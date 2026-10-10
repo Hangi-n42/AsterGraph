@@ -175,7 +175,12 @@ def test_preservation_reuse_is_local_and_invalidated_by_meaning_or_claim_change(
     m = meaning('m'); claim = run['claims'][0]; requirement=run['requirements'][0]
     run['preservation_reuses']=[dict(requirement_id='r', requirement_revision=1,
         claim_versions={claim['id']:autoschema.identifier('claim',claim)},
-        meaning_versions={'m':autoschema.identifier('meaning',m)},check={'target_id':claim['id']})]
+        meaning_versions={'m':autoschema.identifier('meaning',m)},
+        requirement_version=business_review.preservation_requirement_version(requirement),
+        source_versions=claim['source_version_ids'],
+        source_fingerprint=business_review.preservation_source_version(run, claim['source_version_ids']),
+        check=dict(target_id=claim['id'], status='preserved', before_normal_meanings=['m'],
+            after_locations=[claim['id']], reason='동일 정상 의미 보존'))]
     assert business_review.valid_preservation_reuses(run,requirement,[m])
     changed=dict(m,conditions=['새 조건'])
     assert not business_review.valid_preservation_reuses(run,requirement,[changed])

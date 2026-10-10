@@ -176,7 +176,8 @@ def test_requirement_completion_uses_actual_finding_dependencies(premises, findi
     background = meaning('background', required_for_requirement=False)
     bridge = meaning('bridge', required_for_requirement=False); bridge['premise_keys'] = ['background']
     finding = dict(id='f', origin='source', kind='interpretation_uncertain', text='배경 기록의 근거 미확정',
-        meaning_keys=finding_keys, scope_meaning_keys=[], claim_ids=[], fields=[])
+        meaning_keys=finding_keys, scope_meaning_keys=[], claim_ids=[], fields=[],
+        provided_block_ids=[b['id'] for b in run['blocks']])
     source = dict(review_contract=review.CONTRACT, meanings=[normal, background, bridge], findings=[finding],
         gaps=[], meaning_gaps=[], source_batches=[], source_selection={})
     result = judgments([m['key'] for m in review.review_meanings(source)], ids=[run['claims'][0]['id']])

@@ -339,11 +339,23 @@ def pending_source_targets(source):
     return {uid: ids - excluded for uid, ids in pending_inspections(source).items() if ids - excluded}
 
 
+def inherited_inspection_units(run):
+    """Carry referenced source receipts separately from model-response caches."""
+    latest = {a['requirement_id']: a for a in run.get('assessments', [])}
+    ids = {r.get('unit_id') for a in latest.values() for field in ('source_batches', 'reassessment_history')
+        for r in (a.get('source') or {}).get(field, [])}
+    selected = []
+    for unit in [*run.get('units', []), *run.get('reusable_units', []), *run.get('inspection_units', [])]:
+        if unit.get('id') in ids and unit not in selected:
+            selected.append(deepcopy(unit))
+    return selected
+
+
 def historical_inspection_scope(run, record):
     """Recover request scope only; a saved request does not prove model inspection."""
     from .business_run import exact_evidence
     from .discovery_analysis import remap
-    units = [u for u in [*run.get('units', []), *run.get('reusable_units', [])]
+    units = [u for u in [*run.get('units', []), *run.get('reusable_units', []), *run.get('inspection_units', [])]
              if record.get('unit_id') and u.get('id') == record['unit_id']]
     if not units or any(u != units[0] for u in units):
         return dict(scope_record_status='unavailable', scope_record_error='unit_missing_or_ambiguous')
@@ -562,13 +574,38 @@ def finding_block_ids(run, requirement, findings):
             for hit in index.search(finding['text'], {d['id'] for d in documents}, 4)}
 
 
-def valid_preservation_reuses(run, requirement, meanings):
+def preservation_valid(check, claims):
+    active = {c['id'] for c in claims if not c.get('superseded_by')}
+    return bool(check.get('status') == 'preserved' and check.get('before_normal_meanings')
+        and check.get('after_locations') and set(check['after_locations']) <= active
+        and check.get('target_id') in {c['id'] for c in claims})
+
+
+def preservation_requirement_version(requirement):
+    return autoschema.identifier('requirement', {k: requirement[k] for k in
+        ('id', 'revision', 'question_ids', 'question', 'criterion', 'target', 'situation', 'period', 'source_ids', 'required')
+        if k in requirement})
+
+
+def preservation_source_version(run, versions):
+    return autoschema.identifier('source', [b for b in run['blocks'] if b['source_version_id'] in versions])
+
+
+def valid_preservation_reuses(run, requirement, meanings, *, challenges=()):
     claims = {c['id']: autoschema.identifier('claim', c) for c in run['claims']}
     versions = {m['key']: autoschema.identifier('meaning', m) for m in meanings}
+    latest = next((a for a in reversed(run.get('assessments', [])) if a['requirement_id'] == requirement['id']), {})
+    challenges = [*(latest.get('representation') or {}).get('meaning_challenges', []), *challenges]
     return [r for r in run.get('preservation_reuses', []) if r['requirement_id'] == requirement['id']
         and r['requirement_revision'] == requirement['revision']
+        and preservation_valid(r['check'], run['claims'])
+        and r.get('requirement_version') == preservation_requirement_version(requirement)
+        and r.get('source_fingerprint') == preservation_source_version(run, r.get('source_versions', []))
         and all(claims.get(cid) == version for cid, version in r['claim_versions'].items())
-        and all(versions.get(key) == version for key, version in r['meaning_versions'].items())]
+        and all(versions.get(key) == version for key, version in r['meaning_versions'].items())
+        and not any(set(c.get('claim_ids', [])).intersection(r['claim_versions'])
+            or c.get('meaning_key') in r['meaning_versions']
+            for c in [*run.get('candidate_challenges', []), *challenges])]
 
 
 def repair_context(run, requirement, meanings):

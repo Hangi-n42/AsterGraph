@@ -42,6 +42,23 @@ def test_exact_request_recovers_scope_without_promoting_historical_verdicts():
     assert (run, source) == before
 
 
+@pytest.mark.parametrize('changed_source', [False, True])
+def test_continuation_retains_only_referenced_original_units_and_revalidates_source(changed_source):
+    parent, _, source = historical_source()
+    parent['assessments'] = [dict(requirement_id='r', source=source)]
+    parent['reusable_units'].append(dict(id='unreferenced', stage='requirement_representation'))
+    before = deepcopy(parent)
+    child = dict(parent, units=[], reusable_units=[], inspection_units=review.inherited_inspection_units(parent),
+        blocks=deepcopy(parent['blocks']))
+    assert [u['id'] for u in child['inspection_units']] == ['historical']
+    assert review.inherited_inspection_units(child) == child['inspection_units']
+    if changed_source:
+        child['blocks'][1]['text'] = '바뀐 원문'
+    receipt = review.inspection_summaries(source, child)[0]
+    assert receipt['scope_record_status'] == ('unavailable' if changed_source else 'available')
+    assert receipt['inspection_status'] is None and parent == before
+
+
 @pytest.mark.parametrize('corruption', ['message_text', 'map', 'view_text', 'version', 'parse',
     'span', 'locator', 'previous', 'unit_id'])
 def test_mismatched_records_cannot_supply_historical_scope(corruption):

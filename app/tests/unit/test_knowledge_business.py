@@ -1002,7 +1002,7 @@ def test_preserved_repair_is_not_blocked_by_unrelated_requirement():
         assessment = dict(id=rid, requirement_id=rid, source=source, errors=[], representation=dict(
             checks=[dict(meaning_key='m', status='represented', claim_ids=[cid])], source_challenges=[],
             preservation_checks=[dict(target_id='fixed', status='preserved', before_normal_meanings=['정상 의미'],
-                                      after_locations=['fixed.statement'])] if rid == 'a' else []))
+                                      after_locations=['fixed'])] if rid == 'a' else []))
         assessment['input_fingerprint'] = business_run.assessment_fingerprint(run, dict(id=rid), source)
         run['assessments'].append(assessment)
     eligible, blocked = business_use.eligibility(run)

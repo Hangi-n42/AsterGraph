@@ -43,6 +43,7 @@ def start(service, changeset_id, request):
         run = deepcopy(parent)
         run.update(id=uuid4().hex, parent_run_id=parent['id'], status='queued', started_at=None, finished_at=None,
             units=[], analysis_units=[], reusable_units=deepcopy(parent['units']), parent_recipe=deepcopy(parent['recipe']),
+            inspection_units=business_review.inherited_inspection_units(parent),
             parent_model_identity=deepcopy(parent['model_identity']), metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0),
             prior_repairs=deepcopy([*parent.get('prior_repairs', []), *parent['repairs']]), repairs=[])
         for key in ('changeset_id', 'error', 'continuation'):
@@ -108,7 +109,7 @@ def start(service, changeset_id, request):
             source_correction_ids=receipt['source_correction_ids'], related_requirement_ids=[r['id'] for r in run['requirements']],
             candidate_requirement_ids=[r['id'] for r in run['impact_candidates']],
             basis='shared source scope is an impact candidate, not confirmed semantic impact')
-        run['preservation_reuses'] = preservation_reuses(parent, run)
+        run['preservation_reuses'] = preservation_reuses(parent, run, edit_id=receipt_id)
         run['graph'] = autoschema.graph(run['claims'])
         # Consuming a revision prevents a second edit from silently overwriting this one.
         change['revision'] += 1
@@ -131,20 +132,20 @@ def start(service, changeset_id, request):
     return dict(run_id=run['id'], status='queued', changeset_revision=change['revision'])
 
 
-def preservation_reuses(parent, run):
+def preservation_reuses(parent, run, *, edit_id=None):
     """Reuse a local before/after check, never the requirement's unknown conjunctions."""
     reused = []
     current = {c['id']: c for c in run['claims']}
     latest = {a['requirement_id']: a for a in parent['assessments']}
     changed_versions = {e['source_version_id'] for c in run.get('source_corrections', [])
-                        if c['edit_id'] == run['repairs'][-1]['id'] for e in c['evidence']}
+                        if edit_id and c['edit_id'] == edit_id for e in c['evidence']}
     for rid, assessment in latest.items():
         if assessment.get('input_fingerprint') != business_run.assessment_fingerprint(parent,
             next(r for r in parent['requirements'] if r['id'] == rid), assessment['source'], assessment.get('review_scope')):
             continue
         for check in (assessment.get('representation') or {}).get('preservation_checks', []):
             ids = {check['target_id'], *check['after_locations']}
-            if check['status'] != 'preserved' or not check['before_normal_meanings'] or not check['after_locations']:
+            if not business_review.preservation_valid(check, parent['claims']):
                 continue
             old = [c for c in parent['claims'] if c['id'] in ids]
             if len(old) != len(ids) or any(c != current.get(c['id']) for c in old):
@@ -157,11 +158,18 @@ def preservation_reuses(parent, run):
             reused.append(dict(requirement_id=rid, assessment_id=assessment['id'], check=deepcopy(check),
                 claim_versions={c['id']: autoschema.identifier('claim', c) for c in old},
                 requirement_revision=assessment['revision'],
+                requirement_version=business_review.preservation_requirement_version(
+                    next(r for r in parent['requirements'] if r['id'] == rid)),
                 meaning_versions={m['key']: autoschema.identifier('meaning', m)
                     for m in business_review.review_meanings(assessment['source'])
                     if any(e['source_version_id'] in versions for e in m['evidence'])},
-                source_versions=sorted(versions), scope='local_preservation_only_not_requirement_independence'))
-    return reused
+                source_versions=sorted(versions), source_fingerprint=business_review.preservation_source_version(parent, versions),
+                scope='local_preservation_only_not_requirement_independence'))
+    candidate = dict(run, preservation_reuses=reused)
+    return [r for requirement in run['requirements'] if requirement['id'] in latest
+        for r in business_review.valid_preservation_reuses(
+        candidate, requirement, business_review.review_meanings(latest[requirement['id']]['source']),
+        challenges=(latest[requirement['id']].get('representation') or {}).get('meaning_challenges', []))]
 
 
 def recheck(service, run_id):

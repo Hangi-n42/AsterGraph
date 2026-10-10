@@ -180,6 +180,7 @@ def start(service, request):
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
                    parent_run_id=parent['id'] if parent else None,
                    reusable_units=deepcopy(parent['units']) if parent else [],
+                   inspection_units=business_review.inherited_inspection_units(parent) if parent else [],
                    reusable_chunk_ids=[c['id'] for c in chunks if parent and any(
                        p['id'] == c['id'] and p['blocks'] == c['blocks'] for p in parent['chunks'])],
                    parent_chunk_ids=[c['id'] for c in parent['chunks']] if parent else [],
@@ -205,7 +206,13 @@ def start(service, request):
                 if key in parent:
                     run[key] = deepcopy(parent[key])
         if parent and (request.resume_run_id or request.reassess_run_id):
-            run['preservation_reuses'] = deepcopy(parent.get('preservation_reuses', []))
+            from .business_edit import preservation_reuses
+            latest_preservation = preservation_reuses(parent, run)
+            latest_assessments = {a['requirement_id']: a for a in parent['assessments']}
+            refreshed = {(rid, p['target_id']) for rid, a in latest_assessments.items()
+                for p in (a.get('representation') or {}).get('preservation_checks', [])}
+            run['preservation_reuses'] = latest_preservation + [deepcopy(r) for r in parent.get('preservation_reuses', [])
+                if (r['requirement_id'], r['check']['target_id']) not in refreshed]
         if request.answer_items:
             from .business_use import bind_answer_items
             run['answer_items'] = bind_answer_items(request, requirements)
@@ -360,6 +367,15 @@ def remap_expression_keys(value, mapping):
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .discovery_analysis import remap
     context = deepcopy(context)
+    if context.get('repair_context') and 'preservation_checks' in output_type.model_fields:
+        ids = tuple(c['id'] for c in context.get('claims', []) if not c.get('superseded_by'))
+        row = get_args(output_type.model_fields['preservation_checks'].annotation)[0]
+        located = create_model('LocatedPreservationCheck', __base__=row,
+            after_locations=(list[Literal[ids]] if ids else list[str], Field(
+                description='Only actual active provided claim IDs; no field paths or prose.',
+                **({} if ids else dict(max_length=0)))))
+        output_type = create_model('Located' + output_type.__name__, __base__=output_type,
+            preservation_checks=(list[located], deepcopy(output_type.model_fields['preservation_checks'])))
     # Public requirements are criteria, not previous model judgments/history.
     public_keys = {'id', 'revision', 'question_ids', 'question', 'target', 'situation', 'period', 'criterion', 'source_ids', 'required'}
     for field in ('requirement', 'answer_request', 'application_context'):
@@ -592,7 +608,7 @@ def assessment_fingerprint(run, requirement, source, scope=None):
 COMPLETION_CONTRACT = 'required-meaning-completion-v2-applicability'
 
 
-def requirement_completion(assessment, accepted_ids=None):
+def requirement_completion(assessment, accepted_ids=None, *, claims=None):
     source = assessment.get('source') or {}
     representation = assessment.get('representation') or {}
     required = {c['meaning_key'] for c in representation.get('source_checks', []) if c['required_for_requirement']}
@@ -610,6 +626,8 @@ def requirement_completion(assessment, accepted_ids=None):
         and representation.get('satisfied') and representation.get('conjunctions_satisfied')
         and not representation.get('source_challenges') and not any(business_review.blocked(assessment)) and not assessment['errors']
         and assessment.get('preservation_complete', False)
+        and (claims is None or all(business_review.preservation_valid(p, claims)
+            for p in representation.get('preservation_checks', [])))
         and (accepted_ids is None or required_ids <= set(accepted_ids)))
     if assessment.get('candidate_accuracy_contract'):
         complete = complete and all(
@@ -745,6 +763,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                     provided_block_ids=sorted(provided_ids),
                     correction_scope='원문에 맞는 정확 인용과 자료 상태를 정정한다. 인용 오류만으로 정상 의미를 바꾸거나 새 의미를 만들지 않는다.'))
         histories = business_review.repair_context(run, requirement, source['meanings']) if business_review.current(run) else run['repairs']
+        initial_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source))
         repair_context = [dict(id=r['id'], targets=r['targets'], preserve_meanings=r['preserve_meanings'],
             changes=[dict(before=compact_claim(v['before']) if v['before'] else None,
                           after=next((compact_claim(c) for c in run['claims'] if c['id'] == v['after']['id']), None),
@@ -765,10 +784,25 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
         assessment['input_fingerprint'] = assessment_fingerprint(run, requirement, source, assessment.get('review_scope'))
         assessment['representation'] = representation
         if representation:
-            reused_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source))
+            reused_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source),
+                challenges=representation.get('meaning_challenges', []))
             representation['preservation_checks'].extend(deepcopy(r['check']) for r in reused_preservation
                 if r['check']['target_id'] not in {p['target_id'] for p in representation['preservation_checks']})
             assessment['preservation_reuses'] = deepcopy(reused_preservation)
+            current_preserved = {r['check']['target_id'] for r in reused_preservation}
+            for previous in initial_preservation:
+                if previous['check']['target_id'] not in current_preserved:
+                    check = next((p for p in representation['preservation_checks']
+                        if p['target_id'] == previous['check']['target_id']), None)
+                    if check is None:
+                        check = deepcopy(previous['check'])
+                        representation['preservation_checks'].append(check)
+                    check.update(status='unknown', after_locations=[],
+                        reason='preservation_reuse_invalidated_by_challenge: 다음 보존 재검토 필요')
+            for check in representation['preservation_checks']:
+                if check.get('status') == 'preserved' and not business_review.preservation_valid(check, run['claims']):
+                    check.update(status='unknown', after_locations=[],
+                        reason='invalid_preservation_location: ' + check.get('reason', ''))
             if business_review.separate_application(run):
                 challenged_ids = {cid for c in run.get('candidate_challenges', []) for cid in c['claim_ids']}
                 business_review.review_candidate_pool(service, run, [c for c in run['claims'] if c['id'] in challenged_ids])
@@ -835,8 +869,9 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                         review_unit_ids=check.get('review_unit_ids', []), error_attributions=deepcopy(pending),
                         source_reassessment_needed=False))
             expected_preservation = {v['before']['id'] for r in repair_context for v in r['changes'] if v['before']}
-            preserved = {p['target_id'] for p in representation['preservation_checks'] if p['status'] == 'preserved'
-                         and p['before_normal_meanings'] and p['after_locations']}
+            expected_preservation.update(r['check']['target_id'] for r in initial_preservation)
+            preserved = {p['target_id'] for p in representation['preservation_checks']
+                         if business_review.preservation_valid(p, run['claims'])}
             assessment['preservation_complete'] = expected_preservation <= preserved
             assessment['blocked_meaning_keys'], assessment['global_blocks'] = map(list, business_review.blocked(assessment))
     if business_review.separate_application(run):
@@ -854,7 +889,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 error_evidence=deepcopy(check['error_evidence'])))
         assessment['candidate_review_ids'] = sorted({v['receipt_id'] for v in direct.values()})
     assessment['claim_ids'] = sorted(set(assessment['claim_ids']))
-    assessment.update(requirement_completion(assessment))
+    assessment.update(requirement_completion(assessment, claims=run['claims']))
     run['assessments'].append(assessment)
     save(service, run)
     business_store.save_assessment(service, run, requirement, assessment)

@@ -55,7 +55,7 @@ def eligibility(run):
             elif check['status'] == 'unknown' or meaning.get('source_status') == 'unknown':
                 exclude(check['claim_ids'], 'unresolved_meaning_not_false')
         preserved = {p['target_id'] for p in representation.get('preservation_checks', [])
-                     if p['status'] == 'preserved' and p['before_normal_meanings'] and p['after_locations']}
+                     if business_review.preservation_valid(p, run['claims'])}
         preserved_current.update(preserved)
         exclude({p['target_id'] for p in representation.get('preservation_checks', [])
                  if p['target_id'] not in preserved}, 'normal_meaning_preservation_conflict')
@@ -187,7 +187,7 @@ def decide(service, changeset_id, request):
         for assessment in latest.values():
             assessment.update(recorded_status=assessment['status'],
                 recorded_completion_contract=assessment.get('completion_contract'))
-            assessment.update(business_run.requirement_completion(assessment, request.accept_ids))
+            assessment.update(business_run.requirement_completion(assessment, request.accept_ids, claims=run['claims']))
         snapshot = dict(id=uuid4().hex, kind='source_graph', parent_id=None, run_id=run['id'],
                         completion_contract=business_run.COMPLETION_CONTRACT,
                         eligibility_contract=ELIGIBILITY_CONTRACT,
