@@ -65,3 +65,7 @@ engine SHA `c8bbfac5e73a6f04f0dd2d91dde8f9934c0f1526b862f6129703be8d158a25db`, G
 자동 before_normal 보존 receipt는 정정된 주체/범위와 신규 누리집 참조를 기존 정상 내용과 혼동해 실패했다. 실제 기존 행위·시점·유선/서면 내용 유지의 원문 대조와 이 잘못된 자동 preserved 판정은 별도다. 한 receipt를 세 독립 의미 오답으로 합산하지 않는다. eligible=[]·SC03 normal_meaning_preservation_unconfirmed, SC04 unresolved/Scope obligation-permission 모순과 최초 SC03/SC04 U→C 오판을 유지한다.
 
 source4의 원문 의미38/필수32는 질문 밖 필수 전파와 날짜 적용성의 한계가 남아 전체 요구 정확성으로 채택되지 않았다. whole R/QA0, 운영 graph/search/QA·#616/#617/#620 미완료다. C1의 k1 복합 처리 추론과 잘못된 gap 해소는 실패로 보존하고 전용 실험 코드는 실제 회수했다. 제품신규8(edit2/source4/direct1/C1)·C 국소12 exact 재사용·회수 후 관련76 pass는 제품 보고의 해당 실행 수치이며 연구6신규나 A누적6에 더하지 않는다. 이 단계는 제품 파일 수정·새 모델 호출0이고 연구 diff/joint judge 미채택 결론을 바꾸지 않는다.
+
+## 2026-10-11 새 평가 원칙에 따른 해석 보충 — #657
+
+NIE baseline/diff8/8 동률은 그 자료의 추가분류 이득0이고 핵심 실패 개선 가능성의 기각 근거가 아니다. B1의 C03 개별 이유7/8→8/8 개선과 differences의 후보에 없는 장소 배타성 과장을 분리한다. #657에서 NIE는 이미 올바른 개별 이유 보존·중복 오류 출력 제거/비용 대조이고 새 개별 이유 개선 대상으로 세지 않는다. 최초 계약/전체 gatefalse·기본 제품미채택은 보존한다. 당시 기준·원시 응답·실패를 소급 수정하지 않았다. [다음 비교 준비](business_diff_responsibility_plan_20261011.md).
