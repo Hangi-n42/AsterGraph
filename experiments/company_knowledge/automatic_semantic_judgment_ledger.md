@@ -628,6 +628,13 @@ N02의 방법 출처는 [Task Calibration 논문](https://aclanthology.org/2025.
 
 - **N07 실제 완료 갱신:** 준비모델0/OPEN은 당시 기록이다. 배정 뒤 동일6확인과 종료검증을 완료했고 양쪽8/8·기술2/3·이유범위한계로 gatefalse/제품미채택·A누적6을 확정했다. 새모델추가0, 결과/보존은 [확인 보고](../../docs/70_research/company_knowledge/business_candidate_diff_confirmation_20261011.md).
 
+### N08 · #656 · 기존 NIE 단독·공동 기여/입력범위 확인 완료
+
+- **이유·동결:** B1은 새 NIE에서 baseline부터8라벨 정답이었으나 같은 지시 단독이 없었다. 기존 노출v2 8후보 전부(정상4/U2/C2), full40블록/부모8·raw/gold·numeric/parser·model/settings를 유지해 신규단독8 대 saved joint3의8판정 exact재사용. 후보 수+former Y/Z→X 역할ID 구성의 효과이며 pure cardinality 인과·새자료 일반화·B1 재실행 아님. 새A번호0/누적6 유지.
+- **실제 결과:** 라벨8/8→8/8·정상4·U2/C2·개선0/악화0/동일8/unknown0, 개별이유7/8→7/8. 단독 C03도 raw 없는 유일한 식사 장소/대안 배제를 만들어 이유 실패; joint 같은 배타성 실패 보존. Event오류4/4씩, 단독 C04/C07 인용48→36/35→13자로 고정 최소구절2/4(공동0/4). 실제추가오류검출·교정·저장0. strict단독8/8 대 joint2/3·whole수용5/8; joint개별judgment는8/8이며 Z단독difference 추가계약실패를 의미회귀로 세지 않음. 양쪽 wholegatefalse·제품미채택/재시도0.
+- **입력범위:** 실제단독6696~6788+output2048로 원래c47ctx8192 밖이며 첫판단전ctx11264를 기존NIEjoint와 고정. token/params/props exact대조·원문절삭0. saved공통prefix6662는 candidate header/Event접두부도 포함(source-only 아님). 입력특성 full제공범위·주소·필드자료형·tokenbudget과 출력quote유일성 계약을 별도 보충기록으로 구분. ID/gold/라벨별 사후예외0·모두8분모. 구조적조건이 의미정확성 보장범위라는 근거 없음. 동일ctx8192의 기존SC U→C2 실패와 c47부분편집연결을 그대로 유지.
+- **비용·종료:** 신규8입력53878/출력1621·모델385.373527초·elapsed합385.740630초·completiondriver385.779413초·hash/기동/token/release대기/종료driver402.890098초(hash6.140332). exact재사용3의 과거20573/2254·231.955870초는 신규비용에 미합산. EOS8/8·잘림0·cache_n0·실행오류0·동결/raw/source주소 검증. PID76532 command확인/SIGTERM/exit0·15:32:50KST11435닫힘/Ollama0 자원반환. 보고메시지 자동승인거절 뒤 전송우회없이 조율 직접조회. [보고/구조화 결과](../../docs/70_research/company_knowledge/business_singleton_scope_contribution_20261011.md), 전체보존은 `/Users/hyeongi/.codex/artifacts/business-singleton-scope-contribution-20261011/final`. #655CLOSED·#656연구비교·제품616/617/620미완료, README2·제품code/DB·과거실패 보존. 사용자결정사항없음.
+
 ### 검토했지만 실행하지 않았거나 범위 밖인 방향
 
 | 방향 | 상태와 이유 | 다시 검토할 때 필요한 새 근거 |
