@@ -996,18 +996,11 @@ def query(service, request, *, context_mode='graph'):
                 for task in business_review.public_item_tasks(run, requirement)]
             run['answer_work_items'].extend(i for i in run['answer_items'] if i['requirement_id'] not in scoped)
             run['answer_work_records'] = []
-            versions = {c['id']:business_run.autoschema.identifier('claim',c) for c in original['claims'] if not c.get('superseded_by')}
             for rid in scoped:
-                scope = snapshot['assessments'][rid]['source']['public_scope']
                 requirement = next(r for r in requirements if r['id'] == rid)
-                source_valid = scope.get('source_version_fingerprint') == business_run.autoschema.identifier(
-                    'public_scope_source',business_review.source_blocks(original,requirement))
-                candidates_valid = scope['candidate_versions'] == versions
                 task_ids = {w['id'] for w in run['answer_work_items'] if w['requirement_id'] == rid}
-                run['answer_work_records'].extend(dict(row, source_binding_valid=source_valid,
-                    candidate_binding_valid=candidates_valid, original_unit_id=scope['unit_id'],
-                    followup=next((f for f in scope['followup'] if f['task_id'] == row['task_id']),None),
-                    authority='previous_work_state_not_truth_or_approval') for row in scope['items'] if row['task_id'] in task_ids)
+                run['answer_work_records'].extend(row for row in business_review.public_work_records(
+                    original, requirement, snapshot['assessments'][rid]['source']) if row['task_id'] in task_ids)
     required_source_context = []
     if source_reader:
         context = [{k: v for k, v in c.items() if k != 'linked_claim_ids'} for c in context]

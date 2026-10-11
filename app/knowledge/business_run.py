@@ -665,7 +665,7 @@ def apply_source_corrections(run, requirement, source):
     return result
 
 
-def reassess_challenges(service, run, requirement, assessment):
+def reassess_challenges(service, run, requirement, assessment, *, focus_meaning_keys=None):
     representation = assessment.get('representation') or {}
     application_challenges = (assessment.get('source') or {}).get('application_challenges', [])
     if (assessment.get('source') or {}).get('public_scope'):
@@ -681,7 +681,10 @@ def reassess_challenges(service, run, requirement, assessment):
     attempted = {c['before']['key'] for c in run.get('source_corrections', []) if c['mode'] == 'reassess'
         and c['requirement_id'] == requirement['id'] and c['status'] != 'pending'}
     pending = []
+    active_keys = {m['key'] for m in business_review.review_meanings(assessment['source'])} if focus_meaning_keys is not None else None
     for challenge in challenges:
+        if active_keys is not None and (not isinstance(challenge, dict) or challenge.get('meaning_key') not in active_keys):
+            continue
         correction = explicit.get(challenge.get('meaning_key')) if isinstance(challenge, dict) else None
         if correction:
             correction.setdefault('model_disagreements', []).append(dict(assessment_id=assessment['id'], challenge=deepcopy(challenge)))
@@ -694,7 +697,8 @@ def reassess_challenges(service, run, requirement, assessment):
             blocks=business_review.source_blocks(run, requirement), previous=assessment['source'], challenges=pending), GroundingCheck)
         if source:
             assessment = assess(service, run, requirement,
-                source=apply_source_corrections(run, requirement, source), phase='source_reassessment')
+                source=apply_source_corrections(run, requirement, source), phase='source_reassessment',
+                **(dict(focus_meaning_keys=focus_meaning_keys) if focus_meaning_keys is not None else {}))
     return assessment
 
 

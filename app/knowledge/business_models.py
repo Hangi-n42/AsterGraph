@@ -58,6 +58,13 @@ class BusinessRunRequest(BaseModel):
     conceptualize: bool = True
 
 
+class BusinessAnswerRecheck(BaseModel):
+    model_config = {'extra': 'forbid'}
+    qa_run_id: str = Field(min_length=1)
+    task_ids: list[str] = Field(min_length=1)
+    repair: bool = True
+
+
 class EvidenceQuote(BaseModel):
     block_id: str
     quote: str = Field(min_length=1)
@@ -441,6 +448,13 @@ class ContributionRevision(ContributionCheck):
 class ContributionSynthesisCheck(RequirementSynthesisCheck):
     checks: list[ContributionRevision]
     candidate_challenges: list[GroundedMeaningChallenge]
+
+
+class ChallengedContributionRevision(ContributionRevision):
+    represented_content: str = Field(...)
+    missing_content: str = Field(...)
+    missing_evidence: list[EvidenceQuote] = Field(...)
+    revision_basis: Literal['new_evidence', 'contradiction', 'prior_misreading', 'combined_expression', 'rechecked_unchanged']
 
 
 class ClaimPatchBase(BaseModel):
