@@ -1,0 +1,74 @@
+{
+  "version": "presentation-six-questions-v1-20261012",
+  "created_at": "2026-10-11T20:10:50.434814+00:00",
+  "scope": "D01 whole startup business with common rules and explicit appendix closure",
+  "exposure": "Exploratory; all questions previously exposed during planning/reference preparation. SUP03 was designated connectivity development; no product B/C answers inspected before this selection.",
+  "items": [
+    {
+      "id": "SUP03",
+      "source_id": "D01",
+      "origin": "supplementary",
+      "date": null,
+      "title_verbatim": null,
+      "question_verbatim": "공고 제2018-447호에서 청년전용창업자금에 적용하는 고정금리는 얼마인가요?",
+      "query": "공고 제2018-447호에서 청년전용창업자금에 적용하는 고정금리는 얼마인가요?",
+      "split": "development",
+      "query_sha256": "6496d696363b7c7320f4b0cb680c6533852077efbbd14f0e379fcf4fa33325b7"
+    },
+    {
+      "id": "SUP01",
+      "source_id": "D01",
+      "origin": "supplementary",
+      "date": null,
+      "title_verbatim": null,
+      "question_verbatim": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 무엇이며, 그 자금에서 사업장 임차보증금을 시설자금으로 지원하는가?",
+      "query": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 무엇이며, 그 자금에서 사업장 임차보증금을 시설자금으로 지원하는가?",
+      "split": "final_exploratory",
+      "query_sha256": "17613e917d2069e36601bfa9f6e38282b28abb0c3b63b84652fbebb5c78c242e"
+    },
+    {
+      "id": "ACT501070",
+      "source_id": "501070",
+      "origin": "actual_consultation",
+      "date": "2019-01-21",
+      "title_verbatim": "특허 사업화 자금안내",
+      "question_verbatim": "특허를 보유하고 있는 제조업종의 중소기업, 창업기업에 해당하는 법인입니다. 1. 중진공 창업지원기업자금 중 개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다. (저희는 특허만 가지고 있고, 기타 인증은 없습니다.)2.위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다.",
+      "query": "상담일: 2019-01-21\n상담 제목: 특허 사업화 자금안내\n원 질문: 특허를 보유하고 있는 제조업종의 중소기업, 창업기업에 해당하는 법인입니다. 1. 중진공 창업지원기업자금 중 개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다. (저희는 특허만 가지고 있고, 기타 인증은 없습니다.)2.위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다.",
+      "split": "final_exploratory",
+      "query_sha256": "ccd3c430fde8563a1ca5581d2dcf51e37db26a4ab321ca825cc43083a68506ec"
+    },
+    {
+      "id": "SUP02",
+      "source_id": "D01",
+      "origin": "supplementary",
+      "date": null,
+      "title_verbatim": null,
+      "question_verbatim": "대표자 만 39세 이하·업력 3년 미만이라는 요건을 명시한 별도 자금은 무엇이며, 그 자금에서 특허권 매입 비용을 투자자금으로 지원하는가?",
+      "query": "대표자 만 39세 이하·업력 3년 미만이라는 요건을 명시한 별도 자금은 무엇이며, 그 자금에서 특허권 매입 비용을 투자자금으로 지원하는가?",
+      "split": "final_exploratory",
+      "query_sha256": "9c4f4ca205d7c4040ff3cf7565d4d162d85db0794f5279e3e0f9c0b5a36296d4"
+    },
+    {
+      "id": "SUP04",
+      "source_id": "D01",
+      "origin": "supplementary",
+      "date": null,
+      "title_verbatim": null,
+      "question_verbatim": "공고 제2018-447호에서 청년전용창업자금의 기업당 대출한도와 시설·운전자금 대출기간(거치기간 포함)은 각각 얼마인가요?",
+      "query": "공고 제2018-447호에서 청년전용창업자금의 기업당 대출한도와 시설·운전자금 대출기간(거치기간 포함)은 각각 얼마인가요?",
+      "split": "final_exploratory",
+      "query_sha256": "0d91227e8183e297c934dcea65c1512c7d9b66437dbad9402967a5a72dca1502"
+    },
+    {
+      "id": "ACT501108",
+      "source_id": "501108",
+      "origin": "actual_consultation",
+      "date": "2019-02-11",
+      "title_verbatim": "창업문의",
+      "question_verbatim": "안녕하세요. 저는 속초에서 젓갈 창업을 하고 있습니다. 중진공 창업자금 관련으로 문의드립니다. 사업자는 2018년 3월 20일에 개시를 했습니다. 젓갈 공장은 다른 분이 하신 걸 제가 리모델링을 해서 운영을 하고 있습니다. 중진공 직원은 제가 젓갈 공장을 운영하고 있는게 창업으로 볼 수 없다고 하는데요. 공장 사장님하고 사업자등록증도 틀리고 제가 신규사업자로 사업을 하는 건데 창업이 안 되는 건가요? 전에 사장님은 다른 곳으로 이전을 했고요. 답변 부탁드립니다.",
+      "query": "상담일: 2019-02-11\n상담 제목: 창업문의\n원 질문: 안녕하세요. 저는 속초에서 젓갈 창업을 하고 있습니다. 중진공 창업자금 관련으로 문의드립니다. 사업자는 2018년 3월 20일에 개시를 했습니다. 젓갈 공장은 다른 분이 하신 걸 제가 리모델링을 해서 운영을 하고 있습니다. 중진공 직원은 제가 젓갈 공장을 운영하고 있는게 창업으로 볼 수 없다고 하는데요. 공장 사장님하고 사업자등록증도 틀리고 제가 신규사업자로 사업을 하는 건데 창업이 안 되는 건가요? 전에 사장님은 다른 곳으로 이전을 했고요. 답변 부탁드립니다.",
+      "split": "final_exploratory",
+      "query_sha256": "fe2124dffa20e884dead5891dae8fbdd6e6cbff1f1e6212e8dbdf622f4b9e6af"
+    }
+  ]
+}
