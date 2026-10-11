@@ -1,0 +1,7 @@
+question_id,origin,type,B_retrieval_full,B_answer_full,B_status,C_retrieval_full,C_answer_full,C_status,C_vs_B,paired_reason
+SUP03,supplementary,single_fact,1/1,1/1,fulfilled,1/1,1/1,fulfilled,same,양쪽 모두 필요한 금리 근거와 정답을 확보했다. 단일 사실 개발 대조 1건의 동률이며 전체 비교 결과를 뜻하지 않는다.
+SUP01,supplementary,dependent_multihop,2/2,2/2,fulfilled,2/2,2/2,fulfilled,same,양쪽 모두 자금 식별과 해당 자금의 임차보증금 제외를 충족. 직접 검색된 구간은 다르지만 공통 문맥 처리 후 원문 정보 집합은 동일.
+ACT501070,actual,multi_evidence_with_material_gap,2/3,0/3,unfulfilled,2/3,0/3,unfulfilled,uncertain,양쪽 모두 핵심 상담 요청은 불충족. C는 B의 금리 전용을 줄였지만 독립 신청 경로를 AND로 결합하고 제외 가능성을 도출했다. 서로 다른 의미의 득실이 혼재하므로 사전 기준에 따라 종합 우열 미확정.
+SUP02,supplementary,dependent_multihop,2/2,1/2,partial,2/2,1/2,unfulfilled,worse,"핵심 자금 식별은 양쪽 충족, 특허 투자자금 제외는 양쪽 미충족. C는 제외를 다른 시설 항목에 붙이는 확정적 범위 오류가 추가됨."
+SUP04,supplementary,multi_evidence,2/2,2/2,fulfilled,2/2,2/2,fulfilled,same,대출한도와 거치 포함 기간 모두 같은 의미로 충족.
+ACT501108,actual,gap_boundary,2/2,2/2,fulfilled,2/2,2/2,fulfilled,same,양쪽 모두 공고상 요건을 안내하고 개별 법상 창업 인정 기준의 공백을 구분. B의 날짜 계산·절차 안내 추가는 핵심 의미의 새 득실로 계산하지 않음.

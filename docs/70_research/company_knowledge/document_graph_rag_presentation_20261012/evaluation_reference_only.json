@@ -1,0 +1,1145 @@
+{
+  "version": "presentation-six-reference-v1-20261012",
+  "product_input": false,
+  "unchanged_parent_references": {
+    "author_reference_draft.json": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746",
+    "reference_reconciliation.json": "7f6470a192e30030535c0d4d9dda790300812ebe6a1934290a4b8da5507932b6",
+    "comparison_protocol.md": "069d228d9322eb218308c30d03bd6edbdce54e59910045e33ca6b02f0058f404",
+    "report_strata_interpretation_v1.json": "bd6b79719b4977c71c0a89944f6cd4876b7b6f623a0483fe4a0dfede12ea26fd"
+  },
+  "items": [
+    {
+      "id": "SUP03",
+      "origin": "supplementary",
+      "source_id": "D01",
+      "date": "2026-10-12",
+      "question_verbatim": "공고 제2018-447호에서 청년전용창업자금에 적용하는 고정금리는 얼마인가요?",
+      "suitability": "include",
+      "suitability_reason": "실제 상담 유형 분포를 보완하는 원문 기반 별도 진단이며 실제 사용자 분포로 합산하지 않는다.",
+      "question_type": "single_fact",
+      "required_meanings": [
+        {
+          "id": "SUP03-M1",
+          "meaning": "공고 제2018-447호의 청년전용창업자금은 연2.0% 고정금리이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P416",
+              "quote": "* 청년전용창업자금, 창업성공패키지지원은 연 2.0% 고정금리 적용"
+            },
+            {
+              "paragraph_id": "P3",
+              "quote": "2018년 12월 27일"
+            }
+          ],
+          "conditions": [],
+          "exceptions": [],
+          "acceptable_variants": [
+            "연2%, 연이율2.0% 고정이라는 동등 표현을 허용한다."
+          ]
+        }
+      ],
+      "expected_gaps": [],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다."
+      ],
+      "reasoning_steps": [],
+      "required_structure_checks": [],
+      "exposure_note": "공식 원문으로 이번 작성자가 만든 정상 단일근거 보조 문항. 실제 상담 아님. 미노출 최종셋 여부는 운영 노출 기록으로 별도 확정. 실행 담당자가 연결 개발문항으로 선정했다고 통지했다. 최종 확인 집계와 분리한다."
+    },
+    {
+      "id": "SUP01",
+      "origin": "supplementary",
+      "source_id": "D01",
+      "date": "2026-10-12",
+      "question_verbatim": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 무엇이며, 그 자금에서 사업장 임차보증금을 시설자금으로 지원하는가?",
+      "suitability": "include",
+      "suitability_reason": "실제 상담 유형 분포를 보완하는 원문 기반 별도 진단이며 실제 사용자 분포로 합산하지 않는다.",
+      "question_type": "multihop",
+      "required_meanings": [
+        {
+          "id": "SUP01-M1",
+          "meaning": "등록된 특허기술을 사업화하려는 기업을 대상으로 명시한 창업기업자금의 하위 자금은 개발기술사업화자금이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P365",
+              "quote": "ㅇ 혁신창업지원, 일자리창출촉진, 개발기술사업화자금으로 구분"
+            },
+            {
+              "paragraph_id": "P382",
+              "quote": "- (개발기술사업화) ①다음 해당 기술을 사업화하고자 하는 기업"
+            },
+            {
+              "paragraph_id": "P384",
+              "quote": "▪특허, 실용신안 또는 저작권 등록 기술"
+            },
+            {
+              "paragraph_id": "P1",
+              "quote": "중소벤처기업부 공고 제2018-447호"
+            }
+          ],
+          "conditions": [
+            "질문은 공고상 대상유형 식별이며 실제 기업의 전체 자격심사를 요청한 것이 아니다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        },
+        {
+          "id": "SUP01-M2",
+          "meaning": "사업장 임차보증금은 창업기업자금 시설범위에 일반적으로 열거되지만 식별된 개발기술사업화자금에는 명시적인 지원 불가 예외가 적용된다.",
+          "evidence": [
+            {
+              "paragraph_id": "P396",
+              "quote": "□ 시설자금"
+            },
+            {
+              "paragraph_id": "P400",
+              "quote": "ㅇ 자가 사업장 건축자금, 토지구입비, 임차보증금"
+            },
+            {
+              "paragraph_id": "P402",
+              "quote": "* 개발기술사업화자금은 건축 및 토지구입비, 임차보증금은 지원 불가"
+            },
+            {
+              "paragraph_id": "P1",
+              "quote": "중소벤처기업부 공고 제2018-447호"
+            }
+          ],
+          "conditions": [
+            "해당 자금에서 해당 용도로의 지원 여부에 한정한다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        }
+      ],
+      "expected_gaps": [],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다.",
+        "특허를 보유한 모든 기업의 전체 자금이 금지된다고 하지 않는다.",
+        "개발기술사업화의 임차보증금 제외를 다른 창업기업자금에도 적용하지 않는다.",
+        "특허보유만으로 승인되는 제도라고 하지 않는다."
+      ],
+      "reasoning_steps": [
+        {
+          "id": "S1",
+          "intermediate": "등록 특허기술을 사업화하는 대상유형을 찾는다.",
+          "conclusion": "개발기술사업화자금으로 식별한다.",
+          "depends_on": [],
+          "evidence": [
+            {
+              "paragraph_id": "P382",
+              "quote": "- (개발기술사업화) ①다음 해당 기술을 사업화하고자 하는 기업"
+            },
+            {
+              "paragraph_id": "P384",
+              "quote": "▪특허, 실용신안 또는 저작권 등록 기술"
+            }
+          ],
+          "dependency_reason": "뒤에서 어느 하위자금의 예외를 적용할지 정하기 위한 필수 대상 식별이다."
+        },
+        {
+          "id": "S2",
+          "intermediate": "사업장 임차보증금의 공통 자금용도를 찾는다.",
+          "conclusion": "임차보증금은 시설자금 공통 항목에 열거된다.",
+          "depends_on": [],
+          "evidence": [
+            {
+              "paragraph_id": "P396",
+              "quote": "□ 시설자금"
+            },
+            {
+              "paragraph_id": "P400",
+              "quote": "ㅇ 자가 사업장 건축자금, 토지구입비, 임차보증금"
+            }
+          ],
+          "dependency_reason": "질문에서 묻는 용도가 다음 단계의 예외 대상 지출인지 확인한다."
+        },
+        {
+          "id": "S3",
+          "intermediate": "S1의 자금과 S2의 지출을 P402의 적용대상과 맞춘다.",
+          "conclusion": "개발기술사업화자금에서는 사업장 임차보증금 지원 불가.",
+          "depends_on": [
+            "S1",
+            "S2"
+          ],
+          "evidence": [
+            {
+              "paragraph_id": "P402",
+              "quote": "* 개발기술사업화자금은 건축 및 토지구입비, 임차보증금은 지원 불가"
+            }
+          ],
+          "dependency_reason": "자금 식별을 빼면 P400만 보고 허용으로 오독한다. 용도 식별을 빼면 예외를 모든 시설비로 넓힐 수 있다."
+        }
+      ],
+      "required_structure_checks": [
+        {
+          "check": "특허기술 대상 하위자금과 시설 임차보증금 예외의 귀속",
+          "paragraph_ids": [
+            "P382",
+            "P384",
+            "P395",
+            "P396",
+            "P400",
+            "P402"
+          ],
+          "status": "verified_native_structure",
+          "effect": "원형 본문·표/셀 범위를 작성자가 확인했다. 독립 정답검토는 별도이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P382",
+              "parashape_id": "348",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P384",
+              "parashape_id": "112",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "22"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P395",
+              "parashape_id": "364",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P396",
+              "parashape_id": "302",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P400",
+              "parashape_id": "365",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P402",
+              "parashape_id": "367",
+              "parents": []
+            }
+          ]
+        }
+      ],
+      "exposure_note": "계획서 v1.1에 이미 공개된 개발 후보를 그대로 재사용. 미노출 평가 문항 아님."
+    },
+    {
+      "id": "ACT501070",
+      "origin": "actual",
+      "source_id": "501070",
+      "date": "2019-01-21",
+      "question_verbatim": "특허를 보유하고 있는 제조업종의 중소기업, 창업기업에 해당하는 법인입니다. 1. 중진공 창업지원기업자금 중 개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다. (저희는 특허만 가지고 있고, 기타 인증은 없습니다.)2.위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다.",
+      "question_sha256": "6e3fe856c6d848d7d28abb236ab147a24e713424afa5e5c889cb9d7aefa41e55",
+      "research_group": "direct_program_reference",
+      "suitability": "include",
+      "suitability_reason": "원형 구조에서 ①의 기술목록(table22)과 그 밖의 ② 별도 대상 문단을 확인했다. 등록특허 기술의 사업화 경로와 인증기업 자체기술 경로를 구분하는 답변, 다른 자금의 조건부 안내와 실제 심사 공백을 평가할 수 있다.",
+      "question_type": "gap_mixed",
+      "required_meanings": [
+        {
+          "id": "501070-M1",
+          "meaning": "개발기술사업화의 ①은 열거된 기술을 사업화하려는 기업으로 등록 특허기술이 포함되고, ②는 인증 등으로 열거된 기업이 자체기술을 사업화하려는 별도 대상유형이다. ① 등록 특허기술 사업화 경로에 ②의 인증까지 동시에 갖출 것을 요구하지 않는다.",
+          "evidence": [
+            {
+              "paragraph_id": "P382",
+              "quote": "- (개발기술사업화) ①다음 해당 기술을 사업화하고자 하는 기업"
+            },
+            {
+              "paragraph_id": "P384",
+              "quote": "▪특허, 실용신안 또는 저작권 등록 기술"
+            },
+            {
+              "paragraph_id": "P392",
+              "quote": "② 자체 기술을 사업화하고자 하는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업"
+            }
+          ],
+          "conditions": [
+            "단순히 특허를 소지한 것과 해당 등록 기술을 사업화하려는 것은 구별한다.",
+            "① 경로의 기술 요건 해당은 창업기업자금의 다른 조건이나 융자심사를 면제하지 않는다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "“두 항목은 대상유형이므로 등록 특허기술을 사업화하는 ① 경로로 검토할 수 있고 ② 인증을 함께 갖출 필요는 없다”를 허용한다.",
+            "“어느 한 유형에 해당하여 검토할 수 있다”는 표현은 허용하되 “특허만 있으면 무조건 승인”은 허용하지 않는다."
+          ]
+        },
+        {
+          "id": "501070-M2",
+          "meaning": "개발기술사업화는 업력과 상관없이 지원하지만 제품 양산 후 3년이 경과한 기술은 대상에서 제외된다.",
+          "evidence": [
+            {
+              "paragraph_id": "P393",
+              "quote": "※ 단, 제품 양산 후 3년이 경과한 기술은 개발기술사업화자금 대상에서 제외"
+            },
+            {
+              "paragraph_id": "P394",
+              "quote": "※ 개발기술사업화자금은 업력과 상관없이 지원"
+            }
+          ],
+          "conditions": [
+            "업력 무관은 창업기업자금의 다른 공통·사업별 조건까지 면제한다는 뜻이 아니다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        },
+        {
+          "id": "501070-M3",
+          "meaning": "그 밖의 공고 내 후보로는 7년 미만 등 혁신창업지원 요건에 해당하는 경우 생산설비 등의 시설자금과 창업·생산·기업경영 운전자금을 안내할 수 있다.",
+          "evidence": [
+            {
+              "paragraph_id": "P366",
+              "quote": "- (혁신창업지원) 사업 개시일로부터 7년 미만(신청‧접수일 기준)인 중소기업 및 창업을 준비 중인 자"
+            },
+            {
+              "paragraph_id": "P397",
+              "quote": "ㅇ 생산설비 및 시험검사장비 도입 등에 소요되는 자금"
+            },
+            {
+              "paragraph_id": "P412",
+              "quote": "ㅇ 창업소요 비용, 제품생산 비용 및 기업경영에 소요되는 자금, 약속어음 폐지‧감축에 따른 현금결제 전환 비용"
+            }
+          ],
+          "conditions": [
+            "질문의 창업기업이라는 자기 설명만으로 정확한 업력·신청대상 적합성을 확정하지 않는다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "D01의 다른 관련 자금을 조건과 함께 정확히 제시한 경우 대체 안내로 허용한다. 모든 자금을 열거하도록 요구하지 않는다."
+          ]
+        }
+      ],
+      "expected_gaps": [
+        {
+          "kind": "case_review",
+          "description": "등록 특허의 실제 사업화, 제품 양산 경과기간, 다른 자금의 업력·대상 요건",
+          "required_handling": "특허만 있다는 사실로 기업 전체 자격·융자 승인을 보장하지 않는다."
+        },
+        {
+          "kind": "additional_source",
+          "description": "D01 밖의 특허 사업화 지원·보증·보조사업 전체",
+          "required_handling": "다른 제도를 추정해 나열하거나 D01이 전부라고 표현하지 않는다."
+        }
+      ],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다.",
+        "특허 보유만으로 승인된다고 단정하지 않는다.",
+        "①과②의 동시 충족을 요구하거나, 한 경로에 해당하면 공통 조건·양산기간 제외·융자심사도 자동 통과한다고 설명하지 않는다."
+      ],
+      "reasoning_steps": [],
+      "required_structure_checks": [
+        {
+          "check": "개발기술사업화 ① 열거 목록과 ②의 동일 수준 관계 및 P393/P394 공통 주석 범위",
+          "paragraph_ids": [
+            "P382",
+            "P384",
+            "P392",
+            "P393",
+            "P394"
+          ],
+          "status": "verified_native_structure",
+          "effect": "작성자가 원본 구조에서 상위 본문·표/셀 귀속 및 행·열을 확인했다. 이는 구조 확인이며 별도 독립 검토 완료 표시는 아니다.",
+          "evidence": [
+            {
+              "paragraph_id": "P382",
+              "parashape_id": "348",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P384",
+              "parashape_id": "112",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "22"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P392",
+              "parashape_id": "357",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P393",
+              "parashape_id": "362",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P394",
+              "parashape_id": "362",
+              "parents": []
+            }
+          ],
+          "finding": "P382①는 본문, P383~P391은 table22의 기술목록, P392②는 표 밖 본문이며 뒤의 P393·P394는 개발기술사업화 공통 주석이다. ②는 특허기술 항목 안의 추가 인증조건이 아니다."
+        }
+      ],
+      "exposure_note": "프로젝트 보유 실제 상담 후보 원문 그대로 보존. 기존 탐색·계획에 공개된 후보이며 작성자는 원답변·제품 출력·그래프를 보지 않았다. 전체 운영 노출 이력은 별도 확인 전까지 미노출 평가셋으로 주장하지 않는다.",
+      "source_title": "특허 사업화 자금안내"
+    },
+    {
+      "id": "SUP02",
+      "origin": "supplementary",
+      "source_id": "D01",
+      "date": "2026-10-12",
+      "question_verbatim": "대표자 만 39세 이하·업력 3년 미만이라는 요건을 명시한 별도 자금은 무엇이며, 그 자금에서 특허권 매입 비용을 투자자금으로 지원하는가?",
+      "suitability": "include",
+      "suitability_reason": "실제 상담 유형 분포를 보완하는 원문 기반 별도 진단이며 실제 사용자 분포로 합산하지 않는다.",
+      "question_type": "multihop",
+      "required_meanings": [
+        {
+          "id": "SUP02-M1",
+          "meaning": "대표자 만39세 이하·사업개시3년 미만의 별도 자금은 청년전용창업자금이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P367",
+              "quote": "* 다음 청년전용창업자금과 창업사업연계자금 별도 운용"
+            },
+            {
+              "paragraph_id": "P368",
+              "quote": "<청년전용창업자금>"
+            },
+            {
+              "paragraph_id": "P369",
+              "quote": "▪대표자가 만 39세 이하로 사업 개시일로부터 3년 미만(신청‧접수일 기준)인 중소기업 및 창업을 준비 중인 자"
+            },
+            {
+              "paragraph_id": "P2",
+              "quote": "『중소기업진흥에 관한 법률』제66조 및 제67조에 따른 “2019년도 중소벤처기업부 소관 중소기업 정책자금 융자계획”을 다음과 같이 공고합니다."
+            },
+            {
+              "paragraph_id": "P370",
+              "quote": "* 창업성공패키지지원의 경우 7년 미만인 창업 및 예비창업자"
+            }
+          ],
+          "conditions": [
+            "질문이 준 기본 기준에 대응하는 자금명 식별이며 모든 청년·예비창업자에 대한 승인판정이 아니다."
+          ],
+          "exceptions": [
+            "P370 창업성공패키지의 업력7년 미만 특례는 별도 범위이다."
+          ],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        },
+        {
+          "id": "SUP02-M2",
+          "meaning": "특허권 매입비용은 무형자산 확보 투자자금 목록의 지식재산권 매입에 해당하지만, 그 투자자금 범위에서 청년전용창업자금은 제외된다.",
+          "evidence": [
+            {
+              "paragraph_id": "P405",
+              "quote": "ㅇ 다음에 해당하는 무형자산 확보를 위한 투자자금"
+            },
+            {
+              "paragraph_id": "P406",
+              "quote": "[투자자금]"
+            },
+            {
+              "paragraph_id": "P407",
+              "quote": "▪ 지식재산권(특허, 상표권 등) 매입에 소요되는 비용"
+            },
+            {
+              "paragraph_id": "P410",
+              "quote": "※ 청년전용창업자금은 제외"
+            },
+            {
+              "paragraph_id": "P2",
+              "quote": "『중소기업진흥에 관한 법률』제66조 및 제67조에 따른 “2019년도 중소벤처기업부 소관 중소기업 정책자금 융자계획”을 다음과 같이 공고합니다."
+            }
+          ],
+          "conditions": [
+            "특허권 매입을 투자자금으로 지원하는지에 한정한다.",
+            "제외 주석을 운전자금 또는 모든 지식재산 관련 지출로 넓히지 않는다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        }
+      ],
+      "expected_gaps": [],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다.",
+        "청년전용은 시설자금을 전혀 지원하지 않는다고 하지 않는다.",
+        "모든 특허 출원·등록·개발 관련 지출이 영구 금지라고 확대하지 않는다.",
+        "특허권 매입을 특허등록 자문·출원비와 동일시하지 않는다."
+      ],
+      "reasoning_steps": [
+        {
+          "id": "S1",
+          "intermediate": "연령·업력 기준을 상위 자금명과 연결한다.",
+          "conclusion": "청년전용창업자금을 식별한다.",
+          "depends_on": [],
+          "evidence": [
+            {
+              "paragraph_id": "P368",
+              "quote": "<청년전용창업자금>"
+            },
+            {
+              "paragraph_id": "P369",
+              "quote": "▪대표자가 만 39세 이하로 사업 개시일로부터 3년 미만(신청‧접수일 기준)인 중소기업 및 창업을 준비 중인 자"
+            }
+          ],
+          "dependency_reason": "동일 공고의 여러 창업기업자금 중 어느 자금에 적용되는 예외를 찾을지 정한다."
+        },
+        {
+          "id": "S2",
+          "intermediate": "특허권 매입비의 문서상 용도 항목을 분류한다.",
+          "conclusion": "무형자산 확보를 위한 투자자금의 지식재산권 매입비이다.",
+          "depends_on": [],
+          "evidence": [
+            {
+              "paragraph_id": "P405",
+              "quote": "ㅇ 다음에 해당하는 무형자산 확보를 위한 투자자금"
+            },
+            {
+              "paragraph_id": "P406",
+              "quote": "[투자자금]"
+            },
+            {
+              "paragraph_id": "P407",
+              "quote": "▪ 지식재산권(특허, 상표권 등) 매입에 소요되는 비용"
+            }
+          ],
+          "dependency_reason": "P410 제외가 적용되는 범위인 투자자금에 이 지출이 들어가는지 확인한다."
+        },
+        {
+          "id": "S3",
+          "intermediate": "S1의 청년전용과 S2의 투자자금 범위를 제외 주석에 결합한다.",
+          "conclusion": "해당 청년전용 자금에서 특허권 매입을 그 투자자금으로 지원하지 않는다.",
+          "depends_on": [
+            "S1",
+            "S2"
+          ],
+          "evidence": [
+            {
+              "paragraph_id": "P410",
+              "quote": "※ 청년전용창업자금은 제외"
+            }
+          ],
+          "dependency_reason": "자금만 또는 용도만 알면 제외 결론을 확정할 수 없다. 두 식별 결과를 함께 적용해야 하며 시설 전체 금지로 확대하면 오류다."
+        }
+      ],
+      "required_structure_checks": [
+        {
+          "check": "청년전용 자금명·연령업력 박스와 투자자금 목록·P410·다음운전자금제목의 관계",
+          "paragraph_ids": [
+            "P368",
+            "P369",
+            "P405",
+            "P406",
+            "P407",
+            "P408",
+            "P409",
+            "P410",
+            "P411"
+          ],
+          "status": "verified_native_structure",
+          "effect": "원형 본문·표/셀 범위를 작성자가 확인했다. 독립 정답검토는 별도이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P368",
+              "parashape_id": "234",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "20"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P369",
+              "parashape_id": "112",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "20"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P405",
+              "parashape_id": "368",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P406",
+              "parashape_id": "495",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "23"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P407",
+              "parashape_id": "46",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "23"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P408",
+              "parashape_id": "46",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "23"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P409",
+              "parashape_id": "46",
+              "parents": [
+                {
+                  "tag": "TableCell",
+                  "attributes": {
+                    "col": "0",
+                    "colspan": "1",
+                    "row": "0",
+                    "rowspan": "1"
+                  }
+                },
+                {
+                  "tag": "TableControl",
+                  "attributes": {
+                    "table-id": "23"
+                  }
+                }
+              ]
+            },
+            {
+              "paragraph_id": "P410",
+              "parashape_id": "368",
+              "parents": []
+            },
+            {
+              "paragraph_id": "P411",
+              "parashape_id": "459",
+              "parents": []
+            }
+          ]
+        }
+      ],
+      "exposure_note": "계획서 v1.1에 이미 공개된 개발 후보를 그대로 재사용. 미노출 평가 문항 아님."
+    },
+    {
+      "id": "SUP04",
+      "origin": "supplementary",
+      "source_id": "D01",
+      "date": "2026-10-12",
+      "question_verbatim": "공고 제2018-447호에서 청년전용창업자금의 기업당 대출한도와 시설·운전자금 대출기간(거치기간 포함)은 각각 얼마인가요?",
+      "suitability": "include",
+      "suitability_reason": "실제 상담 유형 분포를 보완하는 원문 기반 별도 진단이며 실제 사용자 분포로 합산하지 않는다.",
+      "question_type": "multi_evidence",
+      "required_meanings": [
+        {
+          "id": "SUP04-M1",
+          "meaning": "청년전용창업자금의 대출한도는 기업당1억원 이내이다.",
+          "evidence": [
+            {
+              "paragraph_id": "P427",
+              "quote": "* 개발기술사업화자금은 20억원, 청년전용창업자금은 기업당 1억원 이내"
+            },
+            {
+              "paragraph_id": "P4",
+              "quote": "중소벤처기업부장관"
+            }
+          ],
+          "conditions": [
+            "상한이지 모든 신청자의 승인액이 아니다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        },
+        {
+          "id": "SUP04-M2",
+          "meaning": "청년전용창업자금의 시설·운전 대출기간은 모두6년 이내이며 그 기간에 거치3년 이내가 포함된다.",
+          "evidence": [
+            {
+              "paragraph_id": "P423",
+              "quote": "※ 청년전용창업자금 : 시설‧운전 6년 이내(거치기간 3년 이내 포함)"
+            },
+            {
+              "paragraph_id": "P4",
+              "quote": "중소벤처기업부장관"
+            }
+          ],
+          "conditions": [],
+          "exceptions": [],
+          "acceptable_variants": [
+            "최대6년 중 거치최대3년을 포함한다는 표현을 허용한다."
+          ]
+        }
+      ],
+      "expected_gaps": [],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다.",
+        "기간6년에 거치3년을 더하여 총9년이라고 하지 않는다.",
+        "일반 운전5억원 또는 개발기술사업화20억원 한도를 청년전용에 적용하지 않는다."
+      ],
+      "reasoning_steps": [],
+      "required_structure_checks": [],
+      "exposure_note": "공식 원문으로 이번 작성자가 만든 독립 항목 수집 보조 문항. 실제 상담 아님. 미노출 최종셋 여부는 운영 노출 기록으로 별도 확정."
+    },
+    {
+      "id": "ACT501108",
+      "origin": "actual",
+      "source_id": "501108",
+      "date": "2019-02-11",
+      "question_verbatim": "안녕하세요. 저는 속초에서 젓갈 창업을 하고 있습니다. 중진공 창업자금 관련으로 문의드립니다. 사업자는 2018년 3월 20일에 개시를 했습니다. 젓갈 공장은 다른 분이 하신 걸 제가 리모델링을 해서 운영을 하고 있습니다. 중진공 직원은 제가 젓갈 공장을 운영하고 있는게 창업으로 볼 수 없다고 하는데요. 공장 사장님하고 사업자등록증도 틀리고 제가 신규사업자로 사업을 하는 건데 창업이 안 되는 건가요? 전에 사장님은 다른 곳으로 이전을 했고요. 답변 부탁드립니다.",
+      "question_sha256": "1ca23f402d9871b3bfb01b0e1111d88abc5425ed0966f7d48218b80cadbfe3b8",
+      "research_group": "direct_program_reference",
+      "suitability": "include",
+      "suitability_reason": "고정 공고로 답할 수 있는 조건부 안내와 질문의 구체적인 공백을 분리해 평가할 수 있다.",
+      "question_type": "gap_mixed",
+      "required_meanings": [
+        {
+          "id": "501108-M1",
+          "meaning": "창업기업자금 신청대상은 중소기업창업지원법 제2조의 창업자라는 요건을 둔다. 사업자등록증이 새롭다는 사실만을 독립적 창업 인정 기준으로 제시할 수 없다.",
+          "evidence": [
+            {
+              "paragraph_id": "P362",
+              "quote": "ㅇ『중소기업창업지원법』제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업"
+            }
+          ],
+          "conditions": [
+            "공고는 해당 법조항을 참조하지만 승계·기존 공장 사용의 구체적 창업 판정 규칙을 이 문단에 싣지 않는다."
+          ],
+          "exceptions": [],
+          "acceptable_variants": [
+            "같은 조건과 적용 범위를 보존한 자연스러운 요약·동의어 표현을 허용한다."
+          ]
+        },
+        {
+          "id": "501108-M2",
+          "meaning": "혁신창업지원에는 신청·접수일 기준 사업 개시 후 7년 미만이라는 업력 조건이 있다. 질문의 개시일이 이 기간 안이라는 계산과 기존 젓갈 공장을 인수·사용한 경우의 법적 창업 인정은 별개다.",
+          "evidence": [
+            {
+              "paragraph_id": "P366",
+              "quote": "- (혁신창업지원) 사업 개시일로부터 7년 미만(신청‧접수일 기준)인 중소기업 및 창업을 준비 중인 자"
+            }
+          ],
+          "conditions": [],
+          "exceptions": [],
+          "acceptable_variants": [
+            "기간 요건 충족만으로 창업 인정에 대한 직원의 판단을 뒤집을 수 없다는 제한을 명확히 하면 된다."
+          ]
+        }
+      ],
+      "expected_gaps": [
+        {
+          "kind": "additional_source",
+          "description": "2019년 해당 시점의 창업 정의·사업승계 관련 법령과 운영기준이 필요하다.",
+          "required_handling": "당시 법령이 없는 현재 고정 자료로 최종 창업 해당 여부를 확정하지 않는다."
+        },
+        {
+          "kind": "case_review",
+          "description": "기존 공장의 사업·설비·권리 승계인지 단순 임차·시설 사용인지가 확인되지 않는다.",
+          "required_handling": "공장 이전, 리모델링, 신규 등록만으로 창업 인정·불인정 어느 쪽도 확정하지 않는다."
+        }
+      ],
+      "prohibited_overreach": [
+        "D01 고정 공고를 현재 제도나 질문 당시 모든 개정·다른 제도의 완전한 재현으로 표현하지 않는다.",
+        "제도상 대상·한도를 개인의 승인·실지급 보장으로 바꾸지 않는다.",
+        "새 사업자등록이면 무조건 창업이라고 하지 않는다.",
+        "같은 업종 공장·리모델링이라는 이유만으로 무조건 사업승계나 지원 불가로 판정하지 않는다."
+      ],
+      "reasoning_steps": [],
+      "required_structure_checks": [],
+      "exposure_note": "프로젝트 보유 실제 상담 후보 원문 그대로 보존. 기존 탐색·계획에 공개된 후보이며 작성자는 원답변·제품 출력·그래프를 보지 않았다. 전체 운영 노출 이력은 별도 확인 전까지 미노출 평가셋으로 주장하지 않는다.",
+      "source_title": "창업문의"
+    }
+  ],
+  "reconciliation": [
+    {
+      "id": "501070",
+      "reconciliation_status": "agreement",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "양측의 대상·공백·범위 및 질문유형에 실질 충돌 없음. 부가설명은 전역 조건부 정확성 원칙으로 처리한다.",
+      "query_envelope": {
+        "source_title": "특허 사업화 자금안내",
+        "question_verbatim": "특허를 보유하고 있는 제조업종의 중소기업, 창업기업에 해당하는 법인입니다. 1. 중진공 창업지원기업자금 중 개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다. (저희는 특허만 가지고 있고, 기타 인증은 없습니다.)2.위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다.",
+        "date": "2019-01-21",
+        "question_sha256": "6e3fe856c6d848d7d28abb236ab147a24e713424afa5e5c889cb9d7aefa41e55"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "ACT501070",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "501070-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "501070-M2",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "501070-M3",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [],
+      "evaluation_partition": "candidate_previously_exposed",
+      "eligible_for_final_confirmation": true,
+      "question_type": "gap_mixed",
+      "structure_disagreement": false
+    },
+    {
+      "id": "501108",
+      "reconciliation_status": "modified",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "blind의 사업승계후 다른 자금(P496) 안내를 core에서 제거한다. 창업 판정 공백을 밝히는 boundary_only 범위는 양측 일치한다.",
+      "query_envelope": {
+        "source_title": "창업문의",
+        "question_verbatim": "안녕하세요. 저는 속초에서 젓갈 창업을 하고 있습니다. 중진공 창업자금 관련으로 문의드립니다. 사업자는 2018년 3월 20일에 개시를 했습니다. 젓갈 공장은 다른 분이 하신 걸 제가 리모델링을 해서 운영을 하고 있습니다. 중진공 직원은 제가 젓갈 공장을 운영하고 있는게 창업으로 볼 수 없다고 하는데요. 공장 사장님하고 사업자등록증도 틀리고 제가 신규사업자로 사업을 하는 건데 창업이 안 되는 건가요? 전에 사장님은 다른 곳으로 이전을 했고요. 답변 부탁드립니다.",
+        "date": "2019-02-11",
+        "question_sha256": "1ca23f402d9871b3bfb01b0e1111d88abc5425ed0966f7d48218b80cadbfe3b8"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "ACT501108",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "501108-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "501108-M2",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [
+        {
+          "meaning_id": null,
+          "action": "retain_author_core",
+          "blind_change": "blind의 P496 사업승계시 다른 자금 경로 설명은 원질문의 창업 인정 판단에 필수가 아니므로 추가로 안내할 때의 정확성으로만 취급한다. author M1/M2 그대로 사용.",
+          "evidence_ids": [
+            "P362",
+            "P366",
+            "P496"
+          ]
+        }
+      ],
+      "evaluation_partition": "candidate_previously_exposed",
+      "eligible_for_final_confirmation": true,
+      "question_type": "gap_mixed",
+      "structure_disagreement": false,
+      "answerability_scope": "boundary_only: 법적 창업 인정/불인정 자체를 정답으로 확정하지 않음"
+    },
+    {
+      "id": "SUP01",
+      "reconciliation_status": "agreement",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "양측의 대상·공백·범위 및 질문유형에 실질 충돌 없음. 부가설명은 전역 조건부 정확성 원칙으로 처리한다.",
+      "query_envelope": {
+        "source_title": null,
+        "question_verbatim": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 무엇이며, 그 자금에서 사업장 임차보증금을 시설자금으로 지원하는가?",
+        "date": null,
+        "question_sha256": "17613e917d2069e36601bfa9f6e38282b28abb0c3b63b84652fbebb5c78c242e"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "SUP01",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "SUP01-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "SUP01-M2",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [],
+      "evaluation_partition": "plan_development_exposed",
+      "eligible_for_final_confirmation": true,
+      "question_type": "multihop",
+      "structure_disagreement": false,
+      "dependency_trace": [
+        {
+          "step_id": "SUP01-S1",
+          "meaning_id": "SUP01-M1",
+          "source_paragraph_ids": [
+            "P382",
+            "P384"
+          ],
+          "depends_on": [],
+          "operation": "등록특허 기술 사업화 대상 규칙으로 자금 식별"
+        },
+        {
+          "step_id": "SUP01-S2",
+          "meaning_id": "SUP01-M2",
+          "source_paragraph_ids": [
+            "P396",
+            "P400",
+            "P402"
+          ],
+          "depends_on": [
+            "SUP01-S1"
+          ],
+          "operation": "시설 임차보증금 범위에 대해 식별된 자금의 예외 적용"
+        }
+      ]
+    },
+    {
+      "id": "SUP02",
+      "reconciliation_status": "agreement",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "양측의 대상·공백·범위 및 질문유형에 실질 충돌 없음. 부가설명은 전역 조건부 정확성 원칙으로 처리한다.",
+      "query_envelope": {
+        "source_title": null,
+        "question_verbatim": "대표자 만 39세 이하·업력 3년 미만이라는 요건을 명시한 별도 자금은 무엇이며, 그 자금에서 특허권 매입 비용을 투자자금으로 지원하는가?",
+        "date": null,
+        "question_sha256": "9c4f4ca205d7c4040ff3cf7565d4d162d85db0794f5279e3e0f9c0b5a36296d4"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "SUP02",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "SUP02-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "SUP02-M2",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [],
+      "evaluation_partition": "plan_development_exposed",
+      "eligible_for_final_confirmation": true,
+      "question_type": "multihop",
+      "structure_disagreement": false,
+      "dependency_trace": [
+        {
+          "step_id": "SUP02-S1",
+          "meaning_id": "SUP02-M1",
+          "source_paragraph_ids": [
+            "P368",
+            "P369"
+          ],
+          "depends_on": [],
+          "operation": "명시 연령·업력에 대응하는 별도자금 식별"
+        },
+        {
+          "step_id": "SUP02-S2",
+          "meaning_id": "SUP02-M2",
+          "source_paragraph_ids": [
+            "P405",
+            "P406",
+            "P407"
+          ],
+          "depends_on": [],
+          "operation": "특허권 매입을 투자자금 용도로 분류"
+        },
+        {
+          "step_id": "SUP02-S3",
+          "meaning_id": "SUP02-M2",
+          "source_paragraph_ids": [
+            "P410"
+          ],
+          "depends_on": [
+            "SUP02-S1",
+            "SUP02-S2"
+          ],
+          "operation": "식별된 자금과 분류된 용도를 결합해 제외 주석 적용"
+        }
+      ]
+    },
+    {
+      "id": "SUP03",
+      "reconciliation_status": "agreement",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "양측의 대상·공백·범위 및 질문유형에 실질 충돌 없음. 부가설명은 전역 조건부 정확성 원칙으로 처리한다.",
+      "query_envelope": {
+        "source_title": null,
+        "question_verbatim": "공고 제2018-447호에서 청년전용창업자금에 적용하는 고정금리는 얼마인가요?",
+        "date": null,
+        "question_sha256": "6496d696363b7c7320f4b0cb680c6533852077efbbd14f0e379fcf4fa33325b7"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "SUP03",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "SUP03-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [],
+      "evaluation_partition": "development_connectivity_only",
+      "eligible_for_final_confirmation": false,
+      "question_type": "single_fact",
+      "structure_disagreement": false
+    },
+    {
+      "id": "SUP04",
+      "reconciliation_status": "agreement",
+      "author_suitability": "include",
+      "blind_suitability": "include",
+      "reason": "양측의 대상·공백·범위 및 질문유형에 실질 충돌 없음. 부가설명은 전역 조건부 정확성 원칙으로 처리한다.",
+      "query_envelope": {
+        "source_title": null,
+        "question_verbatim": "공고 제2018-447호에서 청년전용창업자금의 기업당 대출한도와 시설·운전자금 대출기간(거치기간 포함)은 각각 얼마인가요?",
+        "date": null,
+        "question_sha256": "0d91227e8183e297c934dcea65c1512c7d9b66437dbad9402967a5a72dca1502"
+      },
+      "baseline_reference": {
+        "file": "author_reference_draft.json",
+        "item_id": "SUP04",
+        "sha256": "8b10db3d5c2aacc063f6d59262470d7cda60aeb057bc1f1f117660e17958e746"
+      },
+      "core_conditional_mapping": [
+        {
+          "meaning_id": "SUP04-M1",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        },
+        {
+          "meaning_id": "SUP04-M2",
+          "mode": "core_required",
+          "original_meaning_unchanged": true,
+          "condition_policy": "원문 질문·선택한 후보에 실제 적용하는 조건만 평가. 언급하지 않은 배경규정·대안 전수나열은 요구하지 않음."
+        }
+      ],
+      "minimal_patches": [],
+      "evaluation_partition": "candidate_previously_exposed",
+      "eligible_for_final_confirmation": true,
+      "question_type": "multi_evidence",
+      "structure_disagreement": false
+    }
+  ],
+  "policy": "Apply original minimal reconciliation and comparison_protocol; not every ancillary condition must be enumerated. No generated answer changes expected meaning."
+}

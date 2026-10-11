@@ -1,0 +1,42 @@
+{
+  "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+  "source_run_sha256": "a4ba6555dd8797ed7037a753cb207cc323281ebf10b53ba65f8d8bc1e0d13f24",
+  "publication_status": "emergency_partial_build",
+  "source_blocks": 3364,
+  "source_characters": 45124,
+  "source_pool_count": 3371,
+  "source_pool_sha256": "e527bbb65ec0f46026a1474910c619dfde97753ddd6fe5afabf76dd57e1caac9",
+  "passage_index_sha256": "75bc2ec8519c6445e59c955e911d44919edbbdd5b501681eef383e9b6c7a0ddd",
+  "graph_edges": 1446,
+  "concept_targets": 289,
+  "concept_results": 289,
+  "unattempted_concepts": 0,
+  "concept_ignored": [],
+  "failed_concepts": 1,
+  "inherited_extraction_cost": {
+    "records": 52,
+    "provider_responses": 52,
+    "statuses": {
+      "succeeded": 46,
+      "failed": 6
+    },
+    "elapsed_s": 12901.612435,
+    "input_tokens": 204057,
+    "output_tokens": 166216
+  },
+  "new_concept_cost": {
+    "records": 289,
+    "provider_responses": 288,
+    "statuses": {
+      "succeeded": 288,
+      "failed": 1
+    },
+    "elapsed_s": 11445.552813999995,
+    "input_tokens": 1314131,
+    "output_tokens": 5138
+  },
+  "additional_extraction_calls": 0,
+  "unextracted_appendix_blocks": 2996,
+  "graph_completed": false,
+  "parent_source_build_manifest_sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240"
+}
