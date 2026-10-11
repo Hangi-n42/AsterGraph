@@ -1,6 +1,7 @@
 """Source graph construction and requirement repair on the existing service worker."""
 import asyncio
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from time import monotonic
 from uuid import uuid4
@@ -1540,16 +1541,24 @@ def execute(service, run_id):
         run['graph'] = autoschema.graph(run['claims'])
         save(service, run)
         by_chunk = {c['id']: c for c in run['chunks']}
-        run['conceptualization_scope'] = 'stored_pool_preserved' if run.get('stored_pool') else (
+        projected = run.get('source_projection')
+        run['conceptualization_scope'] = 'stored_pool_preserved' if run.get('stored_pool') and not projected else (
             'all' if options.get('conceptualize', True) else 'deferred_to_selected_targets')
-        for target in autoschema.concept_targets(run['graph']) if options.get('conceptualize', True) and not run.get('stored_pool') else []:
+        for target in autoschema.concept_targets(run['graph']) if options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []:
             if cancelled(service, run):
                 return
+            if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
+                projected['stop_reason'] = 'new_request_deadline'
+                break
             messages, selection = autoschema.concept_messages(target, run['graph'], by_chunk, options['neighbor_mode'])
             response = call(service, run, 'concept_' + target['kind'], messages, max_tokens=options['concept_tokens'])
             run['concepts'].append(dict(id=uuid4().hex, target=target, selection=selection,
                 concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
                 relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id']))
+            save(service, run)
+        if projected:
+            completed = {c['target']['id'] for c in run['concepts']}
+            projected['unattempted_concept_target_ids'] = [i for i in projected['planned_concept_target_ids'] if i not in completed]
             save(service, run)
         changed = False
         for requirement in run['requirements']:
@@ -1583,6 +1592,9 @@ def execute(service, run_id):
         run['status'] = 'review_ready' if all(a['status'] == 'satisfied' for a in latest.values()) and len(latest) == len(run['requirements']) else 'partial'
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
+        if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
+                          or projected['unattempted_concept_target_ids']):
+            run['extraction_complete'] = False
         if not run['extraction_complete']:
             run['status'] = 'partial'
         elif not run['requirements']:
