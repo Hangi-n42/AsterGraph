@@ -1,0 +1,134 @@
+{
+  "method_improvement": "public target/case selection retained; R semantic mappings remain failed",
+  "limited_use": "current own-source facts, candidate/version/source-bound; no whole requirement or connection approval",
+  "individual_repair": {
+    "attempted": 1,
+    "model_Event_proposal_corrected": 1,
+    "first_full_scope_storage_failed": 1,
+    "event_only_reused_native0_saved": 1,
+    "current_source_supported": 1,
+    "normal_meaning_preserved": 1
+  },
+  "QA": {
+    "native_calls": 1,
+    "public_items": 4,
+    "processed_work_items": 8,
+    "direct_fact_work_items": 5,
+    "gap_only_work_items": 3,
+    "partial_work_items": 2,
+    "item_errors": [],
+    "actual_candidate_citations": [
+      "claim_2fb77b029b92d84e22bbf0c4",
+      "claim_fcaed30a4d57db87cdb43b17",
+      "claim_61bcb219292ebec7112bf07e",
+      "claim_32f070bce1607411f45e6456"
+    ],
+    "all_required_work_complete": false
+  },
+  "calls": {
+    "native_calls": 7,
+    "model_s": 923.1224,
+    "input_tokens": 57312,
+    "output_tokens": 9075
+  },
+  "ledger": [
+    {
+      "unit_id": "d83ce7ae712a4ac1a02969e6482653a4",
+      "stage": "requirement_application",
+      "status": "succeeded",
+      "error": null,
+      "reused_from": null,
+      "elapsed_s": 185.823206,
+      "input_tokens": 15117,
+      "output_tokens": 1560,
+      "product_stage": "scope"
+    },
+    {
+      "unit_id": "1ea9d25899894071830ac682d029f463",
+      "stage": "requirement_representation",
+      "status": "succeeded",
+      "error": null,
+      "reused_from": null,
+      "elapsed_s": 163.039464,
+      "input_tokens": 13245,
+      "output_tokens": 1436,
+      "product_stage": "R"
+    },
+    {
+      "unit_id": "b7245b8de5ed40788a782ec8ac266dd7",
+      "stage": "requirement_representation",
+      "status": "succeeded",
+      "error": null,
+      "reused_from": null,
+      "elapsed_s": 341.807438,
+      "input_tokens": 15399,
+      "output_tokens": 3523,
+      "product_stage": "R"
+    },
+    {
+      "unit_id": "971da7ea76754225bb9b40786e3f53be",
+      "status": "succeeded",
+      "error": null,
+      "elapsed_s": 24.063259,
+      "input_tokens": 1421,
+      "output_tokens": 184,
+      "product_stage": "self"
+    },
+    {
+      "unit_id": "921c7047e18e48289a547d1d7503b52a",
+      "status": "succeeded",
+      "error": null,
+      "elapsed_s": 64.692146,
+      "input_tokens": 3237,
+      "output_tokens": 777,
+      "product_stage": "repair"
+    },
+    {
+      "unit_id": "340397a49db34b31b43a1ee60d8624a7",
+      "status": "succeeded",
+      "error": null,
+      "elapsed_s": 64.672469,
+      "input_tokens": 2284,
+      "output_tokens": 890,
+      "product_stage": "preservation"
+    },
+    {
+      "unit_id": "3213653466f2419982ca8c48094ae0a9",
+      "status": "succeeded",
+      "error": null,
+      "elapsed_s": 79.024418,
+      "input_tokens": 6609,
+      "output_tokens": 705,
+      "product_stage": "QA"
+    }
+  ],
+  "no_new_extraction": true,
+  "no_whole_R_repeat": true,
+  "original_source_meaning_noShow_error_unrepaired": true,
+  "model_release_recovered_without_QA_retry": true,
+  "artifact_root": "/Users/hyeongi/.codex/artifacts/business-public-scope-20261011/bounded-followup-v1",
+  "manifest_sha256": "0aa30cabf8bbb30d7102f5e6ae61c8bc54140d8ea3234f6c58828821cce2b278",
+  "manifest_files": 218,
+  "source_snapshot": {
+    "html_sha256": "1be3dac9ef2cdfe2e465919eea1cb20080d327ef8ea94b7af60b0d5d8f665a04",
+    "text_sha256": "5677311e4b2d4d034b90b04ed3f293c1db9b80185e761ac3dbfaf4f709df9731"
+  },
+  "base_commit": "dfc4eb1901d70ae19a7d8d6f73536b85fcfda490",
+  "checks": {
+    "related_tests": "72 passed in 134.72s",
+    "last_consumer_test": "1 passed",
+    "actual_source_candidate_challenge_mutations": "3 blocked, native0",
+    "bus_stored_boundary": "exact and unchanged, native0"
+  },
+  "retrieval": {
+    "contract": "required-reviewed-claims+ranked-remainder-v1",
+    "required_candidates_forced": true,
+    "autonomous_ranking_improvement_not_claimed": true
+  },
+  "research_method_improvement": "A/B1 is evaluated separately from this product workflow",
+  "open_issues": [
+    616,
+    617,
+    620
+  ]
+}

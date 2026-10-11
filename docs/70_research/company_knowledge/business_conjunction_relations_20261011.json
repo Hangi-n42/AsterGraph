@@ -1,0 +1,41 @@
+{
+  "status": "semantic_gate_failed_do_not_adopt",
+  "criterion": "r05-guidance-scope-v1",
+  "run_id": "12831a8102d34e99b9c09489cfa49f2d",
+  "assessment_id": "0f9c5f53deff4d8abbbc1322625407ce",
+  "unit_id": "9fc77f1743e348c3b9c64c493964f3b6",
+  "prompt_eval_count": 16603,
+  "eval_count": 3645,
+  "model_s": 316.783973,
+  "new_model_calls": 1,
+  "exact_reused_local_requests": 12,
+  "raw_source_claim_meaning_preserved": true,
+  "model_claimed_status": {
+    "assessment_status": "satisfied",
+    "satisfied": true,
+    "source_completeness": "complete",
+    "errors": []
+  },
+  "gate": {
+    "normal_conjunctions_k3_k4_k5_preserved": true,
+    "extra_relations_source_support_resolved": false,
+    "source_facts_and_inferences_separated": false,
+    "R05_QA_executed": false
+  },
+  "failure": "k1 relation repeats the whole original compound processing assertion and infers exclusion of plate-change-associated business from particular number-change/plate-reissue/reseal exclusions; direct duty and delivery facts do not establish the missing compound/term relation.",
+  "official_human_or_general_quality": false,
+  "retries": 0,
+  "product_default_adopted": false,
+  "C_only_code_withdrawal": "completed_after_museum_source4",
+  "artifact": "/Users/hyeongi/.codex/artifacts/business-conjunction-relations-20261011/first-join-trial-v1",
+  "artifact_manifest_sha256": "a2d9008d1bdf9dee147cfc5bb055171ca33fe3c4dee2333243b6e25ba2028082",
+  "C_only_code_withdrawal_receipt": "data/knowledge/evaluations/business_conjunction_relations_20261011/actual/code_withdrawal_receipt.json",
+  "withdrawal_archive": {
+    "path": "/Users/hyeongi/.codex/artifacts/business-conjunction-relations-20261011/withdrawal-v1",
+    "manifest_sha256": "3c408ca965963fed4d630faa6c04e4b0a428a03ffc90c1da932e5d6476953068",
+    "files": 3,
+    "bytes": 41841,
+    "all_hashes_verified": true
+  },
+  "post_withdrawal_regression_tests": 76
+}

@@ -139,7 +139,7 @@ def test_query_exposes_answer_boundary_separately_from_source_review_history(sna
     requirement = dict(id='r', revision=1, status='ready', question='NODE_ID는?', criterion='NODE_ID')
     snapshot.update(id='s', kind='source_graph', run_id='origin', requirements=[requirement], concepts=[])
     snapshot['assessments']['r']['id'] = 'assessment'
-    original = dict(id='origin', kind='business', status='succeeded', units=[],
+    original = dict(id='origin', kind='business', status='succeeded', units=[], requirements=[requirement],
         recipe=dict(options=dict(context_tokens=16384, review_tokens=4096)), model_identity={})
     if contract is not None:
         original['recipe']['review_contract'] = contract

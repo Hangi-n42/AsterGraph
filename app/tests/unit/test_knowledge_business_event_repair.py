@@ -113,6 +113,56 @@ def test_native_event_schema_requires_only_its_own_shape_and_legacy_shape_stays_
         Repairs.model_validate(dict(patches=[dict(patch, head='기관', relation='접수', tail='신청')], unresolved=[]))
 
 
+@pytest.mark.parametrize('supported', [True, False])
+def test_event_only_dispatch_keeps_missing_participants_in_general_repair(monkeypatch, supported):
+    run, assessment, patch = event_case()
+    old = run['claims'][0]
+    if not supported:
+        old['raw']['Entity'][1] = '원문에 없는 참여자'
+    target = assessment['actions'][0]
+    target.update(error_fields={old['id']: ['raw.Event']}, error_evidence=deepcopy(patch['evidence']),
+                  reason='자동 원시 C 이유', automatic_label='C')
+    calls = []
+    def answer(_s, _r, _stage, _instruction, context, schema):
+        calls.append(context)
+        if supported:
+            assert 'participant_occurrences' in context and context['errors'][0]['automatic_label'] == 'C'
+            return dict(sentences=[patch['raw']['Event']], participants={
+                f'entity_{i}': next(iter(options)) for i, options in enumerate(context['participant_occurrences'])})
+        assert context['tasks'][0]['target_id'] == old['id']
+        assert context['tasks'][0]['meanings'][0]['reason'] == target['reason']
+        assert context['tasks'][0]['meanings'][0]['automatic_label'] == 'C'
+        return dict(patches=[patch], unresolved=[])
+    monkeypatch.setattr(business_run, 'json_call', answer)
+    monkeypatch.setattr(business_run, 'save', lambda *a: None)
+    assert business_run.repair(None, run, run['requirements'][0], assessment)
+    assert len(calls) == 1 and run['claims'][0]['raw'] == patch['raw']
+    assert run['repairs'][0]['before'][0]['raw'] == old['raw']
+
+
+def test_supported_event_model_failure_does_not_retry_general_repair(monkeypatch):
+    run, assessment, patch = event_case()
+    old = run['claims'][0]
+    assessment['actions'][0].update(error_fields={old['id']: ['raw.Event']},
+                                    error_evidence=deepcopy(patch['evidence']))
+    calls = []
+    monkeypatch.setattr(business_run, 'json_call', lambda *a: calls.append(a[4]) or None)
+    monkeypatch.setattr(business_run, 'save', lambda *a: None)
+    before = deepcopy(run['claims'])
+    assert not business_run.repair(None, run, run['requirements'][0], assessment)
+    assert len(calls) == 1 and 'participant_occurrences' in calls[0]
+    assert run['claims'] == before and not run['repairs'][0]['changes']
+
+
+def test_supported_candidate_is_not_sent_to_editing(monkeypatch):
+    run, assessment, _ = event_case()
+    assessment['actions'][0]['action'] = 'maintain'
+    before = deepcopy(run)
+    monkeypatch.setattr(business_run, 'json_call', lambda *a: pytest.fail('normal candidate must not be edited'))
+    assert not business_run.repair(None, run, run['requirements'][0], assessment)
+    assert run == before
+
+
 @pytest.mark.parametrize('reason', ['', '원문에서 사건과 참여자로 표현하도록 역할을 명시적으로 변경'])
 def test_role_conversion_to_native_event_still_requires_reason(monkeypatch, reason):
     run, assessment, patch = event_case()

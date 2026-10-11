@@ -1,0 +1,220 @@
+{
+  "issue": 616,
+  "adoption": "product continuation connection only",
+  "base_head": "600c20f934003923badd41b57d625a6cc73c6834",
+  "parent_run_id": "9da0802dc5794b4b9fd6edb196920dd3",
+  "preflight_run_id": "a76a87aaf3a14c2d98561e74efee3999",
+  "independent_verification": {
+    "status": "bounded_preflight_verified",
+    "run_id": "a76a87aaf3a14c2d98561e74efee3999",
+    "parent_run_id": "9da0802dc5794b4b9fd6edb196920dd3",
+    "raw_preflight_status": "failed",
+    "raw_assertion_failure": "whole conjunction record equality included stale review cache metadata",
+    "checked_from_saved_state": true,
+    "new_product_or_model_execution": false,
+    "semantic_result": false,
+    "checks": {
+      "preservation_targets_3": true,
+      "c47_excluded": true,
+      "claims_119_unchanged": true,
+      "blocks_171_unchanged": true,
+      "meanings_17_unchanged": true,
+      "findings_2_unchanged": true,
+      "conjunction_ids_content_5_unchanged": true,
+      "historical_scope_unchanged": true,
+      "only_referenced_original_unit": true,
+      "model_response_cache_not_extended": true,
+      "original_database_unchanged": true,
+      "executed_code_matches_current": true
+    },
+    "local_exact_reuses": 11,
+    "directly_changed_local_packets": [
+      {
+        "index": 4,
+        "mode": "meaning_batch",
+        "exact_signature": false,
+        "changed_signature_fields": [
+          "messages"
+        ],
+        "changed_payload_fields": [
+          "repair_context"
+        ],
+        "baseline_unit_id": "af68574b3d734de7a9d739778070ae1d",
+        "new_model_called": false,
+        "meaning_keys": [
+          "plate_change_documents"
+        ],
+        "conditional_fallback_due_to_unexecuted_packet": false,
+        "status": "changed_packet_not_executed",
+        "unit_id": "7ee37daeb0de4bc59989fc1b38c22c2f"
+      }
+    ],
+    "conditional_fallback_due_to_missing_response": [
+      {
+        "index": 5,
+        "mode": "meaning_batch",
+        "exact_signature": false,
+        "changed_signature_fields": [
+          "messages",
+          "reference_map"
+        ],
+        "changed_payload_fields": [
+          "claims",
+          "repair_context"
+        ],
+        "baseline_unit_id": "af68574b3d734de7a9d739778070ae1d",
+        "new_model_called": false,
+        "meaning_keys": [
+          "plate_change_documents"
+        ],
+        "conditional_fallback_due_to_unexecuted_packet": true,
+        "status": "conditional_fallback_not_executed",
+        "unit_id": "7fb734263bf04931be460704a39d58b9"
+      }
+    ],
+    "partial_join_input_only": [
+      {
+        "index": 14,
+        "mode": "requirement_join",
+        "exact_signature": false,
+        "changed_signature_fields": [
+          "messages",
+          "schema",
+          "reference_map"
+        ],
+        "changed_payload_fields": [
+          "claims",
+          "conjunction_candidates",
+          "local_failures",
+          "local_judgments",
+          "local_preservation_checks",
+          "preservation_targets",
+          "repair_context",
+          "source"
+        ],
+        "baseline_unit_id": "62a98e50fa394797b7dae3325f2d69e1",
+        "new_model_called": false,
+        "meaning_keys": [
+          "common_documents",
+          "proxy_documents",
+          "transfer_certificate",
+          "plate_change_documents",
+          "sale_additional_documents",
+          "sale_exception",
+          "myeongji_main_office_scope",
+          "geumryongsan_center_scope",
+          "geumryongsan_center_exclusion",
+          "bujon_center_scope",
+          "gupo_center_scope",
+          "dongbusan_center_scope"
+        ],
+        "conditional_fallback_due_to_unexecuted_packet": false,
+        "status": "partial_join_input_only_not_executed",
+        "unit_id": "127c20c1a7464f2bae33a89ec16d6c80"
+      }
+    ],
+    "conjunction_cache_metadata_changes": [
+      {
+        "id": "conjunction_1339f1784029def5cfa6ffa4",
+        "fields": [
+          "input_fingerprint",
+          "review",
+          "review_error"
+        ]
+      },
+      {
+        "id": "conjunction_fd7919e7569091520eaffc0a",
+        "fields": [
+          "input_fingerprint",
+          "review",
+          "review_error"
+        ]
+      },
+      {
+        "id": "conjunction_ee15c788dafd2b64f8b27c64",
+        "fields": [
+          "input_fingerprint",
+          "review",
+          "review_error"
+        ]
+      },
+      {
+        "id": "conjunction_2813d470a727054f68c79be9",
+        "fields": [
+          "input_fingerprint",
+          "review",
+          "review_error"
+        ]
+      },
+      {
+        "id": "conjunction_bc83a515988f2a205e8e9aa3",
+        "fields": [
+          "input_fingerprint",
+          "review",
+          "review_error"
+        ]
+      }
+    ],
+    "actual_generations": 0,
+    "identity_lookups": 0,
+    "raw_execution_files_sha256": {
+      "result.json": "e5cbfc38b71cb166ecc30fe02e1960ca926fb66f24961eb1a41c821cfc338581",
+      "knowledge.db": "a281d4676a3b49eddd9808711d31b2f0a538d18a61081d7aea835c80c891e09f",
+      "request_ledger.json": "b9d8b09adfb52ba94f61b0ad3f8854c52868927b866ccd3b1b2bdb3f71c5b60e",
+      "freeze.json": "80425786a4ffced9b48123adcab9929fdb63480ab064a9d1d315bd26a3c3bb02"
+    }
+  },
+  "tests": {
+    "initial_related": {
+      "total": 111,
+      "passed": 110,
+      "failed": 1,
+      "tool_output_chunk": "f6c807",
+      "failure": "fixture missing provided_block_ids"
+    },
+    "baseline_failure_reproduced": {
+      "head": "600c20f934003923badd41b57d625a6cc73c6834",
+      "tool_output_chunk": "d4b863"
+    },
+    "corrected_fixture_cases": {
+      "passed": 6,
+      "tool_output_chunk": "4bb5ac"
+    },
+    "final_preservation_and_historical": {
+      "passed": 31,
+      "seconds": 2.89,
+      "new_continuation_cases": 16,
+      "new_scope_cases": 2,
+      "junit": "preservation-tests.xml",
+      "tool_output_chunk": "2f1dfe"
+    }
+  },
+  "preserved_failures": [
+    {
+      "path": "preflight_failed_01",
+      "reason": "baseline comparison used new validator instead of saved original request"
+    },
+    {
+      "path": "preflight_failed_02",
+      "reason": "original scope receipt not inherited; ordinal matching shifted after conditional fallback"
+    },
+    {
+      "path": "preflight",
+      "reason": "whole conjunction cache metadata equality assertion; bounded checks verified separately"
+    }
+  ],
+  "immutable_source_database": {
+    "path": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_historical_inspection_scope_20261011/actual_join/knowledge.db",
+    "sha256": "92a2537b041364463bc10c8d4a9d84373b6a927a6ca6a0f94e75ecf185e03e66",
+    "unchanged": true
+  },
+  "artifact_root": "/Users/hyeongi/.codex/artifacts/business-preservation-continuation-20261011/v1",
+  "semantic_improvement_claimed": false,
+  "qa_success_claimed": false,
+  "new_model_source_edit_extraction_concept_qa_judge_calls": 0,
+  "issue_status_intent": {
+    "616": "OPEN",
+    "617": "OPEN",
+    "620": "OPEN"
+  }
+}

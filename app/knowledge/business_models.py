@@ -19,10 +19,21 @@ class RequirementInput(BaseModel):
     expected_revision: int = Field(ge=0, default=0)
 
 
+class PublicAnswerItem(BaseModel):
+    """Execution-only decomposition of an unchanged public request, never an expected answer."""
+    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
+    id: str = Field(min_length=1)
+    requirement_id: str
+    requirement_revision: int = Field(ge=0)
+    field: Literal['question', 'criterion']
+    request_quote: str = Field(min_length=1)
+
+
 class BusinessRunRequest(BaseModel):
     model_config = {'extra': 'forbid'}
     source_version_ids: list[str] = Field(min_length=1)
     requirement_ids: list[str] = Field(min_length=1)
+    answer_items: list[PublicAnswerItem] = Field(default_factory=list)
     block_ids: list[str] = Field(default_factory=list)
     target_parse_run_ids: dict[str, str] = Field(default_factory=dict)
     selection_reason: str = ''
@@ -45,6 +56,13 @@ class BusinessRunRequest(BaseModel):
     reuse_run_id: str | None = None
     reassess_run_id: str | None = None
     conceptualize: bool = True
+
+
+class BusinessAnswerRecheck(BaseModel):
+    model_config = {'extra': 'forbid'}
+    qa_run_id: str = Field(min_length=1)
+    task_ids: list[str] = Field(min_length=1)
+    repair: bool = True
 
 
 class EvidenceQuote(BaseModel):
@@ -128,12 +146,31 @@ class RepresentationCheck(BaseModel):
     reason: str
 
 
+class PreservationComparison(BaseModel):
+    change: Literal['retained', 'corrected', 'added', 'lost', 'unknown']
+    before_field: str | None
+    before_quote: str | None
+    after_id: str | None
+    after_field: str | None
+    after_quote: str | None
+    source_block_ids: list[str]
+    before_source_status: Literal['supported', 'unsupported', 'unknown', 'not_present']
+    same_normal_meaning: bool | None
+    reason: str
+
+
 class PreservationCheck(BaseModel):
     target_id: str
     status: Literal['preserved', 'lost', 'unknown']
     before_normal_meanings: list[str]
     after_locations: list[str]
     reason: str
+
+
+class FieldPreservationCheck(PreservationCheck):
+    before_normal_meanings: list[str] = Field(max_length=0)
+    after_locations: list[str] = Field(max_length=0)
+    comparisons: list[PreservationComparison] = Field(min_length=1)
 
 
 class SourceMeaningCheck(BaseModel):
@@ -258,6 +295,19 @@ class MeaningSelection(BaseModel):
     correction: MeaningContent | None = Field(description='Only if the stored meaning needs a source-grounded correction or narrower scope; otherwise null. Preserve the whole subject/condition/time meaning.')
 
 
+class ConjunctionReview(BaseModel):
+    conjunction_id: str
+    original_source_status: Literal['supported', 'unsupported', 'unknown', 'refuted']
+    source_status: Literal['supported', 'unsupported', 'unknown', 'refuted']
+    statement: str = Field(min_length=1, description='Current source-grounded wording; retain the original wording if no correction is established.')
+    meaning_keys: list[str]
+    claim_ids: list[str]
+    evidence: list[EvidenceQuote]
+    requirement_link: RootedRequirementLink
+    item_ids: list[str]
+    reason: str = Field(min_length=1)
+
+
 class SelectedRequirementSourceCheck(BaseModel):
     examined_block_ids: list[str]
     inspection_status: Literal['complete', 'partial', 'unknown']
@@ -277,7 +327,7 @@ class RequirementLinkUpdate(BaseModel):
     required_for_requirement: bool
 
 
-class RequirementLinkReassessment(GroundingCheck):
+class RequirementLinkReassessment(LocalSourceCheck):
     meanings: list[RequirementLinkUpdate]
 
 
@@ -296,6 +346,22 @@ class GroundedMeaningChallenge(MeaningChallenge):
 class RequirementApplicationCheck(BaseModel):
     model_config = {'extra': 'forbid'}
     links: list[MeaningApplicability]
+    meaning_challenges: list[GroundedMeaningChallenge]
+
+
+class PublicItemCoverage(BaseModel):
+    task_id: str
+    meaning_keys: list[str]
+    candidate_ids: list[str]
+    source_state: Literal['available', 'unselected', 'unread', 'not_provided', 'unknown']
+    expression_state: Literal['represented', 'partial', 'not_found', 'unknown']
+    read_block_ids: list[str]
+    gap: str
+    reason: str
+
+
+class PublicScopeCheck(BaseModel):
+    items: list[PublicItemCoverage]
     meaning_challenges: list[GroundedMeaningChallenge]
 
 
@@ -364,6 +430,9 @@ class ContributionCheck(BaseModel):
     status: Literal['represented', 'partial', 'missing', 'unknown']
     claim_ids: list[str]
     reason: str
+    represented_content: str = ''
+    missing_content: str = ''
+    missing_evidence: list[EvidenceQuote] = Field(default_factory=list)
 
 
 class ContributionReviewCheck(ExpressionReviewCheck):
@@ -379,6 +448,13 @@ class ContributionRevision(ContributionCheck):
 class ContributionSynthesisCheck(RequirementSynthesisCheck):
     checks: list[ContributionRevision]
     candidate_challenges: list[GroundedMeaningChallenge]
+
+
+class ChallengedContributionRevision(ContributionRevision):
+    represented_content: str = Field(...)
+    missing_content: str = Field(...)
+    missing_evidence: list[EvidenceQuote] = Field(...)
+    revision_basis: Literal['new_evidence', 'contradiction', 'prior_misreading', 'combined_expression', 'rechecked_unchanged']
 
 
 class ClaimPatchBase(BaseModel):
@@ -473,16 +549,6 @@ class BusinessEventEdit(BaseModel):
         return self
 
 
-class PublicAnswerItem(BaseModel):
-    """Execution-only decomposition of an unchanged public request, never an expected answer."""
-    model_config = {'extra': 'forbid', 'str_strip_whitespace': True}
-    id: str = Field(min_length=1)
-    requirement_id: str
-    requirement_revision: int = Field(ge=0)
-    field: Literal['question', 'criterion']
-    request_quote: str = Field(min_length=1)
-
-
 class BusinessQuery(BaseModel):
     question: str = Field(min_length=1)
     choices: list[str] = Field(default_factory=list)
@@ -503,8 +569,9 @@ class BusinessQuery(BaseModel):
             raise ValueError('원문 QA는 요구 충족 판정이 아닙니다. 요구별 승인 지식 활용에는 snapshot을 선택하세요.')
         if self.answer_mode in {'items', 'reviewed_items'} and not self.answer_items:
             raise ValueError('항목별 답변에는 공개 요청에서 고정한 answer_items가 필요합니다.')
-        if self.answer_items and (self.answer_mode not in {'items', 'reviewed_items'} or not self.requirement_ids):
-            raise ValueError('answer_items는 요구를 선택한 항목별 답변에서만 사용합니다.')
+        if self.answer_items and (self.answer_mode not in {'items', 'reviewed_items'}
+                or not self.requirement_ids and self.answer_mode != 'reviewed_items'):
+            raise ValueError('answer_items는 요구에 묶인 항목별 답변에서만 사용합니다.')
         if len({i.id for i in self.answer_items}) != len(self.answer_items):
             raise ValueError('공개 답변 항목 ID가 중복됩니다.')
         return self
