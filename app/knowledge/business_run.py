@@ -1585,6 +1585,8 @@ def execute(service, run_id):
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
         if not run['extraction_complete']:
             run['status'] = 'partial'
+        elif not run['requirements']:
+            run['status'] = 'succeeded' if all(u['status'] == 'succeeded' for u in run['units']) else 'partial'
     except Exception as exc:
         run.update(status='failed', error=f'{type(exc).__name__}: {exc}')
     finally:
