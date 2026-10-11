@@ -1,0 +1,474 @@
+{
+  "issue": 656,
+  "scope": "Exposed NIE all8, same11264 runtime and semantic instruction as saved joint, roleX remapping plus candidate cardinality package.",
+  "labels": {
+    "single": 8,
+    "joint": 8
+  },
+  "normal_preserved": {
+    "single": 4,
+    "joint": 4
+  },
+  "U_correct": {
+    "single": 2,
+    "joint": 2
+  },
+  "C_correct": {
+    "single": 2,
+    "joint": 2
+  },
+  "improved": 0,
+  "regressed": 0,
+  "same": 8,
+  "unknown": 0,
+  "reason_review": {
+    "method": "This research assistant compared all fixed gold/source and actual raw outputs; no new model grader or human trial.",
+    "singleton_reasons": {
+      "NIE-C01": true,
+      "NIE-C08": true,
+      "NIE-C02": true,
+      "NIE-C03": false,
+      "NIE-C04": true,
+      "NIE-C05": true,
+      "NIE-C06": true,
+      "NIE-C07": true
+    },
+    "joint_reasons": {
+      "NIE-C01": true,
+      "NIE-C08": true,
+      "NIE-C02": true,
+      "NIE-C03": false,
+      "NIE-C04": true,
+      "NIE-C05": true,
+      "NIE-C06": true,
+      "NIE-C07": true
+    },
+    "singleton_reason_pass": 7,
+    "joint_reason_pass": 7,
+    "individual_reason_improved": 0,
+    "individual_reason_regressed": 0,
+    "individual_reason_same": 8,
+    "C03": {
+      "label_correct_both": true,
+      "reason_correct_both": false,
+      "single_bad_claim": "하다람쉼터만을 유일한 필수 장소로 한정",
+      "joint_bad_claim": "반드시 하다람쉼터에서만 도시락을 먹어야",
+      "candidate_has_only": false,
+      "actual_issue": "The source permits eating in designated places; it does not establish an obligation to eat. The candidate does not explicitly exclude the other designated place.",
+      "real_world_falsity_proven": false
+    },
+    "Event_error_locations": 4,
+    "Event_error_minimal_frozen_quotes": {
+      "single": 2,
+      "joint": 0
+    },
+    "shorter_error_quotes": [
+      "NIE-C04:48 to36 code points",
+      "NIE-C07:35 to13 code points"
+    ],
+    "gate_pass": false,
+    "product_adoption": false,
+    "new_correction_or_storage": 0,
+    "decision": "No additional joint label detection gain. Keep the source-valid labels/normal preservation/addresses separately from false C03 reason. No new mechanism or A count; no rerun or product integration.",
+    "next": "No input-only semantic reliability rule is established. Keep SC U/C failures. Require a genuinely distinct cause-changing hypothesis or needed outside-development correction evidence before another model comparison."
+  },
+  "strict": {
+    "single_calls": 8,
+    "joint_calls": 2,
+    "joint_whole_accepted_candidate_occurrences": 5
+  },
+  "Event_error_locations": {
+    "single": 4,
+    "joint": 4
+  },
+  "source_refs": {
+    "single": 11,
+    "joint": 12,
+    "unique_block_ids": 5,
+    "addresses_valid": true
+  },
+  "cost": {
+    "new_singleton": {
+      "calls": 8,
+      "input_tokens": 53878,
+      "output_tokens": 1621,
+      "model_s": 385.373527
+    },
+    "reused_joint": {
+      "calls": 3,
+      "input_tokens": 20573,
+      "output_tokens": 2254,
+      "model_s": 231.95587
+    },
+    "completion_elapsed_sum_s": 385.74063020804897,
+    "completion_driver_s": 385.77941300009843,
+    "startup_hash_tokenization_release_wait_shutdown_driver_s": 402.89009795803577,
+    "hash_verification_s": 6.140331583912484,
+    "baseline_cost_is_historical": true
+  },
+  "input_scope": {
+    "original_scope_file_preserved": true,
+    "candidate_selection_unchanged": true,
+    "input_observable_scope": [
+      "whole supplied source and parents",
+      "archived source address reconstruction",
+      "raw field types and whole raw preservation",
+      "fixed tokenizer input plus output budget"
+    ],
+    "output_contract_only": [
+      "selected error field must be an existing string field",
+      "returned quote must resolve uniquely in that field"
+    ],
+    "correction": "Unique returned error quote is an output-contract condition, not an input-observable semantic applicability feature or routing exception.",
+    "meaning_guarantee_from_input_features": false,
+    "no_gold_or_ID_routing": true,
+    "all_eight_in_denominator": true,
+    "posthoc_subset_adoption": false,
+    "saved_shared_prefix_6662_includes_candidate_header": true,
+    "exact_singleton_tokens": [
+      6696,
+      6788,
+      6715,
+      6715,
+      6724,
+      6763,
+      6769,
+      6708
+    ],
+    "all_singleton_inputs_outside_c47_8192_budget": true,
+    "product_adoption": false
+  },
+  "resource_return": {
+    "stopped_owned_processes": [
+      {
+        "owned_pid": 76532,
+        "checked_at_utc": "2026-10-11T06:32:50.458179+00:00",
+        "owned_command_verified": true,
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-11T06:32:50.643668+00:00",
+        "port11435_closed": true
+      }
+    ],
+    "port11435_closed": true,
+    "ollama_models": [],
+    "driver_wall_s": 402.89009795803577,
+    "finished_at_utc": "2026-10-11T06:32:50.644933+00:00"
+  },
+  "all_EOS": true,
+  "truncation": 0,
+  "execution_errors": 0,
+  "cache_n": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "product_adoption": false,
+  "A_cumulative": 6,
+  "new_A_number": false,
+  "frozen_initial_manifest_sha256": "cdd166ad0ad162dae24469285dbcdb4e46fa24286fca9bf3384bd5db7f1b338a",
+  "source_output_audit_sha256": "124c9671e975f7cf2f7ca63df2ba4297c6c65a3d7a3e6f10f6be91cd73e36eac",
+  "research_models": "Same installed Qwen native engine/GGUF as prior NIE. No external grader, new source/candidate/model/training.",
+  "old_comparison_records_unchanged": true,
+  "candidate_rows": [
+    {
+      "candidate_id": "NIE-C01",
+      "expected": "supported",
+      "baseline_request": "normal_detail_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": true,
+      "single": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e26",
+          "e27"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B026에서 '안전한 관람을 위하여 다음 품목의 반입을 금지합니다'라고 명시하고, NIE-B027에서 금지 품목 목록의 첫 번째로 '주류'를 열거하고 있습니다. 따라서 국립생태원이 주류 반입을 금지한다는 후보의 주장은 원문에 의해 완전히 지지됩니다.",
+        "error_spans": []
+      },
+      "joint": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e26",
+          "e27"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B026과 NIE-B027에 따르면 '안전한 관람을 위하여 다음 품목의 반입을 금지합니다'라고 명시되어 있으며, 그 목록에 '주류'가 포함되어 있습니다. 후보 X의 주장인 '주류 반입 금지'는 원문에 의해 지지됩니다. 다른 품목이 언급되지 않았더라도 주류 금지라는 사실 자체는 원문과 일치합니다.",
+        "error_spans": []
+      }
+    },
+    {
+      "candidate_id": "NIE-C08",
+      "expected": "supported",
+      "baseline_request": "normal_detail_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": true,
+      "single": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e26",
+          "e27"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "후보 X의 주장은 원문 NIE-B026과 NIE-B027에 의해 완전히 지지됩니다. NIE-B026은 '안전한 관람을 위하여 다음 품목의 반입을 금지합니다'라고 명시하고, NIE-B027은 '주류, 버너, 텐트, 그늘막, 공', '자전거, 인라인, 킥보드, 전동자동차 등 소형 탑승기구', '안내견을 제외한 반려동물'을 구체적으로 열거하고 있습니다. 후보는 이 두 문장의 내용을 정확히 결합하여 재구성했으며, 원문에 없는 조건이나 주체, 의무를 추가하거나 축소하지 않았습니다.",
+        "error_spans": []
+      },
+      "joint": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e26",
+          "e27"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B026과 NIE-B027에 '안전한 관람을 위하여 다음 품목의 반입을 금지합니다'라고 명시되어 있고, 구체적으로 '주류, 버너, 텐트, 그늘막, 공', '자전거, 인라인, 킥보드, 전동자동차 등 소형 탑승기구', '안내견을 제외한 반려동물'이 열거되어 있습니다. 후보 Y는 이 모든 내용과 조건을 정확히 반영하고 있으므로 원문에 의해 지지됩니다.",
+        "error_spans": []
+      }
+    },
+    {
+      "candidate_id": "NIE-C02",
+      "expected": "supported",
+      "baseline_request": "permission_place_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": true,
+      "single": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e31"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B031(e31)에 '도시락 드시는 곳: 하다람쉼터, 에코리움 옥상정원'이라고 명시되어 있어, 국립생태원 관람객이 하다람쉼터에서 도시락을 먹을 수 있다는 후보의 주장을 직접적으로 지지합니다.",
+        "error_spans": []
+      },
+      "joint": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e31",
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B031과 NIE-B039에 '도시락 드시는 곳: 하다람쉼터, 에코리움 옥상정원'이라고 명시되어 있어, 관람객이 하다람쉼터에서 도시락을 먹을 수 있다는 주장은 원문에 의해 지지된다.",
+        "error_spans": []
+      }
+    },
+    {
+      "candidate_id": "NIE-C03",
+      "expected": "unsupported",
+      "baseline_request": "permission_place_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": true,
+      "single": {
+        "label": "unsupported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e30",
+          "e31"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B030(e30)은 '음식물은 지정된 장소에서만 드실 수 있으며'라고 하여 음식물 섭취에 대한 장소 제한(의무)을 명시하고, NIE-B031(e31)은 '도시락 드시는 곳: 하다람쉼터, 에코리움 옥상정원'이라고 하여 도시락 섭취가 가능한 지정 장소를 두 곳으로 열거하고 있습니다. 후보 X는 '하다람쉼터에서 도시락을 먹어야 한다'고 하여, 원문에 포함된 '에코리움 옥상정원'이라는 대안 장소를 배제하고 하다람쉼터만을 유일한 필수 장소로 한정하는 조건/범위를 추가·확대하고 있습니다. 따라서 원문으로 지지되지 않습니다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "국립생태원 관람객은 하다람쉼터에서 도시락을 먹어야 한다."
+          }
+        ]
+      },
+      "joint": {
+        "label": "unsupported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e31",
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문은 하다람쉼터가 도시락 이용 장소임을 명시하지만, 관람객이 반드시 하다람쉼터에서만 도시락을 먹어야 한다는 의무를 부과하지 않는다. 또한 에코리움 옥상정원에서도 도시락을 먹을 수 있으므로, 하다람쉼터에서만 먹어야 한다는 주장은 원문으로 확정할 수 없다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "국립생태원 관람객은 하다람쉼터에서 도시락을 먹어야 한다."
+          }
+        ]
+      }
+    },
+    {
+      "candidate_id": "NIE-C04",
+      "expected": "contradicted",
+      "baseline_request": "permission_place_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": true,
+      "single": {
+        "label": "contradicted",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e30"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B030(e30)은 '음식물은 지정된 장소에서만 드실 수 있으며'라고 명시하여, 지정된 장소 외에서의 음식물 섭취를 금지하고 있습니다. 후보 X는 지정되지 않은 곳에서도 먹을 수 있다고 주장하므로 원문과 직접적으로 모순됩니다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "음식물 섭취 장소로 지정되지 않은 곳에서도 도시락을 먹을 수 있다"
+          }
+        ]
+      },
+      "joint": {
+        "label": "contradicted",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e30"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B030에 '음식물은 지정된 장소에서만 드실 수 있으며'라고 명시되어 있어, 지정되지 않은 장소에서의 음식물 섭취는 금지된다. 따라서 후보 Z의 주장은 원문과 직접적으로 모순된다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "국립생태원 관람객은 음식물 섭취 장소로 지정되지 않은 곳에서도 도시락을 먹을 수 있다."
+          }
+        ]
+      }
+    },
+    {
+      "candidate_id": "NIE-C05",
+      "expected": "supported",
+      "baseline_request": "equipment_scope_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": false,
+      "single": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B039(e39)에 '유모차 무료대여 에코리움 안내데스크 생후 36개월(12kg) 이하용 입니다. ※ 유모차는 에코리움(실내)에서만 대여 및 이용이 가능합니다.'라고 명시되어 있어 후보의 모든 주장(대여 장소, 대상, 무료, 이용 범위)이 정확히 일치합니다.",
+        "error_spans": []
+      },
+      "joint": {
+        "label": "supported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": null,
+        "reason": "원문 NIE-B039(e39)에 '유모차 무료대여 에코리움 안내데스크 생후 36개월(12kg) 이하용 입니다. ※ 유모차는 에코리움(실내)에서만 대여 및 이용이 가능합니다. (야외 이용불가)'라고 명시되어 있어 후보 X의 모든 주장(무료 대여, 대상, 장소, 실내 한정)이 정확히 지지된다.",
+        "error_spans": []
+      }
+    },
+    {
+      "candidate_id": "NIE-C06",
+      "expected": "contradicted",
+      "baseline_request": "equipment_scope_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": false,
+      "single": {
+        "label": "contradicted",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B039(e39)에는 '유모차는 에코리움(실내)에서만 대여 및 이용이 가능합니다. (야외 이용불가)'라고 명시되어 있습니다. 후보 X는 '에코리움 실내와 야외에서 대여·이용할 수 있다'고 주장하여, 원문의 '야외 이용불가'라는 조건과 직접적으로 모순됩니다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "이 유모차는 에코리움 실내와 야외에서 대여·이용할 수 있다."
+          }
+        ]
+      },
+      "joint": {
+        "label": "contradicted",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B039(e39)에 '유모차는 에코리움(실내)에서만 대여 및 이용이 가능합니다. (야외 이용불가)'라고 명시되어 있어, 후보 Y가 주장하는 '야외에서 대여·이용할 수 있다'는 내용과 직접적으로 모순된다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "이 유모차는 에코리움 실내와 야외에서 대여·이용할 수 있다."
+          }
+        ]
+      }
+    },
+    {
+      "candidate_id": "NIE-C07",
+      "expected": "unsupported",
+      "baseline_request": "equipment_scope_baseline",
+      "singleton_strict": true,
+      "baseline_whole_strict": false,
+      "single": {
+        "label": "unsupported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B039(e39)에는 '유모차'에 대해 '에코리움(실내)에서만 대여 및 이용이 가능합니다. (야외 이용불가)'라고 명시되어 있으나, '휠체어'에 대해서는 '정문 매표소, 서문 매표소, 에코리움 안내데스크'에서 무료대여된다는 내용만 있을 뿐, 야외 이용 금지에 대한 언급은 없습니다. 후보는 유모차의 제한 사항을 휠체어에 적용하여 원문에 없는 의무/금지 사항을 추가했습니다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "야외에서 이용할 수 없다"
+          }
+        ]
+      },
+      "joint": {
+        "label": "unsupported",
+        "individual_contract": true,
+        "individual_contract_error": null,
+        "source_refs": [
+          "e39"
+        ],
+        "source_ref_addresses_verified": true,
+        "Event_error_covers_frozen_gold": true,
+        "reason": "원문 NIE-B039(e39)에는 '휠체어 무료대여 정문 매표소, 서문 매표소, 에코리움 안내데스크'라고만 기재되어 있으며, 휠체어의 야외 이용 가능 여부나 금지 여부에 대한 명시적 문구가 없다. 따라서 '야외에서 이용할 수 없다'는 주장은 원문으로 확정할 수 없다.",
+        "error_spans": [
+          {
+            "field": "Event",
+            "quote": "국립생태원에서 무료로 대여한 휠체어는 야외에서 이용할 수 없다."
+          }
+        ]
+      }
+    }
+  ]
+}
