@@ -1072,6 +1072,11 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
     return value
 
 
+def event_edit_supported(old, blocks):
+    return all(any(b['source_version_id'] in old['source_version_ids'] and entity in b['text']
+                   for b in blocks) for entity in old['raw']['Entity'])
+
+
 def event_meaning_edit(service, run, task, old, blocks):
     """The model edits meanings and selects server-enumerated literal occurrences."""
     options = []
@@ -1193,6 +1198,7 @@ def repair(service, run, requirement, assessment):
             key = (cid, target['meaning_key'] if cid is None else None)
             tasks.setdefault(key, dict(target_id=cid, meanings=[]))['meanings'].append(deepcopy(target))
     semantic_tasks = [t for t in tasks.values() if t['target_id'] and by_id[t['target_id']]['role'] == 'event_entity'
+        and event_edit_supported(by_id[t['target_id']], repair_blocks)
         and all(m.get('error_fields', {}).get(t['target_id']) == ['raw.Event'] and m.get('error_evidence')
                 for m in t['meanings'])]
     for task in semantic_tasks:

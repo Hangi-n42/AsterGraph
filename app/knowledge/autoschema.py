@@ -549,6 +549,13 @@ def scope_record(value, chunk, raw, role):
     dependencies = {}
     known_participants = set()
     for i, meaning in enumerate(record['meanings']):
+        event_refs = meaning['evidence']
+        literal_event = (role == 'event_entity' and bool(raw.get('Entity'))
+            and len({(e['source_version_id'], e['block_id'], e['start_char'], e['end_char']) for e in event_refs}) > 1
+            and len({e['source_version_id'] for e in event_refs}) == 1
+            and all(e in record['evidence'] for e in event_refs)
+            and all(e['quote'] == raw.get('Event') for e in [*event_refs, *record['evidence']])
+            and all(raw['Event'].count(entity) == 1 for entity in raw['Entity']))
         indices = meaning['premises']['meaning_indices']
         valid = len(set(indices)) == len(indices) and all(0 <= n < len(keys) and n != i for n in indices)
         if not valid:
@@ -572,10 +579,14 @@ def scope_record(value, chunk, raw, role):
                         start = ref['start_char'] + match.start()
                         address = (ref['source_version_id'], ref['block_id'], start, start + len(label))
                         occurrences[address] = dict(ref, start_char=start, end_char=address[-1], quote=label)
-                if len(occurrences) != 1:
+                if len(occurrences) != 1 and not (literal_event and refs
+                        and all(ref in event_refs for ref in refs)):
                     errors.append('entity mention is absent or ambiguous inside evidence')
                 else:
                     refs = list(occurrences.values())
+                    if len(refs) > 1:
+                        record.setdefault('address_restorations', []).append(dict(kind='identical_selected_event_sentences',
+                            meaning_index=i, field=field, entity_index=index, evidence=deepcopy(refs)))
             # Address agreement is not a judgment that the surrounding meaning is true.
             resolved = bool(refs and not errors)
             item = dict(participant, value=label, evidence=refs, meaning_refs=[meaning['id']],
@@ -583,6 +594,17 @@ def scope_record(value, chunk, raw, role):
             meaning['participants'].append(item)
             record['mentions'].append(deepcopy(item))
             record['errors'].extend(errors)
+        if (literal_event and ('Event', None) not in known_participants and not meaning['address_errors']
+                and len(meaning['participants']) == len(raw['Entity'])
+                and all(p['address_status'] == 'resolved' for p in meaning['participants'])
+                and all(p['field'] == 'Entity' and all(e in scope['meanings'][i]['evidence'] for e in p['evidence'])
+                    for p in scope['meanings'][i]['participants'])):
+            item = dict(field='Event', entity_index=None, value=raw['Event'], evidence=deepcopy(event_refs),
+                meaning_refs=[meaning['id']], address_status='resolved', address_errors=[])
+            meaning['participants'].append(item)
+            known_participants.add(('Event', None))
+            record.setdefault('address_restorations', []).append(dict(kind='literal_event_endpoint',
+                meaning_index=i, field='Event', entity_index=None, evidence=deepcopy(event_refs)))
         record['errors'].extend(meaning['address_errors'])
     expected = ({('Event', None), *(('Entity', n) for n in range(len(raw.get('Entity', []))))}
                 if role == 'event_entity' else {('Head', None), ('Tail', None)})

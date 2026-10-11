@@ -1,0 +1,121 @@
+{
+  "status": "SC03_stored_direct_accuracy_confirmed_preservation_model_failed_whole_requirement_incomplete_SC04_unresolved",
+  "new_native_edits": 2,
+  "retries": 0,
+  "first_storage_successes": 0,
+  "address_replay_new_model_calls": 0,
+  "address_replay_stored_successes": 1,
+  "SC03": {
+    "first_run_id": "7f01d8c480aa4d509f041ecf0e35a327",
+    "first_unit_id": "66e8bb8d4ebc4dd68bbaf7b1c5b5c06c",
+    "replay_run_id": "0fce1f98d3414cdf81aa683525415bd5",
+    "state": "applied_awaiting_recheck",
+    "approval": "none"
+  },
+  "SC04": {
+    "first_run_id": "5cb4659544ad4ecd96a7482b832fc451",
+    "first_unit_id": "8d720137da17498eb2affbc82f8c1dcb",
+    "state": "unresolved",
+    "semantic_record_conflict": "obligation relation_kind vs permission modality"
+  },
+  "automatic_U_C_errors_retained": true,
+  "product_autonomous_extraction": false,
+  "development_exposure": true,
+  "source_html_sha256": "1be3dac9ef2cdfe2e465919eea1cb20080d327ef8ea94b7af60b0d5d8f665a04",
+  "source_text_sha256": "5677311e4b2d4d034b90b04ed3f293c1db9b80185e761ac3dbfaf4f709df9731",
+  "tests": {
+    "address_scope_event_conjunction": 53,
+    "post_C_withdrawal_related_unique": 76
+  },
+  "artifact": "/Users/hyeongi/.codex/artifacts/business-auto-finding-extension-20261011/first-edits-and-sc03-address-replay-v1",
+  "artifact_manifest_sha256": "67dd56169e8b0e456529d0a1b60fb897ccff1d207fdd2dcadbc773ba08b3aacc",
+  "gate": {
+    "approval": false,
+    "operational_graph_search_QA": false,
+    "official_or_human_quality": false,
+    "direct_candidate_source_accuracy_in_AI_source_comparison": true,
+    "whole_requirement_recheck": false,
+    "model_preservation_comparison": false
+  },
+  "source_followup": {
+    "run_id": "28e3bcb1631d4958a5743eafe8c70900",
+    "new_model_calls": 4,
+    "source_meanings": 38,
+    "required_for_requirement": 32,
+    "meaning_groups": 28,
+    "findings": 9,
+    "source_completeness": "unknown",
+    "model_s": 631.156127,
+    "driver_s": 633.565028,
+    "semantic_scope_gate_passed": false,
+    "required_flags_manually_changed": false,
+    "whole_requirement_unchanged": true,
+    "source_requests_exactly_unchanged_after_C_withdrawal": true
+  },
+  "candidate_followup": {
+    "run_id": "e26e27b343a7426f8eccea4fb0da8ee2",
+    "receipt_id": "70f73315db5146a8976b9896bcc1d362",
+    "unit_id": "7f5b96ed34c5448eaa938d0a78eed254",
+    "new_model_calls": 1,
+    "prompt_eval_count": 4534,
+    "eval_count": 274,
+    "model_s": 43.272595,
+    "driver_s": 43.52293924998958,
+    "current_candidate_accuracy_gate_passed": true,
+    "actual_normal_content_retention_in_AI_source_comparison": true,
+    "overall_limited_model_followup_gate_passed": false,
+    "current_eligibility": [
+      [],
+      {
+        "claim_2fb77b029b92d84e22bbf0c4": [
+          "normal_meaning_preservation_unconfirmed"
+        ]
+      }
+    ],
+    "whole_requirement_R_graph_search_QA_calls": 0,
+    "retries": 0,
+    "state": "executed_limited_gate_failed",
+    "candidate_cases": [
+      "SC01",
+      "SC02",
+      "SC03"
+    ],
+    "provided_blocks": [
+      "b4",
+      "b7"
+    ],
+    "model_statuses": [
+      "supported",
+      "supported",
+      "supported"
+    ],
+    "normal_SC02_false_completeness_error": false,
+    "preservation_model_error": "receipt conflates retained action/timing with corrected subject/condition and a new website reference; not three independent semantic errors",
+    "whole_requirement_assessment_replacement": false,
+    "artifact": {
+      "path": "/Users/hyeongi/.codex/artifacts/business-auto-finding-extension-20261011/direct-candidate-review-v1",
+      "files": 24,
+      "bytes": 2126921,
+      "manifest_sha256": "ca0767ec1dbb2b7008077d6155827c696bbd1bb1d1f56755a62e89e40fcc7d36",
+      "all_hashes_verified": true
+    },
+    "qualification_archive": {
+      "path": "/Users/hyeongi/.codex/artifacts/business-auto-finding-extension-20261011/direct-candidate-review-qualification-v1",
+      "files": 2,
+      "bytes": 5694,
+      "manifest_sha256": "a760b48b77b49cd785e4ca24af8858f2db4190910f144170b32eaf5adde63fc6",
+      "all_hashes_verified": true
+    }
+  },
+  "source4_and_preparation_archive": {
+    "path": "/Users/hyeongi/.codex/artifacts/business-auto-finding-extension-20261011/source4-and-candidate-preparation-v1",
+    "manifest_sha256": "ddcd0b4f2169d57aea45e284a74896dbf04d6f84a78e7bdc8cb02fe614c2f76f",
+    "files": 20,
+    "bytes": 2657586,
+    "all_hashes_verified": true
+  },
+  "new_native_calls_in_this_A_extension": 7,
+  "new_edit_calls": 2,
+  "new_source_calls": 4,
+  "new_direct_candidate_review_calls": 1
+}
