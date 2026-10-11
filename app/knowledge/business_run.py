@@ -359,7 +359,7 @@ def remap_expression_keys(value, mapping):
         return [remap_expression_keys(v, mapping) for v in value]
     if isinstance(value, dict):
         return {k: {mapping.get(cid, cid): detail for cid, detail in v.items()}
-                if k in {'claim_support', 'error_fields'} and isinstance(v, dict) else remap_expression_keys(v, mapping)
+                if k in {'claim_support', 'error_fields', 'after_fields', 'after_versions'} and isinstance(v, dict) else remap_expression_keys(v, mapping)
                 for k, v in value.items()}
     return value
 
@@ -370,10 +370,12 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     if context.get('repair_context') and 'preservation_checks' in output_type.model_fields:
         ids = tuple(c['id'] for c in context.get('claims', []) if not c.get('superseded_by'))
         row = get_args(output_type.model_fields['preservation_checks'].annotation)[0]
+        location_field = deepcopy(row.model_fields['after_locations'])
+        location_field.description = 'Only actual active provided claim IDs; no field paths or prose.'
+        if not ids:
+            location_field = Field(max_length=0, description=location_field.description)
         located = create_model('LocatedPreservationCheck', __base__=row,
-            after_locations=(list[Literal[ids]] if ids else list[str], Field(
-                description='Only actual active provided claim IDs; no field paths or prose.',
-                **({} if ids else dict(max_length=0)))))
+            after_locations=(list[Literal[ids]] if ids else list[str], location_field))
         output_type = create_model('Located' + output_type.__name__, __base__=output_type,
             preservation_checks=(list[located], deepcopy(output_type.model_fields['preservation_checks'])))
     # Public requirements are criteria, not previous model judgments/history.

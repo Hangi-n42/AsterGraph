@@ -139,12 +139,31 @@ class RepresentationCheck(BaseModel):
     reason: str
 
 
+class PreservationComparison(BaseModel):
+    change: Literal['retained', 'corrected', 'added', 'lost', 'unknown']
+    before_field: str | None
+    before_quote: str | None
+    after_id: str | None
+    after_field: str | None
+    after_quote: str | None
+    source_block_ids: list[str]
+    before_source_status: Literal['supported', 'unsupported', 'unknown', 'not_present']
+    same_normal_meaning: bool | None
+    reason: str
+
+
 class PreservationCheck(BaseModel):
     target_id: str
     status: Literal['preserved', 'lost', 'unknown']
     before_normal_meanings: list[str]
     after_locations: list[str]
     reason: str
+
+
+class FieldPreservationCheck(PreservationCheck):
+    before_normal_meanings: list[str] = Field(max_length=0)
+    after_locations: list[str] = Field(max_length=0)
+    comparisons: list[PreservationComparison] = Field(min_length=1)
 
 
 class SourceMeaningCheck(BaseModel):
