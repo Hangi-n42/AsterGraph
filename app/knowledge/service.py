@@ -207,6 +207,10 @@ class KnowledgeService:
         from .business_run import start
         return start(self, request)
 
+    def project_business_source(self, parent_run_id, **selection):
+        from .business_projection import start
+        return start(self, parent_run_id, **selection)
+
     def _create_parse(self, db, request):
         from .parsers import plan_units, parser_info
         run = dict(id=uuid4().hex, kind='parse', status='queued', units=[], input_version_ids=[],
