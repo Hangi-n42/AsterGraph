@@ -488,6 +488,13 @@ R38은동일원문제한의자동삽입에서구성gate실패를유지하고별�
 - **오프라인/노출 경계:** 원본 불변. 고정 literal alias 복사본의 정상 응답 계약만 복구 가능; 삭제점 Y[0,0)는 유일 입력 diff에서 확인하나 원래 quote 계약은 여전히 실패한다. condition differences를 제외한 판정/근거 검사도 전체 계약 복구가 아니다. semantic 이유 수정/모델 재시도0. 기존 노출 목록과 최신 NA6/SC5 영수증에서 미사용 기존 적합사례0, 미검색 이력은 확인불가. 새 source 정상 S/S+허용 S/U/U 공동2요청 설계만 제안·작성/확인실행0.
 - **비용/자원/완료 경계:** 신규4 입력11762/출력2552·모델202.048530초·요청elapsed합202.370819초·completion driver202.374842초·적재/종료 driver217.881268초·hash6.318413초. EOS/비잘림4/4·cache_n0. PID63113 SIGTERM/exit0·2026-10-11 13:35:01 KST 포트닫힘/Ollama모델0 영수증 보존. 원시/동결/기준선/감사는 별도 artifact manifest에 유지. 승인 정확초안 #655생성 및 #654연구 CLOSED 확인. README2·제품코드/DB·이전실패 보존, 실제 교정/저장/같은 요구/그래프/검색/답변·c47재실행·B2·merge/deploy0. 이후 확인은 조율이 결정한다.
 
+
+**2026-10-11 B2 · 실제 미적용 제안 before/after 기존 공동 검수 — 새 A번호0**
+
+- SC03/SC04 실제 native 제안의 전체 Event+Entity·원문8/부모6을 고정하고 before단독C/C2정확재사용 대 after단독2+공동2를 실행했다. B1 diff/주의문·alias/삭제 좌표 계약·편집기 이유/gold/적용 provenance 입력0. after단독S/S·공동C/S,C/S로 before U/C 오류2 유지·공동 추가 라벨효과0, 원래 U/S gate=false·제품기본미채택이다.
+- 신규라벨/이유4/6·after정상4출현보존(고유2), 형식3/4. SC03 Entity 배열 원소 quote에 문자열주소/index가 없어 계약실패이며 위치관찰과 구분한다. source canonical9참조/6판정 확인은 의미성공이 아니다. 제안은 동결 당시 edit_applied=false이며 이후 제품의 별도 저장 성과로 연구 개선을 소급하지 않는다.
+- 신규4 입력12848/출력1150·모델131.521847초·요청elapsed합131.764233초·completion driver131.768207초·적재/종료139.621370초·hash6.077409초. 준비metadata/root import 실패2는 모델0 때 보존·동결 이후 변경/재시도0. PID65651 SIGTERM/exit0·13:52:21 KST 포트닫힘/Ollama0 뒤 제품C에 자원반환. 실제교정/같은요구/graph/search/QA의 B2개선0·새A0/누적6·c47추가0·#655확인남음/OPEN. [결과](../../docs/70_research/company_knowledge/business_actual_proposal_pair_20261011.md).
+
 <a id="product"></a>
 ## 5. 자동 판단과 혼동하면 안 되는 편집·관리·답변 기록
 
