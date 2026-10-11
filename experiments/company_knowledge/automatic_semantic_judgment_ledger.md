@@ -607,6 +607,12 @@ N02의 방법 출처는 [Task Calibration 논문](https://aclanthology.org/2025.
 
 - **승인 후 실제 제한 결과:** 준비 뒤 자원을 배정받아 현재 runtime/props/token ID까지 정확 일치 확인, 원본단독S 응답1 재사용. 교체본단독S·공동U/S로 정상회귀1·공동이점없음, 기대S/S 유지. 신규2·입력3515/출력718·모델57.295438초·wall57.300869초, EOS/비잘림/cache0·주소/형식2/2. 구성 함수는 연구 보완으로 보존하고 judge 제품채택 기각·추가0·A4 유지·소유PID44325 즉시종료. 위 모델0/재사용미승인은 준비 당시 이력이며 최신 결과는 [R38 구성 후속 보고](../../docs/70_research/company_knowledge/business_source_entity_replacement_20261011.md). #654 종료는 조율 평가 뒤 결정한다.
 
+### N07 · #655 · B1 새 국립생태원 확인 준비
+
+- **준비만 완료:** 새 원문 전체5,033자·40블록/8부모, v2후보8(S4/U2/C2·미확정0), fresh Astra 작성/블라인드 독립동결8/8 일치. C08만 모델호출 전에 같은 금지 규칙의 상세 정상으로 바꾸고 v1/gold/blind/개정 이력을 보존했다. 실제 저장 후보·사람/다른 모델 검증은 아니다. 실제 두 세션의 gpt-6-astra/xhigh·fork none·UUID·누적 usage는 부모 검증 receipt에 별도 보존한다.
+- **새 입력/평가 계약:** unequal Entity string path 합집합 diff v2와 공통 technical_view(고정1:1문구alias·같은field/유일반대quote/전체opcode의 typed 빈좌표만)로 baseline3/diff3 총6신규를 고정했다. 같은 원문·후보·system·settings·골드에 같은 parser 적용, legacy 실패도 별도 보존. 기존동일path B1 diff4동일·원문40주소/실제diff3·저장응답8·잘못된계약4거절만 offline 확인; 새로운 의미 성공이 아니다.
+- **실패/실행 경계:** 준비의 전역 text 유일성 assertion 실패는 보존하고 고유block marker 뒤 exacttext 좌표로 복구했다. 원문/후보/gold 의미변경0·모델적재/호출0. 제품자원 반환 후 token/runtime preflight 필요; 전체필수원문을 줄이지 않는다. 원래 B1 gate=false/이유오류·제품미채택 유지, 새 A완료0·누적6·#655 OPEN. [준비 계획](../../docs/70_research/company_knowledge/business_candidate_diff_confirmation_plan_20261011.md).
+
 ### 검토했지만 실행하지 않았거나 범위 밖인 방향
 
 | 방향 | 상태와 이유 | 다시 검토할 때 필요한 새 근거 |
