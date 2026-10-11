@@ -339,7 +339,7 @@ def selected_evidence_type(output_type, references):
     overrides = {}
     for field, row_type in evidence_fields(output_type).items():
         selected = {name: (selection, Field(max_length=len(references)))
-                    for name in ('evidence', 'error_evidence') if name in row_type.model_fields}
+                    for name in ('evidence', 'error_evidence', 'missing_evidence') if name in row_type.model_fields}
         row = create_model('Selected' + row_type.__name__, __base__=row_type, **selected)
         if issubclass(output_type, (GroundingCheck, LocalSourceCheck)):
             unresolved = create_model('Unresolved' + row_type.__name__, __base__=row,
@@ -388,8 +388,11 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     from .business_models import PublicScopeCheck
     if issubclass(output_type, (LocalSourceCheck, RequirementJoinCheck, RequirementSynthesisCheck, ExpressionReviewCheck, CandidateSourceReview, RequirementApplicationCheck, PublicScopeCheck, SelectedRequirementSourceCheck)) or (stage == 'source_reassessment' and issubclass(output_type, GroundingCheck)):
         evidence_views = {f'e{n + 1}': deepcopy(b) for n, b in enumerate(context.get('blocks', []))}
+        has_missing_evidence = any('missing_evidence' in row.model_fields for row in evidence_fields(output_type).values())
         output_type = selected_evidence_type(output_type, evidence_views)
         fields = 'evidence와 error_evidence' if issubclass(output_type, (ExpressionReviewCheck, RequirementSynthesisCheck, CandidateSourceReview)) else 'evidence'
+        if has_missing_evidence:
+            fields += ', missing_evidence'
         instruction += '\n' + fields + '에는 blocks의 evidence_ref ID만 선택한다. 여러 구간은 별도 ID로 반환한다. 문장을 재작성하지 않는다. 참조가 있다는 이유만으로 의미 지지/해소를 선언하지 않는다.\n'
         if issubclass(output_type, SelectedRequirementSourceCheck):
             # Provenance remains server-side. Historical keys are not new local
@@ -469,14 +472,14 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         restored = deepcopy(selected)
         for field, row_type in fields.items():
             for row in restored[field]:
-                for name in ('evidence', 'error_evidence'):
+                for name in ('evidence', 'error_evidence', 'missing_evidence'):
                     if name in row_type.model_fields:
                         row[name] = [exact_evidence([dict(block_id=views[ref]['id'], quote=views[ref]['text'])],
                                                    [views[ref]])[0] for ref in row[name]]
         normalized = output_type.model_validate(restored).model_dump()
         for field in fields:
             for row, original in zip(normalized[field], restored[field]):
-                for name in ('evidence', 'error_evidence'):
+                for name in ('evidence', 'error_evidence', 'missing_evidence'):
                     if name in original:
                         row[name] = original[name]
         run['units'][-1]['restored_evidence_output'] = deepcopy(normalized)
@@ -618,7 +621,8 @@ def requirement_completion(assessment, accepted_ids=None, *, claims=None):
     required = {c['meaning_key'] for c in representation.get('source_checks', []) if c['required_for_requirement']}
     checks = representation.get('checks', [])
     required_ids = {cid for c in checks if c['meaning_key'] in required for cid in c['claim_ids']}
-    complete = (source.get('completeness') == 'complete' and not source.get('gaps') and not source.get('meaning_gaps')
+    complete = (not source.get('processing_scope', {}).get('pending_meaning_keys')
+        and source.get('completeness') == 'complete' and not source.get('gaps') and not source.get('meaning_gaps')
         and bool(business_review.review_meanings(source)) and bool(required)
         and not business_review.answer_scope_issues(source)
         and all(m['source_status'] == 'supported' and m['availability'] == 'provided' for m in business_review.review_meanings(source))
@@ -695,7 +699,7 @@ def reassess_challenges(service, run, requirement, assessment):
 
 
 def assess(service, run, requirement, *, source=None, phase='initial', previous_run=None, recheck_meaning_keys=None,
-           application_only_resume=False):
+           application_only_resume=False, focus_meaning_keys=None):
     previous_scope = None
     previous_meanings = None
     if previous_run is not None:
@@ -715,10 +719,10 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
             previous_meanings = {m['key']: m for m in previous['source']['meanings']}
     source = deepcopy(source) if source is not None else None
     blocks = [b for b in run['blocks'] if not requirement['source_ids'] or b['source_id'] in requirement['source_ids']]
+    selected_candidates = [c for c in run['claims'] if not c.get('superseded_by') and
+        (not requirement['source_ids'] or any(b['source_id'] in requirement['source_ids']
+            for b in business_review.candidate_source_basis(c, blocks)))]
     if business_review.separate_application(run):
-        selected_candidates = [c for c in run['claims'] if not c.get('superseded_by') and
-            (not requirement['source_ids'] or any(b['source_id'] in requirement['source_ids']
-                for b in business_review.candidate_source_basis(c, blocks)))]
         business_review.review_candidate_pool(service, run, selected_candidates)
     if source is None:
         source = business_review.source(service, run, requirement) if business_review.current(run) else json_call(
@@ -730,7 +734,20 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
             source = business_review.source(service, run, requirement, previous=source)
     if source:
         source = apply_source_corrections(run, requirement, source)
-        if any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
+        source.pop('processing_scope', None)
+        if focus_meaning_keys is not None:
+            public = source.get('public_scope', {})
+            if (not focus_meaning_keys or not set(focus_meaning_keys) <= set(public.get('review_meaning_keys', []))
+                    or not public.get('public_requirement') or any(requirement.get(k) != v
+                        for k, v in public['public_requirement'].items())):
+                raise ValueError('부분 처리는 같은 공개 요구의 기존 선택 의미만 지정할 수 있습니다.')
+            all_keys = {m['key'] for m in business_review.review_meanings(source)}
+            source['processing_scope'] = dict(requested_meaning_keys=sorted(set(focus_meaning_keys)))
+            active = {m['key'] for m in business_review.review_meanings(source)}
+            source['processing_scope'].update(review_meaning_keys=sorted(active),
+                pending_meaning_keys=sorted(all_keys - active), public_scope_unit_id=public.get('unit_id'),
+                scope_selection_is_historical=True, whole_requirement_complete=False)
+        elif any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
             source = business_review.public_requirement_scope(service, run, requirement, source)
     assessment = dict(id=uuid4().hex, requirement_id=requirement['id'], revision=requirement['revision'],
                       phase=phase, source=source, representation=None, status='unknown', claim_ids=[], actions=[], errors=[],
@@ -855,14 +872,22 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 action = 'hold'
                 if meaning['source_status'] == 'supported' and meaning['availability'] == 'provided':
                     action = {'represented': 'maintain', 'missing': 'recover', 'incorrect': 'correct'}.get(check['status'], 'hold')
+                    if check['status'] == 'partial' and check.get('recoverable_remainder'):
+                        action = 'recover'
                 elif meaning['source_status'] == 'refuted' and check['status'] == 'incorrect' and check['claim_ids']:
                     action = 'correct'
                 if action == 'recover' and check['meaning_key'] not in required_keys:
                     action = 'hold'
                 if action == 'maintain' and not check['claim_ids']:
                     business_review.issue(assessment, '실제 표현 위치 없는 유지 판정', check['meaning_key'])
-                assessment['actions'].append(dict(meaning_key=meaning['key'], action=action, claim_ids=check['claim_ids'],
+                    action = 'hold'
+                remainder = action == 'recover' and check['status'] == 'partial'
+                assessment['actions'].append(dict(meaning_key=meaning['key'], action=action,
+                    claim_ids=[] if remainder else check['claim_ids'],
                     reason=check['reason'], review_unit_ids=check.get('review_unit_ids', []),
+                    **(dict(contributing_claim_ids=list(check['claim_ids']),
+                        represented_content=check['represented_content'], missing_content=check['missing_content'],
+                        missing_evidence=deepcopy(check['missing_evidence'])) if remainder else {}),
                     error_fields=deepcopy(check.get('error_fields', {})), error_evidence=deepcopy(check.get('error_evidence', []))))
                 if (check.get('incorrect_claim_ids') and check['status'] in {'represented', 'partial'}
                         and meaning['source_status'] == 'supported' and meaning['availability'] == 'provided'):
@@ -1005,6 +1030,31 @@ def missing_tabular_rows(run, requirement, assessment, targets):
     return list(rows.values()), mappings
 
 
+def recovered_statement_patch(patch, blocks):
+    """Store the proposed sentence; locate literal participants, not synthesized tails."""
+    refs = exact_evidence(patch['evidence'], blocks)
+    event = patch['raw']['Event'] if patch.get('role') == 'event_entity' else patch['statement']
+    entities = patch['raw']['Entity'] if patch.get('role') == 'event_entity' else [patch['head']]
+    if not event.strip() or not entities or any(not entity.strip() for entity in entities):
+        raise ValueError('복구 문장/참여자 누락')
+    participants = []
+    for entity in entities:
+        occurrences = {}
+        for ref in refs:
+            offset = 0
+            while (at := ref['quote'].find(entity, offset)) >= 0:
+                start = ref['start_char'] + at
+                address = dict(ref, quote=entity, start_char=start, end_char=start + len(entity))
+                occurrences[ref['source_version_id'], ref['block_id'], start] = address
+                offset = at + len(entity)
+        if len(occurrences) != 1:
+            raise ValueError('복구 참여자가 선택한 정확 원문 인용에서 유일하지 않음')
+        participants.append(next(iter(occurrences.values())))
+    return dict(patch, role='event_entity', raw=dict(Event=event, Entity=entities),
+        origin='model_statement_recovery', sentences=[event], server_participants=participants,
+        evidence_context=refs)
+
+
 def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='model'):
     if origin == 'model_event_field_edit':
         patch = dict(patch, role=old['role'], raw=dict(deepcopy(old['raw']), Event=patch['raw']['Event']),
@@ -1046,7 +1096,7 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
                  period=patch['period'], references=patch['references'], evidence=refs,
                  source_version_ids=sorted({r['source_version_id'] for r in refs}),
                  review_status='unreviewed', semantic_status='unknown', repair_id=repair_id)
-    if origin in {'user', 'model_event_edit', 'model_event_field_edit'}:
+    if origin in {'user', 'model_event_edit', 'model_event_field_edit', 'model_statement_recovery'}:
         if old and old.get('interpretation'):
             value.setdefault('interpretation_history', []).append(deepcopy(old['interpretation']))
         value.pop('interpretation', None)
@@ -1056,7 +1106,7 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
             value['evidence'] = exact_evidence([*old['evidence'], *refs], patch_blocks)
             value['source_version_ids'] = sorted({r['source_version_id'] for r in value['evidence']})
             value['edited_fields'] = ['raw.Event']
-        if origin == 'model_event_edit':
+        if origin in {'model_event_edit', 'model_statement_recovery'}:
             participants = patch['server_participants']
             if len(participants) != len(raw['Entity']):
                 raise ValueError('편집 참여자 주소 누락')
@@ -1186,6 +1236,12 @@ def repair(service, run, requirement, assessment):
                 inventory_count=scope.get('inventory_count'), unit_ids=[b['unit_id'] for b in batches],
                 all_candidates_accounted_for=accounted == set(scope.get('candidate_inventory_ids', [])),
                 failed_unit_ids=[b['unit_id'] for b in batches if b['error']])
+    if (assessment.get('source') or {}).get('public_scope'):
+        targets = [t for t in targets if t['action'] != 'recover' or (
+            t['missing_pool_check']['all_candidates_accounted_for'] and not t['missing_pool_check']['failed_unit_ids']
+            and t['missing_pool_check']['pool_hash'] == business_review.pool_hash(run))]
+    if not targets:
+        return False
     before = deepcopy(run['claims'])
     by_id = {c['id']: c for c in before}
     target_ids = {cid for t in targets for cid in t['claim_ids']}
@@ -1197,10 +1253,8 @@ def repair(service, run, requirement, assessment):
     repair_blocks = run['blocks']
     if business_review.current(run):
         selected_keys = {t['meaning_key'] for t in targets} | {m['key'] for m in preserve}
-        source = dict(source, meanings=[m for m in source['meanings'] if m['key'] in selected_keys])
-        source.pop('source_batches', None)
-        source.pop('resolution_history', None)
-        source.pop('reassessment_history', None)
+        source = dict(meanings=[m for m in source['meanings'] if m['key'] in selected_keys],
+            meaning_conjunctions=[a for a in source.get('meaning_conjunctions', []) if set(a['meaning_keys']) <= selected_keys])
         repair_blocks = business_review.related_blocks(run, source['meanings'], [by_id[c] for t in targets for c in t['claim_ids']])
     if direct_targets:
         extra = business_review.candidate_request(run, [by_id[cid] for cid in direct_ids])[1]['blocks']
@@ -1238,7 +1292,11 @@ def repair(service, run, requirement, assessment):
     maintained -= protected_claims | target_ids
     output_type = create_model('TargetRepairs', __base__=Repairs,
         patches=(Repairs.model_fields['patches'].annotation, Field(max_length=len(tasks))))
-    instruction = REPAIR_PROMPT + ('''\n
+    instruction = REPAIR_PROMPT + '''
+recover의 contributing_claim_ids는 원문에 맞는 기존 부분 표현이며 교정/삭제 대상이 아니다.
+missing_content가 있으면 원문과 missing_evidence를 확인하여 그 나머지를 새 후보로 보완한다.
+대상·조건·시점을 보존하고 원문이 지지하지 않는 결합이나 배타 규칙을 만들지 않는다.
+''' + ('''\n
 candidate_review_id가 있는 correct는 후보 자체의 원문 오류 판정이다. meaning_key는 귀속 ID이며 검증된 원문 의미가 아니다.
 그 review_records의 실제 오류 필드·근거를 원문과 대조하여 고친다. source 의미의 누락/실패는 이 판정의 대체 정답이 아니다.
 before의 다른 정상 내용은 모두 보존한다. 요구에 무관한 정상 내용을 없애거나 질문 사용 시점을 원문 기간으로 넣지 않는다.
@@ -1291,6 +1349,14 @@ before의 다른 정상 내용은 모두 보존한다. 요구에 무관한 정�
                     continue
                 event_only = bool(allowed.get('candidate_review_id') and old and old['role'] == 'event_entity'
                     and patch.get('role') == old['role'] and allowed.get('error_fields', {}).get(old['id']) == ['raw.Event'])
+                if (old is None and allowed['action'] == 'recover' and (assessment.get('source') or {}).get('public_scope')
+                        and patch.get('role') in {None, 'event_entity'}):
+                    original_patch = deepcopy(patch)
+                    patch = recovered_statement_patch(patch, repair_blocks)
+                    receipt.setdefault('recovery_boundaries', []).append(dict(meaning_key=allowed['meaning_key'],
+                        proposed_statement=patch['raw']['Event'], unused_model_proposal=original_patch,
+                        participant_addresses=deepcopy(patch['server_participants']),
+                        authority='unparsed_statement_requires_own_source_review; no_modality_or_relation_approval'))
                 value = materialize_patch(run, patch, old, receipt['id'], repair_blocks,
                     origin='model_event_field_edit' if event_only else patch.get('origin', 'model'))
                 if event_only:

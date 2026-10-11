@@ -423,6 +423,9 @@ class ContributionCheck(BaseModel):
     status: Literal['represented', 'partial', 'missing', 'unknown']
     claim_ids: list[str]
     reason: str
+    represented_content: str = ''
+    missing_content: str = ''
+    missing_evidence: list[EvidenceQuote] = Field(default_factory=list)
 
 
 class ContributionReviewCheck(ExpressionReviewCheck):

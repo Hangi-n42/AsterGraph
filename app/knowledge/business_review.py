@@ -78,7 +78,9 @@ def owned_errors(run):
 
 def review_meanings(source):
     meanings = source.get('meanings', [])
-    if source.get('public_scope'):
+    if source.get('processing_scope'):
+        keys = set(source['processing_scope']['requested_meaning_keys'])
+    elif source.get('public_scope'):
         keys = set(source['public_scope']['review_meaning_keys'])
     elif source.get('review_contract') not in SEPARATED_CONTRACTS:
         return meanings
@@ -1735,6 +1737,12 @@ def summarize_local(meanings, outputs):
                 or '각 제공 후보 묶음에서 미발견; 실제 대조 범위는 review_unit_ids 참조',
             review_unit_ids=[o['review_unit_id'] for o in outputs if o.get('review_unit_id')
                              and any(c['meaning_key'] == key for c in o['checks'])]))
+        parts = [c for c in present if c['status'] == 'partial' and c.get('represented_content')
+                 and c.get('missing_content') and c.get('missing_evidence')]
+        if parts and all(all(c.get(k) == parts[0].get(k) for k in
+                            ('represented_content', 'missing_content', 'missing_evidence')) for c in parts):
+            result['checks'][-1].update({k: deepcopy(parts[0][k]) for k in
+                ('represented_content', 'missing_content', 'missing_evidence')})
         for field in ('error_attributions', 'candidate_dispositions'):
             if any(field in c for c in checks):
                 result['checks'][-1][field] = [deepcopy(row) for c in checks for row in c.get(field, [])]
@@ -1990,6 +1998,11 @@ def current_candidate_reviews(run):
             continue
         instruction, context, schema = candidate_request(run, [claims[cid] for cid in receipt['claim_ids']],
             candidate_repair_context(run, set(receipt['claim_ids'])), challenges=receipt.get('candidate_challenges', []))
+        # An unrelated run challenge can leave an explicit empty list in the
+        # original request. Reconstruct that spelling before exact comparison.
+        recorded = json.loads(unit['messages'][-1]['content'])
+        if recorded.get('candidate_challenges') == [] and 'candidate_challenges' not in context:
+            context['candidate_challenges'] = []
         request = execution.json_request(run, 'candidate_source_review', instruction, context, schema)
         options = run['recipe']['options']
         config = dict(model=run['recipe']['models']['review'], generation=run['recipe']['generation'],
@@ -2052,8 +2065,14 @@ def attach_candidate_support(run, output, claims, blocks):
                         value = value[part]
             if challenge not in run.setdefault('candidate_challenges', []):
                 run['candidate_challenges'].append(deepcopy(challenge))
-        except (ValueError, KeyError, TypeError):
-            output.setdefault('source_challenges', []).append('unattributed_candidate_contradiction: ' + challenge['reason'])
+        except (ValueError, KeyError, TypeError) as exc:
+            output.setdefault('candidate_challenge_errors', []).append(dict(challenge=deepcopy(challenge), error=str(exc)))
+            if challenge.get('meaning_key') in {c['meaning_key'] for c in output['checks']}:
+                output.setdefault('meaning_challenges', []).append(dict(meaning_key=challenge['meaning_key'],
+                    claim_ids=[], fields=[], evidence=[], source_reassessment_needed=False,
+                    reason='candidate_challenge_record_error: ' + str(exc) + ': ' + challenge['reason']))
+            else:
+                output.setdefault('source_challenges', []).append('unscoped_candidate_challenge_record_error: ' + challenge['reason'])
     verified = current_candidate_reviews(run)
     for row in output['checks']:
         ids = row['claim_ids']
@@ -2396,7 +2415,52 @@ def connected_event_candidates(claims, selected, block_ids):
     return linked
 
 
-def represent(service, run, requirement, source, context, *, previous_scope=None, recheck_meaning_keys=None, previous_meanings=None):
+def represent(service, run, requirement, source, context, **options):
+    """Keep the whole question/source while processing an explicitly selected work unit."""
+    if not source.get('processing_scope'):
+        return _represent(service, run, requirement, source, context, **options)
+    keys = {m['key'] for m in review_meanings(source)}
+    known = {m['key'] for m in source['meanings']}
+    records = conjunction_candidates(service, run, requirement, source)
+    def connection_keys(record):
+        reviewed = (record.get('review') or {}).get('meaning_keys', [])
+        if not reviewed:
+            reviewed = next(((h['record'].get('review') or {}).get('meaning_keys', [])
+                for h in reversed(source.get('conjunction_history', []))
+                if h.get('record', {}).get('id') == record['id'] and h['record'].get('review')), [])
+        return set(reviewed) or {k for a in source.get('meaning_conjunctions', [])
+                                if a['text'] == record['text'] for k in a['meaning_keys']}
+    view = deepcopy(source)
+    view['findings'] = [f for f in source.get('findings', [])
+        if not set(f['meaning_keys']) <= known or not f['meaning_keys'] or keys.intersection(f['meaning_keys'])]
+    for field in ('meaning_gaps', 'meaning_conjunctions'):
+        view[field] = [a for a in source.get(field, []) if not a['meaning_keys'] or keys.intersection(a['meaning_keys'])]
+    view['conjunction_records'] = [r for r in records if not connection_keys(r) or keys.intersection(connection_keys(r))]
+    deferred = [r['id'] for r in records if r['id'] not in {v['id'] for v in view['conjunction_records']}]
+    result, scope = _represent(service, run, requirement, view, context, **options)
+    # Only examined findings/connections are updated. The rest remain pending,
+    # including historical errors and original source statements.
+    examined = {f['id'] for f in view['findings']}
+    source['finding_resolutions'] = [r for r in source.get('finding_resolutions', []) if r['finding_id'] not in examined
+        ] + deepcopy(view.get('finding_resolutions', []))
+    source['finding_resolutions'] = list({r['finding_id']: r for r in source['finding_resolutions']}.values())
+    source['meaning_gaps'] = [a for a in source.get('meaning_gaps', []) if not keys.intersection(a['meaning_keys'])
+        ] + deepcopy(view.get('meaning_gaps', []))
+    source['meaning_gaps'] = [a for i, a in enumerate(source['meaning_gaps']) if a not in source['meaning_gaps'][:i]]
+    source['gaps'] = list(dict.fromkeys([*source.get('gaps', []), *view.get('gaps', [])]))
+    source['resolution_history'] = view.get('resolution_history', [])
+    updated = {r['id']: r for r in view['conjunction_records']}
+    source['conjunction_records'] = [deepcopy(updated.get(r['id'], r)) for r in records]
+    source['conjunction_history'] = view.get('conjunction_history', [])
+    source['conjunctions'] = [r['review']['statement'] for r in source['conjunction_records']
+        if r.get('review') and r['review']['source_status'] == 'supported']
+    source['completeness'] = 'partial'
+    scope['processing_scope'] = dict(deepcopy(source['processing_scope']), deferred_conjunction_ids=deferred,
+        deferred_finding_ids=[f['id'] for f in source.get('findings', []) if f['id'] not in examined])
+    return result, scope
+
+
+def _represent(service, run, requirement, source, context, *, previous_scope=None, recheck_meaning_keys=None, previous_meanings=None):
     """Bounded R batches, real missing-pool checks and a compact source-based join."""
     from . import business_run as execution
     from .business_models import (LocalRepresentationCheck, RequirementJoinCheck, PreservationCheck,
@@ -2434,6 +2498,10 @@ dependencies에 지정 의미들의 AND premise_keys를 기록한다. 독립=[]�
         instruction = '''이번 source 의미에 대한 후보의 실제 기여·누락·연결 전제만 대조한다.
 whole_candidate_judgments는 별도 후보–자기 원문 검수 결과다. 여기서 후보 전체 정확성을 다시 판정하지 않는다.
 checks의 claim_ids는 그 의미를 실제로 표현하는 위치다. 일부면 partial, 이번 묶음에서 없으면 missing이다.
+represented는 같은 대상·조건·시점에서 의미 전체가 실제 후보에 표현된 경우다. 원문에만 있는 내용은 후보 표현이 아니다.
+partial에는 represented_content로 실제 후보의 정상 기여를, missing_content/missing_evidence로 원문이 지지하지만 이 후보 묶음에 없는 나머지를 쓴다.
+정확한 부분 후보를 오류로 바꾸지 않는다. 목록의 일부가 포함된다는 진술은 전체 선택지의 충족과 다르다.
+개인의 허용·예외를 단체 규칙의 표현이나 예외로 연결하려면 그 적용을 허용하는 실제 원문 근거와 전제를 확인한다.
 후보 검수 결과를 질문 충족이나 원문 의미 정답으로 승격하지 않는다.
 새 구체 원문 모순을 발견하면 candidate_challenges에 의미키·실제 claim_ids·실제 필드 경로·원문 인용·이유를 기록한다.
 후보 판정은 서버가 해당 후보만 다시 검수한다. 원문 의미 자체의 모순은 meaning_challenges에 남긴다.
@@ -2557,6 +2625,10 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
             if error:
                 failures.extend(dict(meaning_key=key, reason=error) for key in keys)
             else:
+                for check in output['checks']:
+                    if check['status'] in {'represented', 'partial'} and not check['claim_ids']:
+                        failures.append(dict(meaning_key=check['meaning_key'], reason='expression_without_candidate_location'))
+                        check.update(status='unknown', reason='expression_without_candidate_location: ' + check['reason'])
                 output['review_unit_id'] = response_unit_id(run)
                 local_outputs.append(output)
             found = {c['meaning_key'] for o in local_outputs for c in o['checks']
@@ -2684,6 +2756,11 @@ source_completeness는 필수 범위 조사 상태이며 unselected_source_requi
         join_instruction = join_instruction.replace(execution.EXPRESSION_PROMPT, '') + '''
 후보 전체의 자기 출처 정확성은 별도 검수의 책임이며 재판정하지 않는다. checks는 기여/누락/부분 결합만 바꾼다.
 구체 새 후보 모순은 candidate_challenges에 실제 필드·후보 ID·원문 인용으로 남겨 해당 후보 재검수를 요청한다.
+partial을 유지/수정할 때 실제 represented_content와 아직 없는 missing_content/missing_evidence도 함께 반환한다.
+국소 partial의 나머지를 전체 후보 대조 후 복구 가능하다고 확인할 때는 같은 partial이라도 checks에
+revision_basis=combined_expression과 실제 근거를 가진 행을 명시한다. 생략은 잔여 복구 확인이 아니다.
+현재 제공된 모든 부분 후보와 실제 대상·조건·시점·전제를 대조한다. 다른 상황의 후보를 원문 근거 없이 결합하지 않는다.
+정상 부분 후보의 포함 진술은 유지하고, 전체 OR 선택지나 AND 조건의 남은 내용을 별도로 기록한다.
 '''
     if conjunctions:
         join_instruction += '''
@@ -2724,6 +2801,7 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
                 for target in r['targets']]) for r in context],
                 local_preservation_checks=compact['preservation_checks']) if preservation_ids else {})), join_type)
     conjunction_output = deepcopy((result or {}).get('conjunction_reviews', []))
+    remainder_keys = {c['meaning_key'] for c in (result or {}).get('checks', []) if c['status'] == 'partial'}
     if result is not None and split_candidates:
         attach_candidate_support(run, result, join_claims, join_blocks)
     failed_keys = {f['meaning_key'] for f in failures}
@@ -2739,6 +2817,7 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
     else:
         result, joined, valid_rows, join_errors = retain_join_rows(compact, result, join_keys, matched, confirmed_missing)
     valid_join_keys = valid_rows['checks'] & valid_rows['source_checks']
+    remainder_keys &= valid_rows['checks'] - {e['meaning_key'] for e in join_errors if e.get('meaning_key')}
     source_joined = valid_rows['source_checks'] == (keys if split_roles else join_keys) and not any(
         e['field'] == 'source_checks' for e in join_errors)
     result['preservation_checks'] = (result.get('preservation_checks', []) if joined else []) if preservation_ids else compact['preservation_checks']
@@ -2757,6 +2836,18 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
             check.update(status='unknown', reason='국소 대조 실패 또는 전체 후보 대조 전 새 누락 주장: ' + check['reason'])
         if nonessential and check['status'] == 'missing' and seen != all_ids:
             check['reason'] = '요구 밖 의미의 국소 미발견; 전체 후보 부재를 판정하지 않음'
+        if check['status'] == 'partial':
+            try:
+                refs = execution.exact_evidence(check.get('missing_evidence', []), run['blocks'])
+                check['recoverable_remainder'] = bool(check['meaning_key'] in remainder_keys and check['meaning_key'] not in failed_keys
+                    and seen == all_ids and check['claim_ids'] and check.get('represented_content')
+                    and check.get('missing_content') and refs and not check.get('incorrect_claim_ids')
+                    and all(check.get('claim_support', {}).get(cid) == 'supported' for cid in check['claim_ids']))
+                check['missing_evidence'] = refs
+                if check['recoverable_remainder']:
+                    check['review_unit_ids'] = list(dict.fromkeys([*check['review_unit_ids'], response_unit_id(run)]))
+            except ValueError:
+                check['recoverable_remainder'] = False
     resolve_findings(source, result, findings, join_blocks, join_claims, joined=joined,
                      resolution_keys={m['key'] for m in source['meanings']} if split_roles else valid_rows['source_checks'],
                      expression_keys=(valid_rows['checks'] | valid_rows['retained_missing']) - failed_keys,
