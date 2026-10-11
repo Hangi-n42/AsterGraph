@@ -534,6 +534,12 @@ P3 실패를 P4 이후에도 “최신 c47은 편집 자체가 항상 실패”�
 - 채택 코드경계는 교정전달분기와 동일문장모든주소복원. SC03 실제편집저장 및 현재 Event/Scope의 현장답사희망자·방문전·유선AND서면·사전승인 원문일치의 제품AI대조, direct1의 SC01/02/03 supported를 보존한다. 자동 before_normal은 범위정정/신규누리집참조를 기존정상과혼동해 receipt미달, 한receipt를3독립오답으로세지않음. 실제정상핵심유지와 자동보존실패를구분, eligible=[]/SC03보존미확정·SC04 unresolved·초기U→C오판유지.
 - source38/required32의 질문범위과잉·적용성한계, wholeR/QA0·운영graph/search/QA·#616/#617/#620미완료. C k1추론/잘못된gap해소 실패보존·C실험코드실제회수. 제품신규8(edit2/source4/direct1/C1)·C국소12 exact재사용·관련76pass는제품수치이며 연구6신규/A누적6에합산하지않는다. 공식/사람/일반화품질·기본diff/joint judge채택 증거아님.
 
+**2026-10-11 제품 P1 실제 필드 기반 보존 비교·후속 입력 재사용 — A 누적6 유지**
+
+- **출처·실행:** 제품 [원문/출력 대조](/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/source_output_evaluation.json), [candidate receipt](/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/candidate_review.json), [후속 입력 소비](/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/followup_consumption.json)를 실제 unit 입력/응답과 읽기 전용 대조했다. run `2cd7015a8b6841c2a365412f9da4ae6b`, unit `bfb196c4dbaa4ca9accbfbe961319772`, receipt `51ec1d4122f04664a2d705afc2a11f2e`다. 제품 native1의 입력3295/출력640token·모델58.003330초·driver58.318636초이며 이 연구 기록 갱신의 신규 모델0이다.
+- **제한 개선:** 실제 before/after 필드·버전·근거에 비교를 연결해 SC01/SC02/SC03 모두S, 기존 사전승인 행위·방문전·유선AND서면은 retained, 모든관람객→현장답사희망자 범위는 corrected, 누리집참조는 added/not_present로 구분했다. 새 내용을 이전 정상으로 만들던 혼동이 이 비교에서는 해소됐고 binding오류0이다. 후속 입력 구성은 유효 보존검수1건과 현재 후보검수3건을 재사용하고 repair_context=0으로 소비했으나, 후속 전체 요구 모델이 실행됐다는 증거는 아니다.
+- **남은 한계:** corrected의 구조화 before_source_status는U이나 이유는 여전히 “원문과 모순”으로 과장해 U/C혼동이 남는다. 어린이박물관 주체는 실제 필드에 남지만 별도 retained행이 없고, 조건필드 등 모든 정상 의미의 전수 보장을 입증하지 않는다. 제품AI·조율AI 원문 대조의 제한적 보존비교/입력 연결 성과이며 사람시험·새 자동finding/편집/추출·의미판단 일반화·새 연구judge채택0이다. 원래 질문 전체 검토/graph/search/QA0·SC04미수정/미완료, 기존 source38/required32 및 앞선 실패는 유지한다. A누적증가0/현재6, #656재개0·제품#616/#617/#620 전체미완료. 다음은 제품 P2/P3의 원래 질문 범위·답변 연결이며 보존 receipt만으로 전체 완료/승인을 확정하지 않는다.
+
 ## 6. 남길 자산과 재사용하면 안 되는 결론
 
 | 재사용 가능한 것 | 그대로 승격하면 안 되는 것 |
