@@ -842,8 +842,8 @@ def query(service, request, *, context_mode='graph'):
     source_reader = bool(request.source_run_id)
     if context_mode not in {'graph', 'document'}:
         raise ValueError('Unknown query context')
-    if context_mode == 'document' and request.retrieval != 'bm25':
-        raise ValueError('문서 기준선은 bm25를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
+    if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
+        raise ValueError('문서 기준선은 bm25 또는 hybrid를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
     with service.lock, service.repository.connect() as db:
         if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
                                  for r in db.execute('SELECT payload FROM runs')):
@@ -1007,6 +1007,17 @@ def query(service, request, *, context_mode='graph'):
         required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'])
         run['source_context_contract'] = 'existing-table-rowspan-heading-list-bundles-v1'
         run['source_context'] = deepcopy(required_source_context)
+        if request.source_context_tokens is not None:
+            size = (len(encode(dict(context=context, source_context=required_source_context)).encode()) + 1) // 2
+            run['source_context_budget'] = dict(limit=request.source_context_tokens, estimate_tokens=size,
+                method='utf8_bytes/2', exact=False, within_limit=size <= request.source_context_tokens)
+            if size > request.source_context_tokens:
+                run.update(status='failed', finished_at=utcnow(), error='source_context_capacity',
+                           retrieval=hits, provided_ids=sorted(selected), selected_source_context=context)
+                run['metrics']['elapsed_s'] = monotonic() - started
+                business_run.save(service, run)
+                return dict(run_id=run['id'], status='input_capacity', answer=None,
+                            error=run['error'], source_context_budget=run['source_context_budget'])
     source_evidence = {}
     if context_mode == 'graph' and not source_reader:
         blocks = {b['id']: b for b in snapshot['blocks']}

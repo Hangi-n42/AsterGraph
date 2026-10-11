@@ -114,12 +114,18 @@ def source_packet(blocks):
     return result
 
 
+def list_text_parent(path):
+    # A list item's text can be a direct text node or a paragraph/span child.
+    return re.sub(r'( > (?:p|span):[^>]+)$', '', path) if re.search(
+        r'(?:^| > )li:[^>]+ > (?:p|span):[^>]+$', path) else path.split('::text(')[0]
+
+
 def list_parents(block, blocks):
     """Parser list ancestors only; their semantic applicability remains a model judgment."""
     path = block.get('locator', {}).get('element_path', '')
     return [b for b in blocks if b['id'] != block['id'] and b['source_version_id'] == block['source_version_id']
-            and '::text(' in b.get('locator', {}).get('element_path', '')
-            and path.startswith(b['locator']['element_path'].split('::text(')[0] + ' > ')]
+            and list_text_parent(b.get('locator', {}).get('element_path', '')) != b.get('locator', {}).get('element_path', '')
+            and path.startswith(list_text_parent(b['locator']['element_path']) + ' > ')]
 
 
 def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
@@ -154,8 +160,8 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
             # (for example a missing applicant); preserve the actual parent text.
             context += [dict(b, context_only=True) for b in list_parents(block, group)]
             # A retrieved list label needs the contents of its own nested list.
-            parent_item = path.split('::text(')[0]
-            if '::text(' in path and re.search(r'(?:^| > )li(?::[^>]*)?$', parent_item):
+            parent_item = list_text_parent(path)
+            if parent_item != path and re.search(r'(?:^| > )li(?::[^>]*)?$', parent_item):
                 prefix = parent_item + ' > '
                 context += [dict(b, context_only=True) for b in group
                     if b.get('locator', {}).get('element_path', '').startswith(prefix)
