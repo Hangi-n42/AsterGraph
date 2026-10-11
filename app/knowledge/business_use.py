@@ -33,6 +33,22 @@ def eligibility(run):
         for cid in ids:
             blocked.setdefault(cid, []).append(reason)
     for assessment in latest.values():
+        if (assessment.get('source') or {}).get('public_scope'):
+            # Own-source permission concerns the current candidate's literal
+            # facts, not the failed R mapping or whole public requirement.
+            requirement = requirements[assessment['requirement_id']]
+            direct = business_review.current_candidate_reviews(run)
+            own_ids = {c['id'] for c in run['claims'] if any(b['id'] in
+                {v['id'] for v in business_review.source_blocks(run, requirement)}
+                for b in business_review.candidate_source_basis(c, run['blocks']))}
+            supported_ids = {cid for cid,v in direct.items() if cid in own_ids
+                and v['check']['claim_support'].get(cid) == 'supported'
+                and not v['check']['incorrect_claim_ids'] and not v['check']['error_fields']}
+            preserved_current.update(v['check']['target_id'] for v in
+                business_review.valid_preservation_reuses(run, requirement, []))
+            eligible.update(supported_ids)
+            exclude(own_ids - supported_ids, 'own_source_review_pending_or_not_supported')
+            continue
         representation = assessment.get('representation') or {}
         checks = representation.get('checks', [])
         inspected = {cid for check in checks for cid in check['claim_ids']}
@@ -106,6 +122,8 @@ def publish(service, run):
                   completion_contract=business_run.COMPLETION_CONTRACT,
                   requirement_assessment_ids={r: a['id'] for r, a in latest.items()},
                   promotion_status='source_claim_review; has_concept_is_not_approved_is_a')
+    if any((a.get('source') or {}).get('public_scope') for a in latest.values()):
+        change['public_scope_usage'] = 'current_own_source_candidates_only_not_requirement_or_connection_approval'
     with service.lock, service.repository.connect() as db:
         db.execute('INSERT INTO changesets VALUES(?,?)', (change['id'], encode(change)))
     return change
@@ -179,6 +197,8 @@ def decide(service, changeset_id, request):
                         eligibility_contract=ELIGIBILITY_CONTRACT, eligible_ids_at_review=sorted(eligible),
                         reason=request.reason, accepted_ids=request.accept_ids, created_at=utcnow())
         decision['explicit_meaning_reviews'] = deepcopy(explicit)
+        if change.get('public_scope_usage'):
+            decision['public_scope_usage'] = change['public_scope_usage']
         change['decisions'].append(decision['id'])
         change['revision'] += 1
         service.repository.save(db, 'changesets', change)
@@ -198,12 +218,16 @@ def decide(service, changeset_id, request):
                         blocks=deepcopy(run['blocks']), assertions={}, entity_links={},
                         ontology_version_id=None, activation='explicit_query_only')
         snapshot['explicit_meaning_reviews'] = deepcopy(explicit)
+        if change.get('public_scope_usage'):
+            snapshot['public_scope_usage'] = change['public_scope_usage']
         direct = business_review.current_candidate_reviews(run)
         snapshot['reviewed_claim_evidence'] = {
             c['id']: dict(claim_version=business_run.autoschema.identifier('claim', c),
+                original_review_status=c.get('review_status'), source_versions=c['source_version_ids'],
+                source_fingerprint=business_review.preservation_source_version(run,c['source_version_ids']),
                 receipt_id=direct[c['id']]['receipt_id'], unit_id=direct[c['id']]['unit_id'],
                 evidence=deepcopy(direct[c['id']]['check']['evidence']))
-            for c in selected if c['id'] in direct
+            for c in run['claims'] if c['id'] in request.accept_ids and c['id'] in direct
             and direct[c['id']]['check']['claim_support'].get(c['id']) == 'supported'}
         db.execute('INSERT INTO snapshots VALUES(?,?)', (snapshot['id'], encode(snapshot)))
         db.execute('INSERT INTO snapshot_events VALUES(?,?)', (decision['id'], encode(dict(
@@ -267,6 +291,30 @@ def reviewed_answer_meanings(snapshot, selected, requirement_ids):
     for rid, assessment in snapshot.get('assessments', {}).items():
         if requirement_ids and rid not in requirement_ids:
             continue
+        if (assessment.get('source') or {}).get('public_scope'):
+            requirement = next(v for v in snapshot['requirements'] if v['id'] == rid)
+            scoped_blocks = business_review.source_blocks(dict(blocks=snapshot['blocks']),requirement)
+            for candidate in snapshot['claims']:
+                cid = candidate['id']
+                own = snapshot.get('reviewed_claim_evidence', {}).get(cid)
+                current = dict(candidate,review_status=own.get('original_review_status')) if own else candidate
+                if cid not in selected or not own or own['claim_version'] != business_run.autoschema.identifier('claim', current):
+                    continue
+                if not business_review.candidate_source_basis(candidate,scoped_blocks):
+                    continue
+                if own.get('source_fingerprint') != business_review.preservation_source_version(
+                        dict(blocks=snapshot['blocks']),own['source_versions']):
+                    continue
+                rows.append(dict(requirement_id=rid, assessment_id=assessment['id'], key='candidate:'+cid,
+                    kind='own_source_candidate', statement=candidate['statement'],
+                    **{k:deepcopy(candidate.get(k)) for k in ('conditions','exceptions','period','references')},
+                    source_status='supported', availability='provided', record_error=None, field_judgments={},
+                    expression_status='own_source_reviewed', claim_ids=[cid], required_claim_ids=[cid],
+                    claim_support={cid:'supported'}, complete_claim_bundle=True, premise_keys=None,
+                    evidence=business_run.exact_evidence(own['evidence'],snapshot['blocks']),
+                    judgment_origin=dict(origin='candidate_own_source_review',receipt_id=own['receipt_id'],unit_id=own['unit_id'],
+                        scope='candidate_fact_only_not_whole_requirement_or_connection')))
+            continue
         checks = {c['meaning_key']: c for c in (assessment.get('representation') or {}).get('checks', [])}
         for meaning in (assessment.get('source') or {}).get('meanings', []):
             check = checks.get(meaning['key'], {})
@@ -310,6 +358,8 @@ def reviewed_answer_connections(snapshot, original, requirement_ids):
             continue
         requirement = next(r for r in original['requirements'] if r['id'] == rid)
         source = assessment.get('source') or {}
+        if source.get('public_scope'):
+            continue  # This path grants current candidate facts, never the old R compounds.
         for record in source.get('conjunction_records', []):
             row = deepcopy(record)
             row['requirement_id'] = rid
@@ -322,7 +372,7 @@ def reviewed_answer_connections(snapshot, original, requirement_ids):
 
 def bind_answer_items(request, requirements):
     """Bind the public plan to this execution without revising or approving requirements."""
-    by_id = {r['id']: r for r in requirements if r['id'] in request.requirement_ids}
+    by_id = {r['id']: r for r in requirements if not request.requirement_ids or r['id'] in request.requirement_ids}
     items = [i.model_dump() for i in request.answer_items]
     if len({i['id'] for i in items}) != len(items):
         raise ValueError('공개 답변 항목 ID는 중복될 수 없습니다.')
@@ -402,11 +452,12 @@ def unresolved_finding_notes(source):
 
 def reviewed_item_answer(service, run, request, requirements):
     """Select complete reviewed propositions; the server renders their unchanged content."""
+    work_items = run.get('answer_work_items', run['answer_items'])
     available = {}
     excluded = []
     for meaning in run['reviewed_meanings']:
         explicit = meaning['expression_status'] == 'explicitly_reviewed'
-        valid = (meaning['complete_claim_bundle'] and meaning['expression_status'] in {'represented', 'explicitly_reviewed'}
+        valid = (meaning['complete_claim_bundle'] and meaning['expression_status'] in {'represented', 'explicitly_reviewed', 'own_source_reviewed'}
             and meaning['source_status'] == 'supported' and meaning['availability'] == 'provided'
             and not business_review.unresolved_source_fields(meaning)
             and meaning['evidence'] and not meaning['record_error']
@@ -451,7 +502,7 @@ def reviewed_item_answer(service, run, request, requirements):
                     limitations=['현재 검토 버전의 표현 연결을 확인해야 합니다.'])
     selection = create_model('ReviewedSelection', meaning_ref=(Literal[tuple(available)], Field(...)),
         use=(Literal['direct_fact', 'premise_only'], Field(...)))
-    row = create_model('ReviewedItemSelection', item_id=(Literal[tuple(i['id'] for i in run['answer_items'])], Field(...)),
+    row = create_model('ReviewedItemSelection', item_id=(Literal[tuple(i['id'] for i in work_items)], Field(...)),
         selected=(list[selection], Field(...)),
         unconfirmed=(list[str], Field(description='Concrete requested fact or inference link not established; never an affirmative conclusion.')))
     connections = {f'k{n+1}': record for n, record in enumerate(run.get('reviewed_connections', []))}
@@ -474,7 +525,7 @@ def reviewed_item_answer(service, run, request, requirements):
         m['field_name'] for m in available.values() if m.get('kind') == 'exact_row_field'
         and m['requirement_id'] == item['requirement_id']) if re.search(
             r'(?<![A-Za-z0-9_])' + r'\s*'.join(map(re.escape, re.sub(r'\s+', '', name))) + r'(?![A-Za-z0-9_])',
-            item['request_quote'], re.IGNORECASE)] for item in run['answer_items']}
+            item['request_quote'], re.IGNORECASE)] for item in work_items}
     output = business_run.json_call(service, run, 'business_qa',
         '공개 질문/criterion의 항목별로 해당하는 검토 의미 ID만 선택한다. 문장·결론을 새로 작성하지 않는다. '
         '각 의미의 출처/조건/대상/기간과 질문 적용성을 대조한다. 직접 답인 사실은 direct_fact, '
@@ -482,6 +533,13 @@ def reviewed_item_answer(service, run, request, requirements):
         '명시적 사실·조건을 새로운 허용·의무·보장으로 확대하지 않는다. 일부 적용 범위를 일반화하지 않는다. '
         '모든 공개 항목에 유용한 의미 또는 구체 공백이 필요하다. 불필요한 의미는 선택하지 않는다. '
         '검토 의미도 오류 가능하며 judgment_origin은 정답 보장이 아니다. 원문과 모순이면 선택하지 말고 공백에 이유를 남긴다.' + (
+        ' answer_work_items는 원래 공개 항목과 공개 대상·상황에서 고정한 처리 과제다. 원래 public_answer_items를 대체하지 않는다. '
+        '각 작업 ID의 대상·조건을 따로 대조하고, 다른 대상의 정상 사실만으로 이 작업을 완료하지 않는다. '
+        '표현이 없는 작업도 생략하지 않고 필요한 사실·표현 연결의 구체 공백을 쓴다. '
+        'public_work_records는 이전 처리 상태와 구체 공백이다. 후보 사실이나 승인 권한이 아니다. '
+        'source_binding_valid=false인 원문 상태와 candidate_binding_valid=false인 표현 상태를 현재 판정으로 사용하지 않는다. '
+        '현재 자기 출처 검토 후보의 실제 대상·조건으로 답하고 남는 표현·자료 공백을 구분한다. '
+        if run.get('answer_work_items') else '') + (
         ' reviewed_connections는 출처·현재 버전에 묶인 별도 결합 판정이다. selected의 사실 ID가 아니다. '
         '해당 공개 항목에 실제 관련된 연결만 connection_refs로 선택한다. 원문 지지와 후보 표현 위치·질문 필요성을 구별한다. '
         'unsupported/unknown은 거짓이 아니며 refuted는 명시 반증이다. 미확인 결합을 확인된 처리 보장으로 승격하지 않는다. '
@@ -492,6 +550,8 @@ def reviewed_item_answer(service, run, request, requirements):
         '파일 기준일은 현실 최신성이나 전체 요구 충족의 증거가 아니며 assessment_limitations를 유지한다.'
         if run.get('exact_row_answer_fields') else ''),
         dict(question=request.question, public_requirements=requirements, public_answer_items=run['answer_items'],
+             **(dict(answer_work_items=work_items) if run.get('answer_work_items') else {}),
+             **(dict(public_work_records=run['answer_work_records']) if run.get('answer_work_records') else {}),
              requested_row_fields=requested_fields,
              **(dict(row_contexts=row_contexts) if row_contexts else {}),
              **(dict(assessment_limitations=run['answer_assessment_limitations'])
@@ -506,14 +566,15 @@ def reviewed_item_answer(service, run, request, requirements):
         output = dict(items=[])
     rendered, citations, limitations, errors = [], [], [], []
     shown_meanings = set()
-    for item in run['answer_items']:
+    for item in work_items:
+        label = item['request_quote'] + (' · ' + item['context']['quote'] if item.get('context') else '')
         matches = [r for r in output['items'] if r['item_id'] == item['id']]
         if len(matches) != 1:
             errors.append(item['id'] + ': selection_missing_or_duplicate')
-            rendered.append(item['request_quote'] + '\n응답 기록 미완성')
+            rendered.append(label + '\n응답 기록 미완성')
             continue
         row = matches[0]
-        lines = [item['request_quote']]
+        lines = [label]
         shown_rows, selected_fields = set(), set()
         for selected in row['selected']:
             m = available[selected['meaning_ref']]
@@ -538,6 +599,8 @@ def reviewed_item_answer(service, run, request, requirements):
                         lines.append('자료에 기록된 날짜: ' + ', '.join(d['value'] for d in m['source_dates']))
                 continue
             prefix = '확인된 전제 (결론 연결 미확인): ' if selected['use'] == 'premise_only' else '검토된 원문 의미: '
+            if m.get('kind') == 'own_source_candidate' and selected['use'] == 'direct_fact':
+                prefix = '자기 출처 검토 후보: '
             content = reviewed_meaning_lines(m)
             lines.extend([prefix + content[0], *content[1:]])
             citations.extend(m['required_claim_ids'])
@@ -553,8 +616,10 @@ def reviewed_item_answer(service, run, request, requirements):
             if not review or record['requirement_id'] != item['requirement_id']:
                 continue
             link = review['requirement_link']
-            bound_item = next((i for i in record['public_answer_items'] if i['id'] == item['id']), None)
-            matching = bool(bound_item and bound_item == item and item['id'] in review['item_ids'])
+            public_id = item.get('public_item_id', item['id'])
+            public_item = next(i for i in run['answer_items'] if i['id'] == public_id)
+            bound_item = next((i for i in record['public_answer_items'] if i['id'] == public_id), None)
+            matching = bool(bound_item and bound_item == public_item and public_id in review['item_ids'])
             selected_connection = ref in row.get('connection_refs', [])
             required_connection = matching and link['applicability'] == 'applicable' and link['contribution'] != 'background'
             if not selected_connection and not required_connection:
@@ -796,6 +861,8 @@ def query(service, request, *, context_mode='graph'):
             snapshot = service.repository.get(db, 'snapshots', request.snapshot_id)
         if snapshot.get('kind') != 'source_graph':
             raise ValueError('출처 그래프 snapshot이 필요합니다.')
+        requirement_ids = request.requirement_ids or ([r['id'] for r in snapshot['requirements']]
+            if request.answer_mode == 'reviewed_items' else [])
         original = service.repository.get(db, 'runs', snapshot['run_id'])
         invalidations = [event for row in db.execute('SELECT payload FROM snapshot_events')
             if (event := json.loads(row['payload'])).get('event') == 'business_correction'
@@ -805,20 +872,20 @@ def query(service, request, *, context_mode='graph'):
             invalidations.extend(snapshot_invalidations(service, db, snapshot, original))
         if invalidations:
             affected = {rid for i in invalidations for rid in i['requirement_ids']}
-            if affected.intersection(request.requirement_ids):
+            if affected.intersection(requirement_ids):
                 return dict(status='needs_review', answer=None, snapshot_id=snapshot['id'], invalidations=invalidations)
             excluded = {cid for i in invalidations for cid in i['claim_ids']}
             excluded_blocks = {bid for i in invalidations for bid in i.get('block_ids', [])}
             snapshot = dict(snapshot, claims=[c for c in snapshot['claims'] if c['id'] not in excluded],
                             blocks=[b for b in snapshot['blocks'] if b['id'] not in excluded_blocks],
                             assessments={rid:a for rid,a in snapshot['assessments'].items() if rid not in affected})
-        if not set(request.requirement_ids) <= {r['id'] for r in snapshot['requirements']}:
+        if not set(requirement_ids) <= {r['id'] for r in snapshot['requirements']}:
             raise ValueError('선택한 요구가 해당 snapshot에 없습니다.')
         restrictions = restricted_sources(db, snapshot['source_versions'])
         if restrictions:
             return dict(status='needs_review', restrictions=restrictions, answer=None, snapshot_id=snapshot['id'])
         requirements = [service.repository.get(db, 'requirements', r['id']) for r in snapshot['requirements']
-                        if not request.requirement_ids or r['id'] in request.requirement_ids]
+                        if not requirement_ids or r['id'] in requirement_ids]
         stale = [r['id'] for r in requirements if r['status'] == 'needs_review' or
                  r['revision'] != next(v['revision'] for v in snapshot['requirements'] if v['id'] == r['id'])]
         if stale:
@@ -829,11 +896,11 @@ def query(service, request, *, context_mode='graph'):
         if source_reader and not any(c.get('evidence') for c in snapshot['claims']) and not snapshot['blocks']:
             return dict(status='no_source_passages', answer=None, source_run_id=request.source_run_id, model_called=False)
         required_ids = set()
-        if context_mode == 'graph' and request.requirement_ids:
+        if context_mode == 'graph' and requirement_ids:
             required_ids.update(cid for e in snapshot.get('explicit_meaning_reviews', [])
-                if e['requirement_id'] in request.requirement_ids and e['meaning'].get('required_for_requirement')
+                if e['requirement_id'] in requirement_ids and e['meaning'].get('required_for_requirement')
                 for cid in e['claim_ids'])
-            for rid in request.requirement_ids:
+            for rid in requirement_ids:
                 representation = snapshot['assessments'][rid].get('representation') or {}
                 keys = {row['meaning_key'] for row in representation.get('source_checks', [])
                         if row['required_for_requirement']}
@@ -851,7 +918,7 @@ def query(service, request, *, context_mode='graph'):
                    source_extraction_status=original['status'] if source_reader else None,
                    answer_contract=ANSWER_CONTRACT, required_context_ids=sorted(required_ids))
         if request.answer_mode == 'reviewed_items':
-            run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, request.requirement_ids)
+            run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, requirement_ids)
         run['execution_boundary'] = dict(
             answer_mode=request.answer_mode, answer_contract=None,
             unadopted_answer_mode=request.answer_mode in {'source_quotes', 'items'},
@@ -914,12 +981,33 @@ def query(service, request, *, context_mode='graph'):
                     context_mode=context_mode, snapshot_id=None if source_reader else snapshot['id'],
                     source_run_id=request.source_run_id, answer_basis=run['answer_basis'], qa_model_called=False,
                     execution_boundary=run['execution_boundary'])
-    reviewed_meanings = reviewed_answer_meanings(snapshot, selected, request.requirement_ids) if not source_reader else []
+    reviewed_meanings = reviewed_answer_meanings(snapshot, selected, requirement_ids) if not source_reader else []
     run['answer_scope_contract'] = 'reviewed-meanings-and-source-qualifications-v1'
     run['reviewed_meanings'] = deepcopy(reviewed_meanings)
-    run['reviewed_connections'] = reviewed_answer_connections(snapshot, original, request.requirement_ids) if not source_reader else []
+    run['reviewed_connections'] = reviewed_answer_connections(snapshot, original, requirement_ids) if not source_reader else []
     if request.answer_mode == 'reviewed_items':
-        run['exact_row_answer_fields'] = exact_row_answer_fields(snapshot, selected, request.requirement_ids)
+        run['exact_row_answer_fields'] = exact_row_answer_fields(snapshot, selected, requirement_ids)
+        scoped = {rid for rid,a in snapshot.get('assessments', {}).items() if (a.get('source') or {}).get('public_scope')}
+        scoped.intersection_update(r['id'] for r in requirements)
+        if scoped:
+            run['answer_work_items'] = [dict(task['item'], id=task['id'], public_item_id=task['item']['id'],
+                context=task['context']) for requirement in snapshot['requirements']
+                if requirement['id'] in scoped
+                for task in business_review.public_item_tasks(run, requirement)]
+            run['answer_work_items'].extend(i for i in run['answer_items'] if i['requirement_id'] not in scoped)
+            run['answer_work_records'] = []
+            versions = {c['id']:business_run.autoschema.identifier('claim',c) for c in original['claims'] if not c.get('superseded_by')}
+            for rid in scoped:
+                scope = snapshot['assessments'][rid]['source']['public_scope']
+                requirement = next(r for r in requirements if r['id'] == rid)
+                source_valid = scope.get('source_version_fingerprint') == business_run.autoschema.identifier(
+                    'public_scope_source',business_review.source_blocks(original,requirement))
+                candidates_valid = scope['candidate_versions'] == versions
+                task_ids = {w['id'] for w in run['answer_work_items'] if w['requirement_id'] == rid}
+                run['answer_work_records'].extend(dict(row, source_binding_valid=source_valid,
+                    candidate_binding_valid=candidates_valid, original_unit_id=scope['unit_id'],
+                    followup=next((f for f in scope['followup'] if f['task_id'] == row['task_id']),None),
+                    authority='previous_work_state_not_truth_or_approval') for row in scope['items'] if row['task_id'] in task_ids)
     required_source_context = []
     if source_reader:
         context = [{k: v for k, v in c.items() if k != 'linked_claim_ids'} for c in context]
@@ -988,7 +1076,9 @@ def query(service, request, *, context_mode='graph'):
     # Complete claim bundles retain conditions and source provenance; no gold mappings.
     limitations = [dict(requirement_id=r, status=a['status'], gaps=(a.get('source') or {}).get('gaps', []))
                    for r, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
-    answer_requirements = public_answer_requirements(requirements) if request.requirement_ids else []
+    answer_requirements = public_answer_requirements(requirements) if requirement_ids else []
+    if run.get('answer_work_items'):
+        answer_requirements = public_answer_requirements(requirements)
     if request.answer_mode == 'reviewed_items':
         run['answer_assessment_limitations'] = [dict(requirement_id=r['id'], period=r.get('period', ''),
             status=a['status'], source_completeness=(a.get('source') or {}).get('completeness', 'unknown'),
@@ -997,7 +1087,8 @@ def query(service, request, *, context_mode='graph'):
             finding_resolutions=deepcopy((a.get('source') or {}).get('finding_resolutions', [])),
             synthesis_reason=(a.get('representation') or {}).get('reason', ''),
             gaps=(a.get('source') or {}).get('gaps', [])) for r in requirements
-            if (a := snapshot['assessments'][r['id']])['status'] != 'satisfied']
+            if (a := snapshot['assessments'][r['id']])['status'] != 'satisfied'
+            and not (a.get('source') or {}).get('public_scope')]
         output = reviewed_item_answer(service, run, request, answer_requirements)
     elif request.answer_mode == 'items':
         output = item_answer(service, run, request, source_evidence, snapshot['source_versions'], reference_map, answer_requirements)
@@ -1047,7 +1138,7 @@ def query(service, request, *, context_mode='graph'):
             status, output = 'needs_review', None
         run.update(status='succeeded' if status == 'answered' else 'partial', finished_at=utcnow(),
                    answer=output, answer_status=status, retrieval=hits, provided_ids=sorted(selected),
-                   retrieval_concept_hints=hints, retrieval_contract=('required-reviewed-claims+ranked-remainder-v1' if context_mode == 'graph' and request.requirement_ids
+                   retrieval_concept_hints=hints, retrieval_contract=('required-reviewed-claims+ranked-remainder-v1' if context_mode == 'graph' and requirement_ids
                                        else 'source-claims+concept-hints+numeric-identifiers-v2'),
                    concept_hints_are_answer_evidence=False)
         if request.retrieval != 'bm25':

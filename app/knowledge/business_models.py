@@ -342,6 +342,22 @@ class RequirementApplicationCheck(BaseModel):
     meaning_challenges: list[GroundedMeaningChallenge]
 
 
+class PublicItemCoverage(BaseModel):
+    task_id: str
+    meaning_keys: list[str]
+    candidate_ids: list[str]
+    source_state: Literal['available', 'unselected', 'unread', 'not_provided', 'unknown']
+    expression_state: Literal['represented', 'partial', 'not_found', 'unknown']
+    read_block_ids: list[str]
+    gap: str
+    reason: str
+
+
+class PublicScopeCheck(BaseModel):
+    items: list[PublicItemCoverage]
+    meaning_challenges: list[GroundedMeaningChallenge]
+
+
 def expression_evidence_before_verdict(schema):
     properties = schema['properties']
     schema['properties'] = {**{key: value for key, value in properties.items() if key not in {'reason', 'status'}},
@@ -536,8 +552,9 @@ class BusinessQuery(BaseModel):
             raise ValueError('원문 QA는 요구 충족 판정이 아닙니다. 요구별 승인 지식 활용에는 snapshot을 선택하세요.')
         if self.answer_mode in {'items', 'reviewed_items'} and not self.answer_items:
             raise ValueError('항목별 답변에는 공개 요청에서 고정한 answer_items가 필요합니다.')
-        if self.answer_items and (self.answer_mode not in {'items', 'reviewed_items'} or not self.requirement_ids):
-            raise ValueError('answer_items는 요구를 선택한 항목별 답변에서만 사용합니다.')
+        if self.answer_items and (self.answer_mode not in {'items', 'reviewed_items'}
+                or not self.requirement_ids and self.answer_mode != 'reviewed_items'):
+            raise ValueError('answer_items는 요구에 묶인 항목별 답변에서만 사용합니다.')
         if len({i.id for i in self.answer_items}) != len(self.answer_items):
             raise ValueError('공개 답변 항목 ID가 중복됩니다.')
         return self

@@ -126,7 +126,15 @@ def test_direct_preservation_is_consumed_by_existing_reuse_and_repair_context_wi
     rows = review.valid_preservation_reuses(run, run['requirements'][0], [m])
     assert len(rows) == 1 and rows[0]['check'] == check
     assert rows[0]['scope'] == 'local_preservation_only_not_requirement_independence'
+    assert rows[0]['meaning_versions'] == {}
+    assert review.valid_preservation_reuses(run, run['requirements'][0], [m],
+        challenges=[dict(claim_ids=[], fields=[], meaning_key='kept', reason='추가 양식 미확인')])
     assert review.repair_context(run, run['requirements'][0], [m]) == []
     assert not review.valid_preservation_reuses(run, run['requirements'][0], [m],
         challenges=[dict(claim_ids=[claim['id']], meaning_key='kept')])
+    run['candidate_challenges']=[dict(claim_ids=[claim['id']],meaning_key='kept')]
+    assert not review.valid_preservation_reuses(run,run['requirements'][0],[m])
+    monkeypatch.setattr(review,'current_candidate_reviews',lambda r:{claim['id']:dict(receipt_id='direct',
+        check=dict(claim_support={claim['id']:'supported'}))})
+    assert review.valid_preservation_reuses(run,run['requirements'][0],[m])
     assert not run['assessments']
