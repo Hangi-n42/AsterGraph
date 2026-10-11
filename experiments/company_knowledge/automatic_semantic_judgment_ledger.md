@@ -495,6 +495,13 @@ R38은동일원문제한의자동삽입에서구성gate실패를유지하고별�
 - 신규라벨/이유4/6·after정상4출현보존(고유2), 형식3/4. SC03 Entity 배열 원소 quote에 문자열주소/index가 없어 계약실패이며 위치관찰과 구분한다. source canonical9참조/6판정 확인은 의미성공이 아니다. 제안은 동결 당시 edit_applied=false이며 이후 제품의 별도 저장 성과로 연구 개선을 소급하지 않는다.
 - 신규4 입력12848/출력1150·모델131.521847초·요청elapsed합131.764233초·completion driver131.768207초·적재/종료139.621370초·hash6.077409초. 준비metadata/root import 실패2는 모델0 때 보존·동결 이후 변경/재시도0. PID65651 SIGTERM/exit0·13:52:21 KST 포트닫힘/Ollama0 뒤 제품C에 자원반환. 실제교정/같은요구/graph/search/QA의 B2개선0·새A0/누적6·c47추가0·#655확인남음/OPEN. [결과](../../docs/70_research/company_knowledge/business_actual_proposal_pair_20261011.md).
 
+**R40/B1 새 국립생태원 확인 완료 · A누적6·제품 미채택**
+
+- 사전v2후보8(S4/U2/C2), 동일 전체40블록/8부모·골드·system·후보순서·공통 technical_view로 baseline3/diff3 총6신규·재사용0. 전체token6,823~9,191로 첫판단 전에 양쪽ctx11264/output2048을 고정, 원문삭제/설정재시도0. 새기제/A07이 아닌 같은B1 확인이다.
+- 원시라벨8/8→8/8·정상4/4·U/C동일·개선0/회귀0/동일8. legacy/기술계약2/3→2/3·whole수용5/8씩, 양쪽gate=false. 개별이유7/8→8/8이나 permission differences에 raw없는 “그장소에서만”이 남음. 장비baseline 단독Z difference, diff nonunique 유모차 인용/Entity배열 문자열인용 실패 보존. 실제Event오류구절8/8·원문주소16판정검증을 전체계약복구로 세지않음.
+- 입력45,553/출력4,780·모델513.852031초·요청elapsed합514.126713초·completion driver514.133066초·적재/재기동/실제종료포함537.634930초. EOS6/6·잘림/실행오류0·cache_n0. 소유69538/69540 exit0,14:29:49KST 포트닫힘/Ollama[] 반환. offline감사의 개별계약유효 가정 실패와 runtime metadata list/과거flag 한계는 원형+errata로 보존, 모델추가/실행parser변경0.
+- 최초B1개발7→10부분효과/원gatefalse·B2추가효과0/U-C오류를 함께 보존하고 현재기본경로미채택·A최종누적6. #655연구비교종료만 처리하며 #616/#617/#620 제품미완료 유지. [확인 결과](../../docs/70_research/company_knowledge/business_candidate_diff_confirmation_20261011.md).
+
 <a id="product"></a>
 ## 5. 자동 판단과 혼동하면 안 되는 편집·관리·답변 기록
 
@@ -520,6 +527,12 @@ R38은동일원문제한의자동삽입에서구성gate실패를유지하고별�
 P3 실패를 P4 이후에도 “최신 c47은 편집 자체가 항상 실패”라고 쓰면 부정확하다. 반대로 P4의 오류 설명 제공·승인 경로를 R01–R33의 자율 검출 성공과 이어 붙이는 것도 부정확하다.
 
 검색 입력에 수정 후보가 포함됐다는 사실만으로 답변이 이를 사용했다고 볼 수 없다. `required_reviewed_meaning`에 따른 필수 포함을 자율 검색 순위 개선으로 보고하지 않는다. 독립 정상 후보의 저장 불변과 수정 후 자연어 의미 검수도 별도다.
+
+**2026-10-11 제품 SC03/direct·C 회수 최종 연결 · 현재 A누적6 유지**
+
+- 제품 `7d85edff21170550c69c1a1794e573a3b0837d6b`의 HEAD/remote일치·clean과 [SC03 보고](https://github.com/Hangi-n42/Civil-Complaints-System/blob/7d85edff21170550c69c1a1794e573a3b0837d6b/docs/70_research/company_knowledge/business_auto_finding_extension_20261011.md)/[C 보고](https://github.com/Hangi-n42/Civil-Complaints-System/blob/7d85edff21170550c69c1a1794e573a3b0837d6b/docs/70_research/company_knowledge/business_conjunction_relations_20261011.md)·JSON을 읽기 전용 대조했다. 제품파일/DB 수정·모델추가0; 제품raw/76검사를 이 연구에서 재실행하지 않았다.
+- 채택 코드경계는 교정전달분기와 동일문장모든주소복원. SC03 실제편집저장 및 현재 Event/Scope의 현장답사희망자·방문전·유선AND서면·사전승인 원문일치의 제품AI대조, direct1의 SC01/02/03 supported를 보존한다. 자동 before_normal은 범위정정/신규누리집참조를 기존정상과혼동해 receipt미달, 한receipt를3독립오답으로세지않음. 실제정상핵심유지와 자동보존실패를구분, eligible=[]/SC03보존미확정·SC04 unresolved·초기U→C오판유지.
+- source38/required32의 질문범위과잉·적용성한계, wholeR/QA0·운영graph/search/QA·#616/#617/#620미완료. C k1추론/잘못된gap해소 실패보존·C실험코드실제회수. 제품신규8(edit2/source4/direct1/C1)·C국소12 exact재사용·관련76pass는제품수치이며 연구6신규/A누적6에합산하지않는다. 공식/사람/일반화품질·기본diff/joint judge채택 증거아님.
 
 ## 6. 남길 자산과 재사용하면 안 되는 결론
 
@@ -612,6 +625,8 @@ N02의 방법 출처는 [Task Calibration 논문](https://aclanthology.org/2025.
 - **준비만 완료:** 새 원문 전체5,033자·40블록/8부모, v2후보8(S4/U2/C2·미확정0), fresh Astra 작성/블라인드 독립동결8/8 일치. C08만 모델호출 전에 같은 금지 규칙의 상세 정상으로 바꾸고 v1/gold/blind/개정 이력을 보존했다. 실제 저장 후보·사람/다른 모델 검증은 아니다. 실제 두 세션의 gpt-6-astra/xhigh·fork none·UUID·누적 usage는 부모 검증 receipt에 별도 보존한다.
 - **새 입력/평가 계약:** unequal Entity string path 합집합 diff v2와 공통 technical_view(고정1:1문구alias·같은field/유일반대quote/전체opcode의 typed 빈좌표만)로 baseline3/diff3 총6신규를 고정했다. 같은 원문·후보·system·settings·골드에 같은 parser 적용, legacy 실패도 별도 보존. 기존동일path B1 diff4동일·원문40주소/실제diff3·저장응답8·잘못된계약4거절만 offline 확인; 새로운 의미 성공이 아니다.
 - **실패/실행 경계:** 준비의 전역 text 유일성 assertion 실패는 보존하고 고유block marker 뒤 exacttext 좌표로 복구했다. 원문/후보/gold 의미변경0·모델적재/호출0. 제품자원 반환 후 token/runtime preflight 필요; 전체필수원문을 줄이지 않는다. 원래 B1 gate=false/이유오류·제품미채택 유지, 새 A완료0·누적6·#655 OPEN. [준비 계획](../../docs/70_research/company_knowledge/business_candidate_diff_confirmation_plan_20261011.md).
+
+- **N07 실제 완료 갱신:** 준비모델0/OPEN은 당시 기록이다. 배정 뒤 동일6확인과 종료검증을 완료했고 양쪽8/8·기술2/3·이유범위한계로 gatefalse/제품미채택·A누적6을 확정했다. 새모델추가0, 결과/보존은 [확인 보고](../../docs/70_research/company_knowledge/business_candidate_diff_confirmation_20261011.md).
 
 ### 검토했지만 실행하지 않았거나 범위 밖인 방향
 
