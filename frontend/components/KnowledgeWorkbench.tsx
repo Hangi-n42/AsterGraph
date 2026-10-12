@@ -13,12 +13,43 @@ import KnowledgeBusiness from "./KnowledgeBusiness";
 import KnowledgeOntology from "./KnowledgeOntology";
 import KnowledgeSnapshots from "./KnowledgeSnapshots";
 import KnowledgeSearch from "./KnowledgeSearch";
-import { knowledgeRequest as request, knowledgeLabels as labels, knowledgeDate, qualifier, relationLabel, itemLabel, type KnowledgeCatalog, type KnowledgeView, type KnowledgeDetail } from "@/lib/knowledgeWorkbench";
+import { knowledgeRequest as request, knowledgeLabels as labels, knowledgeDate, qualifier, relationLabel, itemLabel, type KnowledgeCatalog, type KnowledgeView, type KnowledgeDetail, type KnowledgeClaim } from "@/lib/knowledgeWorkbench";
 import styles from "./KnowledgeWorkbench.module.css";
 
 type Area = "overview" | "sources" | "explore" | "review" | "search";
 const areas: [Area, string][] = [["overview", "현황"], ["sources", "자료"], ["explore", "지식 탐색"], ["review", "검토 / 변경"], ["search", "검색 / 답변"]];
 type SourceItem = { source: { id: string; title: string }; versions: { id: string; format: string; processing_status?: string }[] };
+
+function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; single: boolean; editable: boolean }) {
+  const [expanded, setExpanded] = useState(single);
+  const content = <div className={styles.claimContent}>
+      {claim.extraction_error && <p role="note" className={styles.warning}>추출 오류 기록: {claim.extraction_error}</p>}
+      <h3>조건 · 예외 · 기간</h3>
+      {claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => {
+        const fields = [['conditions', '조건'], ['exceptions', '예외'], ['time', '기간 / 시점'], ['references', '참조']] as const;
+        const absent = fields.filter(([key]) => typeof meaning[key] === 'object' && meaning[key] !== null && (meaning[key] as { state?: string }).state === 'absent');
+        const present = fields.filter(field => !absent.includes(field));
+        return <div key={i} className={styles.meaning}>
+          {!!present.length && <><p className={styles.muted}>자동 해석 {i + 1} · 저장된 조건</p><dl>{present.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></>}
+          {!!absent.length && <details className={styles.absentQualifiers}><summary>{absent.map(([, title]) => title).join('·')} 없음으로 자동 기록</summary><dl>{absent.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></details>}
+        </div>;
+      }) : <dl><div><dt>조건</dt><dd>{claim.conditions?.length ? claim.conditions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>예외</dt><dd>{claim.exceptions?.length ? claim.exceptions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>기간</dt><dd>{claim.period || "기록 없음"}</dd></div></dl>}
+      <h3>원문과 위치</h3>
+      {!claim.evidence.length && <p className={styles.warning}>저장된 원문 근거가 없습니다.</p>}
+      {claim.evidence.map((e, i) => <div key={`${e.block_id}:${i}`} className={styles.evidence}>
+        <p className={styles.sourceTitle}>{e.source_title || "출처 이름 미기록"}</p>
+        <p className={styles.muted}>{e.context_only || e.precision === "chunk" ? "문맥 근거 · 직접 근거와 구분" : "저장 발췌 · 위치 기록 확인"}</p>
+        <blockquote>{e.quote || "발췌 미기록"}</blockquote>
+        <details><summary>원문 구간과 위치 보기</summary><p className={styles.prewrap}>{e.block_text || "원문 구간 미기록"}</p><dl>{Object.entries(e.locator || {}).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{String(v)}</dd></div>)}</dl></details>
+      </div>)}
+      <p className={styles.muted}>{claim.editable && editable ? "문장 부분 수정 지원 대상 · 저장 후 재검수와 승인은 별도입니다." : "이 유형은 읽기와 이력 확인을 지원합니다."}</p>
+    </div>;
+  if (single) return <><span className={styles.badge}>{labels[claim.review_status || 'unrecorded'] || claim.review_status}</span>{content}<details className={styles.claimDisclosure}><summary>저장 문장 전체</summary><p>{claim.statement}</p></details></>;
+  return <details className={styles.claimDisclosure} open={expanded} onToggle={event => setExpanded(event.currentTarget.open)}>
+    <summary><span className={styles.badge}>{labels[claim.review_status || 'unrecorded'] || claim.review_status}</span><strong>{claim.statement}</strong><span className={styles.muted}>조건과 원문 {claim.evidence.length}건 {expanded ? '접기' : '보기'}</span></summary>
+    {expanded && content}
+  </details>;
+}
 
 export function KnowledgeSelection({ detail, onSelect, onReview }: { detail: KnowledgeDetail | null; onSelect: (id: string) => void; onReview?: () => void }) {
   if (!detail) return <div className={styles.empty}><h3>확인할 대상을 선택하세요</h3><p>원문, 조건과 연결된 관계를 이곳에서 확인합니다.</p></div>;
@@ -27,26 +58,13 @@ export function KnowledgeSelection({ detail, onSelect, onReview }: { detail: Kno
     <h2 tabIndex={-1}>{itemLabel(detail.item)}</h2>
     {detail.item.kind === "relation" && <p className={styles.relationDirection}>{detail.item.head_label}<span aria-label="연결 방향"> → </span>{detail.item.tail_label}</p>}
     {detail.item.kind === "concept" && <p className={styles.warning}>자동 개념 후보: {detail.item.concepts?.join(" · ") || "저장 후보 없음"}. 승인된 온톨로지가 아닙니다.</p>}
-    {onReview && <button className={styles.primary} onClick={onReview}>이 항목 검토하기</button>}
+    {!!detail.relations.length && <details className={styles.connectionDisclosure} open={detail.claims.length > 1}><summary>직접 연결된 관계 · {detail.relations.length}</summary><ul className={styles.connections}>{detail.relations.map(e => <li key={e.id}><button onClick={() => onSelect(e.id)}>{e.head_label}<span>{relationLabel(e.relation)} →</span>{e.tail_label}</button></li>)}</ul></details>}
+    {detail.claims.length > 1 && <h3>연결된 주장 · {detail.claims.length}</h3>}
+    {detail.claims.length > 1 && <p className={styles.muted}>확인할 주장 또는 연결 관계를 선택해 조건과 원문을 펼치세요.</p>}
     {detail.claims.length === 0 && <p>이 대상에 연결된 주장 기록이 없습니다.</p>}
-    {detail.claims.map(claim => <section key={claim.id} className={styles.claim}>
-      <div className={styles.sectionHeading}><h3>저장된 내용</h3><span className={styles.badge}>{labels[claim.review_status || "unrecorded"] || claim.review_status}</span></div>
-      <p>{claim.statement}</p>
-      {claim.extraction_error && <p role="note" className={styles.warning}>추출 오류 기록: {claim.extraction_error}</p>}
-      <h3>조건 · 예외 · 기간</h3>
-      {claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => <div key={i} className={styles.meaning}><p className={styles.muted}>자동 해석 {i + 1} · 의미 검토 전</p><dl>{([['conditions', '조건'], ['exceptions', '예외'], ['time', '기간 / 시점'], ['references', '참조']] as const).map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></div>) : <dl><div><dt>조건</dt><dd>{claim.conditions?.length ? claim.conditions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>예외</dt><dd>{claim.exceptions?.length ? claim.exceptions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>기간</dt><dd>{claim.period || "기록 없음"}</dd></div></dl>}
-      <h3>원문과 위치</h3>
-      {!claim.evidence.length && <p className={styles.warning}>저장된 원문 근거가 없습니다.</p>}
-      {claim.evidence.map((e, i) => <div key={`${e.block_id}:${i}`} className={styles.evidence}>
-        <p className={styles.sourceTitle}>{e.source_title || "출처 이름 미기록"}</p>
-        <p className={styles.muted}>{e.context_only || e.precision === "chunk" ? "함께 저장된 문맥 · 이 문장만의 직접 근거와 구분" : "저장된 발췌 · 위치 일치가 의미 승인은 아님"}</p>
-        <blockquote>{e.quote || "발췌 미기록"}</blockquote>
-        <details><summary>원문 구간과 위치 보기</summary><p className={styles.prewrap}>{e.block_text || "원문 구간 미기록"}</p><dl>{Object.entries(e.locator || {}).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{String(v)}</dd></div>)}</dl></details>
-      </div>)}
-      <p className={styles.muted}>{claim.editable && detail.changeset_id ? "문장 부분 수정 지원 대상 · 저장 후 재검수와 승인은 별도입니다." : "이 유형은 읽기와 이력 확인을 지원합니다."}</p>
-    </section>)}
-    {!!detail.relations.length && <section><h3>직접 연결된 관계 · {detail.relations.length}</h3><ul className={styles.connections}>{detail.relations.map(e => <li key={e.id}><button onClick={() => onSelect(e.id)}>{e.head_label}<span>{relationLabel(e.relation)} →</span>{e.tail_label}</button></li>)}</ul></section>}
+    {detail.claims.map(claim => <ClaimDetail key={claim.id} claim={claim} single={detail.claims.length === 1} editable={!!detail.changeset_id} />)}
     {!!detail.history.length && <section><h3>저장된 변경 전후</h3>{detail.history.map(h => <div key={h.id}><p>{h.actor} · {h.reason}</p>{h.changes.map((c, i) => <div key={i}><p>변경 전: {c.before || "기록 없음"}</p><p>변경 후: {c.after || "기록 없음"}</p></div>)}<p className={styles.muted}>재검수 기록: {h.status || "미기록"}</p></div>)}</section>}
+    {onReview && <div className={styles.selectionAction}><button className={styles.primary} onClick={onReview}>이 항목 검토하기</button><p className={styles.muted}>저장·재검수·승인은 별도 단계입니다.</p></div>}
     <details className={styles.diagnostics}><summary>진단 · 식별자와 변경 이력</summary><p>항목 {detail.item.id}</p><p>저장 표시값 {detail.item.label}</p><p>실행 {detail.run_id || "미기록"}</p><p>변경 묶음 {detail.changeset_id || "없음"}</p>{detail.history.length ? <pre>{JSON.stringify(detail.history, null, 2)}</pre> : <p>이 항목의 저장된 수정 이력이 없습니다.</p>}</details>
   </div>;
 }
@@ -69,6 +87,8 @@ export default function KnowledgeWorkbench() {
   const [reload, setReload] = useState(0);
   const [graphRoot, setGraphRoot] = useState("");
   const [graphMode, setGraphMode] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   const [relationType, setRelationType] = useState("");
   const [direction, setDirection] = useState("both");
   const [sourceId, setSourceId] = useState("");
@@ -98,20 +118,20 @@ export default function KnowledgeWorkbench() {
     }).catch(e => { if (!controller.signal.aborted) setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [scope, selectedId, itemKind, submitted, offset, reload, relationType, direction, sourceId, reviewState, depth, graphRoot]);
-  const select = useCallback((id: string) => { setSelectedId(id); setView(v => v ? { ...v, detail: null } : v); setLoading(true); setMobileDetail(true); }, []);
-  useEffect(() => { if (graphMode) explorePanel.current?.scrollIntoView({ block: "start" }); }, [graphMode]);
+  const select = useCallback((id: string, keyboard = true) => { setSelectedId(id); setView(v => v ? { ...v, detail: null } : v); setLoading(true); setInspectorOpen(true); setMobileDetail(keyboard); }, []);
   useEffect(() => { if (view?.detail && mobileDetail) detailPanel.current?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true }); }, [view?.detail, mobileDetail]);
-  function navigate(next: Area) { setArea(next); setTool("selection"); heading.current?.focus(); }
+  useEffect(() => { heading.current?.focus(); }, [area]);
+  function navigate(next: Area) { setArea(next); setTool("selection"); }
   function showList(kind = "all") { setGraphMode(false); setSubmitted(""); setQuery(""); setSelectedId(""); setRelationType(""); setReviewState(""); setSourceId(""); setItemKind(kind); setOffset(0); setLoading(true); navigate("explore"); setMobileDetail(false); }
   const counts = view?.counts;
 
-  return <div className={styles.shell}>
+  return <div className={styles.shell} data-focus={focusMode && area === "explore" && graphMode}>
     <AppSidebar activeMenu="knowledge" />
-    <main className={styles.main}><details className={styles.mobileMenu}><summary>전체 메뉴</summary><nav aria-label="전체 메뉴"><Link href="/">민원 선택</Link><Link href="/workbench">처리 워크벤치</Link><Link href="/admin">관리자 통계</Link><Link href="/intelligence">민원 인텔리전스</Link></nav></details>
+    <main className={styles.main} data-graph={area === "explore" && graphMode}><details className={styles.mobileMenu}><summary>전체 메뉴</summary><nav aria-label="전체 메뉴"><Link href="/">민원 선택</Link><Link href="/workbench">처리 워크벤치</Link><Link href="/admin">관리자 통계</Link><Link href="/intelligence">민원 인텔리전스</Link></nav></details>
       <header className={styles.header}><div><h1 ref={heading} tabIndex={-1}>회사 지식</h1></div><button className={styles.secondary} onClick={() => { setLoading(true); setReload(v => v + 1); }}>새로고침</button></header>
       <nav aria-label="회사 지식 작업" className={styles.navigation}>{areas.map(([id, name]) => <button key={id} aria-current={area === id ? "page" : undefined} onClick={() => navigate(id)}>{name}</button>)}</nav>
       <section className={styles.scopeBar} aria-label="현재 탐색 범위">
-        <label>자료와 저장 버전<select value={scopeKey} disabled={!catalog?.scopes.length} onChange={e => { setScopeKey(e.target.value); setAnswerTool("stored"); setGraphRoot(""); setRelationType(""); setDirection("both"); setSourceId(""); setReviewState(""); setDepth(1); setSelectedId(""); setView(null); setQuery(""); setSubmitted(""); setOffset(0); setTool("selection"); setMobileDetail(false); setLoading(true); }}><option value="" disabled>{catalog?.scopes.length ? "저장 결과 선택" : "탐색할 업무 저장 결과 없음"}</option>{catalog?.scopes.map(s => <option key={`${s.kind}:${s.id}`} value={`${s.kind}:${s.id}`}>{s.title} · {knowledgeDate(s.created_at)} · {labels[s.status] || s.status}</option>)}</select></label>
+        <label>자료와 저장 버전<select value={scopeKey} disabled={!catalog?.scopes.length} onChange={e => { setScopeKey(e.target.value); setInspectorOpen(false); setAnswerTool("stored"); setGraphRoot(""); setRelationType(""); setDirection("both"); setSourceId(""); setReviewState(""); setDepth(1); setSelectedId(""); setView(null); setQuery(""); setSubmitted(""); setOffset(0); setTool("selection"); setMobileDetail(false); setLoading(true); }}><option value="" disabled>{catalog?.scopes.length ? "저장 결과 선택" : "탐색할 업무 저장 결과 없음"}</option>{catalog?.scopes.map(s => <option key={`${s.kind}:${s.id}`} value={`${s.kind}:${s.id}`}>{s.title} · {knowledgeDate(s.created_at)} · {labels[s.status] || s.status}</option>)}</select></label>
         <div className={styles.scopeState}><span className={styles.badge}>{scope?.data_label || "등록 자료와 검토 도구를 확인하세요"}</span>{scope?.kind === "source_graph" && <span>승인 선택 이력 · 현재 활용 상태 미확인</span>}{scope && <span>{labels[scope.status] || scope.status} · {knowledgeDate(scope.created_at)}</span>}</div>
       </section>
       {error && <div className={styles.error} role="alert">{error} <button onClick={() => { setLoading(true); setReload(v => v + 1); }}>다시 읽기</button></div>}
@@ -129,8 +149,8 @@ export default function KnowledgeWorkbench() {
         </>}
       </section>}
       {area === "sources" && <div className={styles.legacy}><KnowledgeSources key={scopeKey} versionIds={view?.scope.version_ids} /></div>}
-      {area === "explore" && <section ref={explorePanel} className={styles.panel}>
-        <div className={styles.panelHeader}><h2>대상과 관계 찾기</h2><div className={styles.viewSwitch}><button aria-pressed={!graphMode} onClick={() => setGraphMode(false)}>목록</button><button aria-pressed={graphMode} onClick={() => { setGraphRoot(selectedId); setGraphMode(true); }}>그래프</button><span className={styles.muted}>검색 일치 {view?.filtered_count ?? '미확인'}개</span></div></div>
+      {area === "explore" && <section ref={explorePanel} className={`${styles.panel} ${graphMode ? styles.graphWorkspace : ""}`}>
+        <div className={styles.panelHeader}><h2>{graphMode ? "지식 지도" : "대상과 관계 찾기"}</h2><div className={styles.viewSwitch}><button aria-pressed={!graphMode} onClick={() => setGraphMode(false)}>목록</button><button aria-pressed={graphMode} onClick={() => { setGraphRoot(selectedId); setGraphMode(true); setInspectorOpen(!!selectedId); }}>그래프</button>{graphMode && <><button aria-pressed={focusMode} onClick={() => setFocusMode(v => !v)}>{focusMode ? "기본 화면" : "집중 보기"}</button><button aria-expanded={inspectorOpen} disabled={!selectedId} onClick={() => { setInspectorOpen(v => !v); setMobileDetail(true); }}>선택 상세</button></>}<span className={styles.muted}>검색 일치 {view?.filtered_count ?? '미확인'}개</span></div></div>
         <form className={styles.filters} onSubmit={e => { e.preventDefault(); setSubmitted(query); setGraphRoot(""); setSelectedId(""); setDepth(1); setOffset(0); setLoading(true); setMobileDetail(false); }}><label>이름 또는 관계<input value={query} onChange={e => setQuery(e.target.value)} placeholder="확인할 업무나 대상을 검색하세요" /></label><label>항목 종류<select value={itemKind} onChange={e => { setItemKind(e.target.value); setOffset(0); setLoading(true); }}><option value="all">전체</option><option value="node">대상과 업무 내용</option><option value="entity">대상</option><option value="event">업무 내용</option><option value="relation">관계</option><option value="claim">검토 대상 주장</option><option value="concept">자동 개념화 기록</option></select></label><button className={styles.primary} disabled={!scope}>찾기</button></form>
         <details className={styles.filterDetails}><summary>연결 필터 · 관계 / 방향 / 출처 / 검토 상태</summary><div className={styles.filters}>
           <label>관계 종류<select value={relationType} onChange={e => { setRelationType(e.target.value); setOffset(0); setLoading(true); }}><option value="">전체 관계</option>{view?.filters.relation_types.map(v => <option key={v} value={v}>{relationLabel(v)}</option>)}</select></label>
@@ -139,13 +159,13 @@ export default function KnowledgeWorkbench() {
           <label>검토 상태<select value={reviewState} onChange={e => { setReviewState(e.target.value); setOffset(0); setLoading(true); }}><option value="">전체 상태</option>{view?.filters.review_states.map(v => <option key={v} value={v}>{labels[v] || v}</option>)}</select></label>
         </div></details>
         <div className={styles.mobileSwitch}><button aria-pressed={!mobileDetail} onClick={() => setMobileDetail(false)}>목록</button><button aria-pressed={mobileDetail} onClick={() => setMobileDetail(true)} disabled={!selectedId}>선택 상세</button></div>
-        <div className={styles.split} data-detail={mobileDetail} data-graph={graphMode}><div className={styles.listPane}>
-          {graphMode && view ? <KnowledgeGraph key={scopeKey} graph={view.graph} selectedId={selectedId} onSelect={select} busy={loading} onFocus={() => { setGraphRoot(selectedId); setDepth(1); setLoading(true); }} onExpand={() => { setDepth(d => Math.min(3, d + 1)); setLoading(true); }} onReset={() => { setGraphRoot(""); setSelectedId(""); setDepth(1); setLoading(true); setMobileDetail(false); }} /> : <>
+        <div className={styles.split} data-detail={mobileDetail} data-graph={graphMode} data-inspector={inspectorOpen}><div className={styles.listPane}>
+          {graphMode && view ? <KnowledgeGraph key={scopeKey} graph={view.graph} selectedId={selectedId} rootId={graphRoot} dataLabel={view.scope.data_label} onSelect={select} busy={loading} onFocus={() => { setGraphRoot(selectedId); setDepth(1); setLoading(true); }} onExpand={() => { setDepth(d => Math.min(3, d + 1)); setLoading(true); }} onReset={() => { setGraphRoot(""); setSelectedId(""); setDepth(1); setLoading(true); setMobileDetail(false); }} /> : <>
           {view?.items.length === 0 && <div className={styles.empty}>현재 조건에 맞는 항목이 없습니다. 검색어와 종류를 확인하세요.</div>}
           <ul className={styles.itemList}>{view?.items.map(item => <li key={item.id}><button aria-pressed={selectedId === item.id} onClick={() => select(item.id)}><span className={styles.eyebrow}>{labels[item.kind] || item.kind}</span><strong>{itemLabel(item)}</strong>{item.disambiguation && <span>구분 근거: {item.disambiguation}</span>}{item.state && <span>{labels[item.state] || item.state}{item.issue ? " · 오류 기록 있음" : ""}</span>}{item.kind === 'relation' && <span>{item.head_label} → {item.tail_label}</span>}</button></li>)}</ul>
           {!!view?.filtered_count && <div className={styles.pagination}><button disabled={offset === 0 || loading} onClick={() => { setOffset(Math.max(0, offset - 40)); setLoading(true); }}>이전</button><span>{offset + 1}–{Math.min(offset + 40, view.filtered_count)} / {view.filtered_count}</span><button disabled={offset + 40 >= view.filtered_count || loading} onClick={() => { setOffset(offset + 40); setLoading(true); }}>다음</button></div>}
         </>}
-        </div><aside ref={detailPanel} className={styles.detailPane} aria-label="선택 항목 상세"><KnowledgeSelection detail={view?.detail || null} onSelect={select} onReview={() => navigate('review')} /></aside></div>
+        </div><aside ref={detailPanel} className={styles.detailPane} aria-label="선택 항목 상세">{graphMode && <div className={styles.inspectorHeader}><span>선택 항목</span><button aria-label="선택 상세 닫기" onClick={() => { setInspectorOpen(false); setMobileDetail(false); }}>×</button></div>}{loading && selectedId ? <p className={styles.empty}>선택한 항목을 읽고 있습니다…</p> : <KnowledgeSelection key={selectedId} detail={view?.detail || null} onSelect={select} onReview={() => navigate('review')} />}</aside></div>
       </section>}
       {area === "review" && <section className={styles.panel}>
         <div className={styles.panelHeader}><h2>검토와 변경</h2></div><div className={styles.tools} role="group" aria-label="검토 작업">{[['selection','선택 항목'],['changes','원문 변경·영향'],['business','업무 검토 도구'],['extraction','개체·사실 검토'],['ontology','온톨로지 검토'],['snapshots','사용 버전 관리']].map(([id,label]) => <button key={id} aria-pressed={tool===id} onClick={() => setTool(id)}>{label}</button>)}</div>
