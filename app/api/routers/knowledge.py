@@ -360,3 +360,39 @@ def discovery_search(q: str, scope: str | None = None, step: int | None = None, 
 def discovery_terms(run_id: str, label: str, term_type: str = 'any', service=Depends(get_knowledge_service)):
     from app.knowledge.discovery_analysis import terms
     return result(terms(service, run_id, label, term_type))
+
+
+@router.get('/workbench/scopes', response_model=KnowledgeResponse)
+def workbench_scopes(service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.catalog(service))
+
+
+@router.get('/workbench/review', response_model=KnowledgeResponse)
+def workbench_review(run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.review_status(service, run_id))
+
+
+@router.get('/workbench/answers', response_model=KnowledgeResponse)
+def workbench_answers(kind: str, scope_id: str, answer_id: str | None = None, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.answers(service, kind, scope_id, answer_id))
+
+
+@router.get('/workbench/changes', response_model=KnowledgeResponse)
+def workbench_changes(kind: str, scope_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.changes(service, kind, scope_id))
+
+
+@router.get('/workbench/explore', response_model=KnowledgeResponse)
+def workbench_explore(kind: str, scope_id: str, q: str = '', selected_id: str | None = None,
+                      item_kind: str = 'all', offset: int = 0, limit: int = 40,
+                      relation_type: str = '', direction: str = 'both', source_id: str = '',
+                      review_state: str = '', depth: int = 1, graph_root: str = '',
+                      service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.explore(service, kind, scope_id, q=q, selected_id=selected_id,
+                                   item_kind=item_kind, offset=offset, limit=limit, relation_type=relation_type,
+                                   direction=direction, source_id=source_id, review_state=review_state, depth=depth, graph_root=graph_root))

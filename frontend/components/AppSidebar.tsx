@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type ActiveMenu = "queue" | "workbench" | "admin" | "intelligence" | "knowledge";
@@ -12,6 +12,9 @@ interface AppSidebarProps {
 export default function AppSidebar({ activeMenu }: AppSidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  const handle = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (collapsed) handle.current?.focus(); }, [collapsed]);
 
   function menuClass(menu: ActiveMenu) {
     const isActive = activeMenu === menu;
@@ -31,7 +34,7 @@ export default function AppSidebar({ activeMenu }: AppSidebarProps) {
   return (
     <div className={`relative flex-shrink-0 transition-all duration-200 ${collapsed ? "w-0" : "w-52"}`}>
       {/* Sidebar panel - absolute so main can expand when collapsed */}
-      <aside
+      <aside inert={collapsed}
         className={`absolute left-0 top-0 h-full border-r border-slate-300 bg-[#d9dee7] flex flex-col transform transition-transform duration-200 ${
           collapsed ? "-translate-x-full" : "translate-x-0 w-52"
         }`}
@@ -69,6 +72,7 @@ export default function AppSidebar({ activeMenu }: AppSidebarProps) {
         <button
           type="button"
           aria-label="사이드바 열기"
+          ref={handle}
           onClick={() => setCollapsed(false)}
           className="absolute left-0 top-6 -ml-3 z-40 flex h-8 w-6 items-center justify-center rounded-r-md bg-slate-900 text-white shadow"
         >
