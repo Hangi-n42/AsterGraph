@@ -9,7 +9,7 @@ type Claim = { role?: string; raw?: { Event: string; Entity: string[] }; conditi
 type Assessment = { id: string; requirement_id: string; phase: string; status: string; errors: string[]; source_scope?: { provided_block_ids: string[]; model_examined_block_ids: string[]; provided_not_declared_ids: string[] }; source?: { gaps: string[]; meanings: { key: string; statement: string; conditions?: string[]; exceptions?: string[]; period?: string; references?: string[]; source_status: string; availability: string; evidence: { quote: string }[] }[] }; representation?: { reason: string; source_challenges?: string[]; source_checks?: { meaning_key: string; required_for_requirement: boolean; field_checks: Record<string, string>; reason: string }[] }; preservation_complete?: boolean };
 type Run = { source_corrections?: { id: string; mode: string; actor: string; reason: string; before: { statement: string }; after?: { statement: string }; model_disagreements?: { challenge: { reason: string } }[] }[]; recipe: { options: Record<string, unknown> }; id: string; status: string; changeset_id?: string; metrics?: { llm_calls: number; reused_responses?: number }; units: { id: string; stage: string; status: string; error?: string }[]; assessments: Assessment[]; repairs: { id: string; status: string; origin?: string; actor?: string; reason?: string; changes: { before?: Claim; after: Claim }[]; after?: Claim[] }[] };
 type SourceMeaning = { requirement_id: string; version: string; meaning: { key: string; statement: string; conditions: string[]; exceptions: string[]; period: string; references: string[]; premise_keys?: string[] | null; evidence: { block_id: string; quote: string }[] } };
-type Change = { id: string; revision: number; candidate_versions?: Record<string, string>; source_meanings?: SourceMeaning[]; explicit_review_options?: { correction_id: string; claim_ids: string[] }[]; candidates: Claim[]; eligible_ids: string[] };
+export type Change = { id: string; revision: number; candidate_versions?: Record<string, string>; source_meanings?: SourceMeaning[]; explicit_review_options?: { correction_id: string; claim_ids: string[] }[]; candidates: Claim[]; eligible_ids: string[] };
 type Snapshot = { id: string; reason: string; counts: { claims: number } };
 const field = "w-full rounded border border-slate-300 px-3 py-2 text-sm";
 const button = "rounded bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40";
@@ -45,8 +45,8 @@ export function eventEditRequest(change: Change, claim: Claim, form: FormData) {
     evidence: form.getAll("evidence").map(index => ({ block_id: claim.evidence[Number(index)].block_id, quote: claim.evidence[Number(index)].quote })) };
 }
 
-export function EventEditor({ change, busy, onSubmit }: {
-  change: Change; busy: boolean; onSubmit: (value: ReturnType<typeof eventEditRequest>) => Promise<void>;
+export function EventEditor({ change, busy, onSubmit, initiallyOpen = false }: {
+  change: Change; busy: boolean; initiallyOpen?: boolean; onSubmit: (value: ReturnType<typeof eventEditRequest>) => Promise<void>;
 }) {
   const candidates = change.candidates.filter(c => c.role === "event_entity" && c.raw && !c.superseded_by?.length && !c.extraction_error);
   const [id, setId] = useState(candidates[0]?.id || "");
@@ -56,7 +56,7 @@ export function EventEditor({ change, busy, onSubmit }: {
   const [sourceMode, setSourceMode] = useState("replace");
   const sourceMeaning = change.source_meanings?.find(s => `${s.requirement_id}:${s.meaning.key}` === sourceId);
   const claim = candidates.find(c => c.id === id);
-  return <details className="rounded border bg-white p-4"><summary>원문 근거로 문장 직접 수정</summary>
+  return <details open={initiallyOpen || undefined} className="rounded border bg-white p-4"><summary>원문 근거로 문장 직접 수정</summary>
     <p className="text-sm">업무 내용 문장과 그 안의 조건만 수정합니다. 연결된 대상 목록·관계형 주장·대체된 후보는 편집하지 않습니다. 수정은 승인이 아니며 정상 의미 보존과 업무 요구를 다시 확인합니다.</p>
     {!claim ? <p>이 실행에는 편집 가능한 업무 내용 문장이 없습니다.</p> : <>
       <label className="block">수정할 문장<select className={field} value={id} onChange={e => setId(e.target.value)} disabled={busy}>{candidates.map(c => <option key={c.id} value={c.id}>{c.statement}</option>)}</select></label>
@@ -143,7 +143,7 @@ export function CapacityRetrySettings({ run, values, onChange }: {
 }
 
 
-export default function KnowledgeBusiness({ request, sources, visible }: { request: Request; sources: Source[]; visible: boolean }) {
+export default function KnowledgeBusiness({ request, sources, visible, initialRunId }: { request: Request; sources: Source[]; visible: boolean; initialRunId?: string }) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [editing, setEditing] = useState<Requirement | null>(null);
   const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
@@ -175,6 +175,7 @@ export default function KnowledgeBusiness({ request, sources, visible }: { reque
     else setChange(null);
     await refresh();
   }, [request, refresh]);
+  useEffect(() => { if (visible && initialRunId) loadRun(initialRunId).catch(e => setError(e.message)); }, [visible, initialRunId, loadRun]);
   const running = !!run && ["queued", "running", "cancel_requested"].includes(run.status);
   useEffect(() => {
     if (!visible || !running || !run) return;
