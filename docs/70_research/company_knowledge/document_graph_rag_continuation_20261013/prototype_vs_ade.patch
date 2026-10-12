@@ -1,0 +1,276 @@
+--- a/app/knowledge/business_models.py
++++ b/app/knowledge/business_models.py
+@@ -560,6 +560,8 @@
+     source_context_tokens: int | None = Field(default=None, ge=1)
+     graph_variant: Literal['entity', 'entity_event', 'full'] = 'full'
+     answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items'] = 'synthesis'
++    source_selection: Literal['ranked', 'listwise'] = 'ranked'
++    source_context_format: Literal['separate', 'native_bundle'] = 'separate'
+     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
+
+     @model_validator(mode='after')
+@@ -570,6 +572,8 @@
+             raise ValueError('원문 QA는 요구 충족 판정이 아닙니다. 요구별 승인 지식 활용에는 snapshot을 선택하세요.')
+         if (self.retrieval == 'hybrid' or self.source_context_tokens is not None) and not self.source_run_id:
+             raise ValueError('Hybrid와 원문 문맥 상한은 source_run_id 원문 QA에서 지원합니다.')
++        if not self.source_run_id and (self.source_selection != 'ranked' or self.source_context_format != 'separate'):
++            raise ValueError('원문 선택·문맥 비교는 source_run_id에서만 지원합니다.')
+         if self.answer_mode in {'items', 'reviewed_items'} and not self.answer_items:
+             raise ValueError('항목별 답변에는 공개 요청에서 고정한 answer_items가 필요합니다.')
+         if self.answer_items and (self.answer_mode not in {'items', 'reviewed_items'}
+--- a/app/knowledge/business_use.py
++++ b/app/knowledge/business_use.py
+@@ -963,8 +963,17 @@
+             return dict(run_id=run['id'], status='retrieval_failed', answer=None,
+                         snapshot_id=snapshot['id'], error=run['error'], execution_boundary=run['execution_boundary'])
+     if source_reader:
+-        hits, run['passage_selection'] = graph_retrieval.select_passages(
+-            candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit)
++        try:
++            if request.source_selection == 'listwise':
++                hits = graph_retrieval.listwise_passages(service, run, candidates, hits, snapshot['blocks'],
++                                                        run['recipe']['options'], request.limit)
++            hits, run['passage_selection'] = graph_retrieval.select_passages(
++                candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit)
++        except ValueError as exc:
++            run.update(status='failed', finished_at=utcnow(), error=str(exc))
++            run['metrics']['elapsed_s'] = monotonic() - started
++            business_run.save(service, run)
++            return dict(run_id=run['id'], status='unverified', answer=None, error=run['error'], retrieval=hits)
+     if required_ids:
+         by_id = {h['block_id']: h for h in hits}
+         mandatory = [dict(by_id.get(c['id']) or dict(block_id=c['id'], file_id=c['file_id'], score=None),
+@@ -1002,13 +1011,24 @@
+                 run['answer_work_records'].extend(row for row in business_review.public_work_records(
+                     original, requirement, snapshot['assessments'][rid]['source']) if row['task_id'] in task_ids)
+     required_source_context = []
++    reader_body = {}
+     if source_reader:
+         context = [{k: v for k, v in c.items() if k != 'linked_claim_ids'} for c in context]
+         required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'])
+         run['source_context_contract'] = 'existing-table-rowspan-heading-list-bundles-v1'
+         run['source_context'] = deepcopy(required_source_context)
++        reader_body = dict(context=context, source_context=required_source_context)
++        if request.source_context_format == 'native_bundle':
++            try:
++                reader_body = dict(source_bundle=graph_retrieval.native_source_bundle(context, required_source_context))
++            except ValueError as exc:
++                run.update(status='failed', finished_at=utcnow(), error=str(exc), retrieval=hits)
++                run['metrics']['elapsed_s'] = monotonic() - started
++                business_run.save(service, run)
++                return dict(run_id=run['id'], status='unverified', answer=None, error=run['error'], qa_model_called=False)
++            run['source_document_bundle'] = deepcopy(reader_body['source_bundle'])
+         if request.source_context_tokens is not None:
+-            size = (len(encode(dict(context=context, source_context=required_source_context)).encode()) + 1) // 2
++            size = (len(encode(reader_body).encode()) + 1) // 2
+             run['source_context_budget'] = dict(limit=request.source_context_tokens, estimate_tokens=size,
+                 method='utf8_bytes/2', exact=False, within_limit=size <= request.source_context_tokens)
+             if size > request.source_context_tokens:
+@@ -1111,18 +1131,20 @@
+             'reviewed_meanings는 기존 검수의 주장·조건·예외·기간과 원문을 연결한 범위이지 정답표가 아니다. '
+             '질문에 해당하는 의미와 실제 인용을 함께 사용하고, 후보의 다른 절이나 검수 문장의 확대 해석을 그대로 확정하지 않는다. '
+             '원문에서 직접 확인되는 사실과 추가 해석이 필요한 결론을 구분해 답한다.' if not source_reader else '') + (
+-            '\n이번 context는 검색된 원문 구간이다. 원문 자체를 대조하여 답한다. '
+-            'source_context는 선택한 구간의 표 행·병합 셀·상위 조건·예외에 필요한 원문이다. '
++            '\n이번 context는 검색된 원문 구간이다. 원문 자체를 대조하여 답한다. ' +
++            ('source_bundle.blocks는 선택 원문과 필수 문맥의 원래 기록을 문서 위치순서로 함께 배치한 것이다. '
++             'source_bundle.context_rows와 source_context_rows는 각각 원래 context와 source_context 배열을 재구성하는 block 인덱스다. '
++             'citations는 context_rows의 원문 id만 쓴다. ' if request.source_context_format == 'native_bundle' else
++             'source_context는 선택한 구간의 표 행·병합 셀·상위 조건·예외에 필요한 원문이다. ') +
+             'supports_context_ids와 표의 row/column/merged_span을 사용하여 귀속을 확인한다. '
+             'context_id만 있는 문맥은 같은 context의 원문을 참조한다. 문맥 근거도 연결된 context id로 인용한다. '
+             '검색에 사용한 그래프 연결은 미승인 추출일 수 있으며 그 존재가 의미 검증은 아니다. '
+             '원문에 없는 조건이나 연결을 추론해서 채우지 않는다. 이 답변은 온톨로지 승인이나 업무 요구 전체 충족 판정이 아니다.'
+             if source_reader else ''),
+-            dict(question=request.question, choices=request.choices, context=context,
++            dict(question=request.question, choices=request.choices, **(reader_body if source_reader else dict(context=context)),
+                  source_versions=snapshot['source_versions'], source_evidence=source_evidence,
+                  **({'public_requirements': answer_requirements} if answer_requirements else {}),
+-                 requirement_limitations=limitations, **({'source_context': required_source_context} if source_reader
+-                                                         else {'reviewed_meanings': reviewed_meanings})), context_answer,
++                 requirement_limitations=limitations, **({} if source_reader else {'reviewed_meanings': reviewed_meanings})), context_answer,
+             reference_map=reference_map)
+     if source_reader:
+         run['answer_contract'] = 'source-unique-provided-citations-lossless-dedup-v3'
+--- a/app/knowledge/graph_retrieval.py
++++ b/app/knowledge/graph_retrieval.py
+@@ -216,6 +216,78 @@
+         for cid in row['supports_context_ids']:
+             texts[cid].append(text)
+     return {cid: '\n'.join(parts) for cid, parts in texts.items()}
++
++
++def listwise_passages(service, run, candidates, ranked, blocks, options, limit):
++    """Select reader evidence from a bounded retrieved pool; never decide eligibility."""
++    pool = ranked[:5 * limit]
++    if not pool:
++        run['source_selection'] = dict(pool_ids=[], selections=[], status='no_retrieved_candidates')
++        return []
++    by_id = {c['id']: c for c in candidates}
++    context = [{k: v for k, v in by_id[h['block_id']].items() if k != 'linked_claim_ids'} for h in pool]
++    required = source_context(blocks, context, options)
++    aliases = {row['id']: f'k{i+1}' for i, row in enumerate(context)}
++    row_type = create_model('SourceSelection', candidate_id=(Literal[tuple(aliases)], Field(...)),
++        request_quotes=(list[str], Field(min_length=1)), relevance=(str, Field(min_length=1)))
++    schema = create_model('SourceSelections', selections=(list[row_type], Field(max_length=limit)))
++    references = dict(aliases)
++    addresses = required + [dict(id=c['source_reference']['block_id'], **{
++        k: c['source_reference'].get(k) for k in ('source_version_id', 'parse_run_id')}) for c in context]
++    for field, prefix in [('id', 'b'), ('source_version_id', 'v'), ('parse_run_id', 'p')]:
++        values = list(dict.fromkeys(row[field] for row in addresses if row.get(field)))
++        references.update({value: f'{prefix}{i+1}' for i, value in enumerate(values) if value not in references})
++    run['source_selection'] = dict(contract='whole-query-bounded-source-selection-v1',
++        pool_ids=list(aliases), pool_multiplier=5, selection_limit=limit, ranking_is_semantic_validation=False)
++    output = business_run.json_call(service, run, 'source_passage_selection',
++        '전체 원 질문의 공통 상황·앞절·지시대상과 각 요청에 답하는 데 필요한 제공 원문 구간 ID를 선택한다. '
++        '후보와 source_context의 표·상위 문맥·조건·예외를 함께 읽고 요청 포괄에 필요한 구간을 선택한다. '
++        '선택은 관련 근거의 전달이며 기업의 지원 가능성이나 법적 정답을 판정하지 않는다. '
++        'selections에는 candidate_id, 질문의 정확한 연속 구절 request_quotes, 짧은 관련성 relevance를 쓴다. '
++        '각 ID는 한 번만 선택하며 최대 selection_limit개다. 원문에 없는 답변·조건·정정문을 만들지 않는다. '
++        '같은 출처라도 조건·대상·시점이 다른 구간을 의미가 같다고 합치지 않는다.',
++        dict(question=run['query']['question'], choices=run['query']['choices'],
++             selection_limit=limit, candidates=context, source_context=required), schema,
++        reference_map=references)
++    if output is None:
++        reason = run['units'][-1].get('error') if run.get('units') else None
++        raise ValueError('source_selection_input_capacity' if reason == 'input_capacity' else 'source_selection_failed')
++    selected = output.get('selections', [])
++    ids = [row['candidate_id'] for row in selected]
++    if (len(ids) > limit or len(ids) != len(set(ids)) or not set(ids) <= set(aliases)
++            or any(not row['request_quotes'] or any(not text.strip() or text not in run['query']['question']
++                       for text in row['request_quotes']) for row in selected)):
++        raise ValueError('invalid_source_selection')
++    run['source_selection']['selections'] = selected
++    run['source_selection']['status'] = 'selected' if ids else 'valid_empty_selection'
++    run['source_selection']['reasons_are_answer_evidence'] = False
++    hits = {row['block_id']: row for row in pool}
++    return [hits[cid] for cid in ids]
++
++
++def native_source_bundle(context, required):
++    """Order unchanged records by parser location and keep exact reversible array maps."""
++    by_id = {row['id']: row for row in context}
++    entries = []
++    for origin, rows in enumerate((context, required)):
++        for position, row in enumerate(rows):
++            located = by_id.get(row.get('context_id'), row)
++            ref = located.get('source_reference', located)
++            locator = located.get('locator', {})
++            span = located.get('span', [ref.get('start_char', 0), ref.get('end_char', len(located.get('text', '')))])
++            if 'block_order' not in locator:
++                raise ValueError('native_source_position_missing')
++            key = (ref['source_version_id'], ref.get('parse_run_id') or '', locator['block_order'],
++                   *span, locator.get('element_path', ''), origin, position)
++            entries.append((key, origin, position, row))
++    entries.sort(key=lambda item: item[0])
++    bundle = dict(blocks=[entry[3] for entry in entries], context_rows=[], source_context_rows=[])
++    for origin, rows, field in [(0, context, 'context_rows'), (1, required, 'source_context_rows')]:
++        locations = {entry[2]: index for index, entry in enumerate(entries) if entry[1] == origin}
++        bundle[field] = [locations[i] for i in range(len(rows))]
++        if [bundle['blocks'][i] for i in bundle[field]] != rows:
++            raise ValueError('native_source_roundtrip_failed')
++    return bundle
+
+
+ def select_passages(candidates, ranked, blocks, options, limit):
+--- a/app/tests/unit/test_knowledge_document_graph_comparison.py
++++ b/app/tests/unit/test_knowledge_document_graph_comparison.py
+@@ -112,3 +112,42 @@
+     chunks = autoschema.chunks([parent, cell], 8192, 512, 1)
+     target = next(c for c in chunks if any(b['id']=='cell' and not b.get('context_only') for b in c['blocks']))
+     assert any(b['id']=='parent' and b.get('context_only') for b in target['blocks'])
++
++
++@pytest.mark.parametrize('scenario', ['empty_selection', 'missing_native_position'])
++def test_source_reader_explicit_failures_stop_before_QA(tmp_path, monkeypatch, scenario):
++    s = snapshot()
++    original = dict(id='origin', kind='business', status='succeeded', units=[], model_identity={},
++        recipe=dict(options=dict(context_tokens=49152, review_tokens=4096)),
++        sources=s['source_versions'], blocks=s['blocks'], claims=s['claims'], concepts=s['concepts'])
++    before = deepcopy(original)
++    service = KnowledgeService(tmp_path/'knowledge.db')
++    with service.repository.connect() as db:
++        db.execute('INSERT INTO runs VALUES(?,?)', ('origin', json.dumps(original)))
++    def rank(service, run, graph, request):
++        passages = gr.build(graph,'full')[2]
++        return [dict(block_id=pid, score=1.) for pid in passages]
++    monkeypatch.setattr(gr, 'retrieve', rank)
++    stages=[]
++    def call(service, run, stage, *args, **kwargs):
++        stages.append(stage)
++        assert stage=='source_passage_selection'
++        return dict(selections=[])
++    monkeypatch.setattr(business_run,'json_call',call)
++    try:
++        request=BusinessQuery(source_run_id='origin',question='원 질문',retrieval='hybrid',limit=2,
++            source_selection='listwise' if scenario=='empty_selection' else 'ranked',
++            source_context_format='native_bundle' if scenario=='missing_native_position' else 'separate')
++        result=business_use.query(service,request,context_mode='document')
++        assert result['status']=='unverified' and result['answer'] is None
++        assert 'business_qa' not in stages
++        run=service.run(result['run_id'])
++        if scenario=='empty_selection':
++            assert run['source_selection']['status']=='valid_empty_selection'
++            assert run['provided_ids']==[] and run['answer_status']=='unverified'
++        else:
++            assert run['status']=='failed' and result['error']=='native_source_position_missing'
++        with service.repository.connect() as db:
++            assert service.repository.get(db,'runs','origin')==before
++    finally:
++        service.shutdown()
+--- a/app/tests/unit/test_knowledge_graph_retrieval.py
++++ b/app/tests/unit/test_knowledge_graph_retrieval.py
+@@ -372,3 +372,53 @@
+     assert gr.reader_locator(before[1])['column'] == 0
+     assert 'element_path' not in gr.autoschema.source_packet([before[0]])[0].get('locator', {})
+     assert set(note['locator']) == {'element_path', 'block_order'}
++
++
++def test_listwise_selection_preserves_whole_query_full_candidates_and_bounded_pool(monkeypatch):
++    candidates = [dict(id=f'c{i}', text='원문' + str(i) + 'x'*700, source_reference=dict(
++        source_version_id='v', parse_run_id='p', block_id=f'b{i}', start_char=0, end_char=704)) for i in range(15)]
++    ranked = [dict(block_id=c['id'], score=15-i) for i,c in enumerate(candidates)]
++    run = dict(query=dict(question='앞 상황. 1. 첫 요청 2. 위 상황의 다른 요청', choices=[]), units=[])
++    monkeypatch.setattr(gr, 'source_context', lambda blocks, context, options: [dict(
++        id='note', text='원래 예외', supports_context_ids=[context[0]['id']])])
++    def select(service, run, stage, instruction, context, schema, **kwargs):
++        assert stage == 'source_passage_selection'
++        assert context['question'] == run['query']['question']
++        assert len(context['candidates']) == 10
++        assert context['candidates'][0]['text'] == candidates[0]['text']
++        assert context['source_context'][0]['text'] == '원래 예외'
++        return dict(selections=[dict(candidate_id='c7', request_quotes=['위 상황의 다른 요청'], relevance='해당 요청의 원문')])
++    monkeypatch.setattr(gr.business_run, 'json_call', select)
++    assert gr.listwise_passages(None, run, candidates, ranked, [], {}, 2) == [ranked[7]]
++    assert run['source_selection']['pool_ids'] == [c['id'] for c in candidates[:10]]
++    assert run['source_selection']['reasons_are_answer_evidence'] is False
++
++
++@pytest.mark.parametrize('fault', ['unknown', 'duplicate', 'quote', 'failed'])
++def test_listwise_selection_failures_are_not_original_rank_fallback(monkeypatch, fault):
++    candidate = dict(id='c', text='원문', source_reference=dict(source_version_id='v', block_id='b'))
++    monkeypatch.setattr(gr, 'source_context', lambda *_: [])
++    selected = dict(candidate_id='missing' if fault=='unknown' else 'c',
++                    request_quotes=['다른 질문' if fault=='quote' else '원 질문'], relevance='관련')
++    monkeypatch.setattr(gr.business_run, 'json_call', lambda *_a, **_k:
++        None if fault=='failed' else dict(selections=[selected, selected] if fault=='duplicate' else [selected]))
++    with pytest.raises(ValueError):
++        gr.listwise_passages(None, dict(query=dict(question='원 질문', choices=[]), units=[]),
++            [candidate], [dict(block_id='c',score=1)], [], {}, 2)
++
++
++def test_native_bundle_lossless_order_keeps_version_spans_and_reference_only_links():
++    def target(cid, version, order, span):
++        return dict(id=cid, text='같은 문자열', source_reference=dict(source_version_id=version, parse_run_id='p',
++            block_id='same', start_char=span[0], end_char=span[1]), locator=dict(block_order=order,element_path='#source > li'))
++    context = [target('q1','v1',20,[2,6]), target('q2','v2',10,[0,4])]
++    required = [dict(id='b',text='다른 조건 제외',source_version_id='v1',parse_run_id='p',span=[0,8],
++                    locator=dict(block_order=19,element_path='#source > li'),supports_context_ids=['q1']),
++                dict(context_id='q1',supports_context_ids=['q2'])]
++    before = deepcopy((context,required))
++    bundle = gr.native_source_bundle(context, required)
++    assert [bundle['blocks'][i] for i in bundle['context_rows']] == context
++    assert [bundle['blocks'][i] for i in bundle['source_context_rows']] == required
++    assert bundle['blocks'][0]['id'] == 'b'
++    assert len(bundle['blocks']) == 4 and (context,required) == before
++    assert bundle['blocks'][bundle['context_rows'][1]]['source_reference']['source_version_id']=='v2'
