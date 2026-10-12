@@ -155,6 +155,13 @@ def passage_candidates(passages):
                  linked_claim_ids=p['claim_ids']) for p in passages.values()]
 
 
+def reader_locator(block):
+    """Keep parser positions at the reader boundary, without deciding applicability."""
+    return {**autoschema.source_packet([block])[0].get('locator', {}),
+            **{k: v for k, v in block.get('locator', {}).items()
+               if k in {'block_order', 'element_path'}}}
+
+
 def source_context(blocks, context, options):
     """Reuse extraction's mandatory table/list/heading bundles at the reader boundary."""
     selected = {}
@@ -164,7 +171,7 @@ def source_context(blocks, context, options):
         key = (ref['source_version_id'], ref['block_id'])
         selected.setdefault(key, []).append(item['id'])
         if key in originals:
-            item['locator'] = autoschema.source_packet([originals[key]])[0].get('locator', {})
+            item['locator'] = reader_locator(originals[key])
     views = {}
     # One indivisible target unit per bundle; this reuses the existing required
     # context selection without packing unrelated targets up to the model limit.
@@ -194,6 +201,7 @@ def source_context(blocks, context, options):
                 row = views.setdefault(key, dict(context_id=existing, supports_context_ids=[]))
             else:
                 row = views.setdefault(key, dict(autoschema.source_packet([b])[0], span=span,
+                    locator=reader_locator(b),
                     parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
             row['supports_context_ids'] = list(dict.fromkeys(row['supports_context_ids'] + targets))
     return list(views.values())

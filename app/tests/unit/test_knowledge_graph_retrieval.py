@@ -344,3 +344,31 @@ def test_reader_preserves_mandatory_context_across_linked_continuations():
     parts = sorted([r for r in rows if r.get('id') == 'header'], key=lambda r:r['span'])
     assert ''.join(r['text'] for r in parts) == header
     assert all(r['supports_context_ids'] == ['passage'] for r in parts)
+
+
+def test_reader_keeps_native_list_and_table_positions_without_rewriting_source():
+    parent = '#root > section:nth-of-type(1) > ul > li:nth-of-type(2)'
+    blocks = [dict(id=cid, text=text, source_version_id='v', parse_run_id='p',
+                   locator=dict(element_path=path, block_order=order, **extra))
+        for cid, text, path, order, extra in [
+            ('title', '지원 용도 목록', parent + '::text(0)', 10, {}),
+            ('table', '첫 용도\n둘째 용도', parent + ' > table', 11, dict(row=0, column=0)),
+            ('note', '일부 대상 제외', parent + ' > ul > li', 12, {}),
+            ('other', '다른 항목 제외', '#root > section:nth-of-type(2) > ul > li', 20, {})]]
+    candidate = dict(id='passage', text=blocks[0]['text'], source_reference=dict(
+        source_version_id='v', parse_run_id='p', block_id='title',
+        start_char=0, end_char=len(blocks[0]['text'])))
+    before = deepcopy(blocks)
+    context = [candidate]
+    rows = gr.source_context(blocks, context, dict(context_tokens=4096, review_tokens=256))
+    assert blocks == before and candidate['text'] == before[0]['text']
+    assert context[0]['locator'] == dict(element_path=parent + '::text(0)', block_order=10)
+    note = next(row for row in rows if row.get('id') == 'note')
+    assert note['text'] == before[2]['text']
+    assert note['supports_context_ids'] == ['passage']
+    assert note['locator'] == dict(element_path=parent + ' > ul > li', block_order=12)
+    assert not any(row.get('id') == 'other' for row in rows)
+    assert gr.reader_locator(before[1])['row'] == 0
+    assert gr.reader_locator(before[1])['column'] == 0
+    assert 'element_path' not in gr.autoschema.source_packet([before[0]])[0].get('locator', {})
+    assert set(note['locator']) == {'element_path', 'block_order'}
