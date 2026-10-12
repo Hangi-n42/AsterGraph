@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppSidebar from "./AppSidebar";
 import KnowledgeChanges from "./KnowledgeChanges";
+import KnowledgeUsageState from "./KnowledgeUsage";
 import KnowledgeStoredAnswers from "./KnowledgeStoredAnswers";
 import KnowledgeItemReview from "./KnowledgeItemReview";
 import KnowledgeGraph from "./KnowledgeGraph";
@@ -13,7 +14,7 @@ import KnowledgeBusiness from "./KnowledgeBusiness";
 import KnowledgeOntology from "./KnowledgeOntology";
 import KnowledgeSnapshots from "./KnowledgeSnapshots";
 import KnowledgeSearch from "./KnowledgeSearch";
-import { knowledgeRequest as request, knowledgeLabels as labels, knowledgeDate, qualifier, relationLabel, itemLabel, type KnowledgeCatalog, type KnowledgeView, type KnowledgeDetail, type KnowledgeClaim } from "@/lib/knowledgeWorkbench";
+import { knowledgeRequest as request, knowledgeLabels as labels, knowledgeDate, knowledgeVersionName, qualifier, relationLabel, itemLabel, type KnowledgeCatalog, type KnowledgeView, type KnowledgeDetail, type KnowledgeClaim } from "@/lib/knowledgeWorkbench";
 import styles from "./KnowledgeWorkbench.module.css";
 
 type Area = "overview" | "sources" | "explore" | "review" | "search";
@@ -38,6 +39,7 @@ function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; singl
       {!claim.evidence.length && <p className={styles.warning}>저장된 원문 근거가 없습니다.</p>}
       {claim.evidence.map((e, i) => <div key={`${e.block_id}:${i}`} className={styles.evidence}>
         <p className={styles.sourceTitle}>{e.source_title || "출처 이름 미기록"}</p>
+        <p className={styles.muted}>원문 파일 · {e.version_file ? knowledgeVersionName(e.version_file) : '버전 연결 미기록'}</p>
         <p className={styles.muted}>{e.context_only || e.precision === "chunk" ? "문맥 근거 · 직접 근거와 구분" : "저장 발췌 · 위치 기록 확인"}</p>
         <blockquote>{e.quote || "발췌 미기록"}</blockquote>
         <details><summary>원문 구간과 위치 보기</summary><p className={styles.prewrap}>{e.block_text || "원문 구간 미기록"}</p><dl>{Object.entries(e.locator || {}).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{String(v)}</dd></div>)}</dl></details>
@@ -103,6 +105,7 @@ export default function KnowledgeWorkbench() {
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([request<KnowledgeCatalog>("/workbench/scopes", { signal: controller.signal }), request<{ items: SourceItem[] }>("/sources", { signal: controller.signal })]).then(([next, docs]) => {
+      if (controller.signal.aborted) return;
       setCatalog(next); setSources(docs.items); setScopeKey(previous => previous || (next.scopes[0] ? `${next.scopes[0].kind}:${next.scopes[0].id}` : ""));
       if (!next.scopes.length) setLoading(false);
     }).catch(e => { if (!controller.signal.aborted) { setError(e.message); setLoading(false); } });
@@ -122,6 +125,7 @@ export default function KnowledgeWorkbench() {
   useEffect(() => { if (view?.detail && mobileDetail) detailPanel.current?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true }); }, [view?.detail, mobileDetail]);
   useEffect(() => { heading.current?.focus(); }, [area]);
   function navigate(next: Area) { setArea(next); setTool("selection"); }
+  function changeScope(key: string) { setScopeKey(key); setInspectorOpen(false); setAnswerTool("stored"); setGraphRoot(""); setRelationType(""); setDirection("both"); setSourceId(""); setReviewState(""); setDepth(1); setSelectedId(""); setView(null); setQuery(""); setSubmitted(""); setOffset(0); setTool("selection"); setMobileDetail(false); setLoading(true); }
   function showList(kind = "all") { setGraphMode(false); setSubmitted(""); setQuery(""); setSelectedId(""); setRelationType(""); setReviewState(""); setSourceId(""); setItemKind(kind); setOffset(0); setLoading(true); navigate("explore"); setMobileDetail(false); }
   const counts = view?.counts;
 
@@ -131,8 +135,9 @@ export default function KnowledgeWorkbench() {
       <header className={styles.header}><div><h1 ref={heading} tabIndex={-1}>회사 지식</h1></div><button className={styles.secondary} onClick={() => { setLoading(true); setReload(v => v + 1); }}>새로고침</button></header>
       <nav aria-label="회사 지식 작업" className={styles.navigation}>{areas.map(([id, name]) => <button key={id} aria-current={area === id ? "page" : undefined} onClick={() => navigate(id)}>{name}</button>)}</nav>
       <section className={styles.scopeBar} aria-label="현재 탐색 범위">
-        <label>자료와 저장 버전<select value={scopeKey} disabled={!catalog?.scopes.length} onChange={e => { setScopeKey(e.target.value); setInspectorOpen(false); setAnswerTool("stored"); setGraphRoot(""); setRelationType(""); setDirection("both"); setSourceId(""); setReviewState(""); setDepth(1); setSelectedId(""); setView(null); setQuery(""); setSubmitted(""); setOffset(0); setTool("selection"); setMobileDetail(false); setLoading(true); }}><option value="" disabled>{catalog?.scopes.length ? "저장 결과 선택" : "탐색할 업무 저장 결과 없음"}</option>{catalog?.scopes.map(s => <option key={`${s.kind}:${s.id}`} value={`${s.kind}:${s.id}`}>{s.title} · {knowledgeDate(s.created_at)} · {labels[s.status] || s.status}</option>)}</select></label>
-        <div className={styles.scopeState}><span className={styles.badge}>{scope?.data_label || "등록 자료와 검토 도구를 확인하세요"}</span>{scope?.kind === "source_graph" && <span>승인 선택 이력 · 현재 활용 상태 미확인</span>}{scope && <span>{labels[scope.status] || scope.status} · {knowledgeDate(scope.created_at)}</span>}</div>
+        <label>자료와 저장 버전<select value={scopeKey} disabled={!catalog?.scopes.length} onChange={e => changeScope(e.target.value)}><option value="" disabled>{catalog?.scopes.length ? "저장 결과 선택" : "탐색할 업무 저장 결과 없음"}</option>{catalog?.scopes.map(s => <option key={`${s.kind}:${s.id}`} value={`${s.kind}:${s.id}`}>{s.version_files?.length ? s.version_files.map(knowledgeVersionName).join(' / ') : s.title} · {knowledgeDate(s.created_at)} · {labels[s.status] || s.status}</option>)}</select></label>
+        <div className={styles.scopeState}><span className={styles.badge}>{scope?.data_label || "등록 자료와 검토 도구를 확인하세요"}</span>{scope && <span>{labels[scope.status] || scope.status} · {knowledgeDate(scope.created_at)}</span>}</div>
+        {scope && <KnowledgeUsageState key={scopeKey} scope={scope} reload={reload} selectedClaimIds={view?.scope.id === scope.id && view.scope.kind === scope.kind ? view.detail?.claims.map(c => c.id) || [] : []} onOpenScope={key => { changeScope(key); navigate('overview'); }} />}
       </section>
       {error && <div className={styles.error} role="alert">{error} <button onClick={() => { setLoading(true); setReload(v => v + 1); }}>다시 읽기</button></div>}
       {loading && <p role="status" className={styles.loading}>선택한 저장 결과를 읽는 중입니다…</p>}
@@ -170,7 +175,7 @@ export default function KnowledgeWorkbench() {
       {area === "review" && <section className={styles.panel}>
         <div className={styles.panelHeader}><h2>검토와 변경</h2></div><div className={styles.tools} role="group" aria-label="검토 작업">{[['selection','선택 항목'],['changes','원문 변경·영향'],['business','업무 검토 도구'],['extraction','개체·사실 검토'],['ontology','온톨로지 검토'],['snapshots','사용 버전 관리']].map(([id,label]) => <button key={id} aria-pressed={tool===id} onClick={() => setTool(id)}>{label}</button>)}</div>
         {tool === 'selection' && <div className={styles.reviewDetail}><p className={styles.muted}>저장, 재검수, 승인, 사용 버전 반영은 각각 별도의 단계입니다.</p>{view?.detail && <KnowledgeItemReview key={`${scopeKey}:${view.detail.item.id}`} detail={view.detail} onOpenSaved={(runId, id) => { setScopeKey(`run:${runId}`); setSelectedId(id || ""); setGraphRoot(""); setView(null); setQuery(""); setSubmitted(""); setLoading(true); setReload(r => r + 1); navigate('explore'); }} />}<KnowledgeSelection detail={view?.detail || null} onSelect={id => { select(id); navigate('explore'); }} /></div>}
-        {tool === 'changes' && scope && <KnowledgeChanges key={scopeKey} scope={scope} />}
+        {tool === 'changes' && scope && <KnowledgeChanges key={scopeKey} scope={scope} onOpenScope={key => { changeScope(key); navigate('overview'); }} />}
         {tool !== 'selection' && tool !== 'changes' && <div className={styles.legacy}><p className={styles.warning}>기존 검토 도구의 별도 범위입니다. 아래에서 실행 또는 버전을 확인하세요.</p>{tool==='business' && <KnowledgeBusiness key={scopeKey} request={request} sources={sources} visible initialRunId={scope?.kind === "run" ? scope.id : view?.detail?.run_id} />}{tool==='extraction' && <KnowledgeExtraction request={request} sources={sources} />}{tool==='ontology' && <KnowledgeOntology request={request} sources={sources} />}{tool==='snapshots' && <KnowledgeSnapshots request={request} visible />}</div>}
       </section>}
       {area === "search" && <section className={styles.panel}><div className={styles.tools}><button aria-pressed={answerTool === 'stored'} onClick={() => setAnswerTool('stored')}>선택 범위의 저장 답변</button><button aria-pressed={answerTool === 'new'} onClick={() => setAnswerTool('new')}>사용 버전에서 새 검색</button></div>{answerTool === 'stored' ? scope ? <KnowledgeStoredAnswers key={scopeKey} scope={scope} onExplore={id => { select(id); navigate('explore'); }} /> : <p className={styles.empty}>저장 범위를 선택하세요.</p> : <div className={styles.legacy}><p className={styles.warning}>아래에서 별도로 선택한 사용 버전으로 새 검색을 실행합니다. 상단의 자동 추출 실행과 다른 범위입니다.</p><KnowledgeSearch key={scopeKey} request={request} visible /></div>}</section>}

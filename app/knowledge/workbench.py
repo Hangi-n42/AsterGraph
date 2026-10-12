@@ -16,13 +16,20 @@ def catalog(service):
             titles = list(dict.fromkeys(sources.get(versions.get(v, {}).get('source_id'), {}).get('title', '출처 정보 미기록') for v in ids))
             scopes.append(dict(kind='run', id=row['id'], title=' · '.join(titles) or '자료 범위 미기록',
                                status=row['status'], created_at=row['started_at'], version_ids=ids,
+                               version_files=[{k: versions.get(v, {}).get(k) for k in ['id', 'filename', 'dates']} for v in ids],
                                data_label='자동 추출 결과 · 미승인'))
         for row in db.execute("""SELECT id, json_extract(payload,'$.kind') kind,
-                json_extract(payload,'$.created_at') created_at, json_extract(payload,'$.reason') reason
+                json_extract(payload,'$.created_at') created_at, json_extract(payload,'$.reason') reason,
+                json_extract(payload,'$.source_versions') source_versions, json_extract(payload,'$.activation') activation,
+                json_extract(payload,'$.run_id') run_id
                 FROM snapshots ORDER BY rowid DESC"""):
             if row['kind'] == 'source_graph':
-                scopes.append(dict(kind='source_graph', id=row['id'], title=row['reason'] or '검토된 출처 지식',
-                                   status='reviewed', created_at=row['created_at'], data_label='검토된 출처 지식 · 온톨로지와 별도'))
+                ids = list(json.loads(row['source_versions'] or '{}'))
+                titles = list(dict.fromkeys(sources.get(versions.get(v, {}).get('source_id'), {}).get('title', '출처 정보 미기록') for v in ids))
+                scopes.append(dict(kind='source_graph', id=row['id'], title=' · '.join(titles) or '출처 정보 미기록',
+                                   status='selection_recorded', created_at=row['created_at'], data_label='출처 지식 선택 기록 · 온톨로지와 별도',
+                                   version_files=[{k: versions.get(v, {}).get(k) for k in ['id', 'filename', 'dates']} for v in ids],
+                                   version_ids=ids, activation=row['activation'], run_id=row['run_id']))
         return dict(scopes=scopes, registered_sources=len(sources), registered_versions=len(versions),
                     legacy_snapshots=db.execute("SELECT count(*) FROM snapshots WHERE json_extract(payload,'$.kind') IS NOT 'source_graph'").fetchone()[0],
                     ontology_versions=db.execute('SELECT count(*) FROM ontology_versions').fetchone()[0],
@@ -54,11 +61,67 @@ def _claim_view(claim, blocks, sources, versions):
         version_id = ref.get('source_version_id') or block.get('source_version_id')
         source = sources.get(versions.get(version_id, {}).get('source_id'), {})
         evidence.append(dict(**ref, source_title=source.get('title'), locator=block.get('locator'),
-                             block_text=block.get('text'), source_id=source.get('id')))
+                             block_text=block.get('text'), source_id=source.get('id'),
+                             version_file={k: versions.get(version_id, {}).get(k) for k in ['id', 'filename', 'dates']}))
     return dict(**{k: claim.get(k) for k in ['id', 'role', 'statement', 'conditions', 'exceptions', 'period',
                 'references', 'review_status', 'qualifier_status', 'semantic_status', 'extraction_error', 'superseded_by']},
                 evidence=evidence, meanings=(claim.get('interpretation') or {}).get('meanings', []),
                 editable=claim.get('role') == 'event_entity' and not claim.get('extraction_error') and not claim.get('superseded_by'))
+
+
+def usage(service, kind, scope_id):
+    """Current read annotations; query guards still decide each requested scope."""
+    from . import business_use, business_changes, snapshots
+    from .service import utcnow
+    value, _, _, versions = _scope(service, kind, scope_id)
+    run_id = scope_id if kind == 'run' else value.get('run_id')
+    with service.repository.connect() as db:
+        original = value if kind == 'run' else service.repository.get(db, 'runs', run_id)
+        state = snapshots._state(db)
+        version_ids = value.get('input_version_ids') or list(value.get('source_versions') or [])
+        restrictions = business_use.restricted_sources(db, version_ids)
+        invalidations = []
+        if kind == 'source_graph':
+            invalidations = [event for row in db.execute('SELECT payload FROM snapshot_events')
+                if (event := json.loads(row['payload'])).get('event') == 'business_correction'
+                and event['snapshot_id'] == scope_id]
+            invalidations.extend(business_changes.snapshot_invalidations(service, db, value, original))
+        affected = {rid for event in invalidations for rid in event['requirement_ids']}
+        assessments = value.get('assessments') or {}
+        if isinstance(assessments, list):
+            assessments = {a['requirement_id']: a for a in assessments}
+        requirements = []
+        for recorded in value.get('requirements', []):
+            row = db.execute('SELECT payload FROM requirements WHERE id=?', (recorded['id'],)).fetchone()
+            current = json.loads(row['payload']) if row else {}
+            requirements.append(dict(id=recorded['id'], question=recorded.get('question'),
+                recorded_revision=recorded.get('revision'), current_revision=current.get('revision'),
+                recorded_status=assessments.get(recorded['id'], {}).get('status'), current_status=current.get('status'),
+                revision_matches=isinstance(recorded.get('revision'), int) and current.get('revision') == recorded['revision'],
+                source_change_requires_review=recorded['id'] in affected,
+                current_assessment=current.get('current_assessment')))
+        linked = [dict(id=s['id'], run_id=s.get('run_id'), activation=s.get('activation'),
+            reason=s.get('reason'), actor=s.get('actor'), created_at=s.get('created_at'))
+            for row in db.execute("SELECT payload FROM snapshots WHERE json_extract(payload,'$.kind')='source_graph' AND json_extract(payload,'$.run_id')=? ORDER BY rowid DESC", (run_id,))
+            if (s := json.loads(row['payload']))]
+    change_id = original.get('changeset_id')
+    review = None
+    if change_id:
+        change = business_use.change_view(service, change_id)
+        review = dict(changeset_id=change_id, eligible_ids=change['eligible_ids'], blocks=change['eligibility_blocks'],
+            explicit_review_ids=[cid for option in change['explicit_review_options'] for cid in option['claim_ids']])
+    return dict(scope=dict(kind=kind, id=scope_id), run_id=run_id, version_ids=version_ids,
+        version_files=[{k: versions.get(v, {}).get(k) for k in ['id', 'filename', 'dates', 'sha256']} for v in version_ids],
+        missing_version_ids=[v for v in version_ids if v not in versions],
+        snapshot_id=scope_id if kind == 'source_graph' else None,
+        activation=value.get('activation') if kind == 'source_graph' else None,
+        actor=value.get('actor') if kind == 'source_graph' else None,
+        reason=value.get('reason') if kind == 'source_graph' else None,
+        **state, status_checked_at=utcnow(), source_restrictions=restrictions,
+        requirements=requirements, invalidations=invalidations,
+        excluded_claim_ids=sorted({cid for event in invalidations for cid in event['claim_ids']}),
+        excluded_block_ids=sorted({bid for event in invalidations for bid in event.get('block_ids', [])}),
+        linked_snapshots=linked, review=review)
 
 
 def review_status(service, run_id):
@@ -83,19 +146,28 @@ def changes(service, kind, scope_id):
     ids = set(value.get('input_version_ids') or value.get('source_versions') or [])
     source_ids = {versions[v]['source_id'] for v in ids if v in versions}
     records, requirements = [], []
+    scopes = catalog(service)['scopes']
+    linked_ids = {r['id'] for r in value.get('requirements', [])}
     with service.repository.connect() as db:
         for row in db.execute("SELECT payload FROM runs WHERE json_extract(payload,'$.kind')='business_change' ORDER BY rowid DESC"):
             run = json.loads(row['payload'])
             if not ids.intersection(run.get('input_version_ids', [])):
                 continue
+            linked_ids.update(r['id'] for r in run.get('requirements', []))
+            linked_ids.update(i['requirement_id'] for i in run.get('impacts', []))
             records.append(dict(id=run['id'], status=run['status'], created_at=run.get('finished_at'),
                 before_version_id=run['request'].get('before_version_id'), after_version_id=run['request'].get('after_version_id'),
-                diff=run.get('diff'), impacts=run.get('impacts', [])))
+                before_version={k: versions.get(run['request'].get('before_version_id'), {}).get(k) for k in ['id', 'filename', 'dates']},
+                after_version={k: versions.get(run['request'].get('after_version_id'), {}).get(k) for k in ['id', 'filename', 'dates']},
+                diff=run.get('diff'), impacts=run.get('impacts', []),
+                after_scopes=[s for s in scopes if run['request'].get('after_version_id') in s.get('version_ids', [])]))
         for row in db.execute('SELECT payload FROM requirements'):
             requirement = json.loads(row['payload'])
-            if source_ids.intersection(requirement.get('source_ids', [])):
+            if requirement['id'] in linked_ids or source_ids.intersection(requirement.get('source_ids', [])):
                 requirements.append({k: requirement.get(k) for k in ['id', 'question', 'status', 'revision']})
+    current_usage = usage(service, kind, scope_id)
     return dict(records=records, requirements=requirements, edit_impact=value.get('edit_impact'),
+                snapshot_review_requirement_ids=sorted({rid for event in current_usage['invalidations'] for rid in event['requirement_ids']}),
                 versions=[dict(id=v, title=sources.get(versions[v]['source_id'], {}).get('title'),
                                supersedes_version_id=versions[v].get('supersedes_version_id')) for v in ids if v in versions])
 
@@ -120,8 +192,8 @@ def answers(service, kind, scope_id, answer_id=None):
     passages, recorded_links = {}, {}
     selected_edges = set((run.get('graph_retrieval') or {}).get('selected_edge_ids', []))
     for unit in run.get('units', []):
-        reverse = {alias: identifier for identifier, alias in unit.get('reference_map', {}).items()}
-        for message in unit.get('messages', []):
+        reverse = {alias: identifier for identifier, alias in (unit.get('reference_map') or {}).items()}
+        for message in unit.get('messages') or []:
             if message.get('role') != 'user':
                 continue
             try:
@@ -162,10 +234,17 @@ def answers(service, kind, scope_id, answer_id=None):
     selected_links = [e for e in graph['edges'] if e['id'] in selected_edges]
     return dict(items=items, detail=dict(id=run['id'], question=run['query']['question'],
         status=run.get('answer_status'), answer=answer, finished_at=run.get('finished_at'),
-        evidence=evidence, source_run_id=run['query'].get('source_run_id'), snapshot_id=run.get('snapshot_id'),
+        evidence=evidence, source_run_id=run['query'].get('source_run_id'),
+        snapshot_id=run['query'].get('snapshot_id') or (None if run['query'].get('source_run_id') else run.get('snapshot_id')),
         context_mode=run.get('context_mode'), retrieval=run['query'].get('retrieval'),
         graph_links=selected_links, recorded_links=list(recorded_links.values()), recorded_edge_count=len(selected_edges),
         fallback=retrieval.get('fallback'), metrics=run.get('metrics'),
+        used_version_ids=run.get('input_version_ids', []), requirement_ids=run['query'].get('requirement_ids', []),
+        used_versions=[dict(id=v, title=sources.get(versions.get(v, {}).get('source_id'), {}).get('title'),
+                            filename=versions.get(v, {}).get('filename'), dates=versions.get(v, {}).get('dates'))
+                       for v in run.get('input_version_ids', [])],
+        answer_mode=run['query'].get('answer_mode'), recorded_invalidations=run.get('snapshot_invalidations', []),
+        current_usage=usage(service, kind, scope_id),
         note='저장된 답변과 당시 인용 기록입니다. 현재 생성 또는 의미 정확성 검증 결과가 아닙니다.'))
 
 
@@ -263,8 +342,8 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
         version_ids = list(dict.fromkeys(b.get('source_version_id') for b in blocks.values() if b.get('source_version_id')))
     source_ids = set(versions.get(v, {}).get('source_id') for v in version_ids) - {None}
     concept_records = value.get('concepts', [])
-    return dict(scope=dict(kind=kind, id=scope_id, status=value.get('status'), created_at=value.get('started_at') or value.get('created_at'),
-                    data_label='자동 추출 결과 · 미승인' if kind == 'run' else '검토된 출처 지식 · 온톨로지와 별도',
+    return dict(scope=dict(kind=kind, id=scope_id, status=value.get('status') if kind == 'run' else 'selection_recorded', created_at=value.get('started_at') or value.get('created_at'),
+                    data_label='자동 추출 결과 · 미승인' if kind == 'run' else '출처 지식 선택 기록 · 온톨로지와 별도',
                     title=' · '.join(sources[s]['title'] for s in sources if s in source_ids) or '출처 정보 미기록',
                     changeset_id=value.get('changeset_id'), version_ids=version_ids, graph_available=graph_available,
                     partial=value.get('status') in {'partial', 'cancelled', 'failed'} or value.get('extraction_complete') is False),

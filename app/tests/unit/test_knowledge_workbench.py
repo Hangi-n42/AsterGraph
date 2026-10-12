@@ -96,11 +96,11 @@ def test_saved_answers_separate_provided_citations_and_scope(service, monkeypatc
     monkeypatch.setattr(graph_retrieval, 'retrieve', forbidden)
     context = dict(context=[dict(id='q1', text='정확한 저장 인용', source_reference=dict(
         source_version_id='v1-alias', block_id='b1', start_char=0, end_char=9))])
-    answer = dict(id='answer1', kind='business_query', status='succeeded', query=dict(source_run_id='run1', question='질문', retrieval='hybrid'),
+    answer = dict(id='answer1', kind='business_query', status='succeeded', snapshot_id='run:run1', input_version_ids=['v1'], query=dict(source_run_id='run1', question='질문', retrieval='hybrid'),
                   answer=dict(answer='저장 답변', citations=['p1']), provided_ids=['p1', 'p2'],
                   retrieval=[dict(block_id='p1'), dict(block_id='p2'), dict(block_id='p3')],
                   passage_index=dict(texts=dict(p1='인용', p2='제공', p3='조회')),
-                  units=[dict(reference_map={'p1':'q1', 'v1':'v1-alias', 'block1':'b1'},
+                  units=[dict(reference_map=None, messages=None), dict(reference_map={'p1':'q1', 'v1':'v1-alias', 'block1':'b1'},
                               messages=[dict(role='user', content=json.dumps(context))])])
     with service.repository.connect() as db:
         db.execute('INSERT INTO runs VALUES(?,?)', ('answer1', json.dumps(answer)))
@@ -114,6 +114,9 @@ def test_saved_answers_separate_provided_citations_and_scope(service, monkeypatc
     assert result['evidence'][0]['evidence'][0]['source_title'] == '계약 테스트 자료'
     assert result['graph_links'] == []
     assert result['recorded_edge_count'] == 0
+    assert result['snapshot_id'] is None
+    assert result['used_versions'] == [dict(id='v1', title='계약 테스트 자료', filename=None, dates=None)]
+    assert result['current_usage']['scope'] == dict(kind='run', id='run1')
 
 
 def test_claim_count_drills_into_claims_including_excluded_records(service):
@@ -159,3 +162,70 @@ def test_change_history_uses_exact_versions_and_current_source_requirements(serv
     assert [(r['id'], r['status'], r['revision']) for r in result['requirements']] == [('r1', 'needs_review', 3)]
     with service.repository.connect() as db:
         assert before == [tuple(row) for row in db.execute('SELECT id,payload FROM requirements')]
+
+
+def test_usage_keeps_activation_source_restrictions_and_requirement_causes_separate(service):
+    from app.knowledge import snapshots
+    recorded = [dict(id='stable', question='비영향 요구', revision=1), dict(id='changed', question='영향 요구', revision=1)]
+    snapshot = dict(id='selected', kind='source_graph', activation='explicit_query_only', run_id='run1',
+                    source_versions={'v1': {}}, claims=[], blocks=[], requirements=recorded,
+                    assessments={r['id']: dict(status='satisfied') for r in recorded})
+    correction = dict(id='correction', event='business_correction', snapshot_id='selected',
+                      requirement_ids=['changed'], claim_ids=['excluded'], block_ids=['block'])
+    with service.repository.connect() as db:
+        db.execute('INSERT INTO snapshots VALUES(?,?)', (snapshot['id'], json.dumps(snapshot)))
+        db.execute('INSERT INTO snapshot_events VALUES(?,?)', (correction['id'], json.dumps(correction)))
+        for current in [dict(recorded[0], status='unknown'), dict(recorded[1], status='partial', revision=2)]:
+            db.execute('INSERT INTO requirements VALUES(?,?)', (current['id'], json.dumps(current)))
+        db.execute('INSERT INTO snapshots VALUES(?,?)', ('separate-legacy', json.dumps(dict(id='separate-legacy'))))
+        db.execute("UPDATE knowledge_state SET active_snapshot_id='separate-legacy' WHERE id=1")
+    snapshots.set_availability(service, dict(expected_status_revision=0, targets=[dict(type='source_version', id='v1')],
+        state='blocked', actor='fixture', reason='source restriction fixture'))
+    with service.repository.connect() as db:
+        before = {table: [tuple(r) for r in db.execute(f'SELECT * FROM {table}')]
+                  for table in ['snapshots', 'requirements', 'snapshot_events', 'availability_history', 'knowledge_state', 'runs']}
+    view = workbench.usage(service, 'source_graph', 'selected')
+    assert view['activation'] == 'explicit_query_only' and view['active_snapshot_id'] == 'separate-legacy'
+    assert view['source_restrictions'] == [dict(source_version_id='v1', state='blocked')]
+    stable, changed = view['requirements']
+    assert stable['current_status'] == 'unknown' and stable['revision_matches'] is True
+    assert stable['source_change_requires_review'] is False
+    assert changed['current_status'] == 'partial' and changed['recorded_status'] == 'satisfied'
+    assert changed['source_change_requires_review'] is True and changed['revision_matches'] is False
+    assert view['excluded_claim_ids'] == ['excluded'] and view['excluded_block_ids'] == ['block']
+    assert 'usable' not in view and 'available' not in view
+    with service.repository.connect() as db:
+        for table, rows in before.items():
+            assert rows == [tuple(r) for r in db.execute(f'SELECT * FROM {table}')]
+
+
+def test_usage_does_not_turn_missing_current_requirement_or_version_into_permission(service, monkeypatch):
+    from app.knowledge import business_use
+    with service.repository.connect() as db:
+        run = service.repository.get(db, 'runs', 'run1')
+        run.update(requirements=[dict(id='missing', revision=1)], changeset_id='change', input_version_ids=['missing-version'])
+        service.repository.save(db, 'runs', run)
+    monkeypatch.setattr(business_use, 'change_view', lambda *_: dict(eligible_ids=[], eligibility_blocks={'c0':['confirmed_expression_error']}, explicit_review_options=[]))
+    view = workbench.usage(service, 'run', 'run1')
+    assert view['activation'] is None and view['snapshot_id'] is None
+    assert view['missing_version_ids'] == ['missing-version']
+    assert view['requirements'][0]['current_status'] is None and view['requirements'][0]['revision_matches'] is False
+    assert view['review']['blocks'] == {'c0':['confirmed_expression_error']}
+
+
+def test_changes_use_explicit_scope_and_impact_ids_when_source_ids_are_empty(service):
+    with service.repository.connect() as db:
+        run = service.repository.get(db, 'runs', 'run1')
+        run['requirements'] = [dict(id='scope-linked', revision=1)]
+        service.repository.save(db, 'runs', run)
+        change = dict(id='change-linked', kind='business_change', status='succeeded', input_version_ids=['v1','v2'],
+            request=dict(before_version_id='v1',after_version_id='v2'),
+            impacts=[dict(requirement_id='impact-linked',status='unknown',reason='not confirmed')])
+        db.execute('INSERT INTO runs VALUES(?,?)', (change['id'],json.dumps(change)))
+        for id in ['scope-linked','impact-linked','unrelated']:
+            row = dict(id=id,source_ids=[],question=id,status='partial',revision=1)
+            db.execute('INSERT INTO requirements VALUES(?,?)',(id,json.dumps(row)))
+    result = workbench.changes(service,'run','run1')
+    assert {r['id'] for r in result['requirements']} == {'scope-linked','impact-linked'}
+    assert result['snapshot_review_requirement_ids'] == []
+    assert result['records'][0]['impacts'][0]['status'] == 'unknown'
