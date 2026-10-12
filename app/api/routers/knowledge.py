@@ -369,6 +369,12 @@ def workbench_review(run_id: str, service=Depends(get_knowledge_service)):
     return result(workbench.review_status(service, run_id))
 
 
+@router.get('/workbench/usage', response_model=KnowledgeResponse)
+def workbench_usage(kind: str, scope_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.usage(service, kind, scope_id))
+
+
 @router.get('/workbench/answers', response_model=KnowledgeResponse)
 def workbench_answers(kind: str, scope_id: str, answer_id: str | None = None, service=Depends(get_knowledge_service)):
     from app.knowledge import workbench
