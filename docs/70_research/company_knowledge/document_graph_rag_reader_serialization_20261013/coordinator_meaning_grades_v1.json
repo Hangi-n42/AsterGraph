@@ -1,0 +1,92 @@
+{
+  "version": "coordinator-reader-v2-source-reference-grades-v1",
+  "authority": "coordination AI directly compared saved outputs, prior baselines and frozen references; not human or perfectly blind validation",
+  "coordinator_thread_id": "01a11fd9-f71b-7261-832b-0681548a03c4",
+  "frozen_references_changed": false,
+  "questions": 4,
+  "new_QA_responses": 8,
+  "paired_improved": 3,
+  "paired_same": 5,
+  "paired_observed_regressions": 0,
+  "rows": [
+    {
+      "input": "SUP02_C_v2",
+      "verdict": "improved",
+      "reason": "fund identification retained; patent-purchase investment-money exception applied; false gap removed"
+    },
+    {
+      "input": "SUP02_B",
+      "verdict": "same",
+      "reason": "fund identification and scoped exception retained"
+    },
+    {
+      "input": "ACT501108_B",
+      "verdict": "improved",
+      "reason": "under7-year guidance restored; legal startup classification remains unconfirmed"
+    },
+    {
+      "input": "ACT501108_C_v2",
+      "verdict": "improved",
+      "reason": "under7-year guidance restored; legal startup classification remains unconfirmed"
+    },
+    {
+      "input": "SUP01_B",
+      "verdict": "same",
+      "reason": "fund-specific lease-deposit exclusion retained"
+    },
+    {
+      "input": "SUP01_C_v2",
+      "verdict": "same",
+      "reason": "fund-specific lease-deposit exclusion retained"
+    },
+    {
+      "input": "SUP03_B",
+      "verdict": "same",
+      "reason": "2 percent fixed interest rate retained"
+    },
+    {
+      "input": "SUP03_C_v2",
+      "verdict": "same",
+      "reason": "2 percent fixed interest rate retained"
+    }
+  ],
+  "previous_normal_ACT_B_comparison": {
+    "verdict": "same",
+    "independent_new_case": false,
+    "same_native_output_as": "ACT501108_B"
+  },
+  "ACT501108_date": "2019-02-11 is the consultation date already present in the frozen question envelope; no new injection",
+  "ACT501108_prior_gap": "Previous missing-period answer was incomplete against frozen M2, not a wrong legal startup conclusion",
+  "scope": "Judgment concerns the provided2019 document; not the current regime",
+  "first4_provider_cost_comparison": {
+    "baseline_input": 31426,
+    "baseline_output": 1262,
+    "baseline_model_s": 244.763513,
+    "reader_input": 35086,
+    "reader_output": 1084,
+    "reader_model_s": 256.328575,
+    "input_delta": 3660,
+    "input_delta_percent": 11.646407433335455
+  },
+  "validity_cost_audits": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/validity_and_cost_audit.json",
+      "sha256": "f6fdb75a89ebdb040f91c7bf20aec706eefb10dab5acbcfc1a17020cc50f65bf"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/normal_controls_v1/qa/validity_and_cost_audit.json",
+      "sha256": "71b99fdc3f5c718005e1d735c03aff9976b143521a16402be1c10425d11e0404"
+    }
+  ],
+  "actual_first4_entrypoint_addendum_sha256": "dab1ed28905672cc33635edfe7416cb92113a2fde6978b238271c27cbeefa32d",
+  "actual_first4_entrypoint_driver_sha256": "00bea75f6e33dce6dd4c38e1b7c7e28a3f583f4f432c1540fdeaf424740d6458",
+  "actual_controls_entrypoint_addendum_sha256": "040bbaa6dd545e8b475365c5f56de2fd020b7cbe28d38a0a84848bd7c40c26ab",
+  "actual_controls_entrypoint_driver_sha256": "4badcba105c7d68ca7666672e2ab49ea39eddabb686e536d1dd1c4510f96d558",
+  "limitations": [
+    "four development-exposed questions with repeated method conditions, not eight independent examples",
+    "joint structure/serialization/placement intervention; no pure structure or graph-effect attribution",
+    "no general accuracy, independent generalization, hardware speed or input-token-saving claim",
+    "SUP03 is a developer control outside full26"
+  ],
+  "decision": "coordinator authorized limited common B/C reader integration with flat replay preserved"
+}

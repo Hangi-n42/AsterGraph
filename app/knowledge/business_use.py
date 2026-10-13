@@ -840,6 +840,7 @@ def query(service, request, *, context_mode='graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
     source_reader = bool(request.source_run_id)
+    structured_reader = False
     if context_mode not in {'graph', 'document'}:
         raise ValueError('Unknown query context')
     if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
@@ -1007,8 +1008,15 @@ def query(service, request, *, context_mode='graph'):
         required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'])
         run['source_context_contract'] = 'existing-table-rowspan-heading-list-bundles-v1'
         run['source_context'] = deepcopy(required_source_context)
+        reader_context = dict(context=context, source_context=required_source_context)
+        if request.source_format == 'structured':
+            from . import source_reader as reader
+            reader_context, run['source_reader_provenance'] = reader.for_service(service, reader_context)
+        structured_reader = 'source_document' in reader_context or 'source_documents' in reader_context
+        run['reader_contract'] = ('verified-DOM-inline-records-lossless-v2' if
+            structured_reader else 'original-flat-source-records-v1')
         if request.source_context_tokens is not None:
-            size = (len(encode(dict(context=context, source_context=required_source_context)).encode()) + 1) // 2
+            size = (len(encode(reader_context).encode()) + 1) // 2
             run['source_context_budget'] = dict(limit=request.source_context_tokens, estimate_tokens=size,
                 method='utf8_bytes/2', exact=False, within_limit=size <= request.source_context_tokens)
             if size > request.source_context_tokens:
@@ -1111,18 +1119,22 @@ def query(service, request, *, context_mode='graph'):
             'reviewed_meanings는 기존 검수의 주장·조건·예외·기간과 원문을 연결한 범위이지 정답표가 아니다. '
             '질문에 해당하는 의미와 실제 인용을 함께 사용하고, 후보의 다른 절이나 검수 문장의 확대 해석을 그대로 확정하지 않는다. '
             '원문에서 직접 확인되는 사실과 추가 해석이 필요한 결론을 구분해 답한다.' if not source_reader else '') + (
-            '\n이번 context는 검색된 원문 구간이다. 원문 자체를 대조하여 답한다. '
-            'source_context는 선택한 구간의 표 행·병합 셀·상위 조건·예외에 필요한 원문이다. '
+            '\n이번 context는 검색된 원문 구간이다. 원문 자체를 대조하여 답한다. ' +
+            (reader.FORMAT + ('source_documents는 원문 버전과 parse 실행별 독립 source_document이며 입력 배열은 context_input_rows/source_context_input_rows로 복원한다. '
+                if 'source_documents' in reader_context else '') if request.source_format == 'structured' and
+                ('source_document' in reader_context or 'source_documents' in reader_context) else
+                'source_context는 선택한 구간의 표 행·병합 셀·상위 조건·예외에 필요한 원문이다. ') +
             'supports_context_ids와 표의 row/column/merged_span을 사용하여 귀속을 확인한다. '
             'context_id만 있는 문맥은 같은 context의 원문을 참조한다. 문맥 근거도 연결된 context id로 인용한다. '
             '검색에 사용한 그래프 연결은 미승인 추출일 수 있으며 그 존재가 의미 검증은 아니다. '
             '원문에 없는 조건이나 연결을 추론해서 채우지 않는다. 이 답변은 온톨로지 승인이나 업무 요구 전체 충족 판정이 아니다.'
             if source_reader else ''),
-            dict(question=request.question, choices=request.choices, context=context,
+            dict(question=request.question, choices=request.choices, **({} if structured_reader else dict(context=context)),
                  source_versions=snapshot['source_versions'], source_evidence=source_evidence,
                  **({'public_requirements': answer_requirements} if answer_requirements else {}),
-                 requirement_limitations=limitations, **({'source_context': required_source_context} if source_reader
-                                                         else {'reviewed_meanings': reviewed_meanings})), context_answer,
+                 requirement_limitations=limitations, **(reader_context if structured_reader else
+                    {'source_context': required_source_context} if source_reader else
+                    {'reviewed_meanings': reviewed_meanings})), context_answer,
             reference_map=reference_map)
     if source_reader:
         run['answer_contract'] = 'source-unique-provided-citations-lossless-dedup-v3'

@@ -1,0 +1,172 @@
+{
+  "version": "reader-v2-fixed4-native-validity-cost-v1",
+  "questions": 2,
+  "unique_native_requests": 4,
+  "historical_baseline_correspondences": 5,
+  "rows": [
+    {
+      "input": "SUP02_C_v2",
+      "run_id": "3faaee4e8a7b4dccbed773fbe6f74972",
+      "backend_status": "answered",
+      "answer": {
+        "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만인 요건을 명시한 별도 자금은 **청년전용창업자금**입니다. 그러나 이 자금에서 특허권 매입 비용을 투자자금으로 지원하는지는 **아닙니다**. 원문에 따르면 무형자산(지식재산권 등) 확보를 위한 투자자금은 지원 대상에 포함되나, **청년전용창업자금은 제외**됩니다.",
+        "choice": null,
+        "citations": [
+          "passage_61bf9dbc19c9b002eb6c4849",
+          "passage_e0d03e8a45abfc6f18316953",
+          "passage_54d1210723a0cbcf6b5bfb22"
+        ],
+        "limitations": []
+      },
+      "raw_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/SUP02_C_v2.json",
+      "raw_sha256": "5f6b1ba578a9c03d2bd2109a0ffbe0bd7441998521d598887b38caa655893654",
+      "exact_frozen_request_sent": true,
+      "source_budget": {
+        "limit": 16384,
+        "estimate_tokens": 14117,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 8084,
+        "eval_count": 145,
+        "elapsed_s": 59.023666,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0
+    },
+    {
+      "input": "ACT501108_B",
+      "run_id": "015439b7d68145b8a2dc3d68c62be3f1",
+      "backend_status": "answered",
+      "answer": {
+        "answer": "제공된 근거만으로는 질문자의 구체적 상황(기존 공장 리모델링, 전 사장님 이전, 사업자등록 변경 등)이 창업기업자금의 신청 대상에 해당하는지 여부를 확정할 수 없습니다. 제공된 원문은 창업기업자금의 신청대상이 『중소기업창업지원법』제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업임을 명시하고 있으며, 혁신창업지원의 경우 사업 개시일로부터 7년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 한다고 규정하고 있습니다. 질문자는 2018년 3월 20일 개시이므로 2019년 2월 11일 기준 7년 미만 조건은 충족하나, '창업'의 법적 정의나 기존 시설 인수/리모델링이 창업에 해당하는지에 대한 구체적 판단 기준은 제공된 문서에 포함되어 있지 않습니다. 따라서 중진공 직원의 판단이 정확한지 여부는 제공된 근거만으로 확인 불가합니다.",
+        "choice": null,
+        "citations": [
+          "passage_d1ae9b4ab00768116a9b78fd",
+          "passage_2e311f4b234c53f77f330eca"
+        ],
+        "limitations": [
+          "『중소기업창업지원법』상 '창업'의 구체적 정의 및 기존 시설 인수/리모델링이 창업에 해당하는지 여부에 대한 판단 기준이 제공된 원문에 없습니다.",
+          "질문자의 구체적 사실관계(전 사장님 이전, 사업자등록 변경 등)가 법적 창업 요건을 충족하는지 여부는 제공된 근거만으로 판단할 수 없습니다."
+        ]
+      },
+      "raw_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/ACT501108_B.json",
+      "raw_sha256": "b2d1ac7d1504f167440f285928696ba5503757f7267f926c56ab8f8e8732cae6",
+      "exact_frozen_request_sent": true,
+      "source_budget": {
+        "limit": 16384,
+        "estimate_tokens": 16122,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 9387,
+        "eval_count": 358,
+        "elapsed_s": 70.499,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0
+    },
+    {
+      "input": "SUP02_B",
+      "run_id": "f698d178554544fe995786b421eca044",
+      "backend_status": "answered",
+      "answer": {
+        "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 하는 별도 자금은 **청년전용창업자금**입니다. \n\n그러나 이 자금에서 특허권 매입 비용을 투자자금으로 지원하는지는 **아닙니다**. 원문에 따르면, 지식재산권(특허, 상표권 등) 매입에 소요되는 비용은 무형자산 확보를 위한 투자자금의 용도로 명시되어 있으나, 해당 항목 바로 아래에 \"**청년전용창업자금은 제외**\"라는 명시적 예외 조항이 존재합니다. 따라서 청년전용창업자금은 특허권 매입 비용에 대한 투자자금 지원을 받지 않습니다.",
+        "choice": null,
+        "citations": [
+          "passage_61bf9dbc19c9b002eb6c4849",
+          "passage_e0d03e8a45abfc6f18316953",
+          "passage_54d1210723a0cbcf6b5bfb22"
+        ],
+        "limitations": [
+          "제공된 원문은 2019년도 중소기업 정책자금 융자계획 공고 기준이며, 이후 개정 사항이나 다른 연도의 공고 내용은 반영되지 않았습니다.",
+          "청년전용창업자금의 구체적인 대출 한도나 금리 등 다른 조건은 이 질문의 범위(특허권 매입 지원 여부)와 직접 관련이 없어 상세히 확인하지 않았습니다."
+        ]
+      },
+      "raw_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/SUP02_B.json",
+      "raw_sha256": "faa4bc9e1238f1b37da2e04f140b7058aac48cdacd14590f5da7b55c00f47ee4",
+      "exact_frozen_request_sent": true,
+      "source_budget": {
+        "limit": 16384,
+        "estimate_tokens": 14644,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 8527,
+        "eval_count": 295,
+        "elapsed_s": 61.954808,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0
+    },
+    {
+      "input": "ACT501108_C_v2",
+      "run_id": "91b1e8dccf9348cd8416bd3ed91ccda0",
+      "backend_status": "answered",
+      "answer": {
+        "answer": "제공된 근거만으로는 질문자의 사례가 창업기업자금 지원 대상에 해당하는지 여부를 확정할 수 없습니다. 2019년도 공고문에 따르면 창업기업자금은 『중소기업창업지원법』 제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업이 신청 대상입니다. 또한 혁신창업지원의 경우 사업 개시일로부터 7년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 합니다. 질문자는 2018년 3월 20일 개시이므로 기간 요건은 충족할 수 있으나, 기존 사업자의 공장을 리모델링하여 운영하는 형태가 법적 창업에 해당하는지는 제공된 문서에 명시된 판단 기준이 없어 확인이 불가합니다.",
+        "choice": null,
+        "citations": [
+          "passage_d1ae9b4ab00768116a9b78fd",
+          "passage_2e311f4b234c53f77f330eca"
+        ],
+        "limitations": [
+          "『중소기업창업지원법』상 창업의 구체적 정의와 기존 사업자 시설 인수·리모델링 시 창업 인정 여부에 대한 명시적 기준이 제공된 원문에 없습니다.",
+          "중진공 직원의 구두 판단 근거가 문서에 포함되어 있지 않아 법적 해석을 대조할 수 없습니다."
+        ]
+      },
+      "raw_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/ACT501108_C_v2.json",
+      "raw_sha256": "e88eef03033a6be1ef2f184e8b87f401fcf8337604a88d258fd48255afa418e0",
+      "exact_frozen_request_sent": true,
+      "source_budget": {
+        "limit": 16384,
+        "estimate_tokens": 15576,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 9088,
+        "eval_count": 286,
+        "elapsed_s": 64.851101,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0
+    }
+  ],
+  "input_tokens": 35086,
+  "output_tokens": 1084,
+  "request_elapsed_s": 256.328575,
+  "outer_elapsed_s": 267.7776460829991,
+  "provider_cached_input_tokens_observed": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "native_response_replays": 0,
+  "second_ACT_B_native_call": 0,
+  "source_DB_unchanged": true,
+  "model_returned": true,
+  "new_retrieval_or_embedding_calls": 0,
+  "new_selection_or_extraction_calls": 0,
+  "meaning_grade": "pending coordinator; answered schema status and observed wording are not final semantic fulfillment or adoption",
+  "preliminary_wording_observations": {
+    "SUP02": "B/C_v2 identify youth fund and conclude patent-purchase investment-money exclusion without the previous C false-gap conclusion",
+    "ACT501108": "B/C_v2 retain under7-year guidance and inability to confirm legal startup classification from given records"
+  },
+  "attribution": "Joint structure/serialization/placement intervention; no pure structure effect, JSON-order cause or generalization claim",
+  "startup_diagnostic_false_match": "A separate ps precheck matched its own shell command and failed. Native driver independently recorded empty model list and held exclusive lock; actual frozen4 requests were sent once. No model retry resulted.",
+  "full_build_resume_started": false,
+  "default_or_opt_in_integration": false
+}

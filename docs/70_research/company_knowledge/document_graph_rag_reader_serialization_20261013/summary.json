@@ -1,0 +1,37 @@
+{
+  "questions": 4,
+  "new_QA": 8,
+  "provider_input": 65686,
+  "provider_output": 1421,
+  "model_s": 441.993411,
+  "first4": {
+    "provider_input": 35086,
+    "provider_output": 1084,
+    "model_s": 256.328575
+  },
+  "normal4": {
+    "provider_input": 30600,
+    "provider_output": 337,
+    "model_s": 185.66483599999998
+  },
+  "baseline_input": 59462,
+  "baseline_output": 1675,
+  "baseline_model_s": 421.480803,
+  "paired_improved": 3,
+  "paired_same": 5,
+  "observed_regressions": 0,
+  "sourcecap_estimates_not_provider_tokens": true,
+  "no_speed_saving_claim": true,
+  "SUP03_outside_full26": true,
+  "receipt_files_sha256": {
+    "coordinator_meaning_grades_v1.json": "f9382f6660aba6659856bcc7b09a1c5f3047912a8a5e825a6ebe9711b5d40ec9",
+    "eight_saved_input_boundary_checks.json": "cd07a6d0497dc56e4083dba30260eede93ad17063d6aa4a47ddde1e2a0c64953",
+    "preexisting_business_fixture_failures.json": "36a81d6cc4ca07179ffa37ef3db1c206bac96dcbfd3ac9ee9507e2400e41d9cc",
+    "first4_validity_and_cost_audit.json": "f6fdb75a89ebdb040f91c7bf20aec706eefb10dab5acbcfc1a17020cc50f65bf",
+    "normal4_validity_and_cost_audit.json": "71b99fdc3f5c718005e1d735c03aff9976b143521a16402be1c10425d11e0404",
+    "original_execution_manifest.json": "29ddc84318ea73c32a038548093f4f756faf3acf4b54e1512cb3be25a40110b1",
+    "first4_execution_addendum.json": "dab1ed28905672cc33635edfe7416cb92113a2fde6978b238271c27cbeefa32d",
+    "normal4_execution_addendum.json": "040bbaa6dd545e8b475365c5f56de2fd020b7cbe28d38a0a84848bd7c40c26ab",
+    "flat_replay_boundary_check.json": "f2931b7ad771b534dbaabcb449b111227aaca45245f9329f0862a48ffcacd18b"
+  }
+}
