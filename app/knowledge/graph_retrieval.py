@@ -118,6 +118,12 @@ def build(snapshot, variant):
             continue
         for pid, passage in passages.items():
             linked = set(node['claim_ids']).intersection(passage['claim_ids'])
+            if linked and node.get('construction_method') == 'verified_html_classification_row_v1':
+                loc = passage['evidence']
+                linked = linked if any(all(ref.get(k) == loc.get(k) for k in
+                    ('source_version_id', 'parse_run_id', 'block_id'))
+                    and ref['start_char'] < loc['end_char'] and loc['start_char'] < ref['end_char']
+                    for ref in node['evidence']) else set()
             if linked:
                 graph.add_edge(node['id'], pid, key='mention', relation='mention in', claim_ids=sorted(linked))
     ignored = []

@@ -588,6 +588,12 @@ class ChangeRequest(BaseModel):
     key_fields: list[str] = Field(default_factory=list)
 
 
+class HtmlLiteralRowsRequest(BaseModel):
+    model_config = {'extra': 'forbid'}
+    parent_run_id: str
+    block_ids: list[str] = Field(min_length=1)
+
+
 class ConceptRunRequest(BaseModel):
     parent_run_id: str
     target_ids: list[str] = Field(min_length=1)

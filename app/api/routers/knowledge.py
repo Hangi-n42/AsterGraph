@@ -23,7 +23,7 @@ from app.knowledge import extraction_store
 from app.knowledge import snapshots
 from app.knowledge.schemas import SearchRequest, LocalEntityRequest
 from app.knowledge import business_store, business_use
-from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, BusinessAnswerRecheck
+from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck
 
 
 class KnowledgeRoute(APIRoute):
@@ -137,6 +137,11 @@ def start_business(request: BusinessRunRequest, service=Depends(get_knowledge_se
 def business_concepts(request: ConceptRunRequest, service=Depends(get_knowledge_service)):
     from app.knowledge.business_concepts import start
     return result(start(service, request))
+
+
+@router.post('/business/html-rows', response_model=KnowledgeResponse)
+def business_html_rows(request: HtmlLiteralRowsRequest, service=Depends(get_knowledge_service)):
+    return result(service.store_business_html_rows(request))
 
 
 @router.get('/business/runs', response_model=KnowledgeResponse)

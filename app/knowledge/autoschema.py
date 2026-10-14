@@ -346,7 +346,7 @@ def graph(claims):
         elif role in {'entity_relation', 'event_relation'}:
             kind = 'entity' if role == 'entity_relation' else 'event'
             pairs = [(node(claim, kind, raw['Head'], 'Head'), raw['Relation'], node(claim, kind, raw['Tail'], 'Tail'))]
-        elif role == 'structured_row' and claim.get('construction_method') == 'direct_tabular_row':
+        elif role == 'structured_row' and claim.get('construction_method') in {'direct_tabular_row', 'verified_html_classification_row_v1'}:
             # A row and its typed properties, not inferred entities or events.
             # Identity stays within this source claim, even for equal field values.
             row_id = identifier('node', [claim['id'], 'structured_row'])
@@ -360,6 +360,9 @@ def graph(claims):
                 field_id = identifier('node', [claim['id'], 'field_value', field])
                 nodes[field_id] = dict(common, id=field_id, kind='field_value', field=field,
                     value=deepcopy(value), label=json.dumps(value, ensure_ascii=False))
+                if claim.get('construction_method') == 'verified_html_classification_row_v1':
+                    nodes[field_id]['evidence'] = deepcopy(claim['field_evidence'][field])
+                    nodes[field_id]['construction_method'] = claim['construction_method']
                 pairs.append((row_id, field, field_id))
         else:
             continue
