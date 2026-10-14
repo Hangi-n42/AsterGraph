@@ -94,12 +94,36 @@ def start(service, run_id, request):
         receipt = bind_gaps(parent, qa, basis, snapshot, request.task_ids)
         if business_use.restricted_sources(db, parent['input_version_ids']):
             raise KnowledgeConflict('사용이 제한된 원문이 있습니다.')
+        current_requirements = {}
         for r in parent['requirements']:
             current = service.repository.get(db, 'requirements', r['id'])
             if (business_review.preservation_requirement_version(current) != business_review.preservation_requirement_version(r)
-                    or current['status'] == 'needs_review'
-                    or (current.get('current_assessment') or {}).get('run_id') != parent['id']):
+                    or current['status'] == 'needs_review'):
                 raise KnowledgeConflict('현재 요구 검수 실행이 바뀌었습니다.')
+            current_requirements[r['id']] = current
+        # The original request can reuse its child; selecting that child is an explicit new recheck.
+        for row in db.execute('SELECT payload FROM runs ORDER BY rowid DESC'):
+            child = json.loads(row['payload'])
+            if (child.get('parent_run_id') != parent['id'] or child['status'] not in {'succeeded', 'partial'}
+                    or not child.get('finished_at') or child['recipe']['options']['repair'] != request.repair
+                    or any(child[k] != parent[k] for k in ('blocks', 'input_version_ids', 'sources', 'answer_items'))
+                    or any((child.get('answer_gap_recheck') or {}).get(k) != v for k, v in receipt.items())):
+                continue
+            latest = {a['requirement_id']: a for a in child['assessments']}
+            if any((current.get('current_assessment') or {}).get('run_id') not in {parent['id'], child['id']}
+                    or (current.get('current_assessment') or {}).get('assessment_id') != latest[r['id']]['id']
+                    or (current.get('current_assessment') or {}).get('source_version_ids') != child['input_version_ids']
+                    or latest[r['id']].get('input_fingerprint') != business_run.assessment_fingerprint(
+                        child, r, latest[r['id']]['source'], latest[r['id']].get('review_scope'))
+                    for r in child['requirements'] for current in [current_requirements[r['id']]]):
+                continue
+            if child.get('changeset_id'):
+                change = service.repository.get(db, 'changesets', child['changeset_id'])
+                if change['candidates'] != child['claims'] or change.get('invalidated_claim_ids'):
+                    continue
+            return dict(run_id=child['id'], status=child['status'], deferred=receipt['deferred'], reused=True)
+        if any((r.get('current_assessment') or {}).get('run_id') != parent['id'] for r in current_requirements.values()):
+            raise KnowledgeConflict('현재 요구 검수 실행이 바뀌었습니다.')
         run = deepcopy(parent)
         run.update(id=uuid4().hex, parent_run_id=parent['id'], status='queued' if receipt['findings'] else 'partial',
             started_at=None, finished_at=None if receipt['findings'] else utcnow(),
@@ -130,7 +154,8 @@ def execute(service, run_id):
                 continue
             previous = next(a for a in reversed(run['assessments']) if a['requirement_id'] == requirement['id'])
             source = deepcopy(previous['source'])
-            source.setdefault('findings', []).extend(deepcopy(findings))
+            existing_ids = {f['id'] for f in source.setdefault('findings', [])}
+            source['findings'].extend(deepcopy(f) for f in findings if f['id'] not in existing_ids)
             keys = sorted({k for f in findings for k in f['meaning_keys']})
             assessment = business_run.assess(service, run, requirement, source=source,
                 phase='qa_gap_recheck', focus_meaning_keys=keys)
