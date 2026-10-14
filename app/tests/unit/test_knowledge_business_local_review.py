@@ -196,11 +196,12 @@ def test_repair_protects_unknown_part_of_compound_claim_without_blocking_indepen
 
 
 @pytest.mark.parametrize('aggregate_action', ['maintain', 'correct'])
-def test_repair_omits_only_past_source_history_and_corrects_shared_target_once(monkeypatch, aggregate_action):
+def test_repair_keeps_scoped_meanings_and_error_records_and_corrects_shared_target_once(monkeypatch, aggregate_action):
     run = local_run()
     bad, normal = [c['id'] for c in run['claims']]
     keys = ['first', 'second']
-    source = dict(meanings=[meaning(k) for k in keys], gaps=[], conjunctions=[],
+    source = dict(meanings=[dict(meaning(k),conditions=['신청']) for k in [*keys,'outside']], gaps=[], conjunctions=[],
+        meaning_conjunctions=[dict(meaning_keys=keys),dict(meaning_keys=['first','outside'])],
         findings=[dict(id='current', text='현재 미해결 사항')],
         finding_resolutions=[dict(finding_id='current', status='unresolved')],
         resolution_history=[dict(previous_gaps=['과거 이력'])],
@@ -214,6 +215,9 @@ def test_repair_omits_only_past_source_history_and_corrects_shared_target_once(m
     for check in representation['checks']:
         check['incorrect_claim_ids'] = [bad]
         check['claim_support'] = {normal: 'supported', bad: 'incorrect'}
+        check['reason'] = '지정 후보의 접수 관계 오류'
+        check['error_fields'] = {bad:['raw.Relation']}
+        check['error_evidence'] = deepcopy(source['meanings'][0]['evidence'])
     assessment = dict(id='a', source=source, representation=representation, errors=[], issues=[],
         actions=[dict(meaning_key=k, action='correct', claim_ids=[bad], reason=k) for k in keys] +
                 ([dict(meaning_key=k, action='maintain', claim_ids=[normal]) for k in keys]
@@ -225,9 +229,11 @@ def test_repair_omits_only_past_source_history_and_corrects_shared_target_once(m
         assert len(context['tasks']) == 1 and context['tasks'][0]['target_id'] == bad
         assert schema.model_json_schema()['properties']['patches']['maxItems'] == 1
         assert {t['meaning_key'] for t in context['tasks'][0]['meanings']} == set(keys)
-        assert all(t['review_records'][0]['unit_id'] == 'local' for t in context['tasks'][0]['meanings'])
-        assert context['source'] == {k: v for k, v in original_source.items()
-                                     if k not in {'resolution_history', 'reassessment_history'}}
+        for target in context['tasks'][0]['meanings']:
+            check = next(c for c in representation['checks'] if c['meaning_key'] == target['meaning_key'])
+            assert target['review_records'] == [dict(unit_id='local',check=check,provided_block_ids=['body'])]
+        assert context['source'] == dict(meanings=original_source['meanings'][:2],
+                                        meaning_conjunctions=original_source['meaning_conjunctions'][:1])
         assert [c['id'] for c in context['before']] == [bad]
         assert [c['id'] for c in context['reuse_candidates']] == [normal]
         assert context['blocks'][0]['text'] == run['blocks'][0]['text']
@@ -244,6 +250,9 @@ def test_repair_omits_only_past_source_history_and_corrects_shared_target_once(m
     assert not receipt['blocked_meaning_keys']
     assert run['assessments'] == []  # No semantic success is inferred by patch coverage.
     assert run['claims'][0]['superseded_by'] == [normal]
+    assert run['claims'][1] == receipt['before'][1]
+    assert receipt['changes'][0]['before']['id'] == bad
+    assert receipt['changes'][0]['after'] == run['claims'][0]
 
 
 def test_numeric_identifier_ranking_is_opt_in():
