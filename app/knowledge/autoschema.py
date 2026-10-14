@@ -365,7 +365,7 @@ def graph(claims):
             continue
         for n, (head, relation, tail) in enumerate(pairs):
             edges.append(dict(id=identifier('edge', [claim['id'], n]), head=head, relation=relation,
-                              tail=tail, claim_id=claim['id'], status=claim['review_status']))
+                              tail=tail, claim_id=claim['id'], source_chunk_id=claim['chunk_id'], status=claim['review_status']))
     return dict(nodes=list(nodes.values()), edges=edges,
                 interpretations={c['id']: c['interpretation'] for c in claims if c.get('interpretation')})
 
@@ -417,21 +417,30 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
     if kind == 'entity':
         prompt = prompt.replace('[CONTEXT]', context)
     source_edges = [e for e in extracted['edges'] if e['claim_id'] in target.get('claim_ids', [])]
-    chunk_ids = {cid for e in source_edges for k in ('head', 'tail')
-                 for cid in nodes[e[k]].get('chunk_ids', [nodes[e[k]]['chunk_id']])}
+    chunk_ids = {e['source_chunk_id'] for e in source_edges if e.get('source_chunk_id')}
+    chunk_ids.update(cid for e in source_edges if not e.get('source_chunk_id') for k in ('head', 'tail')
+                     for cid in nodes[e[k]].get('chunk_ids', [nodes[e[k]]['chunk_id']]))
     if target.get('chunk_id'):
         chunk_ids.add(target['chunk_id'])
     chunk_ids.update(target.get('chunk_ids', []))
-    mandatory, reference_map = [], {}
+    mandatory, reference_map, provided, duplicate_packets = [], {}, {}, []
     for chunk_id in sorted(chunk_ids):
         chunk = chunks_by_id[chunk_id]
         source_packets = source_packet(chunk['blocks'])
-        for packet in source_packets:
+        unique_packets = []
+        for block, packet in zip(chunk['blocks'], source_packets):
+            key = json.dumps([packet['source_version_id'], block.get('parse_run_id'), packet], ensure_ascii=False, sort_keys=True)
+            if key in provided:
+                duplicate_packets.append(dict(chunk_id=chunk_id, block_id=packet['id'], provided_alias=provided[key]))
+                continue
             alias = 'b' + str(len(reference_map) + 1)
             reference_map[alias] = dict(block_id=packet['id'], source_version_id=packet.pop('source_version_id'),
                                         span=packet.get('span'))
             packet['id'] = alias
-        mandatory.append(json.dumps(source_packets, ensure_ascii=False, separators=(',', ':')))
+            provided[key] = alias
+            unique_packets.append(packet)
+        if unique_packets:
+            mandatory.append(json.dumps(unique_packets, ensure_ascii=False, separators=(',', ':')))
     prompt += '\n한국어로 짧은 유형/관련 개념을 쉼표로 구분한다. 승인 유형·법적 포함을 판정하는 작업이 아니다.'
     interpretations = {cid: compact_interpretation(extracted.get('interpretations', {})[cid]) for cid in target.get('claim_ids', [])
                        if cid in extracted.get('interpretations', {})}
@@ -444,7 +453,8 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
         mode=mode, selected_edge_ids=[p['id'] for p in selected], mandatory_chunk_ids=sorted(chunk_ids),
         context_type='graph_neighbor', omitted_edge_ids=[p['id'] for p in omitted], omissions=omitted,
         selection_rule='direct_role_condition_then_source_order', neighbor_bytes=neighbor_bytes,
-        information_fingerprint=identifier('info', selected), source_reference_map=reference_map)
+        information_fingerprint=identifier('info', selected), source_reference_map=reference_map,
+        duplicate_source_packets=duplicate_packets)
 
 
 def concepts(text):
@@ -667,7 +677,7 @@ def scope_record(value, chunk, raw, role):
 def compact_interpretation(record):
     """Model view only; preserve interpretation content once, without ledger copies."""
     current = record.get('contract') in {'unverified-local-extraction-scope-v2', SCOPE_CONTRACT}
-    value = deepcopy({k:v for k,v in record.items() if k not in {'raw', 'claim_id'}})
+    value = deepcopy({k:v for k,v in record.items() if k not in {'raw', 'claim_id', 'address_restorations'}})
     if current:
         value.pop('mentions', None)  # Already attached directly to meanings.
     seen = set()
