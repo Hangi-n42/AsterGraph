@@ -18,6 +18,13 @@ it('shows explicit use, uncertainty and each restriction without declaring appro
   expect(html).not.toContain('승인 완료');
 });
 
+it('does not call every saved run automatic extraction', () => {
+  const view=fixture();view.scope={kind:'run',id:'edited'};
+  const html=renderToStaticMarkup(createElement(KnowledgeUsageDetails,{view}));
+  expect(html).toContain('저장 결과 · 미승인');
+  expect(html).not.toContain('자동 추출');
+});
+
 it('does not show an old scope while a different scope is loading', () => {
   hooks.seeds = [fixture(), '']; hooks.effects = []; hooks.setters = [];
   const html = renderToStaticMarkup(createElement(KnowledgeUsageState, { scope: { kind: 'source_graph', id: 'new', title: '새 범위', status: 'selection_recorded', data_label: '선택 기록' }, reload: 0, selectedClaimIds: [], onOpenScope: () => {} }));
