@@ -311,6 +311,10 @@ def graph(claims):
             # Claim conditions qualify the edge, not the identity of an exact
             # source mention reused by two different obligations.
             basis = [kind, label, next(iter(locations))]
+            if kind == 'entity' and any(m.get('address_projection') for m in mentions):
+                original_labels = {e['quote'] for m in mentions for e in m['evidence']}
+                if len(original_labels) == 1:
+                    basis[1] = next(iter(original_labels))
             identity = 'source_version+exact_mention+kind+endpoint_text'
             if not current:
                 basis.append(mentions[0].get('identity_scope', []))
@@ -517,6 +521,22 @@ def source_quotes(refs, chunk, *, within=()):
     return resolved, errors
 
 
+def display_mentions(label, refs):
+    """Project whitespace-only display differences back into exact source offsets."""
+    value = ''.join(c for c in label if not c.isspace())
+    occurrences = {}
+    if not value:
+        return occurrences
+    for ref in refs:
+        positions = [n for n, c in enumerate(ref['quote']) if not c.isspace()]
+        text = ''.join(ref['quote'][n] for n in positions)
+        for match in re.finditer('(?=' + re.escape(value) + ')', text):
+            start, end = positions[match.start()], positions[match.start() + len(value) - 1] + 1
+            address = (ref['source_version_id'], ref['block_id'], ref['start_char'] + start, ref['start_char'] + end)
+            occurrences[address] = dict(ref, start_char=address[-2], end_char=address[-1], quote=ref['quote'][start:end])
+    return occurrences
+
+
 def scope_record(value, chunk, raw, role):
     from graphlib import CycleError, TopologicalSorter
     from .business_models import ExtractionScope
@@ -569,6 +589,7 @@ def scope_record(value, chunk, raw, role):
         meaning['premise_ids'] = [keys[n] for n in indices] if valid else []
         dependencies[i] = indices if valid else []
         for participant in scope['meanings'][i]['participants']:
+            projection = False
             field, index = participant['field'], participant['entity_index']
             known_participants.add((field, index))
             label = (raw.get('Entity', [])[index] if field == 'Entity' and isinstance(index, int)
@@ -585,6 +606,11 @@ def scope_record(value, chunk, raw, role):
                         start = ref['start_char'] + match.start()
                         address = (ref['source_version_id'], ref['block_id'], start, start + len(label))
                         occurrences[address] = dict(ref, start_char=start, end_char=address[-1], quote=label)
+                if not occurrences and not errors:
+                    projected = display_mentions(label, refs)
+                    if len(projected) == 1:
+                        occurrences = projected
+                        projection = True
                 if len(occurrences) != 1 and not (literal_event and refs
                         and all(ref in event_refs for ref in refs)):
                     errors.append('entity mention is absent or ambiguous inside evidence')
@@ -597,6 +623,10 @@ def scope_record(value, chunk, raw, role):
             resolved = bool(refs and not errors)
             item = dict(participant, value=label, evidence=refs, meaning_refs=[meaning['id']],
                         address_status='resolved' if resolved else 'unresolved', address_errors=errors)
+            if projection:
+                item['address_projection'] = 'whitespace_display_only'
+                record.setdefault('address_restorations', []).append(dict(kind='whitespace_display_only',
+                    meaning_index=i, field=field, entity_index=index, requested_label=label, evidence=deepcopy(refs)))
             meaning['participants'].append(item)
             record['mentions'].append(deepcopy(item))
             record['errors'].extend(errors)
