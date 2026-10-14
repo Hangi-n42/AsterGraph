@@ -5,13 +5,22 @@ import json
 from . import autoschema, business_run
 
 
-def views(chunk, groups=None, required_context_views=None):
+def views(chunk, groups=None, required_context_views=None, additional_context_views=(), canonical_blocks=()):
     if not groups:
+        assert not additional_context_views
         return [deepcopy(chunk)]
     key = lambda b: (b.get('block_id',b.get('id')), tuple(b.get('span') or ()))
     originals = {key(b):b for b in chunk['blocks']}
+    canonical = {b['id']:b for b in canonical_blocks}
+    for ref in additional_context_views:
+        block = canonical[ref['block_id']]
+        assert ref['source_version_id'] == block['source_version_id'] == chunk['source_version_id']
+        assert ref['parse_run_id'] == (block.get('parse_run_id') or block.get('run_id'))
+        assert ref['quote'] == block['text'] and ref['locator'] == block.get('locator')
+        assert ref.get('span') is None and key(block) not in originals
+        originals[key(block)] = dict(deepcopy(block), context_only=True)
     wanted = {key(b) for b in chunk['blocks'] if not b.get('context_only')}
-    contexts = {key(b) for b in chunk['blocks'] if b.get('context_only')}
+    contexts = {k for k,b in originals.items() if b.get('context_only')}
     required = contexts if required_context_views is None else {key(b) for b in required_context_views}
     assert required <= contexts
     actual = []; result = []; included_contexts = set()
@@ -46,7 +55,8 @@ def repair(service, run, plan):
         assert original['messages'] == business_run.extraction_messages(run, chunk, row['role'])
         assert original['schema'] == autoschema.extraction_schema(row['role'])
         assert original['reference_map'] == chunk['source_reference_map']
-        for view in views(chunk, row.get('groups'), row.get('required_context_views')):
+        for view in views(chunk, row.get('groups'), row.get('required_context_views'),
+                          row.get('additional_context_views', ()), run.get('blocks', ())):
             if business_run.cancelled(service, run):
                 return
             stored_view = run.get('capacity_repair_views', {}).get(view['id'])
@@ -57,6 +67,8 @@ def repair(service, run, plan):
             metadata = dict(source_chunk_id=chunk['id'], repair_view_id=view['id'],
                 capacity_repair_origin=dict(run_id=row['origin_run_id'], unit_id=original['id'],
                     original_limits=deepcopy(original['executed_limits']), strategy=row['strategy']))
+            if row.get('preceding_failed_attempts'):
+                metadata['capacity_repair_origin']['preceding_failed_attempts'] = deepcopy(row['preceding_failed_attempts'])
             options = run['recipe']['options']
             cfg = dict(model=run['recipe']['models']['draft'], generation=run['recipe']['generation'],
                 identity=run['model_identity'], temperature=0, timeout=row['timeout'])
@@ -92,6 +104,8 @@ def repair(service, run, plan):
                     unit.update(status='failed', error=str(exc))
             added = run['claims'][before:]
             original_blocks = {(b['id'],tuple(b.get('span',[0,len(b['text'])]))):b for b in chunk['blocks']}
+            original_blocks.update({(b['id'],tuple(b.get('span',[0,len(b['text'])]))):b for b in run.get('blocks', ())
+                if b['id'] in {r['block_id'] for r in row.get('additional_context_views', ())}})
             source_fields_preserved = all(all(b.get(k) == original_blocks[
                 b['id'],tuple(b.get('span',[0,len(b['text'])]))].get(k)
                 for k in ('text','locator','source_version_id','parse_run_id','run_id','span')) for b in view['blocks'])
