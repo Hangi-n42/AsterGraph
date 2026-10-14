@@ -1559,19 +1559,23 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         # extract, reassess, approve, or conceptualize them.
         run['graph'] = autoschema.graph(run['claims'])
         save(service, run)
-        by_chunk = source_chunks(run)
+        from . import business_concepts
         projected = run.get('source_projection')
         run['conceptualization_scope'] = 'deferred_for_capacity_recovery' if defer_concepts else 'stored_pool_preserved' if run.get('stored_pool') and not projected else (
             'all' if options.get('conceptualize', True) else 'deferred_to_selected_targets')
-        for target in autoschema.concept_targets(run['graph']) if not defer_concepts and options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []:
+        targets = autoschema.concept_targets(run['graph']) if not defer_concepts and options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []
+        planned = business_concepts.prepare(run, targets, options['neighbor_mode'])
+        if projected:
+            projected['planned_concept_target_ids'] = [item['target']['id'] for item in planned]
+        for item in planned:
+            target = item['target']
             if cancelled(service, run):
                 return
             if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
                 projected['stop_reason'] = 'new_request_deadline'
                 break
-            messages, selection = autoschema.concept_messages(target, run['graph'], by_chunk, options['neighbor_mode'])
-            response = call(service, run, 'concept_' + target['kind'], messages, max_tokens=options['concept_tokens'])
-            run['concepts'].append(dict(id=uuid4().hex, target=target, selection=selection,
+            response = call(service, run, 'concept_' + target['kind'], item['messages'], max_tokens=options['concept_tokens'])
+            run['concepts'].append(dict(id=uuid4().hex, target=target, selection=item['selection'],
                 concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
                 relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id']))
             save(service, run)

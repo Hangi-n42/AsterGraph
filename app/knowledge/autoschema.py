@@ -373,16 +373,17 @@ def graph(claims):
 def concept_targets(extracted):
     targets = [deepcopy(n) for n in extracted['nodes'] if n['kind'] in {'entity', 'event'}]
     semantic_nodes = {n['id'] for n in targets}
-    seen = set()
+    relations = {}
     for edge in extracted['edges']:
         if edge['head'] not in semantic_nodes or edge['tail'] not in semantic_nodes:
             continue
-        if edge['relation'] not in seen:
-            seen.add(edge['relation'])
-            targets.append(dict(id=identifier('relation', edge['relation']), kind='relation', label=edge['relation'],
-                                claim_ids=[v['claim_id'] for v in extracted['edges'] if v['relation'] == edge['relation']
-                                           and v['head'] in semantic_nodes and v['tail'] in semantic_nodes]))
-    return targets
+        # Group generation by source ownership; each claim's Scope stays separate.
+        owner = edge.get('source_chunk_id') or edge['claim_id']
+        key = identifier('relation', [edge['relation'], owner])
+        target = relations.setdefault(key, dict(id=key, kind='relation', label=edge['relation'], claim_ids=[]))
+        if edge['claim_id'] not in target['claim_ids']:
+            target['claim_ids'].append(edge['claim_id'])
+    return targets + list(relations.values())
 
 
 def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_bytes=12000):
