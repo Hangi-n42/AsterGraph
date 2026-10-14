@@ -207,6 +207,8 @@ def start(service, request):
                 if key in parent:
                     run[key] = deepcopy(parent[key])
         if parent and (request.resume_run_id or request.reassess_run_id):
+            if (request.reassess_run_id or parent.get('stored_pool')) and 'capacity_repair_views' in parent:
+                run['capacity_repair_views'] = deepcopy(parent['capacity_repair_views'])
             from .business_edit import preservation_reuses
             latest_preservation = preservation_reuses(parent, run)
             latest_assessments = {a['requirement_id']: a for a in parent['assessments']}
