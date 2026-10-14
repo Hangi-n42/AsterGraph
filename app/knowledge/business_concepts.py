@@ -20,7 +20,7 @@ def plan(service, request):
 
 
 def prepare(parent, targets, mode):
-    chunks = {c['id']: c for c in parent['chunks']}
+    chunks = business_run.source_chunks(parent)
     for claim in parent['claims']:
         if claim['chunk_id'] not in chunks:
             ids = {e['block_id'] for e in claim['evidence']}
