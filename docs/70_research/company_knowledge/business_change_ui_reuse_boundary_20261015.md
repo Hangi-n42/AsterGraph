@@ -31,3 +31,5 @@ UI는 이미 연결된 `3014/8014`의 동일 계약으로 검증한 기록만 �
 - UI 증거: `/Users/hyeongi/.codex/artifacts/knowledge-workbench-state-20261012/final-receipt.json`, `actual-api-receipt.json`, `root-saved-qa-current-state.png`. 당시 조회는 현재 관련 요구7/needs_review0, 옛 snapshot 제한5/새 snapshot 제한0을 구분했다. 원문·QA를 다시 평가한 값이 아니다.
 
 버스·UI의 과거 실제 성공, 이번 모델 없는 기록 대조, 새 조건·같은 block 독립성의 미검증을 구분한다. 전체 W6와 #616/#617/#620을 완료 처리하지 않는다. 다음 검증의 실행 조율은 조정 세션 담당이며 현재 사용자 결정이 필요한 사항은 없다.
+
+후속으로 [동일 행 필드 설명과 지원 Event 저장·재조회 경계](business_change_field_edit_boundary_20261015.md)를 실제 복사 DB·브라우저에서 확인했다. 동일4필드 표시와 직접 편집 종류/저장 시각을 보완했으며, 옛 행 전체 재허용·새 조건 의미검증·자동 교정 성공으로 세지 않는다.
