@@ -851,7 +851,7 @@ def query(service, request, *, context_mode='graph'):
             raise KnowledgeConflict('다른 실행이 종료된 뒤 답변을 요청하세요.')
         if source_reader:
             original = service.repository.get(db, 'runs', request.source_run_id)
-            if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'failed', 'cancelled'}:
+            if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'review_ready', 'failed', 'cancelled'}:
                 raise ValueError('종료된 업무 지식 추출 실행을 선택하세요.')
             # A transient read view, never an approval or a stored snapshot.
             snapshot = dict(id='run:' + original['id'], kind='source_graph', run_id=original['id'],
