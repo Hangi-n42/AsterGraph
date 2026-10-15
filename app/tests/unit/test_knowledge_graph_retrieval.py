@@ -6,7 +6,7 @@ import pytest
 
 from app.knowledge import autoschema, business_run, business_use, graph_retrieval as gr
 from app.knowledge.business_models import BusinessQuery
-from app.knowledge.service import KnowledgeService
+from app.knowledge.service import KnowledgeConflict, KnowledgeService
 
 
 def snapshot():
@@ -177,11 +177,13 @@ def test_qa_source_aliases_restore_citations_and_preserve_source_spans(tmp_path,
         service.shutdown()
 
 
-@pytest.mark.parametrize('retrieval,variant', [('bm25', 'full'), ('dense', 'entity_event'),
-    ('hipporag2', 'entity_event'), ('hipporag2', 'full')])
-def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, monkeypatch, retrieval, variant):
+@pytest.mark.parametrize('retrieval,variant,mode', [('bm25', 'full', 'document'), ('bm25', 'full', 'graph'),
+    ('dense', 'entity_event', 'graph'), ('hipporag2', 'entity_event', 'graph'),
+    ('hipporag2', 'full', 'graph'), ('hybrid_graph', 'full', 'graph')])
+@pytest.mark.parametrize('source_status', ['succeeded', 'partial', 'review_ready', 'failed', 'cancelled'])
+def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, monkeypatch, retrieval, variant, mode, source_status):
     s = snapshot()
-    original = dict(id='origin', kind='business', status='partial', units=[], model_identity={},
+    original = dict(id='origin', kind='business', status=source_status, units=[], model_identity={},
                     recipe=dict(options=dict(context_tokens=49152, review_tokens=4096)),
                     sources=s['source_versions'], blocks=s['blocks'], claims=s['claims'], concepts=s['concepts'])
     for claim in original['claims']:
@@ -201,16 +203,44 @@ def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, 
     monkeypatch.setattr(business_run, 'json_call', call)
     try:
         result = business_use.query(service, BusinessQuery(source_run_id='origin', question='원문', limit=2,
-            retrieval=retrieval, graph_variant=variant))
+            retrieval=retrieval, graph_variant=variant), context_mode=mode)
         assert result['status'] == 'answered' and result['snapshot_id'] is None
         assert result['answer_basis'] == 'source_passages_not_ontology_approval'
-        selection = service.run(result['run_id'])['passage_selection']
+        saved = service.run(result['run_id'])
+        assert saved['source_extraction_status'] == source_status
+        selection = saved['passage_selection']
         assert selection['contract'] == gr.SELECTION_CONTRACT and len(selection['ranked_candidates']) == 4
         assert [h['selected_rank'] for h in result['retrieval']] == [1, 2]
         with service.repository.connect() as db:
             assert db.execute('SELECT count(*) FROM snapshots').fetchone()[0] == 0
             assert db.execute('SELECT count(*) FROM decisions').fetchone()[0] == 0
             assert service.repository.get(db, 'runs', 'origin') == original
+    finally:
+        service.shutdown()
+
+
+@pytest.mark.parametrize('kind,status,error', [
+    ('business', 'queued', KnowledgeConflict),
+    ('business', 'running', KnowledgeConflict),
+    ('business', 'cancel_requested', KnowledgeConflict),
+    ('business', 'unsupported', ValueError),
+    ('parse', 'succeeded', ValueError),
+    ('business_change', 'succeeded', ValueError),
+    ('business_query', 'succeeded', ValueError),
+])
+def test_source_run_qa_rejects_active_or_unsupported_runs(tmp_path, monkeypatch, kind, status, error):
+    original = dict(id='origin', kind=kind, status=status)
+    service = KnowledgeService(tmp_path/'knowledge.db')
+    with service.repository.connect() as db:
+        db.execute('INSERT INTO runs VALUES(?,?)', ('origin', json.dumps(original)))
+    monkeypatch.setattr(business_run, 'json_call', lambda *args, **kwargs: pytest.fail('model must not be called'))
+    try:
+        with pytest.raises(error):
+            business_use.query(service, BusinessQuery(source_run_id='origin', question='원문', retrieval='bm25'),
+                               context_mode='document')
+        with service.repository.connect() as db:
+            assert service.repository.get(db, 'runs', 'origin') == original
+            assert db.execute('SELECT count(*) FROM runs').fetchone()[0] == 1
     finally:
         service.shutdown()
 
@@ -344,3 +374,31 @@ def test_reader_preserves_mandatory_context_across_linked_continuations():
     parts = sorted([r for r in rows if r.get('id') == 'header'], key=lambda r:r['span'])
     assert ''.join(r['text'] for r in parts) == header
     assert all(r['supports_context_ids'] == ['passage'] for r in parts)
+
+
+def test_reader_keeps_native_list_and_table_positions_without_rewriting_source():
+    parent = '#root > section:nth-of-type(1) > ul > li:nth-of-type(2)'
+    blocks = [dict(id=cid, text=text, source_version_id='v', parse_run_id='p',
+                   locator=dict(element_path=path, block_order=order, **extra))
+        for cid, text, path, order, extra in [
+            ('title', '지원 용도 목록', parent + '::text(0)', 10, {}),
+            ('table', '첫 용도\n둘째 용도', parent + ' > table', 11, dict(row=0, column=0)),
+            ('note', '일부 대상 제외', parent + ' > ul > li', 12, {}),
+            ('other', '다른 항목 제외', '#root > section:nth-of-type(2) > ul > li', 20, {})]]
+    candidate = dict(id='passage', text=blocks[0]['text'], source_reference=dict(
+        source_version_id='v', parse_run_id='p', block_id='title',
+        start_char=0, end_char=len(blocks[0]['text'])))
+    before = deepcopy(blocks)
+    context = [candidate]
+    rows = gr.source_context(blocks, context, dict(context_tokens=4096, review_tokens=256))
+    assert blocks == before and candidate['text'] == before[0]['text']
+    assert context[0]['locator'] == dict(element_path=parent + '::text(0)', block_order=10)
+    note = next(row for row in rows if row.get('id') == 'note')
+    assert note['text'] == before[2]['text']
+    assert note['supports_context_ids'] == ['passage']
+    assert note['locator'] == dict(element_path=parent + ' > ul > li', block_order=12)
+    assert not any(row.get('id') == 'other' for row in rows)
+    assert gr.reader_locator(before[1])['row'] == 0
+    assert gr.reader_locator(before[1])['column'] == 0
+    assert 'element_path' not in gr.autoschema.source_packet([before[0]])[0].get('locator', {})
+    assert set(note['locator']) == {'element_path', 'block_order'}

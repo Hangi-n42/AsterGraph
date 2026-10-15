@@ -24,7 +24,7 @@ def test_reassessment_does_not_reactivate_old_changed_source(tmp_path, monkeypat
     requirements = [dict(id=rid, revision=1, status='satisfied', history=[], change_history=[],
                          question=rid, criterion=rid, current_assessment=None) for rid in ['changed', 'stable']]
     original = dict(id='origin', kind='business', status='succeeded', units=[],
-        started_at='2026-01-01T00:00:00+00:00', recipe=dict(options={}), model_identity={})
+        started_at='2026-01-01T00:00:00+00:00', recipe=dict(options={}), model_identity={}, requirements=deepcopy(requirements))
     snapshot = dict(id='old', kind='source_graph', run_id='origin', source_versions={'v1':{}}, concepts=[],
                     blocks=blocks[:2], claims=claims[:2], requirements=deepcopy(requirements),
                     assessments={r['id']:dict(id='a-' + r['id'], status='satisfied', claim_ids=[claims[i]['id']])

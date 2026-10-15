@@ -114,12 +114,18 @@ def source_packet(blocks):
     return result
 
 
+def list_text_parent(path):
+    # A list item's text can be a direct text node or a paragraph/span child.
+    return re.sub(r'( > (?:p|span):[^>]+)$', '', path) if re.search(
+        r'(?:^| > )li:[^>]+ > (?:p|span):[^>]+$', path) else path.split('::text(')[0]
+
+
 def list_parents(block, blocks):
     """Parser list ancestors only; their semantic applicability remains a model judgment."""
     path = block.get('locator', {}).get('element_path', '')
     return [b for b in blocks if b['id'] != block['id'] and b['source_version_id'] == block['source_version_id']
-            and '::text(' in b.get('locator', {}).get('element_path', '')
-            and path.startswith(b['locator']['element_path'].split('::text(')[0] + ' > ')]
+            and list_text_parent(b.get('locator', {}).get('element_path', '')) != b.get('locator', {}).get('element_path', '')
+            and path.startswith(list_text_parent(b['locator']['element_path']) + ' > ')]
 
 
 def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
@@ -154,8 +160,8 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
             # (for example a missing applicant); preserve the actual parent text.
             context += [dict(b, context_only=True) for b in list_parents(block, group)]
             # A retrieved list label needs the contents of its own nested list.
-            parent_item = path.split('::text(')[0]
-            if '::text(' in path and re.search(r'(?:^| > )li(?::[^>]*)?$', parent_item):
+            parent_item = list_text_parent(path)
+            if parent_item != path and re.search(r'(?:^| > )li(?::[^>]*)?$', parent_item):
                 prefix = parent_item + ' > '
                 context += [dict(b, context_only=True) for b in group
                     if b.get('locator', {}).get('element_path', '').startswith(prefix)
@@ -305,6 +311,10 @@ def graph(claims):
             # Claim conditions qualify the edge, not the identity of an exact
             # source mention reused by two different obligations.
             basis = [kind, label, next(iter(locations))]
+            if kind == 'entity' and any(m.get('address_projection') for m in mentions):
+                original_labels = {e['quote'] for m in mentions for e in m['evidence']}
+                if len(original_labels) == 1:
+                    basis[1] = next(iter(original_labels))
             identity = 'source_version+exact_mention+kind+endpoint_text'
             if not current:
                 basis.append(mentions[0].get('identity_scope', []))
@@ -336,7 +346,7 @@ def graph(claims):
         elif role in {'entity_relation', 'event_relation'}:
             kind = 'entity' if role == 'entity_relation' else 'event'
             pairs = [(node(claim, kind, raw['Head'], 'Head'), raw['Relation'], node(claim, kind, raw['Tail'], 'Tail'))]
-        elif role == 'structured_row' and claim.get('construction_method') == 'direct_tabular_row':
+        elif role == 'structured_row' and claim.get('construction_method') in {'direct_tabular_row', 'verified_html_classification_row_v1'}:
             # A row and its typed properties, not inferred entities or events.
             # Identity stays within this source claim, even for equal field values.
             row_id = identifier('node', [claim['id'], 'structured_row'])
@@ -350,12 +360,15 @@ def graph(claims):
                 field_id = identifier('node', [claim['id'], 'field_value', field])
                 nodes[field_id] = dict(common, id=field_id, kind='field_value', field=field,
                     value=deepcopy(value), label=json.dumps(value, ensure_ascii=False))
+                if claim.get('construction_method') == 'verified_html_classification_row_v1':
+                    nodes[field_id]['evidence'] = deepcopy(claim['field_evidence'][field])
+                    nodes[field_id]['construction_method'] = claim['construction_method']
                 pairs.append((row_id, field, field_id))
         else:
             continue
         for n, (head, relation, tail) in enumerate(pairs):
             edges.append(dict(id=identifier('edge', [claim['id'], n]), head=head, relation=relation,
-                              tail=tail, claim_id=claim['id'], status=claim['review_status']))
+                              tail=tail, claim_id=claim['id'], source_chunk_id=claim['chunk_id'], status=claim['review_status']))
     return dict(nodes=list(nodes.values()), edges=edges,
                 interpretations={c['id']: c['interpretation'] for c in claims if c.get('interpretation')})
 
@@ -363,16 +376,17 @@ def graph(claims):
 def concept_targets(extracted):
     targets = [deepcopy(n) for n in extracted['nodes'] if n['kind'] in {'entity', 'event'}]
     semantic_nodes = {n['id'] for n in targets}
-    seen = set()
+    relations = {}
     for edge in extracted['edges']:
         if edge['head'] not in semantic_nodes or edge['tail'] not in semantic_nodes:
             continue
-        if edge['relation'] not in seen:
-            seen.add(edge['relation'])
-            targets.append(dict(id=identifier('relation', edge['relation']), kind='relation', label=edge['relation'],
-                                claim_ids=[v['claim_id'] for v in extracted['edges'] if v['relation'] == edge['relation']
-                                           and v['head'] in semantic_nodes and v['tail'] in semantic_nodes]))
-    return targets
+        # Group generation by source ownership; each claim's Scope stays separate.
+        owner = edge.get('source_chunk_id') or edge['claim_id']
+        key = identifier('relation', [edge['relation'], owner])
+        target = relations.setdefault(key, dict(id=key, kind='relation', label=edge['relation'], claim_ids=[]))
+        if edge['claim_id'] not in target['claim_ids']:
+            target['claim_ids'].append(edge['claim_id'])
+    return targets + list(relations.values())
 
 
 def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_bytes=12000):
@@ -407,21 +421,30 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
     if kind == 'entity':
         prompt = prompt.replace('[CONTEXT]', context)
     source_edges = [e for e in extracted['edges'] if e['claim_id'] in target.get('claim_ids', [])]
-    chunk_ids = {cid for e in source_edges for k in ('head', 'tail')
-                 for cid in nodes[e[k]].get('chunk_ids', [nodes[e[k]]['chunk_id']])}
+    chunk_ids = {e['source_chunk_id'] for e in source_edges if e.get('source_chunk_id')}
+    chunk_ids.update(cid for e in source_edges if not e.get('source_chunk_id') for k in ('head', 'tail')
+                     for cid in nodes[e[k]].get('chunk_ids', [nodes[e[k]]['chunk_id']]))
     if target.get('chunk_id'):
         chunk_ids.add(target['chunk_id'])
     chunk_ids.update(target.get('chunk_ids', []))
-    mandatory, reference_map = [], {}
+    mandatory, reference_map, provided, duplicate_packets = [], {}, {}, []
     for chunk_id in sorted(chunk_ids):
         chunk = chunks_by_id[chunk_id]
         source_packets = source_packet(chunk['blocks'])
-        for packet in source_packets:
+        unique_packets = []
+        for block, packet in zip(chunk['blocks'], source_packets):
+            key = json.dumps([packet['source_version_id'], block.get('parse_run_id'), packet], ensure_ascii=False, sort_keys=True)
+            if key in provided:
+                duplicate_packets.append(dict(chunk_id=chunk_id, block_id=packet['id'], provided_alias=provided[key]))
+                continue
             alias = 'b' + str(len(reference_map) + 1)
             reference_map[alias] = dict(block_id=packet['id'], source_version_id=packet.pop('source_version_id'),
                                         span=packet.get('span'))
             packet['id'] = alias
-        mandatory.append(json.dumps(source_packets, ensure_ascii=False, separators=(',', ':')))
+            provided[key] = alias
+            unique_packets.append(packet)
+        if unique_packets:
+            mandatory.append(json.dumps(unique_packets, ensure_ascii=False, separators=(',', ':')))
     prompt += '\n한국어로 짧은 유형/관련 개념을 쉼표로 구분한다. 승인 유형·법적 포함을 판정하는 작업이 아니다.'
     interpretations = {cid: compact_interpretation(extracted.get('interpretations', {})[cid]) for cid in target.get('claim_ids', [])
                        if cid in extracted.get('interpretations', {})}
@@ -434,7 +457,8 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
         mode=mode, selected_edge_ids=[p['id'] for p in selected], mandatory_chunk_ids=sorted(chunk_ids),
         context_type='graph_neighbor', omitted_edge_ids=[p['id'] for p in omitted], omissions=omitted,
         selection_rule='direct_role_condition_then_source_order', neighbor_bytes=neighbor_bytes,
-        information_fingerprint=identifier('info', selected), source_reference_map=reference_map)
+        information_fingerprint=identifier('info', selected), source_reference_map=reference_map,
+        duplicate_source_packets=duplicate_packets)
 
 
 def concepts(text):
@@ -479,6 +503,14 @@ def extraction_schema(role):
     return schema
 
 
+def space_run_spans(value, text):
+    """Only the count of literal spaces may differ; all space boundaries remain."""
+    if ' ' not in value:
+        return []
+    pattern = ''.join(' +' if part.startswith(' ') else re.escape(part) for part in re.split('( +)', value))
+    return [match.span(1) for match in re.finditer('(?=(' + pattern + '))', text)]
+
+
 def source_quotes(refs, chunk, *, within=()):
     """Resolve unique quotes in the addressed view, without guessing occurrences."""
     resolved, errors = [], []
@@ -493,22 +525,49 @@ def source_quotes(refs, chunk, *, within=()):
             errors.append('unresolved source view')
             continue
         block = views[0]
-        offsets = [m.start() for m in re.finditer(re.escape(ref['quote']), block['text'])]
-        if len(offsets) > 1 and within:
-            base = block.get('span', [0])[0]
-            offsets = [offset for offset in offsets if any(parent['block_id'] == block['id']
+        spans = [m.span() for m in re.finditer(re.escape(ref['quote']), block['text'])]
+        projection = not spans
+        if projection:
+            spans = space_run_spans(ref['quote'], block['text'])
+        base = block.get('span', [0])[0]
+        if len(spans) > 1 and within:
+            spans = [(start, end) for start, end in spans if any(parent['block_id'] == block['id']
                 and parent['source_version_id'] == block['source_version_id']
-                and parent['start_char'] <= base + offset
-                and base + offset + len(ref['quote']) <= parent['end_char'] for parent in within)]
-        if len(offsets) != 1:
+                and parent['start_char'] <= base + start
+                and base + end <= parent['end_char'] for parent in within)]
+        if len(spans) != 1:
             errors.append('quote not uniquely located in provided view')
             continue
-        start = block.get('span', [0])[0] + offsets[0]
-        resolved.append(dict(block_id=block['id'], source_version_id=block['source_version_id'],
+        start, end = spans[0]
+        item = dict(block_id=block['id'], source_version_id=block['source_version_id'],
             parse_run_id=block.get('parse_run_id') or block.get('run_id'),
-            start_char=start, end_char=start + len(ref['quote']), quote=ref['quote'],
-            context_only=bool(block.get('context_only')), precision='exact_unverified_meaning'))
+            start_char=base + start, end_char=base + end, quote=block['text'][start:end],
+            context_only=bool(block.get('context_only')), precision='exact_unverified_meaning')
+        if projection:
+            item['matching_method'] = 'space_run_length_only'
+        resolved.append(item)
     return resolved, errors
+
+
+def display_mentions(label, refs):
+    """Project whitespace-only display differences back into exact source offsets."""
+    value = ''.join(c for c in label if not c.isspace())
+    occurrences = {}
+    if not value:
+        return occurrences
+    for ref in refs:
+        if ref.get('matching_method') == 'space_run_length_only':
+            for start, end in space_run_spans(label, ref['quote']):
+                address = (ref['source_version_id'], ref['block_id'], ref['start_char'] + start, ref['start_char'] + end)
+                occurrences[address] = dict(ref, start_char=address[-2], end_char=address[-1], quote=ref['quote'][start:end])
+            continue
+        positions = [n for n, c in enumerate(ref['quote']) if not c.isspace()]
+        text = ''.join(ref['quote'][n] for n in positions)
+        for match in re.finditer('(?=' + re.escape(value) + ')', text):
+            start, end = positions[match.start()], positions[match.start() + len(value) - 1] + 1
+            address = (ref['source_version_id'], ref['block_id'], ref['start_char'] + start, ref['start_char'] + end)
+            occurrences[address] = dict(ref, start_char=address[-2], end_char=address[-1], quote=ref['quote'][start:end])
+    return occurrences
 
 
 def scope_record(value, chunk, raw, role):
@@ -563,6 +622,7 @@ def scope_record(value, chunk, raw, role):
         meaning['premise_ids'] = [keys[n] for n in indices] if valid else []
         dependencies[i] = indices if valid else []
         for participant in scope['meanings'][i]['participants']:
+            projection = False
             field, index = participant['field'], participant['entity_index']
             known_participants.add((field, index))
             label = (raw.get('Entity', [])[index] if field == 'Entity' and isinstance(index, int)
@@ -579,6 +639,12 @@ def scope_record(value, chunk, raw, role):
                         start = ref['start_char'] + match.start()
                         address = (ref['source_version_id'], ref['block_id'], start, start + len(label))
                         occurrences[address] = dict(ref, start_char=start, end_char=address[-1], quote=label)
+                if not occurrences and not errors:
+                    projected = display_mentions(label, refs)
+                    if len(projected) == 1:
+                        occurrences = projected
+                        projection = ('space_run_length_only' if any(r.get('matching_method') == 'space_run_length_only'
+                            for r in projected.values()) else 'whitespace_display_only')
                 if len(occurrences) != 1 and not (literal_event and refs
                         and all(ref in event_refs for ref in refs)):
                     errors.append('entity mention is absent or ambiguous inside evidence')
@@ -591,6 +657,10 @@ def scope_record(value, chunk, raw, role):
             resolved = bool(refs and not errors)
             item = dict(participant, value=label, evidence=refs, meaning_refs=[meaning['id']],
                         address_status='resolved' if resolved else 'unresolved', address_errors=errors)
+            if projection:
+                item['address_projection'] = projection
+                record.setdefault('address_restorations', []).append(dict(kind=projection,
+                    meaning_index=i, field=field, entity_index=index, requested_label=label, evidence=deepcopy(refs)))
             meaning['participants'].append(item)
             record['mentions'].append(deepcopy(item))
             record['errors'].extend(errors)
@@ -631,7 +701,7 @@ def scope_record(value, chunk, raw, role):
 def compact_interpretation(record):
     """Model view only; preserve interpretation content once, without ledger copies."""
     current = record.get('contract') in {'unverified-local-extraction-scope-v2', SCOPE_CONTRACT}
-    value = deepcopy({k:v for k,v in record.items() if k not in {'raw', 'claim_id'}})
+    value = deepcopy({k:v for k,v in record.items() if k not in {'raw', 'claim_id', 'address_restorations'}})
     if current:
         value.pop('mentions', None)  # Already attached directly to meanings.
     seen = set()

@@ -91,6 +91,60 @@ def test_explicit_confirmation_is_separate_from_edit_and_model_eligibility(editi
     assert rows[0]['statement'] == request.event
 
 
+@pytest.mark.parametrize('source_only', [False, True])
+@pytest.mark.parametrize('missing_scope', [False, True])
+def test_edit_impact_records_existing_links_for_candidate_and_source_edits(editing, monkeypatch, source_only, missing_scope):
+    service, parent, change, request = with_source(editing) if source_only else editing
+    parent_before = deepcopy(parent)
+    related = dict(deepcopy(parent['requirements'][0]), id='linked', revision=1, status='satisfied',
+        current_assessment=dict(run_id='prior-linked', assessment_id='linked-a', revision=1,
+                                source_version_ids=['v']), history=[])
+    unlinked = dict(deepcopy(related), id='new', current_assessment=None, status='unassessed')
+    prior = dict(deepcopy(parent), id='prior-linked', requirements=[related], assessments=[dict(
+        id='linked-a', requirement_id='linked', revision=1, claim_ids=[request.claim_id],
+        source=dict(meanings=[meaning('m')]), representation=judgments(['m'], ids=[request.claim_id]))])
+    with service.repository.connect() as db:
+        db.execute('INSERT INTO runs VALUES(?,?)', (prior['id'], encode(prior)))
+        for requirement in (related, unlinked):
+            db.execute('INSERT INTO requirements VALUES(?,?)', (requirement['id'], encode(requirement)))
+    started = business_edit.start(service, change['id'], request)
+    if missing_scope:
+        with service.repository.connect() as db:
+            child = service.repository.get(db, 'runs', started['run_id'])
+            child['sources'] = {}
+            service.repository.save(db, 'runs', child)
+    monkeypatch.setattr(business_run.ModelClient, 'identities', lambda *args: {})
+    monkeypatch.setattr(business_review, 'apply_requirement', lambda _s, _r, _q, facts, _b: facts)
+    def assess(_service, run, requirement, *, source, phase):
+        assessment = dict(id='recheck', requirement_id=requirement['id'], source=source,
+                          representation=None, errors=[], status='unknown')
+        run['assessments'].append(assessment)
+        return assessment
+    monkeypatch.setattr(business_run, 'assess', assess)
+    def check(_service, run, stage, instruction, context, schema):
+        assert stage == 'change_impact' and context['direct_dependency_ids'] == ([] if missing_scope else ['linked'])
+        assert {d['requirement_id']: d['status'] for d in context['stored_dependencies']} == {
+            'linked': 'provided', 'new': 'unassessed'}
+        raw = dict(items=[dict(requirement_id=r['id'], status='affected', reason='synthetic source comparison',
+            change_ids=[context['diff']['changes'][0]['id']], new_relevance=r['id'] == 'linked')
+            for r in context['requirements']])
+        run['units'].append(dict(id='impact', stage=stage, status='succeeded', response=dict(parsed=deepcopy(raw))))
+        return schema.model_validate(raw).model_dump()
+    monkeypatch.setattr(business_run, 'json_call', check)
+    business_edit.recheck(service, started['run_id'])
+    child = service.run(started['run_id'])
+    assert child.get('error') is None
+    assert child['direct_dependency_ids'] == ([] if missing_scope else ['linked'])
+    assert {i['requirement_id']: i['new_relevance'] for i in child['edit_impact']['items']} == {
+        'linked': False, 'new': not missing_scope}
+    assert child['units'][0]['response']['parsed']['items'][0]['new_relevance'] is True
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'runs', parent['id']) == parent_before
+        current = service.repository.get(db, 'requirements', 'linked')
+    assert current['current_assessment'] == related['current_assessment'] and current['status'] == 'needs_review'
+    assert business_use.snapshots(service)['items'] == []
+
+
 def test_snapshot_invalidation_is_scoped_and_preserves_contents(editing):
     service, parent, change, request = editing
     affected = dict(id='affected', kind='source_graph', run_id=parent['id'], claims=[parent['claims'][0]], assessments={})

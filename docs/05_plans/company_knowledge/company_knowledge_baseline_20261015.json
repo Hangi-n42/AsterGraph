@@ -1,0 +1,345 @@
+{
+  "purpose": "existing product A plus workbench B integrated baseline; no new model evaluation",
+  "base_main": "bebf7b3aaca0e8cabe2c29f4d2def518e48ac661",
+  "validated_code_commit": "afc8b8f0d7268c0b644d100952a806ad4dfe4c06",
+  "product_original_to_integration": [
+    {
+      "original_sha": "c87722bed87994b2d3d2dfafb56af845bc06a611",
+      "integration_sha": "ca41d84c498bfa2fbdfd02e0145ae08854d93e41",
+      "subject": "원문 Hybrid 비교와 질문 없는 그래프 구축 경로 지원",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "da9f53abf3cb141b904f0133d8557e5b7dfcb4be",
+      "integration_sha": "a63cc2f647897ccdea6a6e00a03bca3bb2e64f93",
+      "subject": "완료 추출 보존과 발표용 개념화 중단 경계 연결",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "ade0185c5de6ca14e4ddfd872c4af57bf5ce534b",
+      "integration_sha": "bfe58e05ef99cbb29ea1f1440bd7387a8a55e064",
+      "subject": "RAG: 답변 문맥의 원문 위치 복원과 제한 비교 결과 보존",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "cb42d4116468d8e214ce9d23be4d50ee7ab9310c",
+      "integration_sha": "b35f8b5eb6235cb037dc450c949e9dcb4921a75e",
+      "subject": "문서 하이브리드 그래프 검색과 공통 원문 구조 전달 연결",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "c30ad6802555c95bc62784b077ee13e182b406c9",
+      "integration_sha": "bd370a037516201813a50c95628551a569aac679",
+      "subject": "knowledge: restore uniquely addressed whitespace display mentions",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "4328a8ff50c60a0b802454731cdf7d18c10ea73a",
+      "integration_sha": "f946ee7126214bbe96ddf3a07128d25af42feb18",
+      "subject": "저장 QA 재검토의 중복 관찰과 완료 요청 재사용 경계 수정",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "cef86b335125be150b0087321bcda9b3a3a5b961",
+      "integration_sha": "5046cc2046801273e203962256cb5b815b5ccf79",
+      "subject": "교정 입력 범위에 맞춰 기존 검사를 정렬하고 변경·UI 재사용 한계 기록",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "1a1d8ad734b91660c76a78a97122eba605b583ae",
+      "integration_sha": "81a2aa2f46de1c5f536e4032b8b653bb363ec381",
+      "subject": "지식 개념 입력의 원문 소유권과 저장 복구 문맥 상속 보존",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "d6341c2a5c8034cd082227ae020c0061367afe74",
+      "integration_sha": "ff30b6bc4c8310dad378c0e8caadcbd812e027b8",
+      "subject": "저장 지식 풀의 체크포인트와 용량 복구 의존성 포함",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "09d143e40f84588c3d400c5c9ba04c69e3b7b9c0",
+      "integration_sha": "13dd6e845bc7307a5b034b9b1f00c4f5b95845e8",
+      "subject": "관계 개념 입력을 원문 소유권과 후보 경계에서 분할",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "ea0004e86b645edfb8248f7e24529846095634ff",
+      "integration_sha": "703aac78a983707cec4c76417524277bdf7f8261",
+      "subject": "동결 용량 복구의 원본 문맥과 과거 실패 계보 보존",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "091345cd1890ca966b7e9dbf6f7ad4f432682c00",
+      "integration_sha": "22b0878fb904bf8546de426cbcbc07ad75dc2c09",
+      "subject": "과거 상담 비교의 공통 답변과 근거 참조 경계 포함",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "a986bcda25265c5cbd05d17033202c22dff4b120",
+      "integration_sha": "9cf60a27e4a31274ad9de0ee8ddac07d3fa444fa",
+      "subject": "검증된 HTML 분류표 행과 셀별 원문 근거 저장",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "dd53dc3b27fad6c42a0a71b7bd39a96c62328181",
+      "integration_sha": "7f31986ed149ef8da754989262dfcebc8de87f24",
+      "subject": "연속 공백 개수 차이의 원문 인용과 끝점 주소 복원",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "ee376f7a6397726d2daf934075284e007ae91350",
+      "integration_sha": "2d293349295d196924c511e2aa314c9178fd4a79",
+      "subject": "개념화 원문 대응표를 저장과 응답 재사용 경계에 전달",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "06b7d520dc57576bba33357228aa1ed9ef8e2a80",
+      "integration_sha": "fb4e2e3f5e33e72a060f5028f15a5db92904eb0d",
+      "subject": "회사 지식 워크벤치의 탐색·검토·근거 추적 연결",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "d10437bf2ece017862339d6a1210acc2acec4601",
+      "integration_sha": "794bda7d17738c084973d66012bc8672b79320d3",
+      "subject": "회사 지식 그래프 배치와 상세 가독성 개선",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "372afbb09770c13df3847f9b387c62f4e836cf36",
+      "integration_sha": "1bf94b764c359c43dd8f3036f5f3000f975cd5ff",
+      "subject": "feat(지식): 사용 버전과 실제 변경 기록 조회 연결",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "86a277fd07914e6da2c64319f1610486a73aff78",
+      "integration_sha": "6c1aaf0b2a3e293acd8c246556e9f2935b7d243a",
+      "subject": "같은 행 유지 필드와 직접 수정 저장 이력의 조회 보완",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    },
+    {
+      "original_sha": "bce72d7acc96daabcbe79fcad6230c670cbdae17",
+      "integration_sha": "a37a8db47a763a3858389cf3e810a68e2d6b0a2a",
+      "subject": "fix: 검토 대기 추출 실행의 원문 답변 조회 허용",
+      "method": "cherry-pick -x original whole commit"
+    },
+    {
+      "original_sha": "cc3922f9f453ef9d02f934495dc16dbaf7229f73",
+      "integration_sha": "afc8b8f0d7268c0b644d100952a806ad4dfe4c06",
+      "subject": "fix: 변경 영향의 새 관련 표시를 기존 평가 연결로 계산",
+      "method": "path-scoped original patch; original SHA retained in commit body"
+    }
+  ],
+  "research_original_to_integration": [
+    {
+      "original_sha": "be543a89abaff64e277029c63bd080d8a4eb437c",
+      "research_sha": "ab908ed176b85a5141835b0f168b4f1d43492fa3"
+    },
+    {
+      "original_sha": "ade0185c5de6ca14e4ddfd872c4af57bf5ce534b",
+      "research_sha": "03e75f78835bb5ad61720c1ffa3b7ad86c6ebfaf"
+    },
+    {
+      "original_sha": "545e3ad88aded60528c6f79e18d0885547eeaa10",
+      "research_sha": "83a9a9c7ac3f0720085df6dd815ac5f4a4a66697"
+    },
+    {
+      "original_sha": "cb42d4116468d8e214ce9d23be4d50ee7ab9310c",
+      "research_sha": "ee4df19dcfd4949397acf57b013b30724a819b77"
+    },
+    {
+      "original_sha": "4328a8ff50c60a0b802454731cdf7d18c10ea73a",
+      "research_sha": "48bbf52f59339723e871c02180bb02b4dd7a5b6e"
+    },
+    {
+      "original_sha": "cef86b335125be150b0087321bcda9b3a3a5b961",
+      "research_sha": "990a90fdd259058a525005c21d6a2d3e6b1c8188"
+    },
+    {
+      "original_sha": "dd53dc3b27fad6c42a0a71b7bd39a96c62328181",
+      "research_sha": "e42889a2ccd8b317a00211aaec503f39910528fa"
+    },
+    {
+      "original_sha": "86a277fd07914e6da2c64319f1610486a73aff78",
+      "research_sha": "35959123be92a48b0149f6a796283f83eb62d718"
+    },
+    {
+      "original_sha": "cc3922f9f453ef9d02f934495dc16dbaf7229f73",
+      "research_sha": "065d1a4177d4d1673df7dcf01b7659f5fee1bbe4"
+    }
+  ],
+  "duplicate_patch_groups": {
+    "b8606ec96bbf7468d7ffcc35a14479adc04852c7": [
+      "4328a8ff50c60a0b802454731cdf7d18c10ea73a",
+      "f63daf6434b3f810d7c38590f52ba80d53e34062",
+      "6e5a50169a05abf3f9bd1007deafd248c8ecda33"
+    ],
+    "7daee6de7fe5ca2bdee46fd00cdfffd54be11176": [
+      "cef86b335125be150b0087321bcda9b3a3a5b961",
+      "d251b0886ecba481e8a62e7ecdee24f9363de9fe",
+      "5d4553883c34e37fa07435008cb4ec04ac1cce91"
+    ]
+  },
+  "backend_test_files": [
+    "app/tests/unit/test_knowledge_business_change_snapshot.py",
+    "app/tests/unit/test_knowledge_business_changes.py",
+    "app/tests/unit/test_knowledge_business_checkpoint.py",
+    "app/tests/unit/test_knowledge_business_feedback.py",
+    "app/tests/unit/test_knowledge_business_local_review.py",
+    "app/tests/unit/test_knowledge_business_projection.py",
+    "app/tests/unit/test_knowledge_business_semantic_edit.py",
+    "app/tests/unit/test_knowledge_business_space_runs.py",
+    "app/tests/unit/test_knowledge_capacity_canonical_context.py",
+    "app/tests/unit/test_knowledge_concept_source_map_entrypoints.py",
+    "app/tests/unit/test_knowledge_concept_source_units.py",
+    "app/tests/unit/test_knowledge_display_mentions.py",
+    "app/tests/unit/test_knowledge_document_graph_comparison.py",
+    "app/tests/unit/test_knowledge_graph_retrieval.py",
+    "app/tests/unit/test_knowledge_historical_use.py",
+    "app/tests/unit/test_knowledge_html_literal_rows.py",
+    "app/tests/unit/test_knowledge_hybrid_graph.py",
+    "app/tests/unit/test_knowledge_relation_concept_scope.py",
+    "app/tests/unit/test_knowledge_source_capacity_repair.py",
+    "app/tests/unit/test_knowledge_source_reader.py",
+    "app/tests/unit/test_knowledge_stored_pool_views.py",
+    "app/tests/unit/test_knowledge_workbench.py"
+  ],
+  "checks": {
+    "backend": "315 passed in 112.82s",
+    "frontend_unit": "3 files, 11 passed",
+    "typescript": "passed",
+    "eslint_changed_14_files": "passed",
+    "production_next_build": "passed",
+    "initial_broad_lint": "failed: unchanged DuplicateReplyDraftPanel.tsx:23 react-hooks/set-state-in-effect"
+  },
+  "UI": {
+    "runtime": "production frontend 3040 and actual integrated FastAPI router 8040; separate copied DB for each phase; executor held before model",
+    "D01": {
+      "run_id": "185606e5f6604e9c9d969aa16b539170",
+      "graph_expansion": "8 nodes/9 edges to 20 nodes/22 edges; selected CR1 relation, conditions, exceptions, source and keyboard selection retained",
+      "stored_answer": "2.0% fixed interest stored answer with actual citation; no generation"
+    },
+    "seoul": {
+      "old_snapshot_id": "12424e58e49147198426f826495bbe5a",
+      "new_snapshot_id": "996dcfe5a4054404af531942ef1b5862",
+      "change_run_id": "9fd8657075c84ba2b4b9da2e52ac3f82",
+      "old_snapshot_requirement_invalidations": 5,
+      "new_snapshot_requirement_invalidations": 0,
+      "current_needs_review_requirements": 0,
+      "changed_fields": [
+        "ARS_ID",
+        "NODE_ID",
+        "X좌표",
+        "Y좌표"
+      ],
+      "unchanged_fields_same_row": [
+        "ROUTE_ID",
+        "노선명",
+        "순번",
+        "정류소명"
+      ],
+      "unchanged_rows": 59,
+      "excluded_claim_id": "claim_d60cf12c95e74be31e049c8b",
+      "excluded_block_id": "233f259078e943f6b155e1fe2215f232",
+      "stored_QA_ids": [
+        "7c02742a2dca48ab8bcf60afdf4e7184",
+        "e5f927e463d0411fbdec45b315d8c88f"
+      ],
+      "QA_run_status": "succeeded",
+      "answer_status": "answered",
+      "BUS-NEW-13_requirement_status": "partial"
+    },
+    "busan": {
+      "new_run_id": "ddb6a85a8ebb48308a64f03161020c14",
+      "parent_run_id": "b4340414299b488ea6559afa7a9222d5",
+      "changeset_id": "b4eef33a264640559ac06cea3ab0b33b",
+      "receipt_id": "37f61626ec244fcdb6f26794b328d230",
+      "created_at": "2026-10-15T14:52:04.369406+00:00",
+      "claim_id": "claim_29eb7a27987afbd79f4e5d83",
+      "actor": "baseline_validation_operator",
+      "reason": "통합 복사 DB 저장 경로 확인: 법정기한 내 띄어쓰기만 수정. 의미 검수는 실행하지 않음.",
+      "before": "자동차 소유권이 매매, 상속, 공매, 경매 등으로 변경될 경우 양수인이 법정기한내 소유권의 이전(등록) 신청을 한다.",
+      "after": "자동차 소유권이 매매, 상속, 공매, 경매 등으로 변경될 경우 양수인이 법정기한 내 소유권의 이전(등록) 신청을 한다.",
+      "preserved_entities": [
+        "양수인"
+      ],
+      "evidence": [
+        {
+          "block_id": "f02bf3a77f794096bd4ddb0d0beb5a5e",
+          "quote": "자동차 소유권이 매매, 상속, 공매, 경매 등으로 변경될 경우 양수인이 법정기한내 소유권의 이전(등록) 신청을 하는 것을 말합니다.",
+          "source_version_id": "7b42ae519cbd4184b4de800623559005",
+          "parse_run_id": "c07b68e5135e49118fbae958f46125bf",
+          "start_char": 0,
+          "end_char": 73,
+          "precision": "exact"
+        }
+      ],
+      "successful_edit_HTTP_requests": 1,
+      "worker_submissions": 1,
+      "stale_revision_status": 409,
+      "new_runs": 1,
+      "original_rows_unchanged_except_changeset_revision_and_edit_invalidation": true,
+      "snapshot_requirement_activation_tables_unchanged": true,
+      "other_claims_and_requirements_equal_to_parent": true,
+      "terminal_run_status": "failed",
+      "terminal_error": "RuntimeError: W6_diagnostic_stop_before_model",
+      "model_calls": 0,
+      "semantic_quality_verified": false,
+      "database_delta": [
+        {
+          "table": "runs",
+          "before_count": 59,
+          "after_count": 60
+        },
+        {
+          "table": "changesets",
+          "before_count": 11,
+          "after_count": 11
+        }
+      ]
+    }
+  },
+  "source_DB_preservation": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/knowledge-workbench-ui/Civil-Complaints-System/data/knowledge/ui-preview/d01/knowledge.db",
+      "sha256": "6e4e41d895cfc9663ca77d58345c1da32b860825be92ef9d608e61870f3ccd54",
+      "unchanged": true
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/knowledge-workbench-ui/Civil-Complaints-System/data/knowledge/ui-preview/busan/knowledge.db",
+      "sha256": "76f32850286df719a1a9ce5c01b9a7900193271f50e0145626ca23e06b9f31f1",
+      "unchanged": true
+    },
+    {
+      "path": "/Users/hyeongi/.codex/artifacts/knowledge-workbench-state-20261012/seoul/knowledge.db",
+      "sha256": "b85204999c9069cd629eab8a322454d3886adaf2830cea2fe7baa112c9d1165f",
+      "unchanged": true
+    }
+  ],
+  "local_evidence_directory": "/Users/hyeongi/.codex/artifacts/company-knowledge-pipeline-20261015/pr_integration_20261015_v1",
+  "excluded": [
+    "original DB/raw/frozen code/large stored run payloads",
+    "unimplemented pipeline efficiency plans",
+    "stopped whole-concept run and 26-question evaluation",
+    "new changes to automatic semantic judgment research PR659 already merged in main"
+  ],
+  "limitations": [
+    "D01 historical date kind=document_year but frontend expects role; undefined date label pre-exists integration",
+    "dense graph label overlap/edge crossings remain; no large-scale performance claim",
+    "storage diagnostic stopped before model; no semantic recheck approval",
+    "global frontend lint is not green; only scoped changed files passed",
+    "historical research records are not current product quality or complete W6/W7 proof"
+  ],
+  "initial_base_main": "bb046c2686d04219afafab83caeb61ec5889421a",
+  "main_integration": {
+    "initial_base_main": "bb046c2686d04219afafab83caeb61ec5889421a",
+    "latest_base_main": "bebf7b3aaca0e8cabe2c29f4d2def518e48ac661",
+    "merge_commit": "c2d440ae1043d5c305c28ba7662c273b61f5b471",
+    "method": "normal merge of origin/main into this integration branch; no original history rewrite",
+    "main_PR659_status": "merged into main; automatic semantic judgment research differs from this RAG record scope",
+    "new_main_paths": 147,
+    "overlapping_integration_paths": [],
+    "product_runtime_frontend_and_dependency_files_changed_by_main_merge": false,
+    "repeated_model_or_runtime_checks": false
+  }
+}

@@ -5,6 +5,7 @@ query2passage, endpoint score averaging and personalized PageRank. Local BGE
 embeddings replace the paper's encoder; exact supplied edge IDs replace fuzzy
 rematching of LLM-generated triples. See the retrieval methodology document.
 """
+import asyncio
 from functools import lru_cache
 from time import monotonic
 from typing import Literal
@@ -80,8 +81,31 @@ def build(snapshot, variant):
             edges.append(dict(edge, text=' '.join((graph.nodes[edge['head']]['label'], edge['relation'],
                                                   graph.nodes[edge['tail']]['label']))))
     passages = {}
+    if snapshot.get('include_unlinked_blocks'):
+        # Freeze the source pool independently of extraction success or quote size.
+        from .discovery_segments import split
+        for block in snapshot['blocks']:
+            spans = {tuple(span) for view in split(block) for span in [view['span'], *view['shared_spans']]}
+            for start, end in sorted(spans):
+                text = block['text'][start:end]
+                if not text.strip():
+                    continue
+                ref = dict(source_version_id=block['source_version_id'], parse_run_id=block.get('parse_run_id'),
+                           block_id=block['id'], start_char=start, end_char=end, quote=text)
+                pid = autoschema.identifier('passage', ref)
+                passages[pid] = dict(id=pid, text=text, evidence=ref, claim_ids=[])
+                graph.add_node(pid, kind='passage', label=text)
     for claim in claims.values():
         for ref in claim.get('evidence', []):
+            if snapshot.get('include_unlinked_blocks'):
+                for passage in passages.values():
+                    loc = passage['evidence']
+                    if (all(loc[k] == ref.get(k) for k in ('source_version_id', 'block_id'))
+                            and loc.get('parse_run_id') == ref.get('parse_run_id', loc.get('parse_run_id'))
+                            and loc['start_char'] < ref['end_char'] and ref['start_char'] < loc['end_char']
+                            and claim['id'] not in passage['claim_ids']):
+                        passage['claim_ids'].append(claim['id'])
+                continue
             # Preserve the complete provided quote and source version, not its concept label.
             pid = autoschema.identifier('passage', {k: ref.get(k) for k in
                 ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char', 'quote')})
@@ -89,23 +113,17 @@ def build(snapshot, variant):
             if claim['id'] not in row['claim_ids']:
                 row['claim_ids'].append(claim['id'])
             graph.add_node(pid, kind='passage', label=ref['quote'])
-    if snapshot.get('include_unlinked_blocks'):
-        # Upstream indexes source passages even when no triple was extracted.
-        # Such passages can still be found by the dense fallback; no invented edges.
-        linked_blocks = {(p['evidence']['source_version_id'], p['evidence']['block_id']) for p in passages.values()}
-        for block in snapshot['blocks']:
-            if (block['source_version_id'], block['id']) in linked_blocks or not block['text'].strip():
-                continue
-            ref = dict(source_version_id=block['source_version_id'], parse_run_id=block.get('parse_run_id'),
-                       block_id=block['id'], start_char=0, end_char=len(block['text']), quote=block['text'])
-            pid = autoschema.identifier('passage', ref)
-            passages[pid] = dict(id=pid, text=block['text'], evidence=ref, claim_ids=[])
-            graph.add_node(pid, kind='passage', label=block['text'])
     for node in extracted['nodes']:
         if node['id'] not in graph:
             continue
         for pid, passage in passages.items():
             linked = set(node['claim_ids']).intersection(passage['claim_ids'])
+            if linked and node.get('construction_method') == 'verified_html_classification_row_v1':
+                loc = passage['evidence']
+                linked = linked if any(all(ref.get(k) == loc.get(k) for k in
+                    ('source_version_id', 'parse_run_id', 'block_id'))
+                    and ref['start_char'] < loc['end_char'] and loc['start_char'] < ref['end_char']
+                    for ref in node['evidence']) else set()
             if linked:
                 graph.add_edge(node['id'], pid, key='mention', relation='mention in', claim_ids=sorted(linked))
     ignored = []
@@ -143,6 +161,13 @@ def passage_candidates(passages):
                  linked_claim_ids=p['claim_ids']) for p in passages.values()]
 
 
+def reader_locator(block):
+    """Keep parser positions at the reader boundary, without deciding applicability."""
+    return {**autoschema.source_packet([block])[0].get('locator', {}),
+            **{k: v for k, v in block.get('locator', {}).items()
+               if k in {'block_order', 'element_path'}}}
+
+
 def source_context(blocks, context, options):
     """Reuse extraction's mandatory table/list/heading bundles at the reader boundary."""
     selected = {}
@@ -152,7 +177,7 @@ def source_context(blocks, context, options):
         key = (ref['source_version_id'], ref['block_id'])
         selected.setdefault(key, []).append(item['id'])
         if key in originals:
-            item['locator'] = autoschema.source_packet([originals[key]])[0].get('locator', {})
+            item['locator'] = reader_locator(originals[key])
     views = {}
     # One indivisible target unit per bundle; this reuses the existing required
     # context selection without packing unrelated targets up to the model limit.
@@ -182,6 +207,7 @@ def source_context(blocks, context, options):
                 row = views.setdefault(key, dict(context_id=existing, supports_context_ids=[]))
             else:
                 row = views.setdefault(key, dict(autoschema.source_packet([b])[0], span=span,
+                    locator=reader_locator(b),
                     parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
             row['supports_context_ids'] = list(dict.fromkeys(row['supports_context_ids'] + targets))
     return list(views.values())
@@ -262,6 +288,18 @@ def rank(graph, edges, passages, edge_scores, passage_scores, selected_ids, limi
     return sorted(scores.items(), key=lambda x: (-x[1], x[0]))[:limit], node_scores
 
 
+def fuse_rankings(rankings, run_id, query, limit):
+    from app.evaluation.datasets import EvalQuery
+    from app.retrieval.pipeline.base import RetrievedDoc, StageInput, StageOutput
+    from app.retrieval.pipeline.stages.rrf_fusion import RRFFusionStage
+    rq = EvalQuery(qid=run_id, text=query)
+    stages = {name: StageOutput(name, rq, [RetrievedDoc(rq.qid, pid, score, i, name)
+        for i, (pid, score) in enumerate(rows, 1)]) for name, rows in rankings.items()}
+    fused = asyncio.run(RRFFusionStage(source_stages=list(stages), top_k=limit, k=60).run(
+        StageInput(rq, context=dict(stage_outputs=stages))))
+    return [(d.docid, d.score) for d in fused.candidates]
+
+
 def retrieve(service, run, snapshot, request):
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant)
@@ -275,27 +313,42 @@ def retrieve(service, run, snapshot, request):
         embedding_device=settings.EMBEDDING_DEVICE, alpha=.9, passage_weight=.9,
         topk_edges=30, topk_nodes=10, selected_edge_ids=[], fallback=None)
     run['graph_retrieval'] = trace
+    if request.retrieval == 'hybrid':
+        trace['contract'] = 'hybrid-rrf-source-passages-v1'
+    elif request.retrieval == 'hybrid_graph':
+        trace['contract'] = 'hybrid-graph-rrf-source-passages-v1'
+    if request.retrieval not in {'hipporag2', 'hybrid_graph'}:
+        edges = []
     query = request.question + '\n' + '\n'.join(request.choices)
     search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'])
     run['passage_index'] = dict(contract=INDEX_CONTRACT, texts=search_texts)
     # Cached only on this service and immutable snapshot content; model/settings are in key.
     cache = getattr(service, '_graph_embedding_cache', {})
-    key = autoschema.identifier('index', [snapshot['id'], request.graph_variant,
-        settings.EMBEDDING_MODEL, settings.EMBEDDING_DEVICE, edges, passages, search_texts])
+    key = autoschema.identifier('index', [snapshot['id'],
+        settings.EMBEDDING_MODEL, settings.EMBEDDING_DEVICE, passages, search_texts])
     if key not in cache:
-        vectors = embed([e['text'] for e in edges] + [search_texts[pid] for pid in passages])
-        cache.clear()  # Keep only one snapshot/variant; no persistent stale index.
-        cache[key] = (vectors[:len(edges)], vectors[len(edges):])
+        vectors = embed([search_texts[pid] for pid in passages])
+        cache.clear()  # B/C share one unchanged source index, independent of graph edges.
+        cache[key] = vectors
         service._graph_embedding_cache = cache
         trace['index_cache_hit'] = False
     else:
         trace['index_cache_hit'] = True
-    edge_vectors, passage_vectors = cache[key]
+    passage_vectors = cache[key]
+    edge_cache = getattr(service, '_graph_edge_embedding_cache', {})
+    edge_key = autoschema.identifier('edges', [key, edges])
+    trace['edge_index_cache_hit'] = bool(edges and edge_key in edge_cache)
+    if edges and edge_key not in edge_cache:
+        edge_cache.clear()
+        edge_cache[edge_key] = embed([e['text'] for e in edges])
+        service._graph_edge_embedding_cache = edge_cache
+    edge_vectors = edge_cache[edge_key] if edges else np.array([])
+    trace['index_elapsed_s'] = monotonic() - started
     q = embed([query])[0]
     passage_scores = normalize(passage_vectors @ q)
     edge_scores = normalize(edge_vectors @ q) if edges else np.array([])
     selected = []
-    if request.retrieval == 'hipporag2' and edges:
+    if request.retrieval in {'hipporag2', 'hybrid_graph'} and edges:
         indices = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))[:30]
         candidates = [dict(id=edges[i]['id'], triple=edges[i]['text'], status=edges[i]['status']) for i in indices]
         aliases = {c['id']: f'e{i+1}' for i, c in enumerate(candidates)}
@@ -312,7 +365,30 @@ def retrieve(service, run, snapshot, request):
         trace['selected_edge_ids'] = selected
     ranked, seeds = rank(graph, edges, passages, edge_scores, passage_scores, set(selected), len(passages))
     trace['seed_node_scores'] = seeds
-    if not seeds:
+    if request.retrieval in {'hybrid', 'hybrid_graph'}:
+        from .discovery_profile import FrozenIndex
+        index = FrozenIndex([dict(id=pid, file_id=p['evidence']['source_version_id'],
+            text=search_texts[pid]) for pid, p in passages.items()], preserve_numbers=True)
+        lexical = index.rank(query, set(passages))
+        dense = ranked
+        if seeds:
+            dense, _ = rank(graph, edges, passages, edge_scores, passage_scores, set(), len(passages))
+        hybrid = fuse_rankings(dict(bm25=[(h['block_id'], h['score']) for h in lexical], dense=dense),
+                               run['id'], query, len(passages))
+        trace['hybrid'] = dict(rrf_k=60, bm25_ranking=lexical,
+                              dense_ranking=[dict(block_id=p, score=s) for p, s in dense])
+        if request.retrieval == 'hybrid_graph':
+            trace['hybrid_graph'] = dict(rrf_k=60, graph_used=bool(seeds),
+                hybrid_ranking=[dict(block_id=p, score=s) for p, s in hybrid],
+                graph_ranking=[dict(block_id=p, score=s) for p, s in ranked] if seeds else [])
+            if seeds:
+                ranked = fuse_rankings(dict(hybrid=hybrid, graph=ranked), run['id'], query, len(passages))
+            else:
+                ranked = hybrid  # An empty graph selection must not give dense a second vote.
+                trace['fallback'] = 'hybrid_passages'
+        else:
+            ranked = hybrid
+    elif not seeds:
         trace['fallback'] = 'dense_passages' if request.retrieval == 'hipporag2' else 'dense_baseline'
     trace['ranked_passages'] = [dict(id=p, score=s, evidence=passages[p]['evidence'],
                                    claim_ids=passages[p]['claim_ids']) for p, s in ranked]

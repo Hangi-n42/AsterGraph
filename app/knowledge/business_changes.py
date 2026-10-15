@@ -25,6 +25,15 @@ class Impacts(BaseModel):
     items: list[Impact]
 
 
+def direct_dependencies(requirements, version_ids):
+    """Assessment pointers are links, not impacts; None means the changed version is unknown."""
+    version_ids = set(version_ids)
+    if not version_ids:
+        return None
+    return [r['id'] for r in requirements if r.get('current_assessment')
+            and version_ids.intersection(r['current_assessment']['source_version_ids'])]
+
+
 def differences(before, after, key_fields):
     changes, unchanged = [], []
     if key_fields:
@@ -107,6 +116,9 @@ def stored_dependencies(service, requirements):
 
 def review_impacts(service, run, requirements, diff, versions, direct):
     dependencies, blocks = stored_dependencies(service, requirements)
+    linkage_known = direct is not None
+    direct = direct or []
+    run['direct_dependency_ids'] = direct
     # Full receipts remain in the run. Reuse existing projections for repeated
     # source quotations and audit fields without dropping semantic uncertainty.
     changes = []
@@ -146,6 +158,8 @@ def review_impacts(service, run, requirements, diff, versions, direct):
     for impact in result['items']:
         if impact['requirement_id'] in unavailable:
             impact.update(status='unknown', reason='현재 평가 포인터에 일치하는 저장 의미·근거를 확인할 수 없음')
+        # The model judges impact; stored assessment links determine whether it is new.
+        impact['new_relevance'] = linkage_known and impact['status'] == 'affected' and impact['requirement_id'] not in direct
     return result, valid
 
 
@@ -157,7 +171,7 @@ def apply_impacts(service, run, requirements, impacts):
             before = next(r for r in requirements if r['id'] == current['id'])
             if (current['revision'] != before['revision']
                     or current.get('current_assessment') != before.get('current_assessment')):
-                impact.update(status='unknown', reason='판정 중 요구 또는 현재 평가 변경')
+                impact.update(status='unknown', reason='판정 중 요구 또는 현재 평가 변경', new_relevance=False)
             current.setdefault('change_history', []).append(dict(run_id=run['id'], impact=impact, recorded_at=utcnow()))
             if impact['status'] != 'unaffected':
                 current['status'] = 'needs_review'
@@ -240,11 +254,7 @@ def analyze(service, request):
         if not requirements:
             raise ValueError('영향을 확인할 업무 요구가 없습니다.')
         diff = differences(*blocks, request.key_fields)
-        direct = []
-        for requirement in requirements:
-            current = requirement.get('current_assessment')
-            if current and request.before_version_id in current['source_version_ids']:
-                direct.append(requirement['id'])
+        direct = direct_dependencies(requirements, [request.before_version_id])
         recipe = dict(generation=config, models=models, options=dict(review_tokens=4096, extraction_tokens=4096,
                      concept_tokens=512, context_tokens=49152, timeout=1800, think=False))
         run = dict(id=uuid4().hex, kind='business_change', status='running', units=[], input_version_ids=[v['id'] for v in versions],

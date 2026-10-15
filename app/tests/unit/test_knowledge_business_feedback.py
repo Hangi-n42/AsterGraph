@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from app.knowledge import autoschema, business_feedback as feedback, business_review as review, business_run, business_use
 from app.knowledge.business_models import BusinessAnswerRecheck
-from app.knowledge.service import KnowledgeConflict, KnowledgeService, encode
+from app.knowledge.service import KnowledgeConflict, KnowledgeService, encode, utcnow
 from app.tests.unit.test_knowledge_business_local_review import local_run, meaning
 
 
@@ -207,3 +207,109 @@ def test_new_recheck_uses_its_explicit_repair_policy_without_changing_parent(bou
     assert service.run('parent')['recipe']['options']['repair'] is False
     assert BusinessAnswerRecheck(qa_run_id='qa',task_ids=['item/context1']).repair is True
     service.shutdown()
+
+
+@pytest.fixture
+def completed_recheck(bound,tmp_path,monkeypatch):
+    parent,qa,basis,snapshot=bound
+    child=deepcopy(parent)
+    child.update(id='child',parent_run_id=parent['id'],finished_at=utcnow(),
+                 answer_gap_recheck=feedback.bind_gaps(*bound,['item/context1']))
+    child['recipe']['options']['repair']=False
+    assessment=deepcopy(child['assessments'][-1]);assessment['id']='child-assessment'
+    assessment['source']['findings']=deepcopy(child['answer_gap_recheck']['findings'])
+    assessment['source']['findings'][0]['candidate_binding_valid']=True
+    assessment['input_fingerprint']=business_run.assessment_fingerprint(child,child['requirements'][0],assessment['source'])
+    child['assessments'].append(assessment)
+    child['answer_gap_recheck']['assessment_ids']=[assessment['id']]
+    current=dict(deepcopy(parent['requirements'][0]),current_assessment=dict(
+        run_id=child['id'],assessment_id=assessment['id'],source_version_ids=child['input_version_ids']))
+    service=KnowledgeService(tmp_path/'knowledge.db');submitted=[]
+    monkeypatch.setattr(service.executor,'submit',lambda *args:submitted.append(args))
+    with service.repository.connect() as db:
+        for run in [parent,qa,child]:db.execute('INSERT INTO runs VALUES(?,?)',(run['id'],encode(run)))
+        db.execute('INSERT INTO snapshots VALUES(?,?)',(snapshot['id'],encode(snapshot)))
+        db.execute('INSERT INTO requirements VALUES(?,?)',('r',encode(current)))
+    yield service,parent,qa,child,current,submitted
+    service.shutdown()
+
+
+def test_completed_same_request_reuses_current_child_without_dispatch_or_writes(completed_recheck):
+    service,parent,qa,child,current,submitted=completed_recheck
+    before=[service.run(r['id']) for r in [parent,qa,child]]
+    result=feedback.start(service,parent['id'],BusinessAnswerRecheck(
+        qa_run_id=qa['id'],task_ids=['item/context1'],repair=False))
+    assert result==dict(run_id=child['id'],status='partial',deferred=[],reused=True)
+    assert not submitted and before==[service.run(r['id']) for r in [parent,qa,child]]
+
+
+@pytest.mark.parametrize('fault',['requirement','stale','pointer','candidate','source','block','restriction'])
+def test_completed_reuse_rejects_changed_current_state(completed_recheck,monkeypatch,fault):
+    service,parent,qa,child,current,submitted=completed_recheck
+    if fault=='requirement':current['question']='수정된 질문'
+    elif fault=='stale':current['status']='needs_review'
+    elif fault=='pointer':current['current_assessment']['run_id']='other'
+    elif fault=='candidate':child['claims'][0]['raw']['Tail']='변경된 후보'
+    elif fault=='source':child['assessments'][-1]['source']['meanings'][0]['statement']='변경된 해석'
+    elif fault=='block':child['blocks'][0]['text']='변경된 원문'
+    else:monkeypatch.setattr(business_use,'restricted_sources',lambda *a:[dict(state='restricted')])
+    with service.repository.connect() as db:
+        service.repository.save(db,'requirements',current)
+        service.repository.save(db,'runs',child)
+    with pytest.raises(KnowledgeConflict):
+        feedback.start(service,parent['id'],BusinessAnswerRecheck(
+            qa_run_id=qa['id'],task_ids=['item/context1'],repair=False))
+    assert not submitted
+
+
+@pytest.mark.parametrize('mode',['explicit','new_qa','new_policy','failed'])
+def test_latest_child_allows_explicit_recheck_new_qa_policy_and_failure_retry(completed_recheck,mode):
+    service,parent,qa,child,current,submitted=completed_recheck
+    if mode=='new_qa':
+        qa=dict(deepcopy(qa),id='new-qa')
+        with service.repository.connect() as db:db.execute('INSERT INTO runs VALUES(?,?)',(qa['id'],encode(qa)))
+    elif mode=='failed':
+        child['status']='failed'
+        with service.repository.connect() as db:service.repository.save(db,'runs',child)
+    result=feedback.start(service,child['id'],BusinessAnswerRecheck(
+        qa_run_id=qa['id'],task_ids=['item/context1'],repair=mode=='new_policy'))
+    assert result['run_id'] not in {parent['id'],child['id']} and len(submitted)==1
+    assert service.run(result['run_id'])['parent_run_id']==child['id']
+
+
+def test_recheck_keeps_existing_observation_and_derived_validation_metadata(completed_recheck,monkeypatch):
+    service,parent,qa,child,current,submitted=completed_recheck
+    before=service.run(child['id'])
+    result=feedback.start(service,child['id'],BusinessAnswerRecheck(
+        qa_run_id=qa['id'],task_ids=['item/context1'],repair=False))
+    observed=[]
+    monkeypatch.setattr(business_run.ModelClient,'identities',lambda *a:{})
+    def assess(s,r,q,**kwargs):
+        observed.append(deepcopy(kwargs['source']))
+        return dict(id='rechecked',status='partial')
+    monkeypatch.setattr(business_run,'assess',assess)
+    monkeypatch.setattr(business_run,'reassess_challenges',lambda s,r,q,a,**kw:a)
+    monkeypatch.setattr(business_run,'refresh_repaired_graph',lambda *a:None)
+    monkeypatch.setattr(business_use,'publish',lambda *a:dict(id='change'))
+    feedback.execute(service,result['run_id'])
+    assert observed[0]['findings']==child['assessments'][-1]['source']['findings']
+    assert observed[0]['findings'][0]['candidate_binding_valid'] is True
+    assert service.run(child['id'])==before
+
+
+def test_completed_repair_result_is_reused_but_a_later_edit_invalidates_it(completed_recheck):
+    service,parent,qa,child,current,submitted=completed_recheck
+    child['claims'][0]['raw']['Tail']='완료된 교정 결과'
+    assessment=child['assessments'][-1]
+    assessment['input_fingerprint']=business_run.assessment_fingerprint(child,child['requirements'][0],assessment['source'])
+    child['changeset_id']='change'
+    change=dict(id='change',candidates=deepcopy(child['claims']))
+    with service.repository.connect() as db:
+        service.repository.save(db,'runs',child)
+        db.execute('INSERT INTO changesets VALUES(?,?)',(change['id'],encode(change)))
+    request=BusinessAnswerRecheck(qa_run_id=qa['id'],task_ids=['item/context1'],repair=False)
+    assert feedback.start(service,parent['id'],request)['run_id']==child['id']
+    change['invalidated_claim_ids']=[child['claims'][0]['id']]
+    with service.repository.connect() as db:service.repository.save(db,'changesets',change)
+    with pytest.raises(KnowledgeConflict):feedback.start(service,parent['id'],request)
+    assert not submitted

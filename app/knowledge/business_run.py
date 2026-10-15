@@ -1,6 +1,7 @@
 """Source graph construction and requirement repair on the existing service worker."""
 import asyncio
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from time import monotonic
 from uuid import uuid4
@@ -206,6 +207,8 @@ def start(service, request):
                 if key in parent:
                     run[key] = deepcopy(parent[key])
         if parent and (request.resume_run_id or request.reassess_run_id):
+            if (request.reassess_run_id or parent.get('stored_pool')) and 'capacity_repair_views' in parent:
+                run['capacity_repair_views'] = deepcopy(parent['capacity_repair_views'])
             from .business_edit import preservation_reuses
             latest_preservation = preservation_reuses(parent, run)
             latest_assessments = {a['requirement_id']: a for a in parent['assessments']}
@@ -236,23 +239,29 @@ def save(service, run):
         service.repository.save(db, 'runs', run)
 
 
+def source_chunks(run):
+    return {**{c['id']: c for c in run['chunks']}, **run.get('capacity_repair_views', {})}
+
+
 def cancelled(service, run):
     with service.repository.connect() as db:
         return service.repository.get(db, 'runs', run['id'])['status'] == 'cancel_requested'
 
 
-def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None):
+def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None, timeout=None, capacity_repair=None):
     options = run['recipe']['options']
     budget = max_tokens or (options['review_tokens'] if review else options['extraction_tokens'])
     context_tokens = options.get('representation_context_tokens') if stage == 'requirement_representation' else None
     request = ModelRequest(stage, run['recipe']['models']['review' if review else 'draft'], messages,
                            schema=schema, max_tokens=budget, context_tokens=context_tokens or options['context_tokens'],
-                           think=options['think'], timeout=options['timeout'])
+                           think=options['think'], timeout=options['timeout'] if timeout is None else timeout)
     unit = dict(id=request.request_id, stage=stage, status='running', error=None,
                 messages=messages, schema=schema, reference_map=reference_map, started_at=utcnow(),
                 request_configuration=deepcopy(dict(model=request.model, generation=run['recipe']['generation'],
                     identity=run['model_identity'], temperature=request.temperature, timeout=request.timeout)),
                 requested_limits=dict(max_tokens=budget, context_tokens=request.context_tokens, think=request.think))
+    if capacity_repair:
+        unit.update(deepcopy(capacity_repair))
     run['units'].append(unit)
     parent_recipe = run.get('parent_recipe') or {}
     same_recipe = (parent_recipe.get('generation') == run['recipe']['generation'] and
@@ -276,11 +285,13 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
         and u.get('requested_limits') == u.get('executed_limits') == unit['requested_limits']
         and u.get('response') and not u['response'].get('failure_kind')), None)
     if cached is None and same_recipe:
-        cached_run_id = run['parent_run_id']
+        cached_run_id = run.get('reuse_pool_parent_run_id') or run['parent_run_id']
         cached = next((u for u in run.get('reusable_units', []) if u['stage'] == stage and
             u.get('status') == 'succeeded' and not u.get('error') and
             u.get('messages') == messages and u.get('schema') == schema and u.get('response') and
             u.get('reference_map') == reference_map and
+            (not run.get('source_checkpoint') or u.get('request_configuration') == unit['request_configuration']
+             and u.get('requested_limits') == u.get('executed_limits') == unit['requested_limits']) and
             not u['response'].get('failure_kind')), None)
     if cached:
         unit.update(status='succeeded', response=deepcopy(cached['response']), finished_at=utcnow(),
@@ -1423,7 +1434,7 @@ def store_extraction(run, chunk, role, response, unit):
 
 def repair_extraction(service, run):
     """Source-grounded repair of only defective rows; original responses stay intact."""
-    chunks = {c['id']: c for c in run['chunks']}
+    chunks = source_chunks(run)
     for item in run.get('extraction_rejections', []):
         if cancelled(service, run):
             return
@@ -1478,7 +1489,7 @@ def refresh_repaired_graph(service, run):
         refresh_changed(service, run, changed_ids | replacement_ids)
 
 
-def execute(service, run_id):
+def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
     started = monotonic()
     with service.repository.connect() as db:
         run = service.repository.get(db, 'runs', run_id)
@@ -1486,6 +1497,8 @@ def execute(service, run_id):
     save(service, run)
     try:
         options = run['recipe']['options']
+        from . import business_checkpoint
+        inherited = business_checkpoint.validate(service, run)
         for chunk_index, chunk in enumerate([] if run.get('stored_pool') else run['chunks']):
             if all(b.get('locator', {}).get('format') in {'json', 'xlsx'} and
                    isinstance(b['locator'].get('fields'), dict) for b in chunk['blocks']):
@@ -1501,6 +1514,8 @@ def execute(service, run_id):
                 save(service, run)
                 continue
             for role in autoschema.ROLES:
+                if (chunk['id'], role) in inherited:
+                    continue
                 if cancelled(service, run):
                     return
                 response = reuse_source(service, run, role, chunk_index)
@@ -1514,6 +1529,8 @@ def execute(service, run_id):
                     except ValueError as exc:
                         run['units'][-1].update(status='failed', error=str(exc))
                 save(service, run)
+            if (chunk['id'], 'direct_definitions') in inherited:
+                continue
             # Explicit definitions remain independent of the three extraction successes.
             previous = reuse_source(service, run, 'direct_definitions', chunk_index)
             definitions = Definitions.model_validate(previous['parsed']).model_dump() if previous else json_call(service, run, 'direct_definitions',
@@ -1533,23 +1550,39 @@ def execute(service, run_id):
                                for e in refs for b in chunk['blocks']):
                         claim['extraction_error'] = 'reference_only_definition_outside_extraction_target'
                     run['claims'].append(claim)
+        if capacity_repairs:
+            from . import source_capacity_repair
+            source_capacity_repair.repair(service, run, capacity_repairs)
         if options['repair'] and not run.get('stored_pool'):
             repair_extraction(service, run)
         # Rebuild the deterministic view of stored claims as well; this does not
         # extract, reassess, approve, or conceptualize them.
         run['graph'] = autoschema.graph(run['claims'])
         save(service, run)
-        by_chunk = {c['id']: c for c in run['chunks']}
-        run['conceptualization_scope'] = 'stored_pool_preserved' if run.get('stored_pool') else (
+        from . import business_concepts
+        projected = run.get('source_projection')
+        run['conceptualization_scope'] = 'deferred_for_capacity_recovery' if defer_concepts else 'stored_pool_preserved' if run.get('stored_pool') and not projected else (
             'all' if options.get('conceptualize', True) else 'deferred_to_selected_targets')
-        for target in autoschema.concept_targets(run['graph']) if options.get('conceptualize', True) and not run.get('stored_pool') else []:
+        targets = autoschema.concept_targets(run['graph']) if not defer_concepts and options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []
+        planned = business_concepts.prepare(run, targets, options['neighbor_mode'])
+        if projected:
+            projected['planned_concept_target_ids'] = [item['target']['id'] for item in planned]
+        for item in planned:
+            target = item['target']
             if cancelled(service, run):
                 return
-            messages, selection = autoschema.concept_messages(target, run['graph'], by_chunk, options['neighbor_mode'])
-            response = call(service, run, 'concept_' + target['kind'], messages, max_tokens=options['concept_tokens'])
-            run['concepts'].append(dict(id=uuid4().hex, target=target, selection=selection,
+            if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
+                projected['stop_reason'] = 'new_request_deadline'
+                break
+            response = call(service, run, 'concept_' + target['kind'], item['messages'], max_tokens=options['concept_tokens'],
+                            reference_map=item['selection']['source_reference_map'])
+            run['concepts'].append(dict(id=uuid4().hex, target=target, selection=item['selection'],
                 concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
                 relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id']))
+            save(service, run)
+        if projected:
+            completed = {c['target']['id'] for c in run['concepts']}
+            projected['unattempted_concept_target_ids'] = [i for i in projected['planned_concept_target_ids'] if i not in completed]
             save(service, run)
         changed = False
         for requirement in run['requirements']:
@@ -1583,8 +1616,13 @@ def execute(service, run_id):
         run['status'] = 'review_ready' if all(a['status'] == 'satisfied' for a in latest.values()) and len(latest) == len(run['requirements']) else 'partial'
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
+        if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
+                          or projected['unattempted_concept_target_ids']):
+            run['extraction_complete'] = False
         if not run['extraction_complete']:
             run['status'] = 'partial'
+        elif not run['requirements']:
+            run['status'] = 'succeeded' if all(u['status'] == 'succeeded' for u in run['units']) else 'partial'
     except Exception as exc:
         run.update(status='failed', error=f'{type(exc).__name__}: {exc}')
     finally:

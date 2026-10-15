@@ -23,7 +23,7 @@ from app.knowledge import extraction_store
 from app.knowledge import snapshots
 from app.knowledge.schemas import SearchRequest, LocalEntityRequest
 from app.knowledge import business_store, business_use
-from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, BusinessAnswerRecheck
+from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck
 
 
 class KnowledgeRoute(APIRoute):
@@ -137,6 +137,11 @@ def start_business(request: BusinessRunRequest, service=Depends(get_knowledge_se
 def business_concepts(request: ConceptRunRequest, service=Depends(get_knowledge_service)):
     from app.knowledge.business_concepts import start
     return result(start(service, request))
+
+
+@router.post('/business/html-rows', response_model=KnowledgeResponse)
+def business_html_rows(request: HtmlLiteralRowsRequest, service=Depends(get_knowledge_service)):
+    return result(service.store_business_html_rows(request))
 
 
 @router.get('/business/runs', response_model=KnowledgeResponse)
@@ -355,3 +360,45 @@ def discovery_search(q: str, scope: str | None = None, step: int | None = None, 
 def discovery_terms(run_id: str, label: str, term_type: str = 'any', service=Depends(get_knowledge_service)):
     from app.knowledge.discovery_analysis import terms
     return result(terms(service, run_id, label, term_type))
+
+
+@router.get('/workbench/scopes', response_model=KnowledgeResponse)
+def workbench_scopes(service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.catalog(service))
+
+
+@router.get('/workbench/review', response_model=KnowledgeResponse)
+def workbench_review(run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.review_status(service, run_id))
+
+
+@router.get('/workbench/usage', response_model=KnowledgeResponse)
+def workbench_usage(kind: str, scope_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.usage(service, kind, scope_id))
+
+
+@router.get('/workbench/answers', response_model=KnowledgeResponse)
+def workbench_answers(kind: str, scope_id: str, answer_id: str | None = None, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.answers(service, kind, scope_id, answer_id))
+
+
+@router.get('/workbench/changes', response_model=KnowledgeResponse)
+def workbench_changes(kind: str, scope_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.changes(service, kind, scope_id))
+
+
+@router.get('/workbench/explore', response_model=KnowledgeResponse)
+def workbench_explore(kind: str, scope_id: str, q: str = '', selected_id: str | None = None,
+                      item_kind: str = 'all', offset: int = 0, limit: int = 40,
+                      relation_type: str = '', direction: str = 'both', source_id: str = '',
+                      review_state: str = '', depth: int = 1, graph_root: str = '',
+                      service=Depends(get_knowledge_service)):
+    from app.knowledge import workbench
+    return result(workbench.explore(service, kind, scope_id, q=q, selected_id=selected_id,
+                                   item_kind=item_kind, offset=offset, limit=limit, relation_type=relation_type,
+                                   direction=direction, source_id=source_id, review_state=review_state, depth=depth, graph_root=graph_root))

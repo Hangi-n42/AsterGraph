@@ -20,7 +20,7 @@ def plan(service, request):
 
 
 def prepare(parent, targets, mode):
-    chunks = {c['id']: c for c in parent['chunks']}
+    chunks = business_run.source_chunks(parent)
     for claim in parent['claims']:
         if claim['chunk_id'] not in chunks:
             ids = {e['block_id'] for e in claim['evidence']}
@@ -30,21 +30,44 @@ def prepare(parent, targets, mode):
             chunks[claim['chunk_id']] = dict(id=claim['chunk_id'], blocks=blocks, text=autoschema.source_text(blocks),
                                            source_version_id=blocks[0]['source_version_id'])
     planned = []
+    options = parent['recipe']['options']
     for target in targets:
         messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode)
-        planned.append(dict(target=target, messages=messages, selection=selection))
+        estimate = business_run.request_tokens(messages, None, options['concept_tokens'])
+        if target['kind'] != 'relation' or len(target['claim_ids']) < 2 or estimate <= options['context_tokens']:
+            planned.append(dict(target=target, messages=messages, selection=selection))
+            continue
+        # Split at whole-claim boundaries; never truncate the required source or Scope.
+        groups, pending = [], []
+        for claim_id in target['claim_ids']:
+            trial = dict(target, claim_ids=pending + [claim_id])
+            trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode)
+            if pending and business_run.request_tokens(trial_messages, None, options['concept_tokens']) > options['context_tokens']:
+                groups.append(pending)
+                pending = []
+            pending.append(claim_id)
+        groups.append(pending)
+        for index, claim_ids in enumerate(groups):
+            part = dict(target, id=autoschema.identifier('relation', [target['id'], claim_ids]),
+                        claim_ids=claim_ids, partition_of=target['id'])
+            messages, selection = autoschema.concept_messages(part, parent['graph'], chunks, mode)
+            selection['relation_input_partition'] = dict(original_target_id=target['id'],
+                original_claim_ids=list(target['claim_ids']), original_estimated_tokens=estimate,
+                context_tokens=options['context_tokens'], index=index, parts=len(groups))
+            planned.append(dict(target=part, messages=messages, selection=selection))
     return planned
 
 
 def refresh_changed(service, run, changed_ids):
     options = run['recipe']['options']
-    targets = [t for t in autoschema.concept_targets(run['graph']) if changed_ids.intersection(t['claim_ids'])
-               and not any(c['status'] in {'unreviewed', 'accepted'} and c['target'] == t for c in run['concepts'])]
+    targets = [t for t in autoschema.concept_targets(run['graph']) if changed_ids.intersection(t['claim_ids'])]
     for item in prepare(run, targets, options['neighbor_mode']):
+        if any(c['status'] in {'unreviewed', 'accepted'} and c['target'] == item['target'] for c in run['concepts']):
+            continue
         if business_run.cancelled(service, run):
             return
         response = business_run.call(service, run, 'concept_' + item['target']['kind'], item['messages'],
-                                     max_tokens=options['concept_tokens'])
+                                     max_tokens=options['concept_tokens'], reference_map=item['selection']['source_reference_map'])
         run['concepts'].append(dict(id=uuid4().hex, target=item['target'], selection=item['selection'],
             concepts=autoschema.concepts(response['text']) if response else [],
             status='unreviewed' if response else 'failed', relation='has_concept', approved_is_a=False,
@@ -69,7 +92,7 @@ def start(service, request):
         for item in planned:
             if business_run.cancelled(service, run): break
             response = business_run.call(service, run, 'concept_entity', item['messages'],
-                                          max_tokens=recipe['options']['concept_tokens'])
+                                          max_tokens=recipe['options']['concept_tokens'], reference_map=item['selection']['source_reference_map'])
             run['concepts'].append(dict(target=item['target'], selection=item['selection'],
                 concepts=autoschema.concepts(response['text']) if response else [],
                 status='unreviewed' if response else 'failed', relation='has_concept', approved_is_a=False,

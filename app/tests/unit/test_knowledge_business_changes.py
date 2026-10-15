@@ -1,5 +1,8 @@
 import json
+from copy import deepcopy
 from zipfile import ZipFile
+
+import pytest
 
 from app.knowledge import business_changes, business_run, business_store, structured_tables
 from app.knowledge.business_models import RequirementInput, ChangeRequest
@@ -46,14 +49,15 @@ def test_change_rechecks_unlinked_requirement_and_keeps_unaffected(tmp_path, mon
             assert stage == 'change_impact' and context['direct_dependency_ids'] == []
             assert {r['id'] for r in context['requirements']} == {'new', 'stable'}
             return dict(items=[dict(requirement_id='new', status='affected', reason='새 대리인 허용',
-                                    change_ids=[context['diff']['changes'][0]['id']], new_relevance=True),
-                               dict(requirement_id='stable', status='unaffected', reason='9시 유지', change_ids=[], new_relevance=False)])
+                                    change_ids=[context['diff']['changes'][0]['id']], new_relevance=False),
+                               dict(requirement_id='stable', status='unaffected', reason='9시 유지', change_ids=[], new_relevance=True)])
         monkeypatch.setattr(business_run, 'json_call', check)
         run = business_changes.analyze(service, ChangeRequest(before_version_id=versions[0], after_version_id=versions[1]))
         values = {r['id']: r for r in business_store.requirements(service)['items']}
         assert run['status'] == 'succeeded' and values['new']['status'] == 'needs_review'
         assert values['stable']['status'] == 'unassessed'
         assert values['new']['change_history'][0]['run_id'] == run['id']
+        assert [i['new_relevance'] for i in run['impacts']] == [True, False]
     finally:
         service.shutdown()
 
@@ -101,21 +105,75 @@ def test_impact_reads_exact_stored_meanings_and_rejects_stale_pointer(tmp_path, 
         service.shutdown()
 
 
-def test_impact_cannot_preserve_status_after_assessment_pointer_changes(tmp_path):
+@pytest.mark.parametrize('status,new_relevance', [('unaffected', False), ('affected', True)])
+def test_impact_cannot_preserve_status_after_assessment_pointer_changes(tmp_path, status, new_relevance):
     service = KnowledgeService(tmp_path / 'knowledge.db')
     try:
         before = dict(id='r', revision=1, status='satisfied', current_assessment=dict(assessment_id='old'))
         with service.repository.connect() as db:
             db.execute('INSERT INTO requirements VALUES(?,?)', ('r', json.dumps(dict(before,
                 current_assessment=dict(assessment_id='new')))))
-        impacts = [dict(requirement_id='r', status='unaffected', reason='old assessment independent',
-                        change_ids=[], new_relevance=False)]
+        impacts = [dict(requirement_id='r', status=status, reason='old assessment independent',
+                        change_ids=[], new_relevance=new_relevance)]
         business_changes.apply_impacts(service, dict(id='impact-run'), [before], impacts)
         with service.repository.connect() as db:
             current = service.repository.get(db, 'requirements', 'r')
         assert impacts[0]['status'] == 'unknown'
+        assert impacts[0]['new_relevance'] is False
         assert current['status'] == 'needs_review'
         assert current['current_assessment'] == dict(assessment_id='new')
         assert current['change_history'][0]['run_id'] == 'impact-run'
     finally:
         service.shutdown()
+
+
+def test_direct_links_use_assessment_versions_not_source_selection():
+    requirements = [dict(id='scope_only', source_ids=['s'], current_assessment=None),
+        dict(id='linked', source_ids=[], current_assessment=dict(source_version_ids=['before'])),
+        dict(id='other', source_ids=['s'], current_assessment=dict(source_version_ids=['other']))]
+    assert business_changes.direct_dependencies(requirements, ['before']) == ['linked']
+    assert business_changes.direct_dependencies(requirements, ['unlinked-version']) == []
+    assert business_changes.direct_dependencies(requirements, []) is None
+
+
+@pytest.mark.parametrize('status,dependency,direct,provider_flag,expected', [
+    ('affected', 'unassessed', [], False, True),
+    ('affected', 'provided', ['r'], True, False),
+    ('affected', 'provided', [], False, True),
+    ('unaffected', 'unassessed', [], True, False),
+    ('unknown', 'unassessed', [], True, False),
+    ('affected', 'unavailable', [], True, False),
+    ('affected', 'unassessed', None, True, False),
+])
+def test_new_relevance_uses_known_links_without_changing_model_judgment(monkeypatch,
+        status, dependency, direct, provider_flag, expected):
+    raw = dict(items=[dict(requirement_id='r', status=status, reason='stored source comparison',
+                          change_ids=['delta'], new_relevance=provider_flag)])
+    saved = deepcopy(raw)
+    monkeypatch.setattr(business_changes, 'stored_dependencies', lambda *args:
+        ([dict(requirement_id='r', status=dependency)], []))
+    monkeypatch.setattr(business_run, 'json_call', lambda *args: deepcopy(raw))
+    run = {}
+    result, valid = business_changes.review_impacts(None, run, [dict(id='r')],
+        dict(changes=[dict(id='delta')]), [], direct)
+    impact = result['items'][0]
+    assert valid and impact['new_relevance'] is expected
+    assert raw == saved
+    assert impact['change_ids'] == saved['items'][0]['change_ids']
+    if dependency == 'unavailable':
+        assert impact['status'] == 'unknown'
+    else:
+        assert {k: impact[k] for k in ('status', 'reason')} == {
+            k: saved['items'][0][k] for k in ('status', 'reason')}
+    assert run['direct_dependency_ids'] == (direct or [])
+
+
+@pytest.mark.parametrize('output', [None, dict(items=[]), dict(items=[
+    dict(requirement_id='r', status='affected', reason='invalid reference', change_ids=['foreign'], new_relevance=True)])])
+def test_incomplete_impact_review_never_marks_new_relevance(monkeypatch, output):
+    monkeypatch.setattr(business_changes, 'stored_dependencies', lambda *args:
+        ([dict(requirement_id='r', status='unassessed')], []))
+    monkeypatch.setattr(business_run, 'json_call', lambda *args: deepcopy(output))
+    result, valid = business_changes.review_impacts(None, {}, [dict(id='r')], dict(changes=[]), [], [])
+    assert not valid and result['items'][0]['status'] == 'unknown'
+    assert result['items'][0]['new_relevance'] is False
