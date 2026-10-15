@@ -1574,7 +1574,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
                 projected['stop_reason'] = 'new_request_deadline'
                 break
-            response = call(service, run, 'concept_' + target['kind'], item['messages'], max_tokens=options['concept_tokens'])
+            response = call(service, run, 'concept_' + target['kind'], item['messages'], max_tokens=options['concept_tokens'],
+                            reference_map=item['selection']['source_reference_map'])
             run['concepts'].append(dict(id=uuid4().hex, target=target, selection=item['selection'],
                 concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
                 relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id']))

@@ -67,7 +67,7 @@ def refresh_changed(service, run, changed_ids):
         if business_run.cancelled(service, run):
             return
         response = business_run.call(service, run, 'concept_' + item['target']['kind'], item['messages'],
-                                     max_tokens=options['concept_tokens'])
+                                     max_tokens=options['concept_tokens'], reference_map=item['selection']['source_reference_map'])
         run['concepts'].append(dict(id=uuid4().hex, target=item['target'], selection=item['selection'],
             concepts=autoschema.concepts(response['text']) if response else [],
             status='unreviewed' if response else 'failed', relation='has_concept', approved_is_a=False,
@@ -92,7 +92,7 @@ def start(service, request):
         for item in planned:
             if business_run.cancelled(service, run): break
             response = business_run.call(service, run, 'concept_entity', item['messages'],
-                                          max_tokens=recipe['options']['concept_tokens'])
+                                          max_tokens=recipe['options']['concept_tokens'], reference_map=item['selection']['source_reference_map'])
             run['concepts'].append(dict(target=item['target'], selection=item['selection'],
                 concepts=autoschema.concepts(response['text']) if response else [],
                 status='unreviewed' if response else 'failed', relation='has_concept', approved_is_a=False,
