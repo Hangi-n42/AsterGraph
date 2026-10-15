@@ -9,12 +9,12 @@ const reviewReason: Record<string, string> = { own_source_review_pending_or_not_
 
 export function KnowledgeUsageDetails({ view, selectedClaimIds = [], onOpenScope }: { view: KnowledgeUsage; selectedClaimIds?: string[]; onOpenScope?: (key: string) => void }) {
   if (!hasUsageRecords(view)) return <p role="alert" className={styles.error}>사용 상태 응답의 필수 버전·검토 기록을 읽지 못했습니다. 새로고침해 다시 확인하세요.</p>;
-  const policy = view.scope.kind === 'run' ? '자동 추출 · 미승인' : view.activation === 'explicit_query_only' ? '질문에서 직접 지정하는 버전' : '사용 정책 미확인';
+  const policy = view.scope.kind === 'run' ? '저장 결과 · 미승인' : view.activation === 'explicit_query_only' ? '질문에서 직접 지정하는 버전' : '사용 정책 미확인';
   const selectedExcluded = selectedClaimIds.filter(id => view.excluded_claim_ids.includes(id));
   return <details className={styles.diagnostics}>
     <summary>사용 버전·검토 상태 · {policy}{view.invalidations.length ? ' · 변경 후 제외 기록 있음' : ''}{view.source_restrictions.length ? ' · 원문 사용 제한 있음' : ''}</summary>
     <p>일반 활성 지식 버전: {view.active_snapshot_id ? '활성 선택 기록 있음' : '없음'}</p>
-    {view.scope.kind === 'source_graph' ? <><p>{policy}. 일반 활성 지식과 별도로 관리됩니다.</p><p>선택 기록: {view.actor || '결정자 미기록'} · {view.reason || '사유 미기록'}</p></> : <p>이 자동 추출 실행의 원문 QA와 검토된 출처 지식 활용은 별도입니다.</p>}
+    {view.scope.kind === 'source_graph' ? <><p>{policy}. 일반 활성 지식과 별도로 관리됩니다.</p><p>선택 기록: {view.actor || '결정자 미기록'} · {view.reason || '사유 미기록'}</p></> : <p>이 저장 결과의 원문 QA와 검토된 출처 지식 활용은 별도입니다.</p>}
     <p className={styles.muted}>조회 {knowledgeDate(view.status_checked_at)} · 사용 상태 이력 버전 {view.status_revision}</p>
     <h3>선택한 원문 버전</h3>{view.version_files.map((v, i) => <p key={v.id || i}>{knowledgeVersionName(v)}</p>)}
     {view.missing_version_ids.length > 0 && <p className={styles.warning}>원문 버전 {view.missing_version_ids.length}건의 원장 연결을 확인할 수 없습니다.</p>}

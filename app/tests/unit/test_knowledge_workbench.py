@@ -40,6 +40,20 @@ def test_single_scope_counts_keep_homonyms_and_parallel_relations(service):
     assert result['scope']['partial'] is True
 
 
+def test_catalog_labels_only_explicit_edit_runs_and_uses_recorded_save_time(service):
+    with service.repository.connect() as db:
+        for rid in ['run1','run2']:
+            run=service.repository.get(db,'runs',rid)
+            run['repairs']=[dict(origin='user',source_changeset_id='edited',created_at='2026-10-15T00:00:00Z'),dict(origin='model')]
+            service.repository.save(db,'runs',run)
+        db.execute('INSERT INTO changesets VALUES(?,?)',('edited',json.dumps(dict(edit_run_ids=['run1']))))
+    scopes={s['id']:s for s in workbench.catalog(service)['scopes']}
+    assert scopes['run1']['data_label']=='직접 수정 저장 결과 · 미승인'
+    assert scopes['run1']['created_at']=='2026-10-15T00:00:00Z'
+    assert scopes['run2']['data_label']=='자동 추출 결과 · 미승인'
+    assert scopes['run2']['created_at'] is None
+
+
 def test_filters_and_directions_keep_counts_and_selection_explicit(service):
     result = workbench.explore(service, 'run', 'run1', selected_id='n1', graph_root='n1', direction='out', item_kind='node')
     assert result['filtered_count'] == 3

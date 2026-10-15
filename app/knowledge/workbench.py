@@ -7,6 +7,12 @@ def catalog(service):
     with service.repository.connect() as db:
         sources = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT id,payload FROM sources')}
         versions = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT id,payload FROM versions')}
+        edited_runs = {row['run_id']: row['created_at'] for row in db.execute("""SELECT run.id run_id,
+            json_extract(repair.value,'$.created_at') created_at
+            FROM runs run, changesets change, json_each(change.payload,'$.edit_run_ids') edit,
+                json_each(run.payload,'$.repairs') repair
+            WHERE edit.value=run.id AND json_extract(repair.value,'$.origin')='user'
+                AND json_extract(repair.value,'$.source_changeset_id')=change.id""")}
         scopes = []
         for row in db.execute("""SELECT id, json_extract(payload,'$.status') status,
                 json_extract(payload,'$.started_at') started_at,
@@ -15,9 +21,9 @@ def catalog(service):
             ids = json.loads(row['version_ids'] or '[]')
             titles = list(dict.fromkeys(sources.get(versions.get(v, {}).get('source_id'), {}).get('title', '출처 정보 미기록') for v in ids))
             scopes.append(dict(kind='run', id=row['id'], title=' · '.join(titles) or '자료 범위 미기록',
-                               status=row['status'], created_at=row['started_at'], version_ids=ids,
+                               status=row['status'], created_at=(edited_runs[row['id']] or row['started_at']) if row['id'] in edited_runs else row['started_at'], version_ids=ids,
                                version_files=[{k: versions.get(v, {}).get(k) for k in ['id', 'filename', 'dates']} for v in ids],
-                               data_label='자동 추출 결과 · 미승인'))
+                               data_label='직접 수정 저장 결과 · 미승인' if row['id'] in edited_runs else '자동 추출 결과 · 미승인'))
         for row in db.execute("""SELECT id, json_extract(payload,'$.kind') kind,
                 json_extract(payload,'$.created_at') created_at, json_extract(payload,'$.reason') reason,
                 json_extract(payload,'$.source_versions') source_versions, json_extract(payload,'$.activation') activation,

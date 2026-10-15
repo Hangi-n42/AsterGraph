@@ -11,6 +11,14 @@ export async function knowledgeRequest<T>(path: string, init?: RequestInit): Pro
   return result.data as T;
 }
 
+export function unchangedSourceFields(before: unknown, after: unknown): { field: string; value: unknown }[] {
+  if (!before || !after || typeof before !== 'object' || typeof after !== 'object' || Array.isArray(before) || Array.isArray(after)) return [];
+  const next = after as Record<string, unknown>;
+  return Object.entries(before).filter(([field, value]) => Object.hasOwn(next, field)
+    && value === next[field] && ['string', 'number', 'boolean'].includes(typeof value))
+    .map(([field, value]) => ({ field, value }));
+}
+
 export type KnowledgeScope = { kind: "run" | "source_graph"; id: string; title: string; status: string; data_label: string; created_at?: string; partial?: boolean; graph_available?: boolean; changeset_id?: string; version_ids?: string[]; version_files?: KnowledgeVersion[]; activation?: string; run_id?: string };
 export type KnowledgeItem = { id: string; kind: string; label: string; claim_ids: string[]; disambiguation?: string; state?: string; issue?: string; concepts?: string[]; head?: string; tail?: string; head_label?: string; tail_label?: string };
 export type KnowledgeClaim = {
@@ -49,7 +57,7 @@ export function hasUsageRecords(value?: KnowledgeUsage | null): value is Knowled
   return !!value && !!value.scope && typeof value.scope.id === 'string' &&
     ['version_ids', 'version_files', 'missing_version_ids', 'source_restrictions', 'requirements', 'excluded_claim_ids', 'excluded_block_ids', 'invalidations', 'linked_snapshots'].every(key => Array.isArray(value[key as keyof KnowledgeUsage]));
 }
-export const knowledgeLabels: Record<string, string> = { selection_recorded: "선택 저장됨", blocked: "사용 중단", needs_review: "재검토 필요", satisfied: "충족 기록", unaffected: "영향 없음 기록", affected: "영향 있음 기록", claim: "검토 대상 주장", concept: "자동 개념화 기록", entity: "대상", event: "업무 내용", relation: "관계", unreviewed: "미검수", unrecorded: "기록 없음", reviewed: "검토됨", accepted: "수락", partial: "일부 완료", succeeded: "처리 완료", review_ready: "검토 대기", cancelled: "중단", failed: "실패", unknown: "미확인", queued: "대기", running: "처리 중" };
+export const knowledgeLabels: Record<string, string> = { applied_awaiting_recheck: "수정 저장·재검수 대기", selection_recorded: "선택 저장됨", blocked: "사용 중단", needs_review: "재검토 필요", satisfied: "충족 기록", unaffected: "영향 없음 기록", affected: "영향 있음 기록", claim: "검토 대상 주장", concept: "자동 개념화 기록", entity: "대상", event: "업무 내용", relation: "관계", unreviewed: "미검수", unrecorded: "기록 없음", reviewed: "검토됨", accepted: "수락", partial: "일부 완료", succeeded: "처리 완료", review_ready: "검토 대기", cancelled: "중단", failed: "실패", unknown: "미확인", queued: "대기", running: "처리 중" };
 export function knowledgeDate(value?: string) { return value ? new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }) : "시각 미기록"; }
 export function qualifier(value: unknown): string {
   if (typeof value === "string") return value || "별도 기록 없음";

@@ -65,7 +65,7 @@ export function KnowledgeSelection({ detail, onSelect, onReview }: { detail: Kno
     {detail.claims.length > 1 && <p className={styles.muted}>확인할 주장 또는 연결 관계를 선택해 조건과 원문을 펼치세요.</p>}
     {detail.claims.length === 0 && <p>이 대상에 연결된 주장 기록이 없습니다.</p>}
     {detail.claims.map(claim => <ClaimDetail key={claim.id} claim={claim} single={detail.claims.length === 1} editable={!!detail.changeset_id} />)}
-    {!!detail.history.length && <section><h3>저장된 변경 전후</h3>{detail.history.map(h => <div key={h.id}><p>{h.actor} · {h.reason}</p>{h.changes.map((c, i) => <div key={i}><p>변경 전: {c.before || "기록 없음"}</p><p>변경 후: {c.after || "기록 없음"}</p></div>)}<p className={styles.muted}>재검수 기록: {h.status || "미기록"}</p></div>)}</section>}
+    {!!detail.history.length && <section><h3>저장된 변경 전후</h3>{detail.history.map(h => <div key={h.id}><p>{h.actor} · {h.reason}</p>{h.changes.map((c, i) => <div key={i}><p>변경 전: {c.before || "기록 없음"}</p><p>변경 후: {c.after || "기록 없음"}</p></div>)}<p className={styles.muted}>재검수 기록: {h.status ? labels[h.status] || h.status : "미기록"}</p></div>)}</section>}
     {onReview && <div className={styles.selectionAction}><button className={styles.primary} onClick={onReview}>이 항목 검토하기</button><p className={styles.muted}>저장·재검수·승인은 별도 단계입니다.</p></div>}
     <details className={styles.diagnostics}><summary>진단 · 식별자와 변경 이력</summary><p>항목 {detail.item.id}</p><p>저장 표시값 {detail.item.label}</p><p>실행 {detail.run_id || "미기록"}</p><p>변경 묶음 {detail.changeset_id || "없음"}</p>{detail.history.length ? <pre>{JSON.stringify(detail.history, null, 2)}</pre> : <p>이 항목의 저장된 수정 이력이 없습니다.</p>}</details>
   </div>;
