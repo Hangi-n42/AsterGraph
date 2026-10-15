@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from app.knowledge import autoschema, business_concepts, business_run, graph_retrieval
 from app.tests.unit.test_knowledge_concept_source_units import pool
+from app.tests.unit.test_knowledge_concept_source_map_entrypoints import environment
 
 
 def parent():
@@ -71,35 +72,34 @@ def test_single_claim_overflow_is_left_for_product_preflight_and_is_not_truncate
     run = parent(); target = relations(run)[0]
     expected = business_concepts.prepare(run, [target], 'plain')[0]
     run['recipe']['options']['context_tokens'] = 1
-    assert business_concepts.prepare(run, [target], 'plain') == [expected]
+    actual = business_concepts.prepare(run, [target], 'plain')[0]
+    assert {k:v for k,v in actual.items() if k != 'work_input'} == {k:v for k,v in expected.items() if k != 'work_input'}
+    assert actual['work_input']['requested_limits']['context_tokens'] == 1
 
 
-def test_split_targets_are_not_regenerated_by_refresh_and_match_only_their_edges(monkeypatch):
+def test_split_targets_are_not_regenerated_by_refresh_and_match_only_their_edges(environment):
+    from app.tests.unit.test_knowledge_concept_source_map_entrypoints import pool as execution_pool, store
+    service, requests = environment
     run = same_source(); target = relations(run)[0]
+    run['recipe'].update(deepcopy(execution_pool('v')['recipe']))
+    run.update(id='split-control', status='partial', model_identity=dict(draft=dict(digest='a'*64)),
+               blocks=[b for chunk in run['chunks'] for b in chunk['blocks']], concepts=[], units=[],
+               metrics=dict(llm_calls=0,model_total_s=0,elapsed_s=0))
     single = business_concepts.prepare(run, [dict(target, claim_ids=[cid]) for cid in target['claim_ids']], 'plain')
     run['recipe']['options']['context_tokens'] = max(business_run.request_tokens(i['messages'], None, 512) for i in single)
-    run.update(concepts=[], units=[])
-    calls = []
-    def call(service, current, stage, messages, **kwargs):
-        calls.append((stage, messages)); current['units'].append(dict(id=str(len(calls))))
-        return dict(text='개념' + str(len(calls)))
-    monkeypatch.setattr(business_run, 'call', call)
-    monkeypatch.setattr(business_run, 'save', lambda *a: None)
-    monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
+    store(service,run)
     changed = {c['id'] for c in run['claims']}
-    business_concepts.refresh_changed(None, run, changed)
-    assert sum(stage == 'concept_relation' for stage, _ in calls) == 2
-    first_calls = len(calls)
-    business_concepts.refresh_changed(None, run, changed)
-    assert len(calls) == first_calls
-    run['blocks'] = [b for chunk in run['chunks'] for b in chunk['blocks']]
+    business_concepts.refresh_changed(service, run, changed)
+    assert sum(r.stage == 'concept_relation' for r in requests) == 2
+    first_calls = len(requests)
+    business_concepts.refresh_changed(service, run, changed)
+    assert len(requests) == first_calls
     graph, edges, _, _ = graph_retrieval.build(run, 'full')
     by_claim = {c['target']['claim_ids'][0]: c['concepts'] for c in run['concepts'] if c['target']['kind'] == 'relation'}
     for edge in edges:
-        if edge['relation'] != '접수':
-            continue
-        assert graph.edges[edge['head'], edge['tail'], edge['id']]['concepts'] == by_claim[edge['claim_id']]
-        assert not any(label in edge['text'] for labels in by_claim.values() for label in labels)
+        if edge['relation'] == '접수':
+            assert graph.edges[edge['head'], edge['tail'], edge['id']]['concepts'] == by_claim[edge['claim_id']]
+            assert not any(label in edge['text'] for labels in by_claim.values() for label in labels)
 
 
 def test_legacy_edges_without_source_owner_stay_with_their_own_claims():

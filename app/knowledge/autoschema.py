@@ -427,7 +427,7 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
     if target.get('chunk_id'):
         chunk_ids.add(target['chunk_id'])
     chunk_ids.update(target.get('chunk_ids', []))
-    mandatory, reference_map, provided, duplicate_packets = [], {}, {}, []
+    mandatory, reference_map, provided, duplicate_packets, dependencies = [], {}, {}, [], []
     for chunk_id in sorted(chunk_ids):
         chunk = chunks_by_id[chunk_id]
         source_packets = source_packet(chunk['blocks'])
@@ -440,6 +440,10 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
             alias = 'b' + str(len(reference_map) + 1)
             reference_map[alias] = dict(block_id=packet['id'], source_version_id=packet.pop('source_version_id'),
                                         span=packet.get('span'))
+            dependencies.append(dict(alias=alias, **reference_map[alias],
+                parse_run_id=block.get('parse_run_id') or block.get('run_id'),
+                text_sha256=sha256(json.dumps(block['text'], ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
+                locator=deepcopy(block.get('locator')), context_only=block.get('context_only', False)))
             packet['id'] = alias
             provided[key] = alias
             unique_packets.append(packet)
@@ -458,7 +462,7 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
         context_type='graph_neighbor', omitted_edge_ids=[p['id'] for p in omitted], omissions=omitted,
         selection_rule='direct_role_condition_then_source_order', neighbor_bytes=neighbor_bytes,
         information_fingerprint=identifier('info', selected), source_reference_map=reference_map,
-        duplicate_source_packets=duplicate_packets)
+        duplicate_source_packets=duplicate_packets, source_dependencies=dependencies)
 
 
 def concepts(text):

@@ -175,7 +175,8 @@ def start(service, request):
                 chunks = deepcopy(parent['chunks'])
         run = dict(id=uuid4().hex, kind='business', status='queued', units=[], analysis_units=[],
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
-                   requirements=requirements, recipe=dict(version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
+                   requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
+                       parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
                    review_contract=business_review.CONTRACT, generation=config,
                    models=models, options=request.model_dump()), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
@@ -248,7 +249,7 @@ def cancelled(service, run):
         return service.repository.get(db, 'runs', run['id'])['status'] == 'cancel_requested'
 
 
-def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None, timeout=None, capacity_repair=None):
+def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None, timeout=None, capacity_repair=None, concept_work_input=None):
     options = run['recipe']['options']
     budget = max_tokens or (options['review_tokens'] if review else options['extraction_tokens'])
     context_tokens = options.get('representation_context_tokens') if stage == 'requirement_representation' else None
@@ -260,6 +261,12 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
                 request_configuration=deepcopy(dict(model=request.model, generation=run['recipe']['generation'],
                     identity=run['model_identity'], temperature=request.temperature, timeout=request.timeout)),
                 requested_limits=dict(max_tokens=budget, context_tokens=request.context_tokens, think=request.think))
+    if stage.startswith('concept_'):
+        unit['concept_work_input'] = deepcopy(concept_work_input)
+        unit['concept_reuse_contract'] = 'exact-original-concept-work-v1' if concept_work_input is not None else 'legacy'
+        if concept_work_input is not None:
+            from .concept_work import validate_request
+            validate_request(concept_work_input, unit)
     if capacity_repair:
         unit.update(deepcopy(capacity_repair))
     run['units'].append(unit)
@@ -278,12 +285,19 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
                  'requirement_representation': 'representation_tokens'}.get(stage)
     if limit_key:
         same_recipe = same_recipe and budget >= (old_options.get(limit_key) or old_options.get('review_tokens', budget))
+    def concept_reusable(candidate, donor):
+        if not stage.startswith('concept_') or concept_work_input is None:
+            return True
+        from .concept_work import reusable
+        return reusable(service, run, candidate, concept_work_input, donor)
+
     cached_run_id = run['id']
     cached = next((u for u in run['units'][:-1] if u['stage'] == stage and u.get('status') == 'succeeded'
         and not u.get('error') and u.get('messages') == messages and u.get('schema') == schema
         and u.get('reference_map') == reference_map and u.get('request_configuration') == unit['request_configuration']
         and u.get('requested_limits') == u.get('executed_limits') == unit['requested_limits']
-        and u.get('response') and not u['response'].get('failure_kind')), None)
+        and u.get('response') and not u['response'].get('failure_kind')
+        and concept_reusable(u, run['id'])), None)
     if cached is None and same_recipe:
         cached_run_id = run.get('reuse_pool_parent_run_id') or run['parent_run_id']
         cached = next((u for u in run.get('reusable_units', []) if u['stage'] == stage and
@@ -292,10 +306,12 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
             u.get('reference_map') == reference_map and
             (not run.get('source_checkpoint') or u.get('request_configuration') == unit['request_configuration']
              and u.get('requested_limits') == u.get('executed_limits') == unit['requested_limits']) and
-            not u['response'].get('failure_kind')), None)
+            not u['response'].get('failure_kind') and concept_reusable(u, cached_run_id)), None)
     if cached:
         unit.update(status='succeeded', response=deepcopy(cached['response']), finished_at=utcnow(),
                     reused_from=dict(run_id=cached_run_id, unit_id=cached['id'], original_status=cached['status']))
+        if stage.startswith('concept_'):
+            unit['concept_work_id'] = cached.get('concept_work_id') or autoschema.identifier('concept_work', [cached_run_id, cached['id']])
         old_budget = (old_options.get(limit_key) or old_options.get('review_tokens')) if limit_key else budget
         unit['executed_limits'] = deepcopy(cached.get('executed_limits') or dict(
             max_tokens=old_budget, context_tokens=old_context, think=old_options.get('think')))
@@ -1568,18 +1584,12 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         if projected:
             projected['planned_concept_target_ids'] = [item['target']['id'] for item in planned]
         for item in planned:
-            target = item['target']
             if cancelled(service, run):
                 return
             if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
                 projected['stop_reason'] = 'new_request_deadline'
                 break
-            response = call(service, run, 'concept_' + target['kind'], item['messages'], max_tokens=options['concept_tokens'],
-                            reference_map=item['selection']['source_reference_map'])
-            run['concepts'].append(dict(id=uuid4().hex, target=target, selection=item['selection'],
-                concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
-                relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id']))
-            save(service, run)
+            business_concepts.apply_selected_contract(service, run, item)
         if projected:
             completed = {c['target']['id'] for c in run['concepts']}
             projected['unattempted_concept_target_ids'] = [i for i in projected['planned_concept_target_ids'] if i not in completed]

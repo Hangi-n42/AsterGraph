@@ -17,7 +17,7 @@ def pool(version):
     claim=autoschema.graph_record(chunk,'entity_relation',dict(Head='기관',Relation='참여',Tail='신청'),0)
     options=dict(concept_tokens=512,extraction_tokens=8192,review_tokens=4096,context_tokens=49152,think=False,timeout=1800,neighbor_mode='plain',repair=False,conceptualize=True)
     return dict(id=uuid4().hex,kind='business',status='partial',chunks=[chunk],blocks=[block],claims=[claim],graph=autoschema.graph([claim]),
-        recipe=dict(models=dict(draft='fixture-stub',review='fixture-stub'),generation={},options=options),model_identity={},
+        recipe=dict(concept_work_contract='exact-original-concept-work-v1',models=dict(draft='fixture-stub',review='fixture-stub'),generation=dict(provider='ollama'),options=options),model_identity=dict(draft=dict(digest='a'*64)),
         units=[],concepts=[],metrics=dict(llm_calls=0,model_total_s=0,elapsed_s=0),requirements=[],assessments=[],repairs=[],
         input_version_ids=[version],sources={version:{'title':'fixture'}},stored_pool=True)
 
@@ -27,10 +27,15 @@ def environment(tmp_path,monkeypatch):
     service=KnowledgeService(tmp_path/'candidate.db');requests=[]
     class Stub:
         def __init__(self,*a,**kw):pass
+        def execution_identity(self,model,temperature,**limits):
+            return dict(engine='ollama',engine_version='fixture-only',model_digest='a'*64,
+                precision=dict(weights='fixture'), sampling=dict(contract='ollama-request-and-model-defaults-v1',
+                    request_options=dict(temperature=temperature,num_predict=limits['max_tokens'],num_ctx=limits['context_tokens']),
+                    think=limits['think'],model_parameters='fixture defaults',model_configuration_sha256='b'*64))
         async def generate(self,request,cancelled=None):
             assert request.stage.startswith('concept_')
             requests.append(request)
-            return dict(request_id=request.request_id,text='테스트 유형',failure_kind=None,elapsed_s=0,prompt_eval_count=1,eval_count=1)
+            return dict(request_id=request.request_id,text='테스트 유형',failure_kind=None,done=True,done_reason='stop',elapsed_s=0,prompt_eval_count=1,eval_count=1)
     monkeypatch.setattr(business_run,'ModelClient',Stub)
     monkeypatch.setattr('app.knowledge.business_use.publish',lambda *a:dict(id='fixture-changeset'))
     assert Path(business_concepts.__file__).resolve().is_relative_to(Path(__file__).resolve().parents[3])

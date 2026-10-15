@@ -38,6 +38,7 @@ class BusinessRunRequest(BaseModel):
     target_parse_run_ids: dict[str, str] = Field(default_factory=dict)
     selection_reason: str = ''
     neighbor_mode: Literal['structured', 'plain'] = 'plain'
+    concept_work_contract: Literal['legacy', 'exact-original-concept-work-v1'] | None = None
     model: str | None = None
     review_model: str | None = None
     context_tokens: int = Field(default=49152, ge=4096)
@@ -596,6 +597,7 @@ class HtmlLiteralRowsRequest(BaseModel):
 
 class ConceptRunRequest(BaseModel):
     parent_run_id: str
+    donor_run_id: str | None = None
     target_ids: list[str] = Field(min_length=1)
     neighbor_mode: Literal['plain', 'structured']
 
