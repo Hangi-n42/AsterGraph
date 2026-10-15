@@ -503,6 +503,14 @@ def extraction_schema(role):
     return schema
 
 
+def space_run_spans(value, text):
+    """Only the count of literal spaces may differ; all space boundaries remain."""
+    if ' ' not in value:
+        return []
+    pattern = ''.join(' +' if part.startswith(' ') else re.escape(part) for part in re.split('( +)', value))
+    return [match.span(1) for match in re.finditer('(?=(' + pattern + '))', text)]
+
+
 def source_quotes(refs, chunk, *, within=()):
     """Resolve unique quotes in the addressed view, without guessing occurrences."""
     resolved, errors = [], []
@@ -517,21 +525,27 @@ def source_quotes(refs, chunk, *, within=()):
             errors.append('unresolved source view')
             continue
         block = views[0]
-        offsets = [m.start() for m in re.finditer(re.escape(ref['quote']), block['text'])]
-        if len(offsets) > 1 and within:
-            base = block.get('span', [0])[0]
-            offsets = [offset for offset in offsets if any(parent['block_id'] == block['id']
+        spans = [m.span() for m in re.finditer(re.escape(ref['quote']), block['text'])]
+        projection = not spans
+        if projection:
+            spans = space_run_spans(ref['quote'], block['text'])
+        base = block.get('span', [0])[0]
+        if len(spans) > 1 and within:
+            spans = [(start, end) for start, end in spans if any(parent['block_id'] == block['id']
                 and parent['source_version_id'] == block['source_version_id']
-                and parent['start_char'] <= base + offset
-                and base + offset + len(ref['quote']) <= parent['end_char'] for parent in within)]
-        if len(offsets) != 1:
+                and parent['start_char'] <= base + start
+                and base + end <= parent['end_char'] for parent in within)]
+        if len(spans) != 1:
             errors.append('quote not uniquely located in provided view')
             continue
-        start = block.get('span', [0])[0] + offsets[0]
-        resolved.append(dict(block_id=block['id'], source_version_id=block['source_version_id'],
+        start, end = spans[0]
+        item = dict(block_id=block['id'], source_version_id=block['source_version_id'],
             parse_run_id=block.get('parse_run_id') or block.get('run_id'),
-            start_char=start, end_char=start + len(ref['quote']), quote=ref['quote'],
-            context_only=bool(block.get('context_only')), precision='exact_unverified_meaning'))
+            start_char=base + start, end_char=base + end, quote=block['text'][start:end],
+            context_only=bool(block.get('context_only')), precision='exact_unverified_meaning')
+        if projection:
+            item['matching_method'] = 'space_run_length_only'
+        resolved.append(item)
     return resolved, errors
 
 
@@ -542,6 +556,11 @@ def display_mentions(label, refs):
     if not value:
         return occurrences
     for ref in refs:
+        if ref.get('matching_method') == 'space_run_length_only':
+            for start, end in space_run_spans(label, ref['quote']):
+                address = (ref['source_version_id'], ref['block_id'], ref['start_char'] + start, ref['start_char'] + end)
+                occurrences[address] = dict(ref, start_char=address[-2], end_char=address[-1], quote=ref['quote'][start:end])
+            continue
         positions = [n for n, c in enumerate(ref['quote']) if not c.isspace()]
         text = ''.join(ref['quote'][n] for n in positions)
         for match in re.finditer('(?=' + re.escape(value) + ')', text):
@@ -624,7 +643,8 @@ def scope_record(value, chunk, raw, role):
                     projected = display_mentions(label, refs)
                     if len(projected) == 1:
                         occurrences = projected
-                        projection = True
+                        projection = ('space_run_length_only' if any(r.get('matching_method') == 'space_run_length_only'
+                            for r in projected.values()) else 'whitespace_display_only')
                 if len(occurrences) != 1 and not (literal_event and refs
                         and all(ref in event_refs for ref in refs)):
                     errors.append('entity mention is absent or ambiguous inside evidence')
@@ -638,8 +658,8 @@ def scope_record(value, chunk, raw, role):
             item = dict(participant, value=label, evidence=refs, meaning_refs=[meaning['id']],
                         address_status='resolved' if resolved else 'unresolved', address_errors=errors)
             if projection:
-                item['address_projection'] = 'whitespace_display_only'
-                record.setdefault('address_restorations', []).append(dict(kind='whitespace_display_only',
+                item['address_projection'] = projection
+                record.setdefault('address_restorations', []).append(dict(kind=projection,
                     meaning_index=i, field=field, entity_index=index, requested_label=label, evidence=deepcopy(refs)))
             meaning['participants'].append(item)
             record['mentions'].append(deepcopy(item))
