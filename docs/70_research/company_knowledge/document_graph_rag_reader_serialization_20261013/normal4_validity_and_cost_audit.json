@@ -1,0 +1,168 @@
+{
+  "version": "reader-v2-normal-controls-validity-cost-v1",
+  "questions": 2,
+  "unique_native_requests": 4,
+  "baseline_correspondences": 4,
+  "rows": [
+    {
+      "input": "SUP01_C_v2",
+      "run_id": "969dfdc1e36f4352aa99db29deba0c5b",
+      "raw_sha256": "a1a547a6efba4fbb2758c6b11adf4ee3589846464adea28c5a1818003571aa4c",
+      "answer": {
+        "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금은 시설자금으로 **지원 불가**합니다.",
+        "choice": null,
+        "citations": [
+          "passage_fc31af4a77436fe1b40094d2",
+          "passage_12c4ca17d67725e858746230",
+          "passage_54d1210723a0cbcf6b5bfb22"
+        ],
+        "limitations": [
+          "제공된 원문은 2019년도 중소기업 정책자금 융자계획 공고 기준이며, 이후 개정 사항이나 다른 연도 공고의 내용은 확인되지 않습니다."
+        ]
+      },
+      "exact_frozen_request_sent": true,
+      "source_context_budget": {
+        "limit": 16384,
+        "estimate_tokens": 11862,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 6779,
+        "eval_count": 136,
+        "elapsed_s": 45.679467,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0,
+      "baseline_usage": {
+        "prompt_eval_count": 6122,
+        "eval_count": 167,
+        "elapsed_s": 41.911221
+      }
+    },
+    {
+      "input": "SUP03_B",
+      "run_id": "acf32814380b4b7c84ffd3725b71a4b2",
+      "raw_sha256": "1481ffed801a9cc604bd484b02d57bffae92dbd63486545488e8d0ad15da23a8",
+      "answer": {
+        "answer": "연 2.0% 고정금리",
+        "choice": null,
+        "citations": [
+          "passage_67fde967b6e374236f97ea36"
+        ],
+        "limitations": []
+      },
+      "exact_frozen_request_sent": true,
+      "source_context_budget": {
+        "limit": 16384,
+        "estimate_tokens": 13141,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 7854,
+        "eval_count": 33,
+        "elapsed_s": 44.719596,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0,
+      "baseline_usage": {
+        "prompt_eval_count": 6901,
+        "eval_count": 33,
+        "elapsed_s": 39.388584
+      }
+    },
+    {
+      "input": "SUP01_B",
+      "run_id": "daf7f10781994c3a932045293e785338",
+      "raw_sha256": "c255f5ce6e31841afd3125b944e21f868d1b9564e2c2dbf484fe355e460c0e07",
+      "answer": {
+        "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금은 시설자금으로 **지원 불가**합니다.",
+        "choice": null,
+        "citations": [
+          "passage_be5dc7fea39249ac67aa7eda",
+          "passage_2488d60f76c1309a43ae269c",
+          "passage_ead4f9ad0f235301b5b51fa3"
+        ],
+        "limitations": [
+          "제공된 원문은 2019년도 중소기업 정책자금 융자계획 공고 기준이며, 이후 개정 사항이나 다른 연도 공고의 내용은 확인되지 않습니다."
+        ]
+      },
+      "exact_frozen_request_sent": true,
+      "source_context_budget": {
+        "limit": 16384,
+        "estimate_tokens": 11862,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 6779,
+        "eval_count": 135,
+        "elapsed_s": 43.456801,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0,
+      "baseline_usage": {
+        "prompt_eval_count": 6122,
+        "eval_count": 180,
+        "elapsed_s": 43.251695
+      }
+    },
+    {
+      "input": "SUP03_C_v2",
+      "run_id": "97bb88c909644a879a4799ae029ada5f",
+      "raw_sha256": "de3067facc8c83743d6b638e03cfe60fb1a77d999a53d31b45f515e278cd466c",
+      "answer": {
+        "answer": "연 2.0% 고정금리",
+        "choice": null,
+        "citations": [
+          "passage_67fde967b6e374236f97ea36"
+        ],
+        "limitations": []
+      },
+      "exact_frozen_request_sent": true,
+      "source_context_budget": {
+        "limit": 16384,
+        "estimate_tokens": 15391,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "usage": {
+        "prompt_eval_count": 9188,
+        "eval_count": 33,
+        "elapsed_s": 51.808972,
+        "done_reason": "stop",
+        "failure_kind": null
+      },
+      "provider_cached_input_tokens": 0,
+      "baseline_usage": {
+        "prompt_eval_count": 8891,
+        "eval_count": 33,
+        "elapsed_s": 52.16579
+      }
+    }
+  ],
+  "input_tokens": 30600,
+  "output_tokens": 337,
+  "request_elapsed_s": 185.66483599999998,
+  "outer_elapsed_s": 196.75561000000016,
+  "source_DB_unchanged": true,
+  "task_model_returned": true,
+  "new_retrieval_embedding_selection_extraction_calls": 0,
+  "source_cap_estimates_are_not_provider_tokens": true,
+  "native_retries": 0,
+  "default_integration_at_execution": false,
+  "meaning_grade": "separate coordinator source/reference comparison",
+  "execution_manifest_sha256": "040bbaa6dd545e8b475365c5f56de2fd020b7cbe28d38a0a84848bd7c40c26ab",
+  "original_reader_v2_manifest_sha256": "29ddc84318ea73c32a038548093f4f756faf3acf4b54e1512cb3be25a40110b1",
+  "actual_entrypoint_sha256": "4badcba105c7d68ca7666672e2ab49ea39eddabb686e536d1dd1c4510f96d558",
+  "addendum_sha256": "040bbaa6dd545e8b475365c5f56de2fd020b7cbe28d38a0a84848bd7c40c26ab",
+  "time_interpretation": "Different order/load/cache conditions; no speed or cost saving claim"
+}

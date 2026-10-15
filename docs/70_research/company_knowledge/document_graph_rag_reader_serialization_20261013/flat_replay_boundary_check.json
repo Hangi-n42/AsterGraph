@@ -1,0 +1,34 @@
+{
+  "version": "actual-product-flat-reader-replay-check-v1",
+  "passed": 1,
+  "rows": [
+    {
+      "input": "SUP02_B",
+      "exact_frozen_request": true,
+      "source_budget": {
+        "limit": 16384,
+        "estimate_tokens": 14003,
+        "method": "utf8_bytes/2",
+        "exact": false,
+        "within_limit": true
+      },
+      "source_reader_provenance": null,
+      "citation_roundtrip": true
+    }
+  ],
+  "source_db_unchanged": true,
+  "actual_native_calls": 0,
+  "ModelClient_generate_mocked": true,
+  "product_query_json_call_repository_not_mocked": true,
+  "retrieval_and_selection_saved_results": true,
+  "new_embedding_selection_extraction_calls": 0,
+  "raw_HTML_loaded_from_product_version_store": false,
+  "evaluation_directory_used_by_product": false,
+  "temporary_database": "/private/tmp/product-reader-eight-81fct6sl/knowledge.db",
+  "code_sha256": {
+    "app/knowledge/source_reader.py": "93d962eef617c97f654324e272e59df22d022bad901443dcf9fbb898bde93495",
+    "app/knowledge/business_use.py": "5ae1dae188a55ecc98e673f5da02347d1f9006515d91a67d290d39056c6934cc",
+    "app/knowledge/business_models.py": "f2bb947f17852521acf2dbe32ad632d2872fd99d41c76e9e6d768621ca373466"
+  },
+  "flat_replay_DOM_read": false
+}

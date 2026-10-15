@@ -1,0 +1,34 @@
+{
+  "version": "reader-v2-normal-controls-execution-addendum-v1",
+  "original_v2_manifest_sha256": "29ddc84318ea73c32a038548093f4f756faf3acf4b54e1512cb3be25a40110b1",
+  "native_driver_sha256": "4badcba105c7d68ca7666672e2ab49ea39eddabb686e536d1dd1c4510f96d558",
+  "code_sha256": {
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/code/reader_serialization.py": "189f66b4dc4b35eac77265f0ef29374a7f381b129b0c2fedb0d2ad7cce713713",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/code/reader_answer.py": "061a7ac70defe362a5e7a7cdcf05eab214c9aa582c896823819351e9aa260fd4",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/code/native_driver.py": "4201af230f463a139a85657a3dadcc72db2a3508d917e58748e4cbe85215b315",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/app/knowledge/business_use.py": "970d78279f445090909aabf94cb73e410228cd65333945f6f5b9bcd16b79a318",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/app/knowledge/service.py": "9bd42ec2c3dd8fbcf02b2949b19ed1111169c71324fdce1aec2be5e12fba4465",
+    "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/app/knowledge/repository.py": "07e7c3f46aac045c5fc649c814d87faef9db48919bbdaf64b050d9539b44918d"
+  },
+  "preparation_manifest_sha256": "a233836205081f9ab141c0ffda62ce278cbaa06616d6a880e29838a6f06c3229",
+  "source_DB_sha256": "2fd269f22e0ce768a67b72b441274b2b57a1cbf284da2b30831521f4256b5b9d",
+  "interruption_receipt": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/full_build_v3/interruption_v1/interruption_receipt.json",
+  "interruption_receipt_sha256": "b5367667a26696a651fc62fabb6b454475dda952cebee22451c58c863fff0652",
+  "prior_QA_ledger": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_reader_serialization_20261013/v2/qa/execution_ledger.json",
+  "prior_QA_ledger_sha256": "e2ffc8e16de63dae69bed6e83b799646ede2c890ec0f718c2d06836b813e8af7",
+  "request_files_sha256": {
+    "SUP01_B": "95dcc47cf885ff078f5a33e82e0b361898c069b34ba7f6c01ef26595b080e874",
+    "SUP01_C_v2": "762c43ec50eab597bbb3cd6d5f6f0db5a9b93feec37b565fde0c46ce53c949c5",
+    "SUP03_B": "462206f878e1d448b5cf35f6b26656bdb493c6a07365d0ce9847296b77922aa7",
+    "SUP03_C_v2": "f94c2cf0771854bd5de40c10251b6843c222858250212e89950d1d08261ad19b"
+  },
+  "new_native_calls_before_freeze": 0,
+  "unique_requests": 4,
+  "max_native_calls": 4,
+  "unchanged_serializer_system_settings": true,
+  "no_product_integration": true,
+  "no_full_build_resume": true,
+  "preparation_script_sha256": "46e7972aa72bd299a91311882c35317426f32613617fddc02c5cefa92f9e5093"
+}
