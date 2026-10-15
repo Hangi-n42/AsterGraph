@@ -185,10 +185,15 @@ def recheck(service, run_id):
                 review=max(options['context_tokens'], options.get('representation_context_tokens') or options['context_tokens'])))
         receipt = run['repairs'][-1]
         if run.get('impact_candidates'):
-            from .business_changes import review_impacts, apply_impacts
+            from .business_changes import review_impacts, apply_impacts, direct_dependencies
             diff = dict(changes=[dict(id=receipt['id'], kind='interpretation_or_candidate',
                 changes=receipt['changes'], source_corrections=[c for c in run['source_corrections'] if c['edit_id'] == receipt['id']])], unchanged=[])
-            impacts, valid = review_impacts(service, run, run['impact_candidates'], diff, run['sources'], [])
+            changed_versions = {v for change in receipt['changes'] for claim in (change['before'], change['after'])
+                if claim for v in claim['source_version_ids']} | {e['source_version_id']
+                for c in diff['changes'][0]['source_corrections'] for e in c['evidence']}
+            direct = (direct_dependencies(run['impact_candidates'], changed_versions)
+                      if changed_versions <= run['sources'].keys() else None)
+            impacts, valid = review_impacts(service, run, run['impact_candidates'], diff, run['sources'], direct)
             apply_impacts(service, run, run['impact_candidates'], impacts['items'])
             run['edit_impact'].update(items=impacts['items'], record_valid=valid)
             needs_review = {i['requirement_id'] for i in impacts['items'] if i['status'] != 'unaffected'}
