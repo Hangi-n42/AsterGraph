@@ -14,7 +14,7 @@ import networkx as nx
 import numpy as np
 from pydantic import Field, create_model
 
-from . import autoschema, business_run
+from . import autoschema, business_run, business_html_debt_rows
 from .vendor.autoschemakg.rag_prompt import filter_triple_messages
 
 CONTRACT = 'autoschemakg-hipporag2-source-passages-v2'
@@ -69,6 +69,7 @@ def build(snapshot, variant):
     """Keep source-specific identities and parallel edges; concepts are search only."""
     claims = {c['id']: dict(c, evidence=reviewed_evidence(snapshot, c)) for c in snapshot['claims']}
     extracted = autoschema.graph(snapshot['claims'])
+    business_html_debt_rows.annotate_graph(extracted,snapshot['claims'])
     graph = nx.MultiDiGraph()
     for node in extracted['nodes']:
         if variant == 'entity' and node['kind'] != 'entity':
@@ -118,7 +119,7 @@ def build(snapshot, variant):
             continue
         for pid, passage in passages.items():
             linked = set(node['claim_ids']).intersection(passage['claim_ids'])
-            if linked and node.get('construction_method') == 'verified_html_classification_row_v1':
+            if linked and node.get('construction_method') in {'verified_html_classification_row_v1',business_html_debt_rows.PROFILE}:
                 loc = passage['evidence']
                 linked = linked if any(all(ref.get(k) == loc.get(k) for k in
                     ('source_version_id', 'parse_run_id', 'block_id'))
