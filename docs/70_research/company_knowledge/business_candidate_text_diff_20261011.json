@@ -1,0 +1,433 @@
+{
+  "issue": 655,
+  "decision": "partial semantic effect; original gate failed; product not adopted; further confirmation required",
+  "original_gate_pass": false,
+  "original_contracts_passed": 2,
+  "original_contract_denominator": 4,
+  "baseline_readable_labels_correct": 7,
+  "new_readable_labels_correct": 10,
+  "label_denominator": 10,
+  "numeric_pipeline_labels_correct": 8,
+  "contract_accepted_judgment_occurrences": 6,
+  "readable_normal_preserved": 6,
+  "normal_denominator": 6,
+  "readable_error_labels_correct": 4,
+  "error_denominator": 4,
+  "reason_passed_occurrences": 9,
+  "reason_denominator": 10,
+  "error_location_passed_occurrences": 4,
+  "canonical_address_occurrences_verified_offline": 4,
+  "provided_text_evidence_occurrences_only": 6,
+  "new_calls": 4,
+  "reused_calls": 4,
+  "additional_model_calls_for_audit": 0,
+  "improved_occurrences": [
+    "normal_detail.X",
+    "permission.Y",
+    "permission.Z"
+  ],
+  "regressed_readable_labels": [],
+  "same_occurrences": 7,
+  "repetition": {
+    "requests": 4,
+    "judgment_occurrences": 10,
+    "unique_raw_candidates": 9,
+    "unique_contexts": 3,
+    "unique_source_block_texts": 11,
+    "case_ids": [
+      "NA01",
+      "NA02",
+      "NLC-C04",
+      "c46"
+    ]
+  },
+  "cost": {
+    "input_tokens": 11762,
+    "output_tokens": 2552,
+    "model_s": 202.04853,
+    "request_elapsed_sum_s": 202.37081891600974,
+    "completion_driver_s": 202.37484187504742,
+    "driver_wall_s": 217.8812680420233,
+    "hash_verification_s": 6.318413249915466
+  },
+  "output_checks": {
+    "all_eos": true,
+    "all_untruncated": true,
+    "prompt_cache_reuse_tokens": 0,
+    "raw_tokens_cached": [
+      2663,
+      2619,
+      6155,
+      2873
+    ]
+  },
+  "treatment": "candidate-to-candidate character diff plus fixed interpretation warning; not pure diff-computation effect",
+  "records": [
+    {
+      "id": "normal_detail",
+      "expected": {
+        "X": "supported",
+        "Y": "supported"
+      },
+      "baseline_labels": {
+        "X": "unsupported",
+        "Y": "supported"
+      },
+      "readable_labels": {
+        "X": "supported",
+        "Y": "supported"
+      },
+      "original_contract_pass": false,
+      "original_error": "ValueError('output_schema')",
+      "original_raw_sha256": "96ce7985e09c687a9106865c35c8ccdc5a854e3e06b188cf6ec4cae306a57afb",
+      "error_addresses": [],
+      "offline_diagnostic": {
+        "changes": [
+          {
+            "candidate": "X",
+            "from_label": "supported",
+            "to_label": "1"
+          },
+          {
+            "candidate": "Y",
+            "from_label": "supported",
+            "to_label": "1"
+          }
+        ],
+        "diagnostic_contract_pass": true,
+        "full_original_response_recovered": true,
+        "canonical_address_verified": true,
+        "deletion_point": null
+      },
+      "reason_pass": {
+        "X": true,
+        "Y": true
+      },
+      "reason_limit": null
+    },
+    {
+      "id": "condition",
+      "expected": {
+        "X": "supported",
+        "Y": "unsupported"
+      },
+      "baseline_labels": {
+        "X": "supported",
+        "Y": "unsupported"
+      },
+      "readable_labels": {
+        "X": "supported",
+        "Y": "unsupported"
+      },
+      "original_contract_pass": false,
+      "original_error": "ValueError('reference_schema')",
+      "original_raw_sha256": "e0a63ced5bd1b388116da94096a0c16ffbd7bca08ef46a5a30a0d44b51948e7d",
+      "error_addresses": [
+        {
+          "candidate": "Y",
+          "field": "Event",
+          "span": [
+            1,
+            55
+          ]
+        }
+      ],
+      "offline_diagnostic": {
+        "changes": [
+          {
+            "diagnostic_only": "remove differences to isolate unchanged judgments/evidence"
+          }
+        ],
+        "diagnostic_contract_pass": true,
+        "full_original_response_recovered": false,
+        "canonical_address_verified": true,
+        "deletion_point": {
+          "field": "Event",
+          "X": [
+            0,
+            10,
+            "양수인이 미방문 시"
+          ],
+          "Y": [
+            0,
+            0,
+            ""
+          ],
+          "exact_unique_input_opcode": true,
+          "origin": "server input diff, not a model-selected nonempty quote",
+          "old_quote_schema_pass": false
+        }
+      },
+      "reason_pass": {
+        "X": true,
+        "Y": false
+      },
+      "reason_limit": "Conditional source does not state an attendance exemption. The output adds an unsupported possibility of documents being unnecessary when attending, and describes the source as exclusive."
+    },
+    {
+      "id": "permission",
+      "expected": {
+        "X": "supported",
+        "Y": "unsupported",
+        "Z": "unsupported"
+      },
+      "baseline_labels": {
+        "X": "supported",
+        "Y": "contradicted",
+        "Z": "contradicted"
+      },
+      "readable_labels": {
+        "X": "supported",
+        "Y": "unsupported",
+        "Z": "unsupported"
+      },
+      "original_contract_pass": true,
+      "original_error": null,
+      "original_raw_sha256": "7ea5a4075444ee05e4dd6a2b68046ea2a5251487c3b3cc7eee8db1106b8990d2",
+      "error_addresses": [
+        {
+          "candidate": "Y",
+          "field": "Event",
+          "span": [
+            122,
+            130
+          ]
+        },
+        {
+          "candidate": "Z",
+          "field": "Event",
+          "span": [
+            122,
+            133
+          ]
+        }
+      ],
+      "offline_diagnostic": {
+        "changes": [],
+        "diagnostic_contract_pass": true,
+        "full_original_response_recovered": true,
+        "canonical_address_verified": false,
+        "deletion_point": null
+      },
+      "reason_pass": {
+        "X": true,
+        "Y": true,
+        "Z": true
+      },
+      "reason_limit": null
+    },
+    {
+      "id": "explicit_refutation",
+      "expected": {
+        "X": "supported",
+        "Y": "supported",
+        "Z": "contradicted"
+      },
+      "baseline_labels": {
+        "X": "supported",
+        "Y": "supported",
+        "Z": "contradicted"
+      },
+      "readable_labels": {
+        "X": "supported",
+        "Y": "supported",
+        "Z": "contradicted"
+      },
+      "original_contract_pass": true,
+      "original_error": null,
+      "original_raw_sha256": "b30782a9b9c7847dd4f7513bb4c95d4b825b26d1fa4f584ecf4f8eff6da3ddd8",
+      "error_addresses": [
+        {
+          "candidate": "Z",
+          "field": "Event",
+          "span": [
+            43,
+            53
+          ]
+        }
+      ],
+      "offline_diagnostic": {
+        "changes": [],
+        "diagnostic_contract_pass": true,
+        "full_original_response_recovered": true,
+        "canonical_address_verified": false,
+        "deletion_point": null
+      },
+      "reason_pass": {
+        "X": true,
+        "Y": true,
+        "Z": true
+      },
+      "reason_limit": null
+    }
+  ],
+  "frozen_run_files": {
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_text_diff_20261011/run/explicit_refutation_response.json": "b30782a9b9c7847dd4f7513bb4c95d4b825b26d1fa4f584ecf4f8eff6da3ddd8",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_text_diff_20261011/run/result.json": "ef51f6e29da86665acb6a8813c405575b2e2d2b3cea1ce25dd1ed6ea68348015",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_text_diff_20261011/run/permission_response.json": "7ea5a4075444ee05e4dd6a2b68046ea2a5251487c3b3cc7eee8db1106b8990d2",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_text_diff_20261011/run/condition_response.json": "e0a63ced5bd1b388116da94096a0c16ffbd7bca08ef46a5a30a0d44b51948e7d",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_text_diff_20261011/run/normal_detail_response.json": "96ce7985e09c687a9106865c35c8ccdc5a854e3e06b188cf6ec4cae306a57afb"
+  },
+  "original_run_unchanged": true,
+  "boundaries": [
+    "No semantic reason correction, relabeling from source, gold-based location selection, or model retry.",
+    "Fixed literal aliases can recover normal_detail in a copy; original contract failure stays.",
+    "Empty deletion quote has one exact input-derived [0,0) point; old quote schema still rejects it.",
+    "Judgments-only parsing after removing differences is diagnostic, not recovery of the whole condition response.",
+    "A future typed deletion span schema must reject ambiguous/unverified/changed-field mappings and preserve full audit provenance.",
+    "Contract recovery does not fix the unsupported reason or prove semantic quality/product correction."
+  ],
+  "exposure_audit": {
+    "scope": "Existing named exposure inventory plus current NA and SC execution receipts; no exhaustive history guarantee",
+    "files": {
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_contrast_20261010/exposure_inventory.json": "76634606a962b5ee0d1362aec9b41245bef1ce1c1d6465f0eccd20f77db748e3",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_independent_scope_20261010/confirmation_exposure_audit.json": "01a6f66fb58c438950ed292ae696b7333980ac45a9c44ecd30bb2f318724fd43",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_singleton_confirmation_20261011/provenance/exposure_inventory.json": "7a55d6c29d03f1e35afaa672f3cb935fc5edc3ec5bfc14c1dad87fb0c14c6dea",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_contrast_20261010/confirmation/inputs.json": "fcd3df627665f757668924da9ecfb950799ffef8887f66e30ac1a00bbf436092",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_contrast_20261010/confirmation/run/result.json": "3dd43e6ff0709e23aac93b3f037b48bac0ab7eca274ae2faae88866e31965ac0",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_singleton_confirmation_20261011/native/inputs.json": "d5d4e0fb20ba1fd630aa19a3e8c2be6a01f1777826e0d0acccac98e5d0a34b0b",
+      "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_singleton_confirmation_20261011_execution/result.json": "8cf839c567866a6d0e95f6cda44a9b883cfd2490fc72cda723c8fd6c17c7d4d5"
+    },
+    "known_exposed_groups": [
+      "vehicle c13/c46/c47/c11",
+      "museum H01-H08",
+      "museum A01-A02",
+      "museum K01-K02",
+      "library E prompt examples",
+      "NLC-C01-C06",
+      "SL-01-SL-03",
+      "AR01-AR03",
+      "KR01-KR04",
+      "BI01-BI04",
+      "NA01-NA04",
+      "SC01-SC05",
+      "pilot tasks.new designer/gold exposure"
+    ],
+    "current_NA_calls": 6,
+    "current_SC_calls": 5,
+    "confirmed_unused_existing_cases_in_checked_materials": 0,
+    "unknown_history_not_counted": true,
+    "new_cases_authored": 0,
+    "new_source_acquired": false,
+    "new_model_calls": 0,
+    "confirmation_proposal": {
+      "status": "design only; not an executable packet or approved model run",
+      "prerequisite": "New source must be acquired with a bounded exposure receipt and separately authored/blind-reviewed candidates and fixed labels.",
+      "size": "One different source context, two fixed joint requests: normal partial/detail S/S and permission/obligation/explicit no-obligation S/U/U, if source permits this contrast.",
+      "required_controls": [
+        "Both normal candidates remain supported without a completeness claim.",
+        "The normal permission candidate remains supported; obligation and no-obligation assertions require U rather than fabricated C.",
+        "Reasons may not infer real exemptions/prohibitions from absence of source support.",
+        "All labels, differences, locations, evidence, typed deletion spans if present, and contract checks must pass."
+      ],
+      "exclusions": [
+        "No repackaging NA/SC as unused",
+        "No new gold/source written in this task",
+        "No selection based on model output",
+        "No independent execution before root assigns resources and freezes the concrete packet"
+      ],
+      "limitation": "This small design tests transfer of the observed partial effect; not domain-general accuracy or end-to-end correction."
+    }
+  },
+  "evidence_manifest": {
+    "confirmation_exposure_audit.json": "253ae8e014b40471e742dcc77ab04f7a0e204aa6043e49275a911d62f8b5967d",
+    "criteria.json": "a8d7d76798466dbdb6c67144470be47cfdf1c7c84694aad8c4f5c6254370e7ad",
+    "freeze.json": "2d3604f0df8585679c9e34693a126b31233e4482a2a246e355a466243486120f",
+    "frozen_code/app/knowledge/business_run.py": "2d376e96a8a2715fc50ad1d73f3da7644603067426cf863b2b3f85e11b85f23f",
+    "frozen_code/audit_business_b1.py": "c16da820fd3ade8f41a0697daa3269bcabbaf92236f222be770d0016ae1fcd11",
+    "frozen_code/execute_business_b1.py": "0bc6222a7f4038b996f54d680bc705a7b35781cccb5bd2b57876b3c3f7deb368",
+    "frozen_code/finalize_business_b1.py": "ffeb386232da6d983ae8058709a4cccf0d27cd392eec7763fd4cc32f0ae59698",
+    "frozen_code/scripts/compare_business_candidate_contrast.py": "838458ddf33bfeab690ca1ca786d07b7a119d3af32d0a3509cd31811e3df6bc6",
+    "frozen_code/scripts/compare_business_candidate_text_diff.py": "2e739b35f4898f448742b5666412f7f0e5c5dcfe75b4317c36643996d6dea2a9",
+    "frozen_code/scripts/compare_business_condition_contrast.py": "865e30ad420ef0d1931489f0f071d4c8aa363ad913410d67db87a5f44527ff11",
+    "frozen_code/scripts/compare_business_explicit_opposition.py": "66640773b342b3169b19831bfacb1c8b3fed217cf828bdf8c3ebc62803d0e627",
+    "frozen_code/scripts/compare_business_joint_contrast.py": "82d67ee8262669fb68b6c1937f4657d929e878bd8f4bce292a0a111e6b9da0a8",
+    "frozen_code/scripts/compare_business_label_selection.py": "bcf5548a24f3ed71f0843db268a02eb35708cb3083e1c051afb81f183b962bd4",
+    "frozen_code/scripts/compare_business_modality_spans.py": "c4446f0590f1682a8edcb94f56d9dc4fdd685b28bf2b96da550bfa7f1757c8de",
+    "frozen_code/scripts/compare_business_nli.py": "d632e08b14062c5627c9361b1ae1e6aec85f59367ea9e06609a8b47a4f7c61e6",
+    "inputs.json": "0dbf59a2797a84c89caf2333d5f6a45656189b70b3ea21504ef9ae1b87822762",
+    "offline_audit.json": "59b6bdb60f677e68b7a78cf7fbc3ce02417405bcfac031136ef1e97463442bbc",
+    "prepared.json": "2fa71b854c43570268bde575b1d173ce54d5c8aee3eced50a8ef7a4a63e3da79",
+    "preservation_receipt.json": "4a7379394bd0879c986d3e25598903cefcf3826d8f8730a729a57291a5001ed1",
+    "preserved_baselines/condition/props_path.json": "db932c95515917d850a79cb8b39128e8ab8c325becb7ebe8022c6965c06b33bc",
+    "preserved_baselines/condition/request_path.json": "22706d02fa11e0face523e8a93439aeb80f1c5746af228c1f89cbdd94252cc0a",
+    "preserved_baselines/condition/response_path.json": "a307abc1360a13e52824f874f1e6b184cc372efce867e5074c08c585cfd9e60b",
+    "preserved_baselines/condition/runtime_path.json": "cd31a957609c926e70d2201b74179e6d5e828d768206bb6f7b992c5456431946",
+    "preserved_baselines/explicit_refutation/props_path.json": "e2e6bda44d10778511e139dc9924e31f88c7e211e242c732e646a26cdf8ca909",
+    "preserved_baselines/explicit_refutation/request_path.json": "ffc46e601fc4f9c9b86c67a253d4246757c034073ad1dbc6ac36ca76a387e1ba",
+    "preserved_baselines/explicit_refutation/response_path.json": "bde110fede2721460f5f9f9de86ff25c6810fcb2d104c4a089abeea15134352f",
+    "preserved_baselines/explicit_refutation/runtime_path.json": "e2b49a7974b346463caf136060475a860f3316a631f84d7115677faf2358c1d1",
+    "preserved_baselines/normal_detail/props_path.json": "89a0f443226a9d335293c90dcfe3618b643dbd2792bf4edd4740ec223962ad4c",
+    "preserved_baselines/normal_detail/request_path.json": "fafb975aba88b84c954c082d7f71898e6b326968766c94c768811bdcfcf0f7bb",
+    "preserved_baselines/normal_detail/response_path.json": "504adf609a0aba96eef3daf0ee2b88f5bf8c89b6580aeaf4152445e52092d2d9",
+    "preserved_baselines/normal_detail/runtime_path.json": "a267a08c54515132f49ecb90f5bf2e4ee6a77d8ab1f10741dce7e7458a659f89",
+    "preserved_baselines/permission/props_path.json": "e2e6bda44d10778511e139dc9924e31f88c7e211e242c732e646a26cdf8ca909",
+    "preserved_baselines/permission/request_path.json": "ffc46e601fc4f9c9b86c67a253d4246757c034073ad1dbc6ac36ca76a387e1ba",
+    "preserved_baselines/permission/response_path.json": "fcf7b9a570a2555f3ab2cfa29418023b06152dca77de231e9f2c9466196d3d88",
+    "preserved_baselines/permission/runtime_path.json": "e2b49a7974b346463caf136060475a860f3316a631f84d7115677faf2358c1d1",
+    "props.json": "46a52c77086ab90094034a314bd1b49f4b2ca21cf0755a9f694c1b8c76d16b07",
+    "requests.json": "07e5aa63d740b0add291f5aa2ed76690b5591b776326684a2946a928435ac977",
+    "resource_preflight.json": "a38ce50f45f4a7c5fb546c9f20376a5916abfc2bb8b144a2c2894a4e9aac442e",
+    "run/condition_response.json": "e0a63ced5bd1b388116da94096a0c16ffbd7bca08ef46a5a30a0d44b51948e7d",
+    "run/explicit_refutation_response.json": "b30782a9b9c7847dd4f7513bb4c95d4b825b26d1fa4f584ecf4f8eff6da3ddd8",
+    "run/normal_detail_response.json": "96ce7985e09c687a9106865c35c8ccdc5a854e3e06b188cf6ec4cae306a57afb",
+    "run/permission_response.json": "7ea5a4075444ee05e4dd6a2b68046ea2a5251487c3b3cc7eee8db1106b8990d2",
+    "run/result.json": "ef51f6e29da86665acb6a8813c405575b2e2d2b3cea1ce25dd1ed6ea68348015",
+    "runtime_identity.json": "5a4a44b6a0a4200ea0ac7e574553cd6b1bc525b6844b629c09a6f1c567ba5a15",
+    "server.log": "e1e8dc628f9b345d8b2b3f33badd0a7da362bfb6e762abf75e9c9bfee3f44165",
+    "server_start.json": "e4f2ba86c8045806a5a92b60b2f1b4c1cfc99493adb686f9dc86109170cf28b1",
+    "server_stop.json": "fe8b096b0a2e55c33c5d57580b6b1d579ad37ab127c21086682137bd9ed7efdf"
+  },
+  "artifact_destination": "/Users/hyeongi/.codex/artifacts/business-candidate-text-diff-20261011/final",
+  "runtime_identity": {
+    "at": 1791654767.361331,
+    "engine_path": "/Applications/Ollama.app/Contents/Resources/llama-server",
+    "engine_sha256": "c8bbfac5e73a6f04f0dd2d91dde8f9934c0f1526b862f6129703be8d158a25db",
+    "gguf_path": "/Users/hyeongi/.ollama/models/blobs/sha256-f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+    "gguf_sha256": "f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+    "gguf_bytes": 16810714464,
+    "hash_verification_s": 6.318413249915466,
+    "args": [
+      "/Applications/Ollama.app/Contents/Resources/llama-server",
+      "-m",
+      "/Users/hyeongi/.ollama/models/blobs/sha256-f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "11435",
+      "-c",
+      "8192",
+      "-np",
+      "1",
+      "--n-gpu-layers",
+      "all",
+      "--no-context-shift",
+      "--cache-ram",
+      "0"
+    ],
+    "tag_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+    "installed_tag": "qwen3.8:27b-q4_K_M",
+    "same_runtime_as_all_baselines": true,
+    "driver_sha256": "0bc6222a7f4038b996f54d680bc705a7b35781cccb5bd2b57876b3c3f7deb368"
+  },
+  "resource_return": {
+    "owned_pid": 63113,
+    "driver_wall_s": 217.8812680420233,
+    "owned_command_verified": true,
+    "exit_code": 0,
+    "port11435_closed": true,
+    "ollama_models": [],
+    "finished_at_utc": "2026-10-11T04:35:01.693102+00:00"
+  },
+  "baseline_head": "4b674459b83d5dbb5a4b2be2e77b33ae3436de5b",
+  "A_before": 5,
+  "A_after": 6,
+  "new_A_comparisons": 1,
+  "product_code_changes": 0,
+  "actual_correction": 0,
+  "same_requirement_recheck": 0,
+  "graph_search_answer": 0,
+  "skipped": [
+    "No model retries, new candidates/gold, unused confirmation execution, c47 rerun, B2, product integration, full extraction/tests, merge/deploy."
+  ]
+}

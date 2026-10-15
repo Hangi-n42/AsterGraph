@@ -1,0 +1,228 @@
+{
+  "issue": 654,
+  "date": "2026-10-11",
+  "reviewer": "root AI source comparison; not a human trial or blind evaluation",
+  "completed_A_comparisons": 4,
+  "new_A_number": null,
+  "scope": "R38 construction followup, not a new semantic hypothesis",
+  "construction": {
+    "denominator": 3,
+    "constructed_unverified": 1,
+    "unsupported": 2,
+    "unsupported_ids": [
+      "c13",
+      "c47"
+    ],
+    "outside_Event_and_Entity_and_context_and_exact_address_preserved": true,
+    "two_stamp_targets_not_one_meaning_proof": true
+  },
+  "expected": {
+    "counterpart_single": "S",
+    "joint": [
+      "S",
+      "S"
+    ]
+  },
+  "actual": {
+    "counterpart_single": "S",
+    "joint": [
+      "U",
+      "S"
+    ]
+  },
+  "normal_original_preserved": false,
+  "joint_additional_benefit": false,
+  "detail_counterpart_support_observed": true,
+  "new_error_discovery_demonstrated": false,
+  "reason_review": {
+    "joint_original": "Treats unmentioned certificate stamping details as unsupported against frozen normal S criterion.",
+    "joint_counterpart": "Says all original details included although the unchanged authorization-letter item still omits its own stamping qualifier; asymmetric detail criterion.",
+    "difference_dimensions": [
+      "wording",
+      "condition"
+    ],
+    "exact_error_quote_and_source_address_not_semantic_success": true
+  },
+  "execution": {
+    "new_generation_calls": 0,
+    "new_judgment_calls": 2,
+    "reused_original_single_responses": 1,
+    "checks": [
+      {
+        "id": "c46_replacement_single",
+        "raw_sha256": "65901c35d72f542e3aa54f265a99b22332166cbbab202c75f3955322bd8df12b",
+        "input_tokens": 1710,
+        "output_tokens": 219,
+        "response_model_s": 20.862484000000002,
+        "driver_elapsed_s": 20.864552707993425,
+        "EOS": true,
+        "truncated": false,
+        "cache_tokens": 0,
+        "contract_pass": true
+      },
+      {
+        "id": "c46_replacement_joint",
+        "raw_sha256": "504adf609a0aba96eef3daf0ee2b88f5bf8c89b6580aeaf4152445e52092d2d9",
+        "input_tokens": 1805,
+        "output_tokens": 499,
+        "response_model_s": 36.432953999999995,
+        "driver_elapsed_s": 36.43497575004585,
+        "EOS": true,
+        "truncated": false,
+        "cache_tokens": 0,
+        "contract_pass": true
+      }
+    ],
+    "input_tokens": 3515,
+    "output_tokens": 718,
+    "response_model_s": 57.295438,
+    "driver_elapsed_sum_s": 57.299528458039276,
+    "run_wall_s": 57.30086870805826,
+    "hash_verification_s": 6.922618709038943,
+    "cached_original_cost_excluded": true,
+    "model_time_measurement": "sum of actual response prompt_ms + predicted_ms; cached original costs excluded"
+  },
+  "model_resources_released": {
+    "at": 1791654884.61993,
+    "pid": 44325,
+    "signal": "SIGTERM",
+    "owned_command_verified": true,
+    "port11435_closed": true,
+    "ollama_models": []
+  },
+  "decision": "Keep isolated construction evidence; reject current joint configuration for frozen normal preservation; no product adoption.",
+  "issue_state": "OPEN pending coordination evaluation; no closure by this session",
+  "additional_calls": 0,
+  "c1_c76_calls": 0,
+  "new_source_confirmation": 0,
+  "product_edit_storage_graph_search_answer": 0,
+  "normal_preservation_regressions": 1,
+  "source_completeness_versus_claim_support_confusion_observed": true,
+  "internal_cause_or_A_general_impossibility_established": false,
+  "frozen_original_claim_scope": "Does not assert no stamping requirement or sufficiency of this document alone.",
+  "local_evidence_directory": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_source_entity_replacement_20261011",
+  "local_evidence_manifest": {
+    "baseline_reuse.json": {
+      "sha256": "6df3686274fdecbaf3081c86b31a70fc8c91e0e712d4ddf8669e98bbd5b3ece4",
+      "bytes": 38725
+    },
+    "criteria.json": {
+      "sha256": "27609c820022cdc774c99c557175f050c82aad2ef1e97ae1179735046785abc3",
+      "bytes": 1028
+    },
+    "executed_driver_manifest.json": {
+      "sha256": "58da21e72f32a6d938af87662758f04d8bed7823cdb72ab078f7125e3db6c442",
+      "bytes": 954
+    },
+    "execution/criteria.json": {
+      "sha256": "27609c820022cdc774c99c557175f050c82aad2ef1e97ae1179735046785abc3",
+      "bytes": 1028
+    },
+    "execution/freeze.json": {
+      "sha256": "0aa795ad5b3a1652844025462acd95ee8f4103f76f57a7c248e6151fea9944cf",
+      "bytes": 408
+    },
+    "execution/inputs.json": {
+      "sha256": "13f9d35448619bd8773278f19dfdb2ddcd242ae3ed14187c25e1632a34accd5e",
+      "bytes": 41664
+    },
+    "execution/original_reuse_verified.json": {
+      "sha256": "8bc697497f8ffba708fbebf5ec048abcfcc127ff4ef021aee3d41d427eddad55",
+      "bytes": 308
+    },
+    "execution/prepared.json": {
+      "sha256": "c700caf6529ed2e9fcc188bfa2d3bcf25ed561bad900b8a6923a2901a4e1d27d",
+      "bytes": 1408
+    },
+    "execution/props.json": {
+      "sha256": "89a0f443226a9d335293c90dcfe3618b643dbd2792bf4edd4740ec223962ad4c",
+      "bytes": 11800
+    },
+    "execution/requests.json": {
+      "sha256": "fafb975aba88b84c954c082d7f71898e6b326968766c94c768811bdcfcf0f7bb",
+      "bytes": 92317
+    },
+    "execution/run/c46_replacement_joint_response.json": {
+      "sha256": "504adf609a0aba96eef3daf0ee2b88f5bf8c89b6580aeaf4152445e52092d2d9",
+      "bytes": 12615
+    },
+    "execution/run/c46_replacement_single_response.json": {
+      "sha256": "65901c35d72f542e3aa54f265a99b22332166cbbab202c75f3955322bd8df12b",
+      "bytes": 9892
+    },
+    "execution/run/result.json": {
+      "sha256": "fa7a6eb7f5e40280542bdc4e79ba4687ec837fcacd30550e4a19fbf9040d869a",
+      "bytes": 14443
+    },
+    "execution/runtime_identity.json": {
+      "sha256": "a267a08c54515132f49ecb90f5bf2e4ee6a77d8ab1f10741dce7e7458a659f89",
+      "bytes": 869
+    },
+    "execution_authorization.json": {
+      "sha256": "64bd561ad872e968cd020851e322b2a4a952384df32a1d628e31d6ea1c5720d3",
+      "bytes": 462
+    },
+    "final_review.json": {
+      "sha256": "bdd1aba8fa0c33f5b57b9c880aba70a4f7f83088e89e63a48aee63e36a1edd29",
+      "bytes": 3433
+    },
+    "frozen_code/compare_business_source_entity_replacement.py": {
+      "sha256": "7568d2d8dbdba2ec4016786c27b1e1ee0a6bd8b6fb590a5ad8cc9bcfa7b8e7c7",
+      "bytes": 10693
+    },
+    "inputs.json": {
+      "sha256": "df4a17ee2d43e066667dda5d49d7b187b045bf247eb39d912b082d5e7852ef8f",
+      "bytes": 39819
+    },
+    "installed_tag.json": {
+      "sha256": "d402e92c2efa36d959e70748e451247182637b690b5db42c511bf028304dbdf9",
+      "bytes": 566
+    },
+    "judgment_inputs.json": {
+      "sha256": "13f9d35448619bd8773278f19dfdb2ddcd242ae3ed14187c25e1632a34accd5e",
+      "bytes": 41664
+    },
+    "prepared.json": {
+      "sha256": "bbb50e9a1960fee7982de427a38f774f2f5e21ef70074531756be55967c049c8",
+      "bytes": 5221
+    },
+    "runtime_helpers/run_entity_replacement_diagnostic.py": {
+      "sha256": "53a93a7b7b293460e872d4865ded6d9b691e7f22899935e1597b2bacfa291e86",
+      "bytes": 2778
+    },
+    "runtime_helpers/start_entity_replacement_runtime.py": {
+      "sha256": "4378ac2000d5c336bd3d53e95c2d50c20f188f3d573d78f47c577c3011bddf23",
+      "bytes": 1898
+    },
+    "runtime_helpers/stop_entity_replacement_runtime.py": {
+      "sha256": "43734ee77df26e146066ab3b5c47ad6e6ab5b35dfc953e947e50610614b3ef2e",
+      "bytes": 1080
+    },
+    "runtime_identity.json": {
+      "sha256": "a267a08c54515132f49ecb90f5bf2e4ee6a77d8ab1f10741dce7e7458a659f89",
+      "bytes": 869
+    },
+    "server.log": {
+      "sha256": "4e50defed6217896329e604f1e3126e9eff17deb5c3a54703949e2bd83dc521e",
+      "bytes": 5851
+    },
+    "server_start.json": {
+      "sha256": "ae86acb82f45ee326d0a7077c81ddfc02bcd12b6757ac1230ffdd99e681df4a6",
+      "bytes": 438
+    },
+    "server_stop.json": {
+      "sha256": "379c5406b0730682c06bf6843bd38c28e8c68a9c0d0c77d530e289031e3ffaa7",
+      "bytes": 152
+    },
+    "settings.json": {
+      "sha256": "4423382ff26cb2559fe7b26ce771e3d13028924848e1b54229391870a7c4e5ef",
+      "bytes": 291
+    },
+    "tag_binding_verification.json": {
+      "sha256": "fe1fc95d5c85fbc111352fa92e18dc80631d2af51cfb0d2a5be58499a0fbbe12",
+      "bytes": 318
+    }
+  },
+  "tag_binding_verified": true,
+  "durable_evidence_directory": "/Users/hyeongi/.codex/artifacts/business-source-entity-replacement-20261011/final"
+}

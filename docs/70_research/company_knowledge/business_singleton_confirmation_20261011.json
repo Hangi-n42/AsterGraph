@@ -1,0 +1,251 @@
+{
+  "date_kst": "2026-10-11",
+  "stage": "completed_bounded_confirmation_gate_failed",
+  "a_cumulative": 5,
+  "new_a_comparisons": 0,
+  "new_method_or_prompt_or_parser_changes": 0,
+  "independent_targets": {
+    "official_pages": 1,
+    "candidates": 5,
+    "new_institutions": 0
+  },
+  "model": "Qwen3.8 27B Q4_K_M; unchanged native ChatML empty-think singleton protocol",
+  "packet_manifest_sha256": "4cb9b1e22aee3c951fda1aa22b4525c5cb031305a126d4c12db86d19c4577be3",
+  "criteria_sha256": "08497867d7148a17e1a21970f0eb73f6f7b19c677083583ef4edc32e1efe6596",
+  "preflight_freeze_sha256": "c04bf97dcd3e0a5f54040f94f3d57257eb9e4f5bce6d62221b85e7856e5eb038",
+  "expected": [
+    "S",
+    "S",
+    "U",
+    "U",
+    "C"
+  ],
+  "actual": [
+    "S",
+    "S",
+    "C",
+    "C",
+    "C"
+  ],
+  "counts": {
+    "labels_correct": 3,
+    "denominator": 5,
+    "normal_preserved": 2,
+    "normal_denominator": 2,
+    "explicit_contradiction_correct": 1,
+    "unsupported_to_contradicted_confusions": 2,
+    "strict_contract": 5,
+    "exact_source_addresses": 5,
+    "relevant_sections": 5,
+    "error_location_identified": 3,
+    "error_denominator": 3,
+    "reason_correct": 3
+  },
+  "gate_pass": false,
+  "product_adoption": false,
+  "generic_singleton_stability_established": false,
+  "missing_external_reference_type": "Excluded with author/reviewer reasons; not tested and cannot claim correctness or stability.",
+  "semantic_review_method": "Primary agent compared saved native answers to unchanged fixed source/gold/criteria; dedicated grading model calls zero, native self-grading calls zero, external Astra product-output grading calls zero. Root also read actual outputs; no human or independent model-family score.",
+  "reviews": [
+    {
+      "id": "SC01",
+      "type": "조건 보존 정상",
+      "expected_label": "S",
+      "actual_label": "S",
+      "label_pass": true,
+      "contract_pass": true,
+      "exact_source_addresses": true,
+      "relevant_source_sections_selected": true,
+      "event_problem_location_identified": true,
+      "native_event_spans": [],
+      "normal_empty_error_lists_preserved": true,
+      "reason_discriminates_supported_unsupported_contradicted": true,
+      "evidence_semantically_establishes_actual_label": true,
+      "reason": "후보 X의 Event와 Entity는 원문 b4(e4)의 '참고 사항' 3번 항목과 정확히 일치합니다. 원문에 '4명 이상의 자녀를 둔 다자녀 가족의 경우, 현장에서 증빙서류 확인 후 사전 예약한 가족(5명)과 동반 입장 시 비예약자의 입장이 가능합니다.'라고 명시되어 있어 후보의 모든 주장이 원문에 의해 지지됩니다.",
+      "primary_fixed_source_review": "조건·수량·현장 증빙·예약 가족과의 동반 입장 및 허용 강도를 보존한 후보를 S로 유지했다. 원문의 전체 요건 충족을 별도로 주장하지 않았다.",
+      "raw_sha256": "60941148e5f8e8d5e5091c0aab109675ba392dfa9d1b2c12686942538892b4db"
+    },
+    {
+      "id": "SC02",
+      "type": "완전 목록을 주장하지 않는 정상 부분 사실",
+      "expected_label": "S",
+      "actual_label": "S",
+      "label_pass": true,
+      "contract_pass": true,
+      "exact_source_addresses": true,
+      "relevant_source_sections_selected": true,
+      "event_problem_location_identified": true,
+      "native_event_spans": [],
+      "normal_empty_error_lists_preserved": true,
+      "reason_discriminates_supported_unsupported_contradicted": true,
+      "evidence_semantically_establishes_actual_label": true,
+      "reason": "원문 b4(e4)의 '증빙서류 : 가족관계증명서 또는 자녀 수가 명시된 다둥이카드' 구절에서 다자녀 가족 비예약자 동반 입장 시 증빙서류로 가족관계증명서가 인정됨을 명시하고 있어 후보의 주장이 원문에 의해 지지됩니다.",
+      "primary_fixed_source_review": "증빙서류에 가족관계증명서가 포함된다는 부분 사실을 S로 유지했다. 다른 인정 서류와 전체 입장 조건을 모두 열거해야 한다고 요구하지 않았다.",
+      "raw_sha256": "b79acbd60184ec70b678548d59303e6759d1e5a2c8e9c7b55162cf3211f247a2"
+    },
+    {
+      "id": "SC03",
+      "type": "조건 또는 범위 확대",
+      "expected_label": "U",
+      "actual_label": "C",
+      "label_pass": false,
+      "contract_pass": true,
+      "exact_source_addresses": true,
+      "relevant_source_sections_selected": true,
+      "event_problem_location_identified": true,
+      "native_event_spans": [
+        {
+          "field": "Event",
+          "quote": "모든 관람객은 방문 전에 꼭 유선 및 서면으로 사전 승인을 받아야 합니다.",
+          "start_char": 8,
+          "end_char": 49
+        }
+      ],
+      "normal_empty_error_lists_preserved": null,
+      "reason_discriminates_supported_unsupported_contradicted": false,
+      "evidence_semantically_establishes_actual_label": false,
+      "reason": "원문(e4, e7)은 '어린이박물관 현장 답사를 희망하시는 분들'에 대해서만 사전 승인을 받도록 규정하고 있습니다. 후보는 이를 '모든 관람객'으로 범위를 확대하여, 원문의 조건(현장 답사 희망자)과 주체(모든 관람객)가 상충됩니다.",
+      "primary_fixed_source_review": "Event의 모든 관람객이라는 범위 확대를 찾았지만 C로 오판했다. 원문은 현장 답사 희망자를 대상으로 사전 승인을 안내하며, 범위 밖 관람객에게 승인 의무가 없다는 명시 반대 내용은 없다. 이유의 대상 한정과 상충 주장은 U/C를 구분하지 못한다.",
+      "raw_sha256": "de36db599db2f34d6e917f352e9cd00f0b1d3888216d3f70b6f4b1700b503706"
+    },
+    {
+      "id": "SC04",
+      "type": "허용에서 의무로 강화",
+      "expected_label": "U",
+      "actual_label": "C",
+      "label_pass": false,
+      "contract_pass": true,
+      "exact_source_addresses": true,
+      "relevant_source_sections_selected": true,
+      "event_problem_location_identified": true,
+      "native_event_spans": [
+        {
+          "field": "Event",
+          "quote": "반드시 예약을 취소해야 합니다",
+          "start_char": 34,
+          "end_char": 50
+        }
+      ],
+      "normal_empty_error_lists_preserved": null,
+      "reason_discriminates_supported_unsupported_contradicted": false,
+      "evidence_semantically_establishes_actual_label": false,
+      "reason": "원문(e2)은 '예약취소는 예약하신 회차 시작 시간 이전까지 가능합니다'라고 하여 취소의 허용 시점을 명시하고 있습니다. 그러나 후보는 '반드시 예약을 취소해야 합니다'라고 하여, 회차 시작 전까지 취소하는 것을 의무로 규정하고 있습니다. 원문의 '가능하다(허용)'는 '반드시(의무)'로 해석될 수 없으며, 오히려 회차 시작 후 30분 내 미입장 시 자동 취소되는 규정(e2)과도 충돌하여, 회차 시작 전까지의 취소가 필수 조건임을 뒷받침하지 않습니다. 따라서 원문과 양립할 수 없는 반대 내용(의무 부여)이 포함되어 명시 반증(contradicted)으로 판단됩니다.",
+      "primary_fixed_source_review": "취소 허용을 반드시 취소해야 하는 의무로 강화한 구절을 찾았지만 C로 오판했다. 허용 자체는 의무의 명시 부정이 아니며, 미입장 후 자동 취소도 회차 전 취소 의무와의 명시 충돌을 입증하지 않는다. 이유에서 같은 원문을 명시 반증 근거로 과장했다.",
+      "raw_sha256": "baa6b0a75f5de2c3ece1e8f1fcaa9a2b9e2fe71cab0c809d51cf35b274592f0f"
+    },
+    {
+      "id": "SC05",
+      "type": "같은 조건과 대상의 명시 반증",
+      "expected_label": "C",
+      "actual_label": "C",
+      "label_pass": true,
+      "contract_pass": true,
+      "exact_source_addresses": true,
+      "relevant_source_sections_selected": true,
+      "event_problem_location_identified": true,
+      "native_event_spans": [
+        {
+          "field": "Event",
+          "quote": "별도의 식사 또는 간식 공간을 제공합니다.",
+          "start_char": 17,
+          "end_char": 40
+        }
+      ],
+      "normal_empty_error_lists_preserved": null,
+      "reason_discriminates_supported_unsupported_contradicted": true,
+      "evidence_semantically_establishes_actual_label": true,
+      "reason": "원문 b6(단체 입장 안내)의 4번 항목에서 '별도의 식사 또는 간식 공간은 제공하지 않습니다'라고 명시하고 있습니다. 후보 X는 이를 '제공합니다'라고 서술하여 원문의 내용과 정면으로 모순됩니다.",
+      "primary_fixed_source_review": "단체 입장 안내에서 별도 식사·간식 공간을 제공하지 않는다는 명시 부정과 후보의 제공 주장이 동일 대상·맥락에서 반대임을 올바르게 C로 판정했다.",
+      "raw_sha256": "67cf39a9dbf835f1060a42d0f3a7712892105b859b66da08a5bc73a717f4a7e7"
+    }
+  ],
+  "native_cost": {
+    "calls": 5,
+    "input_tokens": 15968,
+    "output_tokens": 947,
+    "model_prompt_plus_generation_s": 134.568435,
+    "completion_elapsed_sum_s": 134.81491562491283,
+    "completion_driver_wall_s": 134.82093775004614,
+    "driver_pre_cleanup_wall_s": 142.096402291907,
+    "engine_and_gguf_hash_verification_s": 5.659127249964513,
+    "eos": 5,
+    "truncated": 0,
+    "reused_prompt_tokens_by_timings_cache_n": 0,
+    "tokens_cached_returned": [
+      3372,
+      3335,
+      3393,
+      3459,
+      3351
+    ],
+    "cache_note": "timings.cache_n=0 is the observed prompt reuse count. Nonzero tokens_cached is preserved separately; do not call that field zero or conflate the counters.",
+    "retries": 0,
+    "response_reuse": 0,
+    "model_edit_or_join_or_qa_calls": 0
+  },
+  "external_author_reviewer_cost": {
+    "source": "Per-agent session event_msg.token_count final total_token_usage; cached and reasoning counts are subsets, not extra tokens.",
+    "per_agent": {
+      "singleton_scope_author": {
+        "input_tokens": 123146,
+        "cached_input_tokens": 77440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 3030,
+        "reasoning_output_tokens": 496,
+        "total_tokens": 126176
+      },
+      "singleton_scope_reviewer": {
+        "input_tokens": 431547,
+        "cached_input_tokens": 409216,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5885,
+        "reasoning_output_tokens": 118,
+        "total_tokens": 437432
+      }
+    },
+    "sum_of_agent_session_totals": {
+      "input_tokens": 554693,
+      "cached_input_tokens": 486656,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8915,
+      "reasoning_output_tokens": 614,
+      "total_tokens": 563608
+    },
+    "observed_spans": [
+      {
+        "task_name": "singleton_scope_author",
+        "dispatch_utc": "2026-10-10T21:09:31.732Z",
+        "last_token_event_utc": "2026-10-10T21:10:32.831Z",
+        "observed_span_s": 61.099,
+        "meaning": "Dispatch to final logged token event; includes tools and parent handoff/wait; not model inference elapsed."
+      },
+      {
+        "task_name": "singleton_scope_reviewer",
+        "dispatch_utc": "2026-10-10T21:12:51.657Z",
+        "last_token_event_utc": "2026-10-10T21:15:20.608Z",
+        "observed_span_s": 148.951,
+        "meaning": "Dispatch to final logged token event; includes tools and parent handoff/wait; not model inference elapsed."
+      }
+    ],
+    "monetary_cost": null,
+    "monetary_cost_status": "No price or billing receipt; cannot confirm.",
+    "root_orchestration_usage_included": false,
+    "local_model_calls": 0,
+    "local_model_input_tokens": 0,
+    "local_model_output_tokens": 0,
+    "local_model_elapsed_s": 0
+  },
+  "resource_release": {
+    "at_utc": "2026-10-10T21:24:59.201293+00:00",
+    "pid": 53776,
+    "owned_command_verified": true,
+    "signal": "SIGTERM",
+    "process_exit_code": 0,
+    "port11435_closed": true,
+    "ollama_models": []
+  },
+  "publication_or_push_or_new_issue": false,
+  "interpretation": "Two normal examples and one explicit negative were preserved on this page. Range and obligation expansion were located but U/C discrimination failed twice. This does not establish a new singleton default, correction, R05 completion, an internal cause, or impossibility of all A methods.",
+  "next_step": "No further call or prompt variant. Root inspects actual outputs before any integration decision; current formulation is not expanded or adopted.",
+  "original_runner_result_preserved": true
+}

@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-11",
+  "comparison": "A-05",
+  "research_record": "R39",
+  "a_cumulative": 5,
+  "independent_targets": 1,
+  "candidates": 2,
+  "baseline": {
+    "X": "unsupported",
+    "Y": "supported"
+  },
+  "expected": {
+    "X": "supported",
+    "Y": "supported"
+  },
+  "actual": {
+    "X": "unsupported",
+    "Y": "supported"
+  },
+  "format_pass_after_same_response_offline_validation": true,
+  "original_harness_pass": false,
+  "semantic_gate_passed": false,
+  "decision": "rejected_stop_no_retry",
+  "new_model_calls": 1,
+  "reused_baseline_calls": 1,
+  "input_tokens": 1805,
+  "output_tokens": 552,
+  "model_s": 38.267528,
+  "completion_wall_s": null,
+  "completion_wall_limit": "Postprocess exception prevented elapsed field persistence; no inferred substitute",
+  "hash_verification_s": 6.01232533401344,
+  "no_truncation": true,
+  "EOS": true,
+  "cache_n": 0,
+  "normal_regression_recovered": false,
+  "new_error_findings": 0,
+  "changed": "One top-level output-order instruction and matching parser order; all meaning instructions/payload/settings unchanged",
+  "case_sha256": "50129ba9f363cc1e9d293fef262b3e20718eaf6d4a7203b15a91b054b17a947a",
+  "issue_created": false,
+  "issue_approval_blocked": true,
+  "issue_retry": 0,
+  "push": 0,
+  "pending_commit_unchanged": "93d1bad0361da19c1e32e348ca2bef98b13be813",
+  "product_integration": 0,
+  "further_model_calls": 0,
+  "resource_returned": {
+    "at": 1791662789.843553,
+    "pid": 50099,
+    "owned_command_verified": true,
+    "signal": "SIGTERM",
+    "process_exit_code": 0,
+    "port11435_closed": true,
+    "ollama_models": []
+  },
+  "remaining_hypotheses_unproven": [
+    "Internal candidate comparison or detail salience",
+    "Other causes of confusing claim support with source completeness"
+  ],
+  "local_artifact": "/Users/hyeongi/.codex/artifacts/business-judgment-order-20261011/final",
+  "evidence_files": [
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/baseline.json",
+      "sha256": "02141948fe330be096fbc5d79d40d1d5ea5c9d61de3fd5e920d8df631e32a93b"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/baseline_reuse_verified.json",
+      "sha256": "2819ec2da9e49f2ac47fc8c20703bb0575661115b4c4d40bb265bee9568feb62"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/criteria.json",
+      "sha256": "69d02628c2b457173da128e3ca6d62b94ba0aa5793af9ca4bddc80016c2d3993"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/executed_driver.py",
+      "sha256": "cf2e97ecef8204183ce797831b9c66db6b767399c31b81463728357aac3df0e3"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/execution_authorization.json",
+      "sha256": "5298a244125dfc5c6c4bb22a1d8a7e3d385865c357c91bd8e13175a3a4c67e81"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/final_review.json",
+      "sha256": "f1612cd615508716e4e88583cefa4526c3abbf91d09d790d916d8582383563a7"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/freeze.json",
+      "sha256": "8c00bb66048c7161908f9f6bddebcec417161f280f57dc257ae45ad6b653f1a7"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/frozen_code.py",
+      "sha256": "3a9577a54aa95689fbb196003bedf8c38444dd20252af8e87e1e2c5eb6b76d3f"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/input.json",
+      "sha256": "ffdfbddcbdc0fcdbf4ef78c5e11edd2eee2a66e4532be5ebafc84940e07a46fc"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/issue_design.md",
+      "sha256": "070f5b4080cd2587e6c147b6480c70a54be35f799fdea778a3b90ed077deaa99"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/issue_status.json",
+      "sha256": "8051d3a1b2c41e47a9b993eb9392be8dff4648e230fa3061590d8e00652029ee"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/ledger_before_A05.md",
+      "sha256": "0e3b1f14e85fe841f7073d74bb0cf646e8aa6fa1f00c741c6d24e951b3f5b5d6"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/parser_checks.json",
+      "sha256": "de40c2458d0f85e2dd71b9ff84cfa16b198e0f2b45e2b610073960d3ffd05aa1"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/postprocess_failure.json",
+      "sha256": "d27bc91770ed94515bafd759dc95dc3f1ba8f5f2601af1b32955c71dbdd26816"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/prepared.json",
+      "sha256": "f887c6a530834b11dfceab57932e1dd35d339b4f8c3b62238aed849a20c24e26"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/prompt.diff",
+      "sha256": "c025cf24d07b4a9bb172d6ce285592f2bf1d93a24198261c77017a7c20eafa9d"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/props.json",
+      "sha256": "9cd7817d88922b0b5a51e725baa58ef458d429a2b874699c11c63c554500d2a6"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/request.json",
+      "sha256": "d702d27f0c175e709eb87e57499a8cec9b4f818b63652d198f574f0d59bd5d71"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/response.json",
+      "sha256": "90881c383dfabdf09d6538a7e3a4e2dbd42b33884de06de8ccd6e7a3702f7846"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/result.json",
+      "sha256": "dac478b04f1026a182367e55e370c4ea6c33a1bc921150b70531b2f9b653140a"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/result_before_offline_validation.json",
+      "sha256": "3f5f012c7821db36fb46172fdf29d99b87badddd4487b4350a8d87554c21811c"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/runtime_identity.json",
+      "sha256": "fbb82d5c77c29d47d5e7a22210d9cf135fccf7b9c856dc6c92b7f2aaf288f138"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/server.log",
+      "sha256": "e2517b4981adbc9e16de59de5999fa5c469700bc07ce63ebf2f9a2a98244c54a"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/server_start.json",
+      "sha256": "7101f28bec2d5c47bfd62b8b52fdc19592d8b59540e3493cfb324ec409573a52"
+    },
+    {
+      "path": "data/knowledge/evaluations/business_judgment_order_20261011/server_stop.json",
+      "sha256": "dc42038cb0fd6f058bbe1be5da39dd7433a79163ad484f8f08859f9898f9c297"
+    }
+  ]
+}

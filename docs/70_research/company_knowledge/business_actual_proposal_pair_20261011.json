@@ -1,0 +1,252 @@
+{
+  "decision": "No joint semantic gain; before U/C failure remains; current B2 configuration not adopted",
+  "original_gate_pass": false,
+  "strict_contracts_passed": 3,
+  "contract_denominator": 4,
+  "new_labels_correct": 4,
+  "new_label_occurrences": 6,
+  "reason_passed_occurrences": 4,
+  "reason_denominator": 6,
+  "after_single_labels": [
+    "supported",
+    "supported"
+  ],
+  "before_single_reused_labels": [
+    "contradicted",
+    "contradicted"
+  ],
+  "joint_labels": [
+    [
+      "contradicted",
+      "supported"
+    ],
+    [
+      "contradicted",
+      "supported"
+    ]
+  ],
+  "unique_actual_proposal_pairs": 2,
+  "unique_raw_candidates": 4,
+  "unique_source_contexts": 1,
+  "source_blocks": 8,
+  "source_parents": 6,
+  "after_normal_occurrences_preserved": 4,
+  "after_unique_normals": 2,
+  "before_U_C_errors": 2,
+  "joint_additional_label_effect": 0,
+  "evidence_address_refs_verified": 9,
+  "evidence_judgment_occurrences": 6,
+  "new_calls": 4,
+  "reused_calls": 2,
+  "model_retries": 0,
+  "new_A_comparisons": 0,
+  "A_cumulative": 6,
+  "cost": {
+    "input_tokens": 12848,
+    "output_tokens": 1150,
+    "model_s": 131.521847,
+    "request_elapsed_sum_s": 131.7642331251409,
+    "completion_driver_s": 131.7682066670386,
+    "driver_wall_s": 139.62137029110454,
+    "hash_verification_s": 6.077408749959432
+  },
+  "treatment": "Existing independent S/U/C candidate joint judgment; no B1 diff/warning/alias/span adapter",
+  "proposal_at_freeze": "Actual product native-model proposals; edit_applied=false; not unchanged saved before/after handoff",
+  "product_writes": 0,
+  "stored_correction_proved": false,
+  "same_requirement_graph_search_answer": false,
+  "reason_failures": {
+    "SC03": "Restricted audience does not explicitly exempt other visitors. Output treats wider obligation as an explicit contradiction.",
+    "SC04": "Cancellation permission before session start does not explicitly refute a mandatory cancellation claim. Output incorrectly declares incompatibility."
+  },
+  "records": [
+    {
+      "id": "SC03_after_single",
+      "expected": {
+        "X": "supported"
+      },
+      "actual": {
+        "X": "supported"
+      },
+      "original_contract_pass": true,
+      "error": null,
+      "raw_sha256": "eb0d5891ba9d63e475b355a572c729a0c6072b4d3d322f0f6ef4773b5df04dc2",
+      "reason_pass": {
+        "X": true
+      },
+      "location_limit": null
+    },
+    {
+      "id": "SC04_after_single",
+      "expected": {
+        "X": "supported"
+      },
+      "actual": {
+        "X": "supported"
+      },
+      "original_contract_pass": true,
+      "error": null,
+      "raw_sha256": "6f2bc70c02e45e5cfbe1cae03b45801cdf760b604f667804c7a78e886fc0d670",
+      "reason_pass": {
+        "X": true
+      },
+      "location_limit": null
+    },
+    {
+      "id": "SC03_joint",
+      "expected": {
+        "X": "unsupported",
+        "Y": "supported"
+      },
+      "actual": {
+        "X": "contradicted",
+        "Y": "supported"
+      },
+      "original_contract_pass": false,
+      "error": "ValueError('nonunique_or_wrong_situation_reference')",
+      "raw_sha256": "68aeb4f2cbb1672bed98fd9156ae4db27187bf7387ded73711be65e1e74b0d91",
+      "reason_pass": {
+        "X": false,
+        "Y": true
+      },
+      "location_limit": "Entity is an array; the quote names an element but contains no array path/index supported by the frozen string-field contract."
+    },
+    {
+      "id": "SC04_joint",
+      "expected": {
+        "X": "unsupported",
+        "Y": "supported"
+      },
+      "actual": {
+        "X": "contradicted",
+        "Y": "supported"
+      },
+      "original_contract_pass": true,
+      "error": null,
+      "raw_sha256": "11f7ad6b018709ee4df1a96ce514c79a4f11f6fca09fff04cf913ac43185be87",
+      "reason_pass": {
+        "X": false,
+        "Y": true
+      },
+      "location_limit": null
+    }
+  ],
+  "outputs_unchanged": {
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_actual_proposal_pair_20261011/run/result.json": "dd47e58b761488b6c9e01046786a622c9bf68e5e40286b07c7fc93eee798b747",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_actual_proposal_pair_20261011/run/SC03_after_single_response.json": "eb0d5891ba9d63e475b355a572c729a0c6072b4d3d322f0f6ef4773b5df04dc2",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_actual_proposal_pair_20261011/run/SC04_after_single_response.json": "6f2bc70c02e45e5cfbe1cae03b45801cdf760b604f667804c7a78e886fc0d670",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_actual_proposal_pair_20261011/run/SC03_joint_response.json": "68aeb4f2cbb1672bed98fd9156ae4db27187bf7387ded73711be65e1e74b0d91",
+    "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_actual_proposal_pair_20261011/run/SC04_joint_response.json": "11f7ad6b018709ee4df1a96ce514c79a4f11f6fca09fff04cf913ac43185be87"
+  },
+  "runtime_identity": {
+    "at": 1791646286.036327,
+    "engine_path": "/Applications/Ollama.app/Contents/Resources/llama-server",
+    "engine_sha256": "c8bbfac5e73a6f04f0dd2d91dde8f9934c0f1526b862f6129703be8d158a25db",
+    "gguf_path": "/Users/hyeongi/.ollama/models/blobs/sha256-f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+    "gguf_sha256": "f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+    "gguf_bytes": 16810714464,
+    "hash_verification_s": 6.077408749959432,
+    "args": [
+      "/Applications/Ollama.app/Contents/Resources/llama-server",
+      "-m",
+      "/Users/hyeongi/.ollama/models/blobs/sha256-f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "11435",
+      "-c",
+      "8192",
+      "-np",
+      "1",
+      "--n-gpu-layers",
+      "all",
+      "--no-context-shift",
+      "--cache-ram",
+      "0"
+    ],
+    "verified_at_utc": "2026-10-10T21:22:42.621727+00:00",
+    "tag": {
+      "name": "qwen3.8:27b-q4_K_M",
+      "model": "qwen3.8:27b-q4_K_M",
+      "modified_at": "2026-09-29T13:23:06.27466818+09:00",
+      "size": 17741872132,
+      "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen35",
+        "families": [
+          "qwen35"
+        ],
+        "parameter_size": "27.3B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 262144,
+        "embedding_length": 5120
+      },
+      "capabilities": [
+        "completion",
+        "vision",
+        "tools",
+        "thinking"
+      ]
+    },
+    "tag_manifest_sha256": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+    "same_runtime_as_baseline": true,
+    "tag_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+    "installed_tag": "qwen3.8:27b-q4_K_M",
+    "same_runtime_as_all_baselines": true,
+    "driver_sha256": "4e988e2bdc97c36b0093fa71d623ed0376d03738306bceb70abfe886c35b8347"
+  },
+  "server_stop": {
+    "owned_pid": 65651,
+    "driver_wall_s": 139.62137029110454,
+    "owned_command_verified": true,
+    "exit_code": 0,
+    "port11435_closed": true,
+    "ollama_models": [],
+    "finished_at_utc": "2026-10-11T04:52:21.491112+00:00"
+  },
+  "evidence_manifest": {
+    "criteria.json": "b5e6a8ec45e998fe98f537180bb00cd41a863794a9f325b75c9f75360bfd0a89",
+    "freeze.json": "24db0182120701ede8d14f35987b1be4f3ce3974ae7e0b21845d76559425d056",
+    "frozen_code/app/knowledge/business_run.py": "2d376e96a8a2715fc50ad1d73f3da7644603067426cf863b2b3f85e11b85f23f",
+    "frozen_code/execute_business_b2.py": "4e988e2bdc97c36b0093fa71d623ed0376d03738306bceb70abfe886c35b8347",
+    "frozen_code/finalize_business_b2.py": "70ab2c3d83b85a5ad026bffc640f61b044b954e539b47093d0cecf6a9224744a",
+    "frozen_code/scripts/compare_business_actual_proposal_pair.py": "860ee7987ae7ea26a7ee834494283b347b1fa0c10fb324fb2a2d87303b578b25",
+    "frozen_code/scripts/compare_business_candidate_contrast.py": "838458ddf33bfeab690ca1ca786d07b7a119d3af32d0a3509cd31811e3df6bc6",
+    "frozen_code/scripts/compare_business_condition_contrast.py": "865e30ad420ef0d1931489f0f071d4c8aa363ad913410d67db87a5f44527ff11",
+    "frozen_code/scripts/compare_business_explicit_opposition.py": "66640773b342b3169b19831bfacb1c8b3fed217cf828bdf8c3ebc62803d0e627",
+    "frozen_code/scripts/compare_business_joint_contrast.py": "82d67ee8262669fb68b6c1937f4657d929e878bd8f4bce292a0a111e6b9da0a8",
+    "frozen_code/scripts/compare_business_label_selection.py": "bcf5548a24f3ed71f0843db268a02eb35708cb3083e1c051afb81f183b962bd4",
+    "frozen_code/scripts/compare_business_modality_spans.py": "c4446f0590f1682a8edcb94f56d9dc4fdd685b28bf2b96da550bfa7f1757c8de",
+    "frozen_code/scripts/compare_business_nli.py": "d632e08b14062c5627c9361b1ae1e6aec85f59367ea9e06609a8b47a4f7c61e6",
+    "handoffs/SC03_proposal_for_B2.json": "05f2d23670ec1efe866bb6ad5d47663a5f848411293503f5c5af7c60672d1886",
+    "handoffs/SC04_proposal_for_B2.json": "198b1bf0db4372199fe1458602affa03704191390eac73691038197718989d16",
+    "inputs.json": "5bf9d8dd588a4cb1cca74e5f8ed8cff77b533198196a72b9630f85d568c26f42",
+    "preparation_failures.json": "44aa595a786de681703ba856315e7119d97a68e31bf7e2a730fca1559a418b8b",
+    "prepared.json": "49c26fd81593dbc76ace40a5c312e2faa7d99a8d6a8926560886fc8433021377",
+    "preserved_baselines/SC03/SC03_single_response.json": "de36db599db2f34d6e917f352e9cd00f0b1d3888216d3f70b6f4b1700b503706",
+    "preserved_baselines/SC03/props.json": "4a584d423bb34d091b5be9f83be81a720b5be3b4a36e0eeee0825a37a4e5aded",
+    "preserved_baselines/SC03/requests.json": "6b3f750bc6da25750f47b95d880ef589144e8648deea95abf60178b40eee7d48",
+    "preserved_baselines/SC03/runtime_identity.json": "283f8b89f4c6c72a7d5151762164ad6a9bd93885e5917976382c75610ac3f1ff",
+    "preserved_baselines/SC04/SC04_single_response.json": "baa6b0a75f5de2c3ece1e8f1fcaa9a2b9e2fe71cab0c809d51cf35b274592f0f",
+    "preserved_baselines/SC04/props.json": "4a584d423bb34d091b5be9f83be81a720b5be3b4a36e0eeee0825a37a4e5aded",
+    "preserved_baselines/SC04/requests.json": "6b3f750bc6da25750f47b95d880ef589144e8648deea95abf60178b40eee7d48",
+    "preserved_baselines/SC04/runtime_identity.json": "283f8b89f4c6c72a7d5151762164ad6a9bd93885e5917976382c75610ac3f1ff",
+    "props.json": "af22b4692638a9a79f59d1bb5d23a9ad88790e1211d47660e39d3b51dec71623",
+    "requests.json": "31b388c184edeb07c370ee44f87ed8b14610589ea9f5076287eaf08742e1a243",
+    "resource_preflight.json": "53c0c27a2e6f9b36813891a6f7f3b456133452b68d97bb24e94294eeaadecf6b",
+    "run/SC03_after_single_response.json": "eb0d5891ba9d63e475b355a572c729a0c6072b4d3d322f0f6ef4773b5df04dc2",
+    "run/SC03_joint_response.json": "68aeb4f2cbb1672bed98fd9156ae4db27187bf7387ded73711be65e1e74b0d91",
+    "run/SC04_after_single_response.json": "6f2bc70c02e45e5cfbe1cae03b45801cdf760b604f667804c7a78e886fc0d670",
+    "run/SC04_joint_response.json": "11f7ad6b018709ee4df1a96ce514c79a4f11f6fca09fff04cf913ac43185be87",
+    "run/result.json": "dd47e58b761488b6c9e01046786a622c9bf68e5e40286b07c7fc93eee798b747",
+    "runtime_identity.json": "e07fbbf8e1e6fb5eef933e1c4083ef657ef751857c9ec3ff375515872ae50092",
+    "semantic_audit.json": "18ea64c153b394b9ce97d1452c84993f593c7de40341b25b798a26d249eef438",
+    "server.log": "36db84606ff4ef60e274b6a8459ba93d6d95388933e823f085df8e13865f8cba",
+    "server_start.json": "d6f797396aacd1c5ed13cdd1470b3ef293eee2428bc4e1894beb6aeb7fa7c1dc",
+    "server_stop.json": "f329e6c68a31e82feb233e608271d11919e8c0ac64bfbe19fcc87e9b3e251e0f"
+  },
+  "artifact_destination": "/Users/hyeongi/.codex/artifacts/business-actual-proposal-pair-20261011/final",
+  "research_head": "8cfb57f0ccd98bc64e1bd9e6729ffca0c6659ed6"
+}
