@@ -1,0 +1,64 @@
+{
+  "contract": "fifth-residual-source-only-preparation-receipt-v1",
+  "original_failed_8k_unit": "8532637f222449a8ab3833e4f9ac6b50",
+  "failed_16k_unit": "d87f51990f71434599c4f4e050800948",
+  "complete_prefix_products": 8,
+  "exact_prefix_duplicates": 0,
+  "prefix_adopted": false,
+  "target_blocks": 95,
+  "target_chars": 999,
+  "target_distribution_exact_once": true,
+  "prepared_new_views": 15,
+  "prepared_total_residual_requests": 56,
+  "required_views": 126,
+  "cumulative_attempts_including_failed_history": 131,
+  "maximum_input_plus_output_estimate": 23459,
+  "estimate_exact": false,
+  "output_tokens": 16384,
+  "context_tokens": 49152,
+  "combined_split_and_canonical_title_repair": true,
+  "distinct_same_name_product_cells_and_field_column": true,
+  "output_formatting": {
+    "contract": "response33-output-formatting-observation-v1",
+    "raw_chars": 37014,
+    "non_string_whitespace_chars": 5948,
+    "non_string_tabs": 918,
+    "non_string_whitespace_fraction": 0.16069595288269303,
+    "interpretation": "Character ratio only; per-token whitespace cost and sole cause of truncation are unconfirmed. No prefix adoption or input/code change.",
+    "native_calls": 0
+  },
+  "model_calls": 0,
+  "current75_unchanged": true,
+  "execute_only_after_current75_terminal": true,
+  "semantic_approval": false,
+  "files": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/repair_plan_candidate_v1.json",
+      "sha256": "8bdba23b04d4a0bcb266f40916f509ed117812eee745971608f33e414b014652"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/source_views_candidate_v1.json",
+      "sha256": "cbcb96a2b3d490afa50c676d001e1bcb49a4afc5fe7e08cb4b5d081ba2d13204"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/source_parent_span_checks_v1.json",
+      "sha256": "a5194a27ac8b411f9009205eaa8cf4921ea34d01ea31c44416bea5f079c67ef9"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/preflight_candidate_v1.json",
+      "sha256": "4c41a640052c92832d6181a9e2587625c81a114258027dca5772634ebb427818"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/effective_repair_plan_candidate_v5.json",
+      "sha256": "1e4942f24c3c6a27fc63faa051aa56f9be3770405d504f3f4fe193003ad1fa98"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/residual_capacity_driver_candidate_v6.py",
+      "sha256": "8fe5529b8d5624d4c50783aef29d8620231f17153b1c48d3c5e99eb61b34f8f4"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v5/prepare_source_content_groups_v1.py",
+      "sha256": "9c0f36c70b3b0b3c652af6292ed9e534c9d1d083db5c305589a8ac1ab6670103"
+    }
+  ]
+}

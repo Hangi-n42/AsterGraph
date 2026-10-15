@@ -1,0 +1,16 @@
+{
+  "script_identity_fields": [
+    "export_script_path",
+    "export_script_sha256"
+  ],
+  "previous_path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/pending_full_v3/export_full_review_pre_script_receipt_v1.py",
+  "previous_sha256": "42bc2c61b8cc335e25e79f6c50aa0f28d7ea23b5fb42523af1e8025d8fcf65e9",
+  "new_sha256": "9f024b5c242bfb0417e61968e983c4b11085b0d3c586a2d5aa9b344e53a1d053",
+  "validation": "syntax checked; provenance fields only; native0 and actual export0",
+  "preparation_manifest_path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/pending_full_v3/preparation_manifest.json",
+  "preparation_manifest_sha256": "fb091834952e0e860304df614b2a2fcbf01e0a0fa7d0a44353196971599394ec",
+  "actual_export_calls": 0,
+  "actual_model_calls": 0,
+  "actual_embedding_calls": 0,
+  "live_source_code_changed": false
+}

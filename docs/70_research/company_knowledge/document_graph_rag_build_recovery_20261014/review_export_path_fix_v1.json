@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-10-14T00:30:01.589487+00:00",
+  "previous_source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/pending_full_v3/export_full_review_pre_v3_paths_v1.py",
+  "previous_sha256": "fc523ce18d64f66cd543a256a5f246302ff862a0b44611dd71300dffa42983e2",
+  "new_sha256": "42bc2c61b8cc335e25e79f6c50aa0f28d7ea23b5fb42523af1e8025d8fcf65e9",
+  "validated": "syntax and exact literal path substitution; no model or output packet creation",
+  "result_folders": {
+    "B": "full_qa_v3",
+    "C_v2": "full_qa_v3",
+    "A": "A_run_v6"
+  },
+  "review_output": "full_review_BC_v3/full_review_A_v3",
+  "native_calls": 0,
+  "embedding_calls": 0,
+  "live_extraction_code_changed": false
+}

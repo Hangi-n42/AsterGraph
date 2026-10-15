@@ -1,0 +1,9 @@
+{
+  "contract": "canonical-evidence-context-clarification-v1",
+  "parent_audit": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/full_build_v7/actual_output_review_v1/raw_scope_consumption_snapshot26_v1.json",
+  "parent_audit_sha256": "fccb562bc521b8a2c70a812760cb1d08550439b199cec5a727e344ab117f3dfb",
+  "clarification": "The compact source review canonical evidence block context_only fields describe canonical blocks, which have no view assignment. They must not be read as the actual Scope evidence context_only values. The actual refs and source-view flags below are authoritative; existing receipts remain unchanged.",
+  "addendum_path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/full_build_v7/actual_output_review_v1/raw_scope_consumption_snapshot26_canonical_evidence_context_addendum_v1.json",
+  "addendum_sha256": "42a1648b4f7dfeb9d03952c748805a4ecd2f0f6d3f3be1b2ccafd2a43fe49112",
+  "native_calls": 0
+}

@@ -1,0 +1,235 @@
+{
+  "candidate_contract": "item-local-evidence-absent-compact-v1",
+  "storage_contract": "unverified-local-extraction-scope-v3",
+  "isolation_path": "/private/tmp/document-graph-output-contract-v1",
+  "archive": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/output_contract_efficiency_preparation_v1",
+  "manifest_sha256": "5ae28abe6030b4678dfb59daca570630bf9d7bfd160e4be3a1140016582d39a5",
+  "candidate_diff_sha256": "86dcf905696208b8f1d2f187f3d39bf0bea80ed75eaa4233491d3d417e7f1cd5",
+  "candidate_modules": [
+    "app/knowledge/business_checkpoint.py",
+    "app/knowledge/business_run.py",
+    "app/knowledge/business_use.py",
+    "app/knowledge/source_reader.py",
+    "app/knowledge/autoschema.py",
+    "app/knowledge/business_review.py",
+    "app/knowledge/business_concepts.py",
+    "app/knowledge/business_models.py",
+    "app/knowledge/service.py",
+    "app/knowledge/repository.py",
+    "app/generation/model_client.py",
+    "app/knowledge/source_capacity_repair.py",
+    "app/knowledge/extraction_wire.py"
+  ],
+  "live_frozen12_unchanged": true,
+  "roundtrip_completed_responses": 35,
+  "roundtrip_existing_v7_normal34_plus_prior_event_relation1": true,
+  "roundtrip_claim_scope_address_ids_graph_concept_inputs_equal": true,
+  "boundary_tests_passed": 28,
+  "new_native_calls": 0,
+  "cases": [
+    {
+      "case": 36,
+      "purpose": "long_code_name_truncated",
+      "role": "entity_relation",
+      "baseline_unit_id": "41731e6989cc483abfcf4f8f4203401b",
+      "origin_failed_unit_id": "7890319c69dd445d8753d9edf36859da",
+      "view_id": "chunk_5655c4f31e905071685fb797",
+      "baseline_done_reason": "length",
+      "baseline_provider_tokens": {
+        "prompt_eval_count": 6664,
+        "eval_count": 16384
+      },
+      "baseline_model_seconds": 1295.603236,
+      "baseline_reused": true,
+      "fresh_baseline_native_calls": 0,
+      "native_entrypoint": "source_capacity_repair.repair",
+      "limitations": "Truncated prefix is not adopted and its limit is not complete baseline cost.",
+      "request_configuration": {
+        "model": "gemma4:31b-it-q4_K_M",
+        "generation": {
+          "provider": "ollama",
+          "endpoint": "http://localhost:11434",
+          "auth_env": "KNOWLEDGE_API_KEY",
+          "context_length": 49152
+        },
+        "identity": {
+          "draft": {
+            "name": "gemma4:31b-it-q4_K_M",
+            "digest": "6316f0629137b426c9d9b853ffc4c8209589f30ee39aebede6285096c0ff47e7",
+            "context_length": 262144
+          },
+          "review": {
+            "name": "qwen3.8:27b-q4_K_M",
+            "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+            "context_length": 262144
+          }
+        },
+        "temperature": 0,
+        "timeout": 1800
+      },
+      "requested_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "executed_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "source_view_sha256": "22fd07944dd8bedd8c18b31cbcaa3d506e8a6da1169c4659bf939e69ba773cad",
+      "source_text_sha256": "2ac2f513a68b1446e948b0d5a41062d1704c24bf147dbbb72797cbabe3883ee6",
+      "reference_map_sha256": "3a774d230f8540f71aeb735f150c1f32968a618ecd3d02abbf836a557b998ed6",
+      "baseline_unit_sha256": "9f511028c1a77f7ff5f71ef3df82434d70d05bbc1fd19243d4eb7eee10694887",
+      "baseline_schema_sha256": "2f1033ec36783cb09dfb6b4224acdd8e9bc6baac966e90b1ab39697aa42856fc",
+      "candidate_schema_sha256": "8e5447351d47be2538ae0970ef814b32bfb53bf8cb1471f5ccbfcdda7d62f514",
+      "baseline_messages_sha256": "c1927dd03b07beef530f548536b81d48e43245d543aa4febcb556d9d360358d8",
+      "candidate_messages_sha256": "61a1ecafcd3d95adf37694aa28b4951cd852dbc73887f2034340b19f8f7fe7ae",
+      "baseline_input_budget": 30820,
+      "candidate_input_budget": 31193,
+      "budget_is_estimate_not_provider_tokens": true,
+      "baseline_stored_claims": 0,
+      "baseline_scope_error_claims": 0,
+      "baseline_reference_only_claims": 0,
+      "source_input_limit": "Provided3112 exclusion,3168 field expert note and4-1 title/definition are preserved. Parent labels3037 welding and3045 heat-treatment are absent; parent attribution is not decidable from this fixed input."
+    },
+    {
+      "case": 42,
+      "purpose": "conditions_exceptions_table_with_notes",
+      "role": "entity_relation",
+      "baseline_unit_id": "ce6e43aeb0e745e4abe69053a841ba96",
+      "origin_failed_unit_id": "7436652b2cfe4f51bd7603019fceee70",
+      "view_id": "repair_view_fc2af7006ec200d10e26d2a1",
+      "baseline_done_reason": "stop",
+      "baseline_provider_tokens": {
+        "prompt_eval_count": 2834,
+        "eval_count": 10867
+      },
+      "baseline_model_seconds": 762.343677,
+      "baseline_reused": true,
+      "fresh_baseline_native_calls": 0,
+      "native_entrypoint": "business_run.call -> store_extraction",
+      "limitations": "Existing obligation classification and missing code relations remain baseline errors.",
+      "request_configuration": {
+        "model": "gemma4:31b-it-q4_K_M",
+        "generation": {
+          "provider": "ollama",
+          "endpoint": "http://localhost:11434",
+          "auth_env": "KNOWLEDGE_API_KEY",
+          "context_length": 49152
+        },
+        "identity": {
+          "draft": {
+            "name": "gemma4:31b-it-q4_K_M",
+            "digest": "6316f0629137b426c9d9b853ffc4c8209589f30ee39aebede6285096c0ff47e7",
+            "context_length": 262144
+          },
+          "review": {
+            "name": "qwen3.8:27b-q4_K_M",
+            "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+            "context_length": 262144
+          }
+        },
+        "temperature": 0,
+        "timeout": 1800
+      },
+      "requested_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "executed_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "source_view_sha256": "f72e2eb10a5e3602a8ae23a4b40e367dc269113440608be22fb810d7269f4050",
+      "source_text_sha256": "53197ead97bdd1c0fdacf81af86a98b0bca2f00ef712d1cf69523655d9b70ed0",
+      "reference_map_sha256": "e4832566b8a4854198d0de2b597b9843e86a022d716ad6ebb73834a7a129a0c3",
+      "baseline_unit_sha256": "c4c0b505e30887eb736ed6da9fc10c47d88d51635199ee5aa96ebc5596c0faae",
+      "baseline_schema_sha256": "2f1033ec36783cb09dfb6b4224acdd8e9bc6baac966e90b1ab39697aa42856fc",
+      "candidate_schema_sha256": "8e5447351d47be2538ae0970ef814b32bfb53bf8cb1471f5ccbfcdda7d62f514",
+      "baseline_messages_sha256": "498f54f2a459dd28ae7c2a79405310d43294bd8d675d0d0f8b6db069e2ffa21f",
+      "candidate_messages_sha256": "942cab7ac23b75d19f5ff89bc4ef4fd98cdb18433b713ac5fc13d716f87d5a61",
+      "baseline_input_budget": 24840,
+      "candidate_input_budget": 25214,
+      "budget_is_estimate_not_provider_tokens": true,
+      "baseline_stored_claims": 18,
+      "baseline_scope_error_claims": 0,
+      "baseline_reference_only_claims": 4,
+      "source_input_limit": "Notes3222-3224 are present as context. Existing18 obligation labels and omitted code relations remain baseline errors."
+    },
+    {
+      "case": 16,
+      "purpose": "normal_event_entity_preservation",
+      "role": "event_entity",
+      "baseline_unit_id": "253aabbd46964ea896c56c0565fd77a0",
+      "origin_failed_unit_id": "e488c0aa7eed4c559becc5eba3c044b3",
+      "view_id": "repair_view_64cb430ddca48a0b46fe13a0",
+      "baseline_done_reason": "stop",
+      "baseline_provider_tokens": {
+        "prompt_eval_count": 1637,
+        "eval_count": 3467
+      },
+      "baseline_model_seconds": 249.176157,
+      "baseline_reused": true,
+      "fresh_baseline_native_calls": 0,
+      "native_entrypoint": "business_run.call -> store_extraction",
+      "limitations": "Existing whitespace/entity-address defects remain baseline errors; normal stop is not semantic approval.",
+      "request_configuration": {
+        "model": "gemma4:31b-it-q4_K_M",
+        "generation": {
+          "provider": "ollama",
+          "endpoint": "http://localhost:11434",
+          "auth_env": "KNOWLEDGE_API_KEY",
+          "context_length": 49152
+        },
+        "identity": {
+          "draft": {
+            "name": "gemma4:31b-it-q4_K_M",
+            "digest": "6316f0629137b426c9d9b853ffc4c8209589f30ee39aebede6285096c0ff47e7",
+            "context_length": 262144
+          },
+          "review": {
+            "name": "qwen3.8:27b-q4_K_M",
+            "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+            "context_length": 262144
+          }
+        },
+        "temperature": 0,
+        "timeout": 1800
+      },
+      "requested_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "executed_limits": {
+        "max_tokens": 16384,
+        "context_tokens": 49152,
+        "think": false
+      },
+      "source_view_sha256": "1239bb01c5b2e940f7df1fc4a4d9cac7f350cd8267161c402ccf208c0425d3f2",
+      "source_text_sha256": "ec66e986b86123db8b32b2a962bb06eea525d05d2b8813b68af3a5c1e775a305",
+      "reference_map_sha256": "b3792712d0af24308118fd5077fcabd5075318489fdb83c7ceea337887760030",
+      "baseline_unit_sha256": "77bd89faf69d1d2f8f302f1a990fb02804fc8a123efda5239599d06619fd6f1f",
+      "baseline_schema_sha256": "7f2dcae51154ba91b81c967bdfae9c0b596f9430880d071d2a1b4712cbaef3ed",
+      "candidate_schema_sha256": "70de5501dc2d75467b3887c4f4870bd37d94b58bd3767a9ab31fd1a5cacbffd4",
+      "baseline_messages_sha256": "bf9405b89ed29f695ca67cb5678af2d2f34dbf6ff23331b258b1ff857c4ae884",
+      "candidate_messages_sha256": "69c0ca83bd6aac7984a2c59718f9544d01c9286ff092ef17bf875a6e74388aa0",
+      "baseline_input_budget": 23185,
+      "candidate_input_budget": 23626,
+      "budget_is_estimate_not_provider_tokens": true,
+      "baseline_stored_claims": 2,
+      "baseline_scope_error_claims": 1,
+      "baseline_reference_only_claims": 0,
+      "source_input_limit": "Environment/Smartfarm parents and unrelated Energy reference remain exactly in the old input; no context cleanup."
+    }
+  ],
+  "only_output_contract_changed": true,
+  "not_held_out": true,
+  "not_quality_evidence": true,
+  "adoption_pending_native_same_input_semantic_review": true,
+  "legacy_residual105_held": true,
+  "full26_and_consultationA_still_required": true
+}
