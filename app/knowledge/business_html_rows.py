@@ -1,4 +1,4 @@
-"""Literal rows from a verified five-column HTML classification table."""
+"""Literal rows from explicitly supported HTML table profiles."""
 from copy import deepcopy
 from hashlib import sha256
 from uuid import uuid4
@@ -6,7 +6,7 @@ import json,re
 
 from bs4 import BeautifulSoup
 
-from . import autoschema,business_run,business_use
+from . import autoschema,business_run,business_use,business_html_debt_rows
 from .service import KnowledgeConflict,encode,utcnow
 
 METHOD = 'verified_html_classification_row_v1'
@@ -56,6 +56,10 @@ def prepare(service,parent,block_ids):
                     raise ValueError('DOM_cell_text_or_span_mismatch')
                 ref=business_run.exact_evidence([dict(block_id=b['id'],quote=b['text'])],parent['blocks'])[0]
                 return b,dict(ref,precision='verified_html_cell',locator=deepcopy(loc))
+            if cell(0,0)[0]['text']=='번호':
+                added,rejected=business_html_debt_rows.prepare(parent,targets,table,cell,persisted,version,parse_id,path)
+                claims.extend(added);rejections.extend(rejected)
+                continue
             headers=[cell(0,c) for c in range(5)]
             if [b['text'] for b,_ in headers]!=HEADERS or len(rows[0].find_all(['td','th'],recursive=False))!=5:
                 raise ValueError('unsupported_classification_headers')
@@ -101,19 +105,22 @@ def store(service,request):
     added,reused=[],[]
     for claim in claims:
         location=lambda c:tuple(c.get('literal_source',{}).get(k) for k in ('source_version_id','parse_run_id','table_path','row'))
-        existing=[c for c in parent['claims'] if c.get('construction_method')==METHOD
+        existing=[c for c in parent['claims'] if c.get('construction_method')==claim['construction_method']
                   and location(c)==location(claim)]
         if existing:
-            if len(existing)!=1 or any(existing[0].get(k)!=claim.get(k) for k in ('raw','evidence','field_sources','field_evidence','literal_source')):
+            if len(existing)!=1 or any(existing[0].get(k)!=claim.get(k) for k in ('raw','evidence','field_sources','field_evidence','literal_source','table_mapping')):
                 rejections.append(dict(claim_id=claim['id'],reason='existing_row_content_conflict'))
             else:reused.append(existing[0]['id'])
         else:added.append(claim)
+    profiles=sorted({c.get('table_mapping',{}).get('profile',c['construction_method']) for c in claims})
     run=deepcopy(parent);run.update(id=uuid4().hex,parent_run_id=parent['id'],status='partial',started_at=utcnow(),finished_at=utcnow(),
         metrics=dict(llm_calls=0,model_total_s=0,elapsed_s=0),
-        html_literal_rows=dict(method=METHOD,selected_block_ids=request.block_ids,added_claim_ids=[c['id'] for c in added],reused_claim_ids=reused,
+        html_literal_rows=dict(method=profiles[0] if len(profiles)==1 else METHOD,profiles=profiles,
+            selected_block_ids=request.block_ids,added_claim_ids=[c['id'] for c in added],reused_claim_ids=reused,
             rejections=rejections,model_calls=0,semantic_quality_approved=False,original_claims_preserved=len(parent['claims'])))
     run['claims'].extend(added)
     delta=autoschema.graph(added)
+    business_html_debt_rows.annotate_graph(delta,added)
     for key in ('nodes','edges'):
         existing_ids={v['id'] for v in run['graph'][key]}
         run['graph'][key].extend(v for v in delta[key] if v['id'] not in existing_ids)
