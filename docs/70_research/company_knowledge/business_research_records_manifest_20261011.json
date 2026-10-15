@@ -1,0 +1,1527 @@
+{
+  "purpose": "Research-only committed snapshot preservation; not a model or product evaluation",
+  "date": "2026-10-11",
+  "base_commit": "c049efedb103c460fd295a1792d068532d0baaa8",
+  "source_commit": "16fd09f48736404be84a4d279c8cbc2d479c49d3",
+  "source_branch": "feature/business-semantic-modality-research",
+  "destination_branch": "feature/business-semantic-research-records",
+  "later_range_base": "00ecdc34791ec3192b2e6b66886809cb5e1a4bd0",
+  "later_commits": [
+    "a109162a11b225e8991e59540d95da3e52ffaf21",
+    "923d1614425431838f38f8a5b5a7d5595ca06066",
+    "42ad81fda64b078bd85c5d7e90ac9ddaa54183ba",
+    "428eb14b2fb2d346e56acc45bfe033b5a6cedd1d",
+    "1ff1b9b7bb0f03491db0fc46ba6d6d694339dc12",
+    "c050f1cd75cce03bde1ae155a435483546260a9d",
+    "c111f8ad10d0a1953ae3b8eefe590a2c8fdb2d16",
+    "a5fd5c9b931c70a7207a12334d3b3afc8497451f",
+    "c79d1e05e6bcd8456a06b22f8e527dce90317251",
+    "3f554541c2e86a4453f3236cdeb6cc8565343d93",
+    "def333024f1df79f09888cd3a1862d7b1885f523",
+    "afb088d17f88a039d7ab7ad99c0ea432cd10aeab",
+    "9d85d585cea2568046ab5f6de365d9bd3b654f6e",
+    "41f31741e02fd529e71944e0e9780f9269a9f816",
+    "02923fb9ab184d70e1a30e6becc66c692610e0e7",
+    "93d1bad0361da19c1e32e348ca2bef98b13be813",
+    "2a3e2c8de6a9544f1ac5f64069eaf24f4670e2d6",
+    "f3180a0ee9d655977c6621cd93b9670e9dacb133",
+    "6883d98dc823b63fb7c201496f3440d4f9990d83",
+    "04541dc15d1eaf13215297532665cffab86e2048",
+    "4b674459b83d5dbb5a4b2be2e77b33ae3436de5b",
+    "8cfb57f0ccd98bc64e1bd9e6729ffca0c6659ed6",
+    "89461ba65df2c08136c0177f36daad8def1124bc",
+    "1d3f7e1c572b7ef66c01df81dd2797e6fc245e9f",
+    "8b219fb18b0fbcf33f31e68189aa317d78309cdd",
+    "bfd7d2a583b7186c9e0afa0d5f45477bffef0864",
+    "03dfd2a249d1fed1556f379670d969d2621be845",
+    "d399e6587dfcb2ab402223a7562995c930782904",
+    "791fff1550f7314bb34eea5af7dbfee19d202052",
+    "f5519028bdf16c522349316914d3e3f2a25941fd",
+    "ce636f6a9257b54523b5d9538cad19742ef2f016",
+    "16fd09f48736404be84a4d279c8cbc2d479c49d3"
+  ],
+  "selection": {
+    "status": "A only; M4 and D1 retain base main",
+    "file_count": 145,
+    "bytes": 28622772,
+    "counts": {
+      "app/tests": 7,
+      "docs": 80,
+      "experiments": 1,
+      "scripts": 57
+    },
+    "earlier_dependency_count": 44,
+    "later_range_file_count": 101,
+    "added_separation_files": [
+      "docs/70_research/company_knowledge/business_research_records_split_20261011.md",
+      "docs/70_research/company_knowledge/business_research_records_manifest_20261011.json"
+    ],
+    "final_added_file_count": 147
+  },
+  "files": [
+    {
+      "path": "app/tests/unit/test_business_clearcheck_diagnostic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d15e91725827f95fda119a11351c535887120649",
+      "sha256": "1f6b52f37113cf7ba4eececd5b87f4e3f93b342a27aef7619a5afbe919534217",
+      "bytes": 1333,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_korean_judge_diagnostic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "da2bae99cdb27ea5fa1624468c6b940b31c6fa6e",
+      "sha256": "d49c251d7ec797a27d4aa339e5e64259418337e71c415851f5486436781cf1c3",
+      "bytes": 2032,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_label_selection.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e160261bb7fc0c4f5c7c5ebe3c6af95c1df8fcfb",
+      "sha256": "8d226d6d2eb21280ccd9098188fb6c9ddeeded9e2cabde05d46a61cc58a5e260",
+      "bytes": 3370,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_natlogic_diagnostic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "078bd11d69013d28c3a9a54cececb138393fc57b",
+      "sha256": "05a20660a0c8a20d821e7223f75c6bb477094f6c4c86d81cc78960184456848a",
+      "bytes": 3108,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_permutation_selection.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "325a117bb2a8d0e999a69f36437f27bdaa8ab7c6",
+      "sha256": "1ac0423c4f1b2ab5655c10a3861df2c38cf1ab3fd167c2118af75b5e70fd42ba",
+      "bytes": 3381,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_qa_diagnostic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c32ad7459eb4a11a6204ce764103420cf88e245b",
+      "sha256": "720182738e1b3fb8d7e5011ed3ac55d8740196ffe9af5c7d2850a1d872c71e37",
+      "bytes": 2079,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "app/tests/unit/test_business_scope_tree_diagnostic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a54816b993cece7af6d2aead1ae0dd7d8e0b748b",
+      "sha256": "7eed60c5f3781bfb13dce0b78102542b43e5d6dc1638021f0f8c086e72f14852",
+      "bytes": 3937,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_action_impact_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b73e5ff5769356f1f05a2383b9981514b9aa7367",
+      "sha256": "f97a6292120dbee1dd6d5ae56ae3f573bfb31bc15e0fcb750c492a81d055cbc3",
+      "bytes": 15974,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_actual_proposal_pair_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "94a670d90a33590a8ac6b53f7665a1975e06b7b6",
+      "sha256": "1744ca8c53bdf422ba317464e156613a49fadc592a980c42a157d802093a6a7e",
+      "bytes": 11944,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_actual_proposal_pair_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c85cc47e18a03c25aeadbeb6a5b9e12bba160caa",
+      "sha256": "c675c8d8f65ea53c195365b8fc9d57cf9a5837567aab116d7e603090f2c23a2b",
+      "bytes": 6441,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_contrast_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "213fac1f3449cd8f640169cb946455ab61e652cd",
+      "sha256": "0f51e6f76cee828aee8e97114991614043a0a0679b6f5434df725223a4d4f3b4",
+      "bytes": 21828,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_contrast_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b09bdc9fcaf2130815633ab972cc04e9d6404773",
+      "sha256": "28eca0a2ee3561d99e1096bff2f9105c5f8e03f9d0549ae7ed19b97c534d0796",
+      "bytes": 13272,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_diff_confirmation_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "995d9b4711f0dbe9155046875358b7536cbeddbd",
+      "sha256": "852f7574bbfca49b034569d8d25a1d1740896f9704d60729477f543ba8404704",
+      "bytes": 18818,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_diff_confirmation_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "8dc6eeaa7543e6b1a1a3f6977e4336c0ef90ea06",
+      "sha256": "2c7101b985646faa64e85fabd65cb6f781ed7a1e29c8d05a9af131e0c867be20",
+      "bytes": 11808,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_diff_confirmation_plan_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "f6fdf4e40924cf1c3ca5b60fafaf3523f326a2f7",
+      "sha256": "9be842ac94b812970a54adce490a9af159b9a25ed54b5cb94b6d7df3ad22daca",
+      "bytes": 7129,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_diff_confirmation_plan_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "2602f80b317b8395062e7342b5bcd4c9cc39264f",
+      "sha256": "c13b2f9d707abde23dcc715e250bad40ff980da3a4b4e368fe93b23d9c57bea1",
+      "bytes": 9932,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_text_diff_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c8c89cb0a65c311025ea642889a09b5c92cb1621",
+      "sha256": "6709cc2fa9d8d12ab5d037036a362e7d2d681c7cf3e478bbda8f7e16052ba5d3",
+      "bytes": 20159,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_candidate_text_diff_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0cc573a548960bbb44c8daf78b34c05844133b9c",
+      "sha256": "96c74b0c5a58d289ea59ff12d93f7a8c43a9174aded658713abf4c235aab58ad",
+      "bytes": 11399,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_clearcheck_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "9e637ce8572987579603d6834e574d39c899801c",
+      "sha256": "3a647bef16e330cdb1df99fdd041f21cf2dbbc140cd3f3f73dfbca5e53f6d2bf",
+      "bytes": 69978,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_clearcheck_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "8b2c75e7972bff006146ebfd6894067fccbe7e8d",
+      "sha256": "a5cab60f66e0747e695528e2f67f9056346766f62a60beb1d0e51cfda432b7d7",
+      "bytes": 8125,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_condition_contrast_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "af97933b4df02792f290ffd351d45692f133289e",
+      "sha256": "25c59a09edc429d101890d0f7b4d8e8848cd10e0e3362656eda43cf631dc1bca",
+      "bytes": 16686,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_condition_contrast_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e699085cee81f669afa2acc9cd0a84c4d87c8cc1",
+      "sha256": "c3b43a8f75ba4261d7e0567333cd366718b6a997cafd3973fe8dfdda017ec9a2",
+      "bytes": 12125,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_condition_contrast_plan_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "6b047ff447cd0543e5d3559fa4d3d9669029884c",
+      "sha256": "563992594a2e1d9e3e783cd4466783c865c37ce142348afcfd398b479d7d781f",
+      "bytes": 9295,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_condition_scope_comparison_20261008.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "65868b24a5e4a01d03ca0e851764f5027d41b4e5",
+      "sha256": "142ac03da870b1a9a6e7d8d77b1615685147fb14c57721398eec65290cb93a7a",
+      "bytes": 5975,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_condition_scope_comparison_20261008.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c454539d84255867d5fa6ee100146c8e74ecd3d9",
+      "sha256": "747962d7b9ec8a645fd8b8e65917b7ef101eab579a87ba31c3ae871f56bef2bc",
+      "bytes": 14252,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_criterion_review_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e971e3b2eae6aff9cdfa787d772e7cdb9f73907e",
+      "sha256": "f7887d3251100f49ffa11ee5ec2ec7f70a0b64e58cc6210085cca001b9346330",
+      "bytes": 24843,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_criterion_review_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c19a3675b2f31e195c689ef4477df50d59090376",
+      "sha256": "38e2600ff8adbf0174f87d2934a2bfc317bba262832058803e4446c777fc9e51",
+      "bytes": 5975,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_dependency_parser_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "754a1c792abe4c7aa4d45ceb7f11610d64bff308",
+      "sha256": "840826a0b0944082b0e6a7bea6f1ee830e7d1afe875dc2485af046a47f480b69",
+      "bytes": 21315,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_dependency_parser_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "696c4808fc17818cfa8fb6786fa3496d61903992",
+      "sha256": "a9e76f2c9648304680b00f44ecb2edf65a0e3741c416e25702cdacd07bc8ba0c",
+      "bytes": 17367,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_diff_responsibility_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c97eca89290e2edcaa5754ec725323365ba6d91e",
+      "sha256": "36e2dd03eb4925870a5415dbe8343507d8a7b285b578aec92896f7c9aea61f68",
+      "bytes": 3504,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_diff_responsibility_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e4cc8e102b223d07888c8d369970719f1c8e1aa7",
+      "sha256": "8ee25390e04bd18209c50ddcdc643290d20dce0320be47f530bad9531b5af5e0",
+      "bytes": 15885,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_diff_responsibility_plan_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "7781c72bf463c2085085afcdbe60046bd2b1ea1d",
+      "sha256": "aff9488ed97de2298d9fdc468a68d4013debeec718c89954b8629befe2726e5b",
+      "bytes": 13706,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_direct_selection_structure_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d5813b486b51f2cf4e44809a270854ce53111fb1",
+      "sha256": "c729b67534af1cd237af5f43a323c957add118113ee32cceea50879465f30690",
+      "bytes": 48182,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_direct_selection_structure_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0d1632b180c6264231decb847b6704df0dfe7919",
+      "sha256": "455a404d593951b32ca218b25c422c101d5c8884f1b26ee2e3692a2b7a96a977",
+      "bytes": 18710,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_document_boundary_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "1c5280cdb1a2f80090d870007737250558941fbc",
+      "sha256": "fdddf993e91159e0105f00a85d8a40af40bc67ca789370621a46d76ce6fec57e",
+      "bytes": 4874,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_document_boundary_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "eb4ebf2c7681b2d2de8300ced3d7788251c19843",
+      "sha256": "47829978e9a070e1aba2bc58a6850bf30b45698dec6053fb5dafe43db9b23124",
+      "bytes": 6044,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_entailment_boundary_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "09823814a28ae048454a940387289630267ea64e",
+      "sha256": "73480065189b5112098ee0d9759d7ae0534c07f151681203973647de853179cf",
+      "bytes": 1063942,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_entailment_boundary_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "311dfed53370a3775245605442a551fdce56d783",
+      "sha256": "6918658fc6d52853f21e6c4e1ba92ee3cb91bfb210317149fa6ccdc63ea8d31e",
+      "bytes": 26133,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_explicit_opposition_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d2151da9be1223eb9e56b3a33f4db9e310e752e4",
+      "sha256": "2497635716eb8dd2e23db9d94ee2bdc40fca8f578ebc53eb42c31bda677ea165",
+      "bytes": 15240,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_explicit_opposition_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "dfc98e6eeb8c021bca11de01012fef96f5d6b08e",
+      "sha256": "032182a7c838bc643d1dc3ff88c385e0c061839fcc297c342f459f75442f5820",
+      "bytes": 14853,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_independent_scope_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "8aad67135de8e5d9130316787767a4f5cf153ddb",
+      "sha256": "ebc55a9c77d433360d595a0eb5e9cf0b2f48f23d068ef4dd1386f8c576b15c3a",
+      "bytes": 5992302,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_independent_scope_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "cf0c3611ffac34ca2c3ccfbe465c30ec2e22bf24",
+      "sha256": "4e8b2bd3257e3a5d1171d731d200e7773526b360834a1de8578eaa765ce93318",
+      "bytes": 30025,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_joint_contrast_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "7a902950ef2d2eb302505e8e9b07421648032b8c",
+      "sha256": "f4d071e33ea91492cba8b5f951339e0424b5f4ed6385d447b720715c0c2eeeef",
+      "bytes": 5987,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_joint_contrast_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "94e4fc965d70bb5c0900718c73101ed69e56e98d",
+      "sha256": "e6f6c9408a9cb74fa977afe43daf9b1db14e80cbc5574547fe2064fd3d6ef25e",
+      "bytes": 7012,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_judgment_order_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "60115604ea40a7620d2e8b94b25efe02ef746214",
+      "sha256": "a083144e9bd586f78693f376429be67969491d5227a81baa089ae5076297c301",
+      "bytes": 6661,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_judgment_order_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d151bfd06f9305d6420dd4252979b527ec100492",
+      "sha256": "0aca15545b92bd640658d69a2ab0b635ab844220ee1bbe1f9827baceba6f9cb4",
+      "bytes": 5920,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_judgment_order_plan_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0216ae0d673b968b2a0a06806b845c888de04245",
+      "sha256": "8dc1936254cae4887729790c1c8a3d8a18e4de7ac1594aef45eac75398018321",
+      "bytes": 2215,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_korean_judge_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c28a5e8f8b4954d6f6afa518ff17cfda5a4a5850",
+      "sha256": "25d4b854e78e2190a5713c7dab47b38fc368367438c8d82378822ac99461c165",
+      "bytes": 2461094,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_korean_judge_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a4ac78a0cf10799dc73239f0972c1847c89f5ef3",
+      "sha256": "6f515d7c405d70dc302680259c79bb967842dd989929b334cb139a6d66ed6973",
+      "bytes": 12245,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_label_selection_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d7c462ce3bfea429ba1a28fb2ea7d2649af83769",
+      "sha256": "c34b18755f5b69d8179e5ffae4ed7885e299eca203b5ee13a4adf965d981e840",
+      "bytes": 1967201,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_label_selection_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "7984e525c1c93da04c628e001f94ca38b52172c5",
+      "sha256": "f36cc7b80a91a55e41f3df91711e17361d9145ebd1b6769f4b178b0484b45c43",
+      "bytes": 23643,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_modality_research_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "aac9fd28cd92ee6d0ee4503d8c909060dc854d07",
+      "sha256": "3e81bd086341496ac4c412c1aa05d0391de4ece50c08d11f496bfe9787e43a13",
+      "bytes": 1113620,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_modality_research_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "97955ed3df32a7c08a3ed82f06d0f82ebdd48b5d",
+      "sha256": "ae9b275cfd6643b3c5c071b1ea8471c53c918a33fec9938b311727b482444180",
+      "bytes": 32163,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_natlogic_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d5bab664a70ed232e4d6fd227d97f4fc66482ea2",
+      "sha256": "67d9a8bd9873959c989a5e557e3dcec351c294c9eac2644c1b09c250daa60484",
+      "bytes": 40568,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_natlogic_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "eb3e5d4b0d41a2f15b4c839a68b64d1e025fb8ae",
+      "sha256": "214940781820fe571ec3ddf9bfc747e6cd28b743cc9cfd31bd3f96bb56b3b43f",
+      "bytes": 11323,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_permutation_selection_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "2be94eac7de15d4f21b016ad8f415c582d0d8d51",
+      "sha256": "1ebd82a0b37b43dfb6335bb1be6221be8db9335ae6c587ee53b1d43e83743969",
+      "bytes": 2418791,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_permutation_selection_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a70f0eee8361bd56bc1a34366763e0db33cc0a75",
+      "sha256": "9aec9810dc3d560a2ba8f27a48ed76b25b9470c01bdbbb48b3d2850583235882",
+      "bytes": 17995,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_qa_compare_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "9a1bd28cd1ff9f5575ff4c69adb2deb4af25181d",
+      "sha256": "078c8b766d1675c276c10425910cbd1f673f85de038e3f25b2554ff510574472",
+      "bytes": 129035,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_qa_compare_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "9768c0cf51ad8da934ba934febd8056f448af955",
+      "sha256": "6abad948590105df500e91f98f4fe9e80781c1e625ff1c57ed3170af8d037a52",
+      "bytes": 10062,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_reason_first_and_modality_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "dc185bc1987309035ca2d5a223666217e2369c5d",
+      "sha256": "5bb0c73b8b0b13dc30ce4794a584a02b11d6534aa6eddc7757ddfd2add9f1efc",
+      "bytes": 1866216,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_reason_first_and_modality_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "99391a24c43331d09b29eca24c7d140bd27772ab",
+      "sha256": "f336a839d6ded5aaee16ffe524894b8263e659930353287f9766fba5843ad78a",
+      "bytes": 24626,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_difference_comparison_20261008.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "4f0a41e642ce7db90dbbeacb6932c475166cbe09",
+      "sha256": "a42f295c308f695e2ebeba3031e6860ea390ba409d79359a5ddbf76fda0da3f8",
+      "bytes": 41506,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_difference_comparison_20261008.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "62bb06b1dc1a50bb71a1fb3f86845297e1020111",
+      "sha256": "a15f67fd2d544349b77cf8d0159f1a05fed9c436a59416fd1f859ca9c62d9650",
+      "bytes": 14075,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_model_comparison_20261008.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a780f0c5949705dd6437cf50540d54e18a2b629e",
+      "sha256": "5b2c9a94a8a71b341fa5bff75e4dd7374e2109a339631b34c6753da608d2afe3",
+      "bytes": 68297,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_model_comparison_20261008.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "5fec68e652c0b6acb8178713ea34e11701a0af4c",
+      "sha256": "e45ca479373fe3de415237a79640c2694da1856c0b9dcdde1d3a931701e86490",
+      "bytes": 15910,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_tree_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "377351b1bbeb3fbfbadcdf41e12fe16f04e9085d",
+      "sha256": "9cbec603b38f1d7ccf0a3035dbf5c938f2930705269ef820213bd7ce5cb4ace2",
+      "bytes": 52184,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_tree_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "7bd9ab7db48003f5a8be5385a9668e4fe80b8078",
+      "sha256": "99c86e3fc45044672557a0d6ce1ad9d74471a91c22f5aa20a4257aed7aa2c727",
+      "bytes": 12863,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_singleton_confirmation_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "ac387250be6c9886b03810fd9a3d392b33f687ab",
+      "sha256": "d8fbd28ff8a9e00a1258d01b5f0cb5219a19458cf58234c50d2d61ee03594237",
+      "bytes": 12593,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_singleton_confirmation_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "5e79b4fbb1569b06bd50b6cc1ffc5bc7b8fcf6ce",
+      "sha256": "f016c371bd9f5e267ec8ae161f8660fa18a710c5ad8549702d148d03212fafdb",
+      "bytes": 8220,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_singleton_scope_contribution_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "54b81f1d80a81cd4171fc53f4f5ffedd2885807f",
+      "sha256": "1d52b6fa3a94c0173f10877bbb6a1f9155fca7f28ac85459975661b7ac73eb3b",
+      "bytes": 19939,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_singleton_scope_contribution_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b5b7ce09ce2388f2177c1aadc335c8f43ae44cc7",
+      "sha256": "c850bb89d2d6aae5b556f7fe16cfe3baeff518e0089c6ad03603e061cad5d9af",
+      "bytes": 10978,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_boundary_20261007.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "bd80eb6ca9bb2f90219573f94867eb2a8aa65f6a",
+      "sha256": "af8e7c2afad87c216b5765ad51ea362895b5d43098ee0ddfce5248d3fa56f986",
+      "bytes": 16488,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_entity_replacement_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c31d4f4fe68468c9e010350034c42e50dfeb65b2",
+      "sha256": "6f4da19be7fc6e1144b1175b2390c5b6a1ff93dfedd38972b4bd688c9c4512d6",
+      "bytes": 8353,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_entity_replacement_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "42b0d45a5f416a123001b39b1864d4f020b26b4b",
+      "sha256": "25334ba12572374432e85a801a49e5a8e559acb8203e9a137280c6270f149ab5",
+      "bytes": 6599,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_entity_replacement_plan_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "52f43507c5e6f50622cd808f1ff0c3ac5cf88f11",
+      "sha256": "94c0fa5a525855eee8900e8b7bc9c436265e87bf398ba7f6c04772264b64502d",
+      "bytes": 5282,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_first_comparison_20261007.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "751b7cdba8b84143bb0913d87b19aebd98192bcc",
+      "sha256": "15de22791e4019cd2c4c759b9fce3e11335bc50cbfc35be50e8d1641587bae3d",
+      "bytes": 10450,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_limit_contrast_20261011.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "fd4aba2665eacd6b01f6d83c82aa2615c5b6a995",
+      "sha256": "ec8af375a5f218f2ad19a9cfd4fb9cc4c134f8366ddec08654cd39291bd7f363",
+      "bytes": 13765,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_limit_contrast_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "15f2df801398a4d4ab43d3f86185a26b1256810b",
+      "sha256": "397406d7fdf9699d5e6fa8312af3200454ffb8b605eef2459521e2ff231f1b4a",
+      "bytes": 10664,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_limit_contrast_plan_20261011.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "10834657aea1bdb9899972869ced8509cf370aed",
+      "sha256": "6c246fab3c2086a401588a937dbd6f6f5cb5fedb264b5ea7f58e36e0f4759e73",
+      "bytes": 6001,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_selection_probability_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "225d31b6e20228fc3b52e9fb36353bb6a802a6bc",
+      "sha256": "e4e5b10f895274302d0970d80a3dbe0abcd293cba299c30f442fa639c1b2e1bb",
+      "bytes": 9633314,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_source_selection_probability_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "34c2db35cbb27d9e47dd2927ec7fda7c790ec4f8",
+      "sha256": "cd81a5de8cc35b9fa55f1ee9324abf62c8ecbd87ff89ea9012e47f37abb9e351",
+      "bytes": 21231,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_task_calibration_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "742e443efa982fe2a4b4bf3bb6161d279e3b1989",
+      "sha256": "a03fc87124ca07376551276aa3d6f90d9d8be9fc939f42fc05bed513c564a12b",
+      "bytes": 14974,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_task_calibration_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "81ff095817e06052cc1d835ff427f17c4f617b9c",
+      "sha256": "e652bb1034c17c88cb13b5d58a12ef49689481b12cef320246af598c6189ead8",
+      "bytes": 7308,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_trankit_20261010.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b932091c6c153fcebc491bf4e7fa57cf8ed41cbf",
+      "sha256": "3c9a6e8d058806dee4f2dd161d4a38012ceae8acfa900c19a6ab8988e6274741",
+      "bytes": 11670,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_trankit_20261010.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "063fb692b6e5bcf596b99bee4c7ea0419be0a899",
+      "sha256": "63f4e577fd218b686049d2fc6d7fc1e3f7525f555db5e0914155b58e3959399b",
+      "bytes": 8506,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_vitaminc_20261009.json",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "446a8e0bc66ddb6ae3ff781267d513131d875448",
+      "sha256": "9fa2d26bdcb7fc254312adc4e07034f3d96241e07bc3113e12ad2ef73b41c098",
+      "bytes": 121298,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_vitaminc_20261009.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "4acdce5b074e4e10375584f48538e0a7d57f89f8",
+      "sha256": "afe69f92ccd5b34e9f37560d7fa124c901e00673277eed758a4cca907c4200fa",
+      "bytes": 8196,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "03f13308e585f702f811653ab532ccdb1a1f0022",
+      "sha256": "eb70da49370aee7baabe370621009a88a458055df424b2bf20b6f87b392f1483",
+      "bytes": 162792,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/business_candidate_diff_fields.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b574feb79deec2a2f0106a13ba2412980a7f9035",
+      "sha256": "8331a758b83a09f0f2c71bea28ef6ad86ab7e9d75dff084b5a5ee8b50dbf7185",
+      "bytes": 1231,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/business_dependency_parser.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "bf40e5dfc548e01fe8396e66ec623cfa0fa5399f",
+      "sha256": "bcb31f291eeb04b01af0c7ac121430e15ea11e561d0d5ac5b411f0ce1d5abaf5",
+      "bytes": 8303,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/business_direct_source_inputs.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "f17efdae23dbb632ea21e57100d0f0e330c19179",
+      "sha256": "8c0a9bfe9c05b3e29c872c5a56e8a8320a8982761bec642e7b0fe19cd188982a",
+      "bytes": 10381,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/business_document_units.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e7806f10251c592f0fef3d69122bb6c76e83f5d7",
+      "sha256": "254f6edd2f6f851624d7b5200f5fe591d87544b9c649fc62e421d8e66290c0ec",
+      "bytes": 3192,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/check_business_candidate_diff_contract.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "090f814dfd2a88fb213eab1f5e59fe8e5a16431d",
+      "sha256": "39716eab8d0b9281891f473325da99e0350c1c209eefa38cc3a165b8c0712ed6",
+      "bytes": 5702,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_actual_proposal_pair.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0955cd6c828d692be6722d25b8c445f1bd623a49",
+      "sha256": "860ee7987ae7ea26a7ee834494283b347b1fa0c10fb324fb2a2d87303b578b25",
+      "bytes": 9723,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_candidate_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a681c61449d0fe1ecced3e9ca8ba35ca1b72d144",
+      "sha256": "838458ddf33bfeab690ca1ca786d07b7a119d3af32d0a3509cd31811e3df6bc6",
+      "bytes": 11521,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_candidate_text_diff.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "053498bb964fb4af337eeafad68aa1ad70a21b0b",
+      "sha256": "2e739b35f4898f448742b5666412f7f0e5c5dcfe75b4317c36643996d6dea2a9",
+      "bytes": 12659,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_clearcheck.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "edecc2f1425d3b15d9775561490e9cb9cc1c45ec",
+      "sha256": "c5477712e90572617f2684bee4f85d7dc5266b938540d10e00be907a59e358b7",
+      "bytes": 9197,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_condition_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b2ff95264d6ac820ed44719edc44b9d1ef05e6c4",
+      "sha256": "865e30ad420ef0d1931489f0f071d4c8aa363ad913410d67db87a5f44527ff11",
+      "bytes": 9995,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_dependency_parser.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "14c3f67ba2a8fe49d690674dabcc10146b667ac2",
+      "sha256": "885775d79f075c98f93d2d1b9423b279185cc9f1ca703c8f66ee34a1d83174f8",
+      "bytes": 9516,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_direct_structure.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "971d17585f731e95a1069c87860e6154e1752b8c",
+      "sha256": "b04eab3b42dc1466419e3df5d546e8362da097e906b7866645cd8c2270e540f1",
+      "bytes": 11416,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_document_boundary.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "b411732831f2d1c7eaa0e6ac9cf76ef4e3ec889e",
+      "sha256": "42e687e44769554f79da6b139d03a8f748c30336a02c979459b5f2a32138200f",
+      "bytes": 5032,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_entailment_boundary.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "1b0a46c44bf616bd7b22990ea5a391acca548235",
+      "sha256": "4a8a4a76a48f2d148f359634682e79807ab9dd4d217b77c4162ca224a28a7840",
+      "bytes": 9517,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_explicit_opposition.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d365201675b4fdd669c4be4aec8fe4f774966ac6",
+      "sha256": "66640773b342b3169b19831bfacb1c8b3fed217cf828bdf8c3ebc62803d0e627",
+      "bytes": 12328,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_independent_scope.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "c67a137a0e773d97395a597cea76e85e4d7b0189",
+      "sha256": "ab54467bd35232e56258d17b906b39ecd3b1fae0205efcf6e7526916add4b504",
+      "bytes": 29628,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_joint_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "422526801ad4eb542182a67e8647b3c6d663a512",
+      "sha256": "82d67ee8262669fb68b6c1937f4657d929e878bd8f4bce292a0a111e6b9da0a8",
+      "bytes": 13634,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_judgment_order.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "129a2254a307464fd5c8d4d8296ace6935dd9586",
+      "sha256": "3a9577a54aa95689fbb196003bedf8c38444dd20252af8e87e1e2c5eb6b76d3f",
+      "bytes": 7308,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_korean_judge.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0d29f8b9e704e5df77ad4e1619735a9cabd26f52",
+      "sha256": "fff8ddf87b7874a6f41bf1f28abbf9ff5868131f818f95c22fbf87a54bba676c",
+      "bytes": 9706,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_label_selection.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "aeb71744d0bd3c40d32b819795640093eae100fa",
+      "sha256": "bcf5548a24f3ed71f0843db268a02eb35708cb3083e1c051afb81f183b962bd4",
+      "bytes": 15776,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_modality_spans.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "6eb0f881d3c7b695192f0ddbde5e7eae357fcbce",
+      "sha256": "c4446f0590f1682a8edcb94f56d9dc4fdd685b28bf2b96da550bfa7f1757c8de",
+      "bytes": 14133,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_natlogic.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "bf8add519401187db31ded8c0bf1bdb44f2d269d",
+      "sha256": "da84a71103c7fd87842e9ea8be73df0be0ceb6cc55966ef24399906916523a9c",
+      "bytes": 16022,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_nli.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "5686a91ab5456fd5ba112fa36b6b950bd4912ca6",
+      "sha256": "d632e08b14062c5627c9361b1ae1e6aec85f59367ea9e06609a8b47a4f7c61e6",
+      "bytes": 8267,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_permutation_selection.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "e06141abf99d43f75e4d83138e7ae0c81dd8675c",
+      "sha256": "9a28ac0d0982cacee9864109143d7cfbcc6490181588c81d1150d72f07387a3b",
+      "bytes": 12724,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_premise_check.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "6b5462fe56e942860167f0c8494e6ac4c6d49b71",
+      "sha256": "b67210e2cb2f41ecb5bd73d137326f7abfe05e9755ad376a21c2ba92a3188315",
+      "bytes": 12221,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_qa.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "5fa96d7ee58aa1f7aee4ca34672919c579d3e319",
+      "sha256": "54e34458cdb75e1c503d6893085755dd1271a9b07e0aba11a01699197542b10e",
+      "bytes": 14339,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_reason_first.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "1b13824f06f65049364f79dc7846c60c57cf43f9",
+      "sha256": "d3e6cdf9db69d01195ea45fda9a11ff1ace5f3b980ebbba116aa1e617fabca41",
+      "bytes": 11107,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_reason_first_confirmation.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "bd1669dd2ac5581a3ca2151c01996d7d6e004192",
+      "sha256": "034e275858a4fbb8aa3601f682dd86ca3905323fc2b267beb40c8ebd273013e4",
+      "bytes": 8109,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_scope_confirmation.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "98c7a2e9d1cd217ec1029fd2a37469f2c9131874",
+      "sha256": "afe951270a7f4fb2c7749d9f02329a0bba5132fe7aae0de83a521d1ef067723e",
+      "bytes": 7407,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_scope_tree.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0f4ae5363b23a3031dd9091fc1be364b981ea249",
+      "sha256": "2ac43fca1e5223bc19179cf2f2d47ab546ae7fcb119c46c7d68217951b45c9c6",
+      "bytes": 17404,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/compare_business_selected_source.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "4f81a96e798cf25e584376de942f0ab4f4bfc915",
+      "sha256": "9a21f24c109682a2f7353996470b5bb13da888bf1b032ec2cbc8e7f33a322563",
+      "bytes": 10541,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_selection_followup.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0cc47e841c33970a43c641432ae989b96198ea80",
+      "sha256": "37c787a4dbd8922746594567f705a9b6035d8169fe626aa5ef2d563ae1d15a01",
+      "bytes": 7305,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_sentence_probability.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "2bbc0047224456ba907e6ad14ec612b937dfc499",
+      "sha256": "0c70a1e3de22b543183d9ebba853707bcb85009d8dd6b59f87d864ff3259c07a",
+      "bytes": 7378,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_source_entity_replacement.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "ca421300a68ca80e110b05d80eef698e98117a30",
+      "sha256": "7568d2d8dbdba2ec4016786c27b1e1ee0a6bd8b6fb590a5ad8cc9bcfa7b8e7c7",
+      "bytes": 10693,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_source_limit_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "f46efb3444ad4d16986f21f27fd85d27a1151a79",
+      "sha256": "e957c7434823ad7e1b27569613d2ff210debbce2319c06297d052a38de15a6b8",
+      "bytes": 8054,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_structure_confirmation.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "14a4a9c71776975aa664f3fd8e7f7f2c236b80c0",
+      "sha256": "f68c73dccb812516e2978e678981cdd425d752fe417934490637fdb0ff41ac54",
+      "bytes": 7765,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_task_calibration.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "d6cfeee6264e2ece0d9bc78dee486b7d97e69477",
+      "sha256": "496c11785ecb88e3419f2e9b54c1deb61c19378ff0fa6a2f939570dac86a5026",
+      "bytes": 11459,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_trankit.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "8ad3a4528da446c8b7f3fed13d08e7bc36075fef",
+      "sha256": "db01c5ddff992645d39177cf9c39a8e09034abfe0e66401b5b206602b96c50bc",
+      "bytes": 5569,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/compare_business_vitaminc.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "42e019a2c45d8a6f524eb1a6b4e8a5c245e6799d",
+      "sha256": "ddecafe99ff09acc9b588ffd38a2d2360f4667e06d0a04b3108f60564a9d299c",
+      "bytes": 6603,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/confirm_business_candidate_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "63c73d5340c36f6c1d5ec176781d4e01586b53a3",
+      "sha256": "cd23ce00c2ce9e92813ff9e2645d41144a1ece106265d46d61b2a8de2dc35a1c",
+      "bytes": 5800,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/diagnose_business_condition_contribution.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a3ed778a0bca89e2ca949ab3dcab7f8e06922d55",
+      "sha256": "2d399954ea5097f2169eab9f91dcf82c3c08341c80cfd516cd9ee871aa9f2e6d",
+      "bytes": 3045,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/diagnose_business_condition_pair.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "4a00007f770ddd5554ddcf27efc9df824479330b",
+      "sha256": "c6b1d738f2ff17eee2f95d7dd32bc85c600585c380c5a6130df300355223a9b8",
+      "bytes": 5657,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/diagnose_business_opposition_single.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "9d44ed36939620e00e96af6af7ad0d6381227dce",
+      "sha256": "4632b0c472ec9f4af01bc4bf028c26d9f20a4c75109790bb84e84f932ba55f30",
+      "bytes": 3096,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/diagnose_business_source_limit.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "ceb58a57419fc50db492186d317b5748a510c58e",
+      "sha256": "7d2e7562a02752d0d34f1f9399c82ce5b7f82ecb99b293d65efcc3572a1a98d5",
+      "bytes": 2679,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/evaluate_passage_selection.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "07435c2ec89a68c5f56211547b71d9fdd384e6b0",
+      "sha256": "0b2fdba2248ae06793fa57a280f0c042248b9468e93ad191bf29cb9c50b243e2",
+      "bytes": 7020,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/execute_business_candidate_diff_confirmation.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0b57743e56f9ae5a824b1ab8914c17cad7b9e7cf",
+      "sha256": "168f117eae05ec9a16e877bf3abef1c47d69c0913962c91289d9a0688eb4280d",
+      "bytes": 11246,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/execute_business_candidate_diff_remaining.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "2d8a872e367840614da7867305653b3b3622174c",
+      "sha256": "7c38485546f7512d87d7ab84aae500ac2af0f6251e581ac80bfd0c9469ef387e",
+      "bytes": 4235,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/execute_business_diff_responsibility.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "0243d994ab47fcbf6f982535c17d7cc01a1281c3",
+      "sha256": "b9db80aeef7a6fbd2b0f9f9943050496a6d35b3368d42ee23ebf9babf31c7caa",
+      "bytes": 9424,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/execute_business_singleton_scope_contribution.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "da3ae2de899ef4534acd12fe49cb5be9e9f176fd",
+      "sha256": "c044faa5c1e7ecc653fc7993aaeddcaeeda1666e744d8bd38e0420f889997b27",
+      "bytes": 7471,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/patches/hyperclovax_think_eog.patch",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "ea025ffc3eee713f479e7c1b9332445e4e6d32ea",
+      "sha256": "3cd7876161eff927414e5860825c6807715e4bff4fc2003dcc6a8b241b7e9157",
+      "bytes": 1125,
+      "history_group": "present_at_later_range_base"
+    },
+    {
+      "path": "scripts/prepare_business_candidate_diff_confirmation.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "a20b793e280c045f4b63f56fa190296d2f40a75c",
+      "sha256": "ce7f614aa9d7b155279be4f65c6812da77eac13853fccadcc2421ce8ba7277f7",
+      "bytes": 10341,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/prepare_business_candidate_diff_remaining.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "2e52aaa8e46933a056ee95231a5d25987f50ff12",
+      "sha256": "cc909fb9a3c12e7e117137cfdb23075c9a255228baf384413d8b37b71e66b949",
+      "bytes": 5986,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/prepare_business_diff_responsibility.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "06f30be4a194f62701f72810b1db5c8027513ce7",
+      "sha256": "1dfb74371553093c693136a41a06a99ca3331c2a93ae698ea04fd2ffec530a14",
+      "bytes": 9408,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/prepare_business_singleton_scope_contribution.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "1a9b170b9681cff1c9afb0858725dff31dc3800e",
+      "sha256": "b51af69ca632353920dfdbb36a37380a98b6a7d918b8ed76585b9f21d19c0f07",
+      "bytes": 7040,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/probe_business_sentence_probability.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "f27d1c6a359a8c0eeb52f7703c0e00a692018c1f",
+      "sha256": "8a004d8b544aa4c96fba588d65be7b3681e9abc905ab20149f2f4cf1a5b95948",
+      "bytes": 5486,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/run_business_condition_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "1e58cb8f66082a1758ded0871e04985d3f28be0c",
+      "sha256": "6e7bb2204ee2cfd390318d2867fcf667e4f4728ab837ceab29106212a070eace",
+      "bytes": 8714,
+      "history_group": "changed_in_later_32_commits"
+    },
+    {
+      "path": "scripts/run_business_source_limit_contrast.py",
+      "status": "A",
+      "mode": "100644",
+      "git_blob": "f694beccfb2d4fa85d290c6f019e657afc77d348",
+      "sha256": "d40401d764812d6673b9840fe2c69c274b4c74d5e164991b8891df96a42fe717",
+      "bytes": 5021,
+      "history_group": "changed_in_later_32_commits"
+    }
+  ],
+  "exclusions": [
+    {
+      "path": "docs/70_research/company_knowledge/business_evidence_parent_boundary_20261007.md",
+      "source_status": "M",
+      "action": "retain_base_main",
+      "reason": "valid_pinned_links_avoid_product_pr_conflict"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_fact_candidate_responsibilities_20261007.md",
+      "source_status": "M",
+      "action": "retain_base_main",
+      "reason": "valid_pinned_links_avoid_product_pr_conflict"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_operating_scope_20261008.md",
+      "source_status": "M",
+      "action": "retain_base_main",
+      "reason": "valid_pinned_links_avoid_product_pr_conflict"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_product_split_20261009.md",
+      "source_status": "D",
+      "action": "retain_base_main",
+      "reason": "base_main_only_product_document"
+    },
+    {
+      "path": "docs/70_research/company_knowledge/business_scope_boundary_20261009.md",
+      "source_status": "M",
+      "action": "retain_base_main",
+      "reason": "valid_pinned_links_avoid_product_pr_conflict"
+    }
+  ],
+  "preserved_original": {
+    "head": "16fd09f48736404be84a4d279c8cbc2d479c49d3",
+    "dirty_paths": [
+      " M docs/README.md",
+      " M experiments/README.md"
+    ],
+    "readme_sha256": {
+      "docs/README.md": "5a95998908616b6147d27cec27afc45e8c04ee86058fc70eaddebcbcdd5ea34a",
+      "experiments/README.md": "f7bfb739bf6e08eb99743413606c101925685097fede744121708b80a2c54221"
+    }
+  },
+  "validation": {
+    "source_sha256_git_blob_mode_matches": 145,
+    "modified_or_deleted_base_files": 0,
+    "product_code_changed": false,
+    "python_ast_files": 63,
+    "json_parse_files": 36,
+    "static_local_imports_missing": [],
+    "product_modules_statically_present": [
+      "app/generation/model_client.py",
+      "app/knowledge/business_run.py",
+      "app/knowledge/discovery_profile.py",
+      "app/knowledge/discovery_segments.py",
+      "app/knowledge/graph_retrieval.py"
+    ],
+    "product_named_symbols_statically_present": [
+      "ModelClient",
+      "ModelRequest",
+      "exact_evidence",
+      "FrozenIndex"
+    ],
+    "original_relative_markdown_links_checked": 155,
+    "original_relative_markdown_links_missing": [],
+    "absolute_local_artifact_links": [
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_auto_finding_edit_20261011/native_request.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_auto_finding_edit_20261011/native_patch.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_auto_finding_edit_20261011/edit_result.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_actual_20261011/actual/knowledge.db",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/docs/70_research/company_knowledge/business_preservation_actual_20261011.md",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/docs/70_research/company_knowledge/business_single_judgment_20261011.md",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/artifacts/business-conjunction-lifecycle-20261011/final/artifact_manifest.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/artifacts/business-partial-source-scope-20261011/v1/artifact_manifest.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/artifacts/business-historical-inspection-scope-20261011/v1/artifact_manifest.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/source_output_evaluation.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/candidate_review.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/worktrees/business-requirement-answer-flow/Civil-Complaints-System/data/knowledge/evaluations/business_preservation_use_20261011/P1_actual/followup_consumption.json",
+        "exists": true
+      },
+      {
+        "file": "experiments/company_knowledge/automatic_semantic_judgment_ledger.md",
+        "target": "/Users/hyeongi/.codex/artifacts/business-preservation-use-20261011/P2-first-scope-v1/manifest.json",
+        "exists": true
+      }
+    ],
+    "pytest": {
+      "prefix": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. /Users/hyeongi/projects/Civil-Complaints-System/.venv/bin/python -m pytest -q -p no:cacheprovider",
+      "files": [
+        "app/tests/unit/test_business_clearcheck_diagnostic.py",
+        "app/tests/unit/test_business_korean_judge_diagnostic.py",
+        "app/tests/unit/test_business_label_selection.py",
+        "app/tests/unit/test_business_natlogic_diagnostic.py",
+        "app/tests/unit/test_business_permutation_selection.py",
+        "app/tests/unit/test_business_qa_diagnostic.py",
+        "app/tests/unit/test_business_scope_tree_diagnostic.py"
+      ],
+      "result": "37 passed in 0.09s",
+      "scope": "Model-free synthetic output/address/aggregation/Boolean contracts only"
+    },
+    "staged_diff_check": "passed",
+    "new_local_or_external_model_calls": 0,
+    "new_quality_experiments": 0,
+    "all_research_runners_executed": false,
+    "full_reproduction_or_product_runtime_compatibility_verified": false
+  },
+  "interpretation": [
+    "Historical failed JSON, raw responses, criteria and gates are unchanged.",
+    "Development improvements of A/B1 are retained separately from default-path adoption.",
+    "Already-8/8 NIE comparisons measure necessity/efficiency/format/regression and do not rule out improvement on hard errors.",
+    "Small-sample 100 percent is not a universal adoption rule.",
+    "Local absolute artifacts and frozen runtime/model/data dependencies are not a portable clone-only experiment package."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "issue": 657,
+  "status": "fixed_5_plus_2_research_complete_product_not_adopted_original_B1_candidate_retained",
+  "A_cumulative": 7,
+  "new_A_comparisons": 1,
+  "summary": {
+    "raw_readable_correct": 11,
+    "label_denominator": 13,
+    "improved_labels": 0,
+    "regressed_labels": 2,
+    "same_labels": 11,
+    "normal_readable_preserved": 7,
+    "normal_denominator": 7,
+    "new_completed_judgments": 12,
+    "new_common_individual_contracts": 11,
+    "new_json_complete_requests": 4,
+    "new_common_whole_judgments": 3,
+    "new_strict_numeric_whole_judgments": 2,
+    "request_denominator": 5,
+    "execution_incomplete_requests": 1,
+    "judgments_inside_incomplete_request": 3,
+    "partial_reason_improvement": 1,
+    "completed_reason_regressions": 2,
+    "unfinished_reason_with_wrong_prefix": 1,
+    "whole_incomplete_not_repaired": true
+  },
+  "cost_total": {
+    "baseline_input": 19719,
+    "baseline_output": 3551,
+    "baseline_model_s": 303.208484,
+    "new_input": 18789,
+    "new_output": 3648,
+    "new_model_s": 322.429428,
+    "new_request_elapsed_s": 322.77430254174396
+  },
+  "reused_responses": 7,
+  "retry_calls": 0,
+  "local_audit_path": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_diff_responsibility_20261011/source_output_audit.json",
+  "audit_sha256": "9dc529d5383a51bbe63f9594d550427ce056b949f8d54ffcbed38bdc88d147e8",
+  "runtime_resource_return_sha256": "c13a000e2752ebf1c61bc77c94b55bc72622882b662502e13a8ed18f61e01c9c",
+  "new_actual_finding_or_edit": 0,
+  "SC_confirmation_new_calls": 2,
+  "SC_prepared_path": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_diff_remaining_20261011",
+  "source_output_review": "research AI + coordinator direct source/output comparison; no grading model calls",
+  "files": {
+    "docs/70_research/company_knowledge/business_diff_responsibility_20261011.md": "8ee25390e04bd18209c50ddcdc643290d20dce0320be47f530bad9531b5af5e0",
+    "scripts/prepare_business_diff_responsibility.py": "1dfb74371553093c693136a41a06a99ca3331c2a93ae698ea04fd2ffec530a14",
+    "scripts/execute_business_diff_responsibility.py": "b9db80aeef7a6fbd2b0f9f9943050496a6d35b3368d42ee23ebf9babf31c7caa",
+    "scripts/prepare_business_candidate_diff_remaining.py": "cc909fb9a3c12e7e117137cfdb23075c9a255228baf384413d8b37b71e66b949",
+    "scripts/execute_business_candidate_diff_remaining.py": "7c38485546f7512d87d7ab84aae500ac2af0f6251e581ac80bfd0c9469ef387e"
+  },
+  "first_comparison_native_calls": 5,
+  "new_model_calls": 7,
+  "SC_result_summary": {
+    "label_correct": 2,
+    "label_denominator": 4,
+    "before_U_C_corrected": 0,
+    "before_U_C_failed": 2,
+    "after_normal_preserved": 2,
+    "whole_original_contract_pass": 1,
+    "request_denominator": 2,
+    "individual_original_row_contract_pass": 3,
+    "individual_row_denominator": 4
+  },
+  "SC_cost_total": {
+    "baseline_input": 6466,
+    "baseline_output": 842,
+    "baseline_model_s": 80.59394,
+    "new_input": 7534,
+    "new_output": 948,
+    "new_model_s": 93.30325099999999,
+    "new_elapsed_s": 93.56947879109066
+  },
+  "SC_audit_sha256": "34845131e93d986e4dbcf7dff1e1fe4a6dcd3d49cd9511de64431b41ffdb1e20",
+  "new_native_cost_only": {
+    "input_tokens": 26323,
+    "output_tokens": 4596,
+    "model_s": 415.732679
+  },
+  "artifact_destination": "/Users/hyeongi/.codex/artifacts/business-diff-responsibility-20261011/final"
+}

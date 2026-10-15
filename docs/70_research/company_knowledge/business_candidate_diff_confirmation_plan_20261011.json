@@ -1,0 +1,183 @@
+{
+  "status": "prepared_only",
+  "native_model_calls": 0,
+  "model_loads": 0,
+  "new_A_comparisons": 0,
+  "A_cumulative_completed": 6,
+  "issue_655": "OPEN; no closure during pending confirmation",
+  "source_url": "https://www.nie.re.kr/nie/main/contents.do?menuNo=200212",
+  "input_version": "NIE candidates v2 / union-string-path diff v2 / technical transport v1",
+  "evaluation_version": "nie-v2-same-technical-parser-baseline-diff-v1",
+  "paths": {
+    "prepared": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_diff_confirmation_20261011",
+    "archive": "/Users/hyeongi/.codex/artifacts/business-candidate-diff-confirmation-20261011/prepared",
+    "inputs": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_diff_confirmation_20261011/inputs.json",
+    "criteria": "/Users/hyeongi/.codex/worktrees/business-semantic-research/Civil-Complaints-System/data/knowledge/evaluations/business_candidate_diff_confirmation_20261011/criteria.json"
+  },
+  "source": {
+    "chars": 5033,
+    "blocks": 40,
+    "parents": 8,
+    "table_merge_cells": 9,
+    "html_sha256": "7edeb555a1f8009cee22ba2830bbc30b9c7bfc7b51a17e4d9edcfb6b8bd050b8",
+    "source_json_sha256": "f176c2a9f20bc61028eee0e5407bb65a88dcd2abdf188e871b96d318a470d2c8",
+    "source_full_text_sha256": "5def13c233ed729abee5960d92a66fbbacb1e94dee85bf4fc4cf7369b895cf10"
+  },
+  "calls": {
+    "planned_new": 6,
+    "baseline": 3,
+    "diff": 3,
+    "reused": 0,
+    "unique_candidates": 8,
+    "per_condition_judgments": 8,
+    "all_occurrences": 16
+  },
+  "gold_counts": {
+    "S": 4,
+    "U": 2,
+    "C": 2,
+    "included": 8,
+    "undetermined": 0
+  },
+  "criteria": {
+    "product_model_calls": 0,
+    "execution_authorized": false,
+    "maximum_new_calls": 6,
+    "reused_responses": 0,
+    "groups": [
+      [
+        "normal_detail",
+        [
+          "NIE-C01",
+          "NIE-C08"
+        ]
+      ],
+      [
+        "permission_place",
+        [
+          "NIE-C02",
+          "NIE-C03",
+          "NIE-C04"
+        ]
+      ],
+      [
+        "equipment_scope",
+        [
+          "NIE-C05",
+          "NIE-C06",
+          "NIE-C07"
+        ]
+      ]
+    ],
+    "unique_candidates": 8,
+    "judgment_occurrences_per_condition": 8,
+    "baseline_and_diff_occurrences": 16,
+    "normal_unique_candidates": 4,
+    "error_unique_candidates": 4,
+    "all_normal_claims_preserved": true,
+    "gate": "Diff: all 8 labels, all four normals, U/C/gaps, differences, exact locations/evidence, no added completeness/exemption/prohibition and new technical output contract pass. Compare all baseline results separately; do not change gold or retry.",
+    "expected": {
+      "normal_detail_baseline": {
+        "X": "supported",
+        "Y": "supported"
+      },
+      "permission_place_baseline": {
+        "X": "supported",
+        "Y": "unsupported",
+        "Z": "contradicted"
+      },
+      "equipment_scope_baseline": {
+        "X": "supported",
+        "Y": "contradicted",
+        "Z": "unsupported"
+      },
+      "normal_detail_diff": {
+        "X": "supported",
+        "Y": "supported"
+      },
+      "permission_place_diff": {
+        "X": "supported",
+        "Y": "unsupported",
+        "Z": "contradicted"
+      },
+      "equipment_scope_diff": {
+        "X": "supported",
+        "Y": "contradicted",
+        "Z": "unsupported"
+      }
+    },
+    "technical_contract": "Identical fixed literal aliases and uniquely input-verified typed empty spans for both baseline and diff; legacy contract failures also recorded.",
+    "parser": "check_business_candidate_diff_contract.technical_view",
+    "new_original_B1_success": false,
+    "original_B1_gate_pass": false,
+    "candidate_revision": "Only C08 changed before any product model call for hypothesis fit; v1 source/candidates/gold/blind judgments preserved.",
+    "string_path_extension": "Unequal Entity lengths preserved. Missing versus empty path explicitly distinguished; no source interpretation.",
+    "source_full_text_chars": 5033,
+    "source_blocks": 40,
+    "source_parents": 8,
+    "source_address_scope": "Archived extracted source normalized-text spans, not an existing company DB parse or source version.",
+    "token_runtime_preflight": "Pending resource handoff; require complete input plus output2048 below ctx8192. No source truncation to pass.",
+    "limitations": [
+      "Same GPT-6 Astra in separate fresh author/reviewer contexts, not human validation or different-model verification.",
+      "Bounded saved-path absence before acquisition is not all-chat/deleted/pretraining non-exposure.",
+      "No product model output grading by author/reviewer. No local/native load or execution during preparation."
+    ]
+  },
+  "parser_sha256": "39716eab8d0b9281891f473325da99e0350c1c209eefa38cc3a165b8c0712ed6",
+  "diff_sha256": "8331a758b83a09f0f2c71bea28ef6ad86ab7e9d75dff084b5a5ee8b50dbf7185",
+  "original_B1": {
+    "gate_pass": false,
+    "readable_labels": "7/10→10/10",
+    "strict_contract": "2/4",
+    "reason_failure": "condition.Y retained"
+  },
+  "offline_validation": {
+    "source_addresses": 40,
+    "diff_groups": 3,
+    "saved_responses": 8,
+    "rejected_invalid_contracts": 4,
+    "no_semantic_result": true
+  },
+  "agent_sessions": {
+    "author": {
+      "id": "01a12947-fff0-7931-a0bd-6f83d91a701b",
+      "actual_models": [
+        "gpt-6-astra"
+      ],
+      "effort": "xhigh",
+      "latest_usage": {
+        "input_tokens": 1314389,
+        "cached_input_tokens": 1249920,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18960,
+        "reasoning_output_tokens": 5303,
+        "total_tokens": 1333349
+      },
+      "latest_usage_timestamp": "2026-10-11T04:58:07.280Z"
+    },
+    "reviewer": {
+      "id": "01a1294f-1052-7652-932b-0300f7ff740c",
+      "actual_models": [
+        "gpt-6-astra"
+      ],
+      "effort": "xhigh",
+      "latest_usage": {
+        "input_tokens": 797746,
+        "cached_input_tokens": 749952,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 16064,
+        "reasoning_output_tokens": 2082,
+        "total_tokens": 813810
+      },
+      "latest_usage_timestamp": "2026-10-11T05:03:46.228Z"
+    }
+  },
+  "recorded_at_utc": "2026-10-11T05:13:16.210066+00:00",
+  "readme_preservation": {
+    "docs/README.md": "5a95998908616b6147d27cec27afc45e8c04ee86058fc70eaddebcbcdd5ea34a",
+    "experiments/README.md": "f7bfb739bf6e08eb99743413606c101925685097fede744121708b80a2c54221"
+  },
+  "cost_scope": "Astra cumulative session API counters include repeated and cached context. Native inference cost is zero; no monetary cost inferred.",
+  "token_preflight": "Await product resource handoff; exact tokenizer input+2048 must fit ctx8192. No truncation. If ctx changes, fix and disclose identical baseline/diff settings before first call.",
+  "original_B1_driver_time_correction": "Original driver_wall_s was captured on entry to finally, before shutdown. Historical value217.881268042s excludes subsequent shutdown tail; B2 wall includes shutdown."
+}
