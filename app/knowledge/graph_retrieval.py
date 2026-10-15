@@ -282,6 +282,18 @@ def rank(graph, edges, passages, edge_scores, passage_scores, selected_ids, limi
     return sorted(scores.items(), key=lambda x: (-x[1], x[0]))[:limit], node_scores
 
 
+def fuse_rankings(rankings, run_id, query, limit):
+    from app.evaluation.datasets import EvalQuery
+    from app.retrieval.pipeline.base import RetrievedDoc, StageInput, StageOutput
+    from app.retrieval.pipeline.stages.rrf_fusion import RRFFusionStage
+    rq = EvalQuery(qid=run_id, text=query)
+    stages = {name: StageOutput(name, rq, [RetrievedDoc(rq.qid, pid, score, i, name)
+        for i, (pid, score) in enumerate(rows, 1)]) for name, rows in rankings.items()}
+    fused = asyncio.run(RRFFusionStage(source_stages=list(stages), top_k=limit, k=60).run(
+        StageInput(rq, context=dict(stage_outputs=stages))))
+    return [(d.docid, d.score) for d in fused.candidates]
+
+
 def retrieve(service, run, snapshot, request):
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant)
@@ -297,7 +309,9 @@ def retrieve(service, run, snapshot, request):
     run['graph_retrieval'] = trace
     if request.retrieval == 'hybrid':
         trace['contract'] = 'hybrid-rrf-source-passages-v1'
-    if request.retrieval != 'hipporag2':
+    elif request.retrieval == 'hybrid_graph':
+        trace['contract'] = 'hybrid-graph-rrf-source-passages-v1'
+    if request.retrieval not in {'hipporag2', 'hybrid_graph'}:
         edges = []
     query = request.question + '\n' + '\n'.join(request.choices)
     search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'])
@@ -328,7 +342,7 @@ def retrieve(service, run, snapshot, request):
     passage_scores = normalize(passage_vectors @ q)
     edge_scores = normalize(edge_vectors @ q) if edges else np.array([])
     selected = []
-    if request.retrieval == 'hipporag2' and edges:
+    if request.retrieval in {'hipporag2', 'hybrid_graph'} and edges:
         indices = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))[:30]
         candidates = [dict(id=edges[i]['id'], triple=edges[i]['text'], status=edges[i]['status']) for i in indices]
         aliases = {c['id']: f'e{i+1}' for i, c in enumerate(candidates)}
@@ -345,23 +359,29 @@ def retrieve(service, run, snapshot, request):
         trace['selected_edge_ids'] = selected
     ranked, seeds = rank(graph, edges, passages, edge_scores, passage_scores, set(selected), len(passages))
     trace['seed_node_scores'] = seeds
-    if request.retrieval == 'hybrid':
+    if request.retrieval in {'hybrid', 'hybrid_graph'}:
         from .discovery_profile import FrozenIndex
-        from app.evaluation.datasets import EvalQuery
-        from app.retrieval.pipeline.base import RetrievedDoc, StageInput, StageOutput
-        from app.retrieval.pipeline.stages.rrf_fusion import RRFFusionStage
         index = FrozenIndex([dict(id=pid, file_id=p['evidence']['source_version_id'],
             text=search_texts[pid]) for pid, p in passages.items()], preserve_numbers=True)
         lexical = index.rank(query, set(passages))
-        rq = EvalQuery(qid=run['id'], text=query)
-        rankings = dict(bm25=[(h['block_id'], h['score']) for h in lexical], dense=ranked)
-        stages = {name: StageOutput(name, rq, [RetrievedDoc(rq.qid, pid, score, i, name)
-            for i, (pid, score) in enumerate(rows, 1)]) for name, rows in rankings.items()}
-        fused = asyncio.run(RRFFusionStage(source_stages=list(stages), top_k=len(passages), k=60).run(
-            StageInput(rq, context=dict(stage_outputs=stages))))
+        dense = ranked
+        if seeds:
+            dense, _ = rank(graph, edges, passages, edge_scores, passage_scores, set(), len(passages))
+        hybrid = fuse_rankings(dict(bm25=[(h['block_id'], h['score']) for h in lexical], dense=dense),
+                               run['id'], query, len(passages))
         trace['hybrid'] = dict(rrf_k=60, bm25_ranking=lexical,
-                              dense_ranking=[dict(block_id=p, score=s) for p, s in ranked])
-        ranked = [(d.docid, d.score) for d in fused.candidates]
+                              dense_ranking=[dict(block_id=p, score=s) for p, s in dense])
+        if request.retrieval == 'hybrid_graph':
+            trace['hybrid_graph'] = dict(rrf_k=60, graph_used=bool(seeds),
+                hybrid_ranking=[dict(block_id=p, score=s) for p, s in hybrid],
+                graph_ranking=[dict(block_id=p, score=s) for p, s in ranked] if seeds else [])
+            if seeds:
+                ranked = fuse_rankings(dict(hybrid=hybrid, graph=ranked), run['id'], query, len(passages))
+            else:
+                ranked = hybrid  # An empty graph selection must not give dense a second vote.
+                trace['fallback'] = 'hybrid_passages'
+        else:
+            ranked = hybrid
     elif not seeds:
         trace['fallback'] = 'dense_passages' if request.retrieval == 'hipporag2' else 'dense_baseline'
     trace['ranked_passages'] = [dict(id=p, score=s, evidence=passages[p]['evidence'],

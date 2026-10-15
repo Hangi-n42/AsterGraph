@@ -29,7 +29,7 @@ def test_source_pool_is_fixed_before_extraction_and_covers_partial_quotes():
     assert s['claims'][0]['evidence'][0]['quote'] == '원문 0'
 
 
-@pytest.mark.parametrize('retrieval', ['hybrid', 'hipporag2'])
+@pytest.mark.parametrize('retrieval', ['hybrid', 'hipporag2', 'hybrid_graph'])
 def test_source_reader_shared_context_budget_and_no_forced_gold(tmp_path, monkeypatch, retrieval):
     s = snapshot()
     s['blocks'][0]['text'] = '신청 기간 원문 0'
@@ -58,10 +58,10 @@ def test_source_reader_shared_context_budget_and_no_forced_gold(tmp_path, monkey
         assert stages == (['business_qa'] if retrieval == 'hybrid' else ['graph_retrieval_filter', 'business_qa'])
         run = service.run(result['run_id'])
         assert run['source_context_budget']['within_limit']
-        if retrieval == 'hybrid':
+        if retrieval in {'hybrid', 'hybrid_graph'}:
             assert run['graph_retrieval']['hybrid']['rrf_k'] == 60
             assert run['graph_retrieval']['hybrid']['bm25_ranking']
-            assert not run['graph_retrieval']['selected_edge_ids']
+            assert bool(run['graph_retrieval']['selected_edge_ids']) == (retrieval == 'hybrid_graph')
         stages.clear()
         request.source_context_tokens = 1
         result = business_use.query(service, request)

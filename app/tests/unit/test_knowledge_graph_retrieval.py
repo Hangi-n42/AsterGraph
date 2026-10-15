@@ -178,7 +178,7 @@ def test_qa_source_aliases_restore_citations_and_preserve_source_spans(tmp_path,
 
 
 @pytest.mark.parametrize('retrieval,variant', [('bm25', 'full'), ('dense', 'entity_event'),
-    ('hipporag2', 'entity_event'), ('hipporag2', 'full')])
+    ('hipporag2', 'entity_event'), ('hipporag2', 'full'), ('hybrid_graph', 'full')])
 def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, monkeypatch, retrieval, variant):
     s = snapshot()
     original = dict(id='origin', kind='business', status='partial', units=[], model_identity={},

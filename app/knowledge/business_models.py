@@ -556,8 +556,9 @@ class BusinessQuery(BaseModel):
     source_run_id: str | None = None
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
-    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2'] = 'hipporag2'
+    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
+    source_format: Literal['structured', 'flat'] = 'structured'
     graph_variant: Literal['entity', 'entity_event', 'full'] = 'full'
     answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items'] = 'synthesis'
     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
@@ -568,7 +569,7 @@ class BusinessQuery(BaseModel):
             raise ValueError('snapshot_id 또는 source_run_id 중 하나를 선택하세요.')
         if self.source_run_id and self.requirement_ids:
             raise ValueError('원문 QA는 요구 충족 판정이 아닙니다. 요구별 승인 지식 활용에는 snapshot을 선택하세요.')
-        if (self.retrieval == 'hybrid' or self.source_context_tokens is not None) and not self.source_run_id:
+        if (self.retrieval in {'hybrid', 'hybrid_graph'} or self.source_context_tokens is not None) and not self.source_run_id:
             raise ValueError('Hybrid와 원문 문맥 상한은 source_run_id 원문 QA에서 지원합니다.')
         if self.answer_mode in {'items', 'reviewed_items'} and not self.answer_items:
             raise ValueError('항목별 답변에는 공개 요청에서 고정한 answer_items가 필요합니다.')
