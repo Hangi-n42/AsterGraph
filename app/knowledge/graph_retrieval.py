@@ -129,10 +129,14 @@ def build(snapshot, variant):
                 pid = autoschema.identifier('passage', ref)
                 passages[pid] = dict(id=pid, text=text, evidence=ref, claim_ids=[])
                 graph.add_node(pid, kind='passage', label=text)
+    passages_by_block = {}
+    for passage in passages.values():
+        loc = passage['evidence']
+        passages_by_block.setdefault((loc['source_version_id'], loc['block_id']), []).append(passage)
     for claim in claims.values():
         for ref in claim.get('evidence', []):
             if snapshot.get('include_unlinked_blocks'):
-                for passage in passages.values():
+                for passage in passages_by_block.get((ref.get('source_version_id'), ref.get('block_id')), []):
                     loc = passage['evidence']
                     if (all(loc[k] == ref.get(k) for k in ('source_version_id', 'block_id'))
                             and loc.get('parse_run_id') == ref.get('parse_run_id', loc.get('parse_run_id'))
@@ -147,11 +151,20 @@ def build(snapshot, variant):
             if claim['id'] not in row['claim_ids']:
                 row['claim_ids'].append(claim['id'])
             graph.add_node(pid, kind='passage', label=ref['quote'])
+    passage_order = {pid: index for index, pid in enumerate(passages)}
+    passages_by_claim = {}
+    for pid, passage in passages.items():
+        for cid in passage['claim_ids']:
+            passages_by_claim.setdefault(cid, []).append(pid)
     for node in extracted['nodes']:
         if node['id'] not in graph:
             continue
-        for pid, passage in passages.items():
-            linked = set(node['claim_ids']).intersection(passage['claim_ids'])
+        node_claims = set(node['claim_ids'])
+        candidates = {pid for cid in node_claims for pid in passages_by_claim.get(cid, [])}
+        # Restore the original passage order after combining claims' candidate lists.
+        for pid in sorted(candidates, key=passage_order.__getitem__):
+            passage = passages[pid]
+            linked = node_claims.intersection(passage['claim_ids'])
             if linked and node.get('construction_method') in {'verified_html_classification_row_v1',business_html_debt_rows.PROFILE}:
                 loc = passage['evidence']
                 linked = linked if any(all(ref.get(k) == loc.get(k) for k in
