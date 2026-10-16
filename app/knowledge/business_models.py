@@ -39,6 +39,7 @@ class BusinessRunRequest(BaseModel):
     selection_reason: str = ''
     neighbor_mode: Literal['structured', 'plain'] = 'plain'
     concept_work_contract: Literal['legacy', 'exact-original-concept-work-v1'] | None = None
+    concept_source_context: Literal['whole', 'verified_table_rows_v1'] | None = None
     model: str | None = None
     review_model: str | None = None
     context_tokens: int = Field(default=49152, ge=4096)
@@ -555,6 +556,7 @@ class BusinessQuery(BaseModel):
     choices: list[str] = Field(default_factory=list)
     snapshot_id: str | None = None
     source_run_id: str | None = None
+    concept_run_id: str | None = Field(default=None, min_length=1)
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
@@ -566,6 +568,8 @@ class BusinessQuery(BaseModel):
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.concept_run_id and not self.source_run_id:
+            raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):
             raise ValueError('snapshot_id 또는 source_run_id 중 하나를 선택하세요.')
         if self.source_run_id and self.requirement_ids:
@@ -596,6 +600,7 @@ class HtmlLiteralRowsRequest(BaseModel):
 
 
 class ConceptRunRequest(BaseModel):
+    concept_source_context: Literal['whole', 'verified_table_rows_v1'] | None = None
     parent_run_id: str
     donor_run_id: str | None = None
     target_ids: list[str] = Field(min_length=1)

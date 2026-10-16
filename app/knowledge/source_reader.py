@@ -160,10 +160,45 @@ FORMAT = ('source_document.tree는 확인된 원문 DOM 포함 관계이며 각 
     'citations는 context_rows에 해당하는 기존 context id만 쓴다. ')
 
 
-def for_service(service, body):
-    """Use the recorded raw version and parse lineage, keeping unknown records intact."""
+def load_html(service, db, version_id, parse_id):
+    """Common immutable HTML/complete-parse lookup; performs no model request."""
     from hashlib import sha256
     from bs4 import BeautifulSoup
+    soup = None; blocks = []; reason = 'unrecorded_version_or_parse'
+    if version_id and parse_id:
+        try:
+            version = service.repository.get(db, 'versions', version_id)
+            parse = service.repository.get(db, 'runs', parse_id)
+        except KeyError:
+            reason = 'unavailable_version_or_parse'
+        else:
+            if version['format'] == 'html' and parse['kind'] == 'parse' and version_id in parse['input_version_ids']:
+                path = service.raw_path(version)
+                try:
+                    raw = path.read_bytes()
+                except OSError:
+                    reason = 'unavailable_raw_HTML'
+                else:
+                    if sha256(raw).hexdigest() != version['sha256']:
+                        reason = 'raw_version_hash_mismatch'
+                    else:
+                        try:
+                            soup = BeautifulSoup(raw.decode('utf-8-sig'), 'html.parser')
+                        except UnicodeDecodeError:
+                            reason = 'unsupported_HTML_encoding'
+                        else:
+                            units = service.parse_units(db, parse, version_id)
+                            complete = bool(units) and all(u['status'] == 'succeeded' for u, _ in units)
+                            blocks = service.parse_blocks(db, parse_id, version_id) if complete else []
+                            reason = ('verified_raw_HTML_and_complete_parse_lineage' if complete else
+                                'verified_raw_HTML_incomplete_parse_no_heading_ranges')
+            else:
+                reason = 'unsupported_format_or_parse_lineage'
+    return soup, blocks, reason
+
+
+def for_service(service, body):
+    """Use the recorded raw version and parse lineage, keeping unknown records intact."""
     context = body['context']; source_context = body['source_context']
     refs = {r['id']: r.get('source_reference', {}) for r in context}
     def key(row):
@@ -175,36 +210,7 @@ def for_service(service, body):
     loaded = {}; provenance = []
     with service.repository.connect() as db:
         for version_id, parse_id in keys:
-            soup = None; blocks = []; reason = 'unrecorded_version_or_parse'
-            if version_id and parse_id:
-                try:
-                    version = service.repository.get(db, 'versions', version_id)
-                    parse = service.repository.get(db, 'runs', parse_id)
-                except KeyError:
-                    reason = 'unavailable_version_or_parse'
-                else:
-                    if version['format'] == 'html' and parse['kind'] == 'parse' and version_id in parse['input_version_ids']:
-                        path = service.raw_path(version)
-                        try:
-                            raw = path.read_bytes()
-                        except OSError:
-                            reason = 'unavailable_raw_HTML'
-                        else:
-                            if sha256(raw).hexdigest() != version['sha256']:
-                                reason = 'raw_version_hash_mismatch'
-                            else:
-                                try:
-                                    soup = BeautifulSoup(raw.decode('utf-8-sig'), 'html.parser')
-                                except UnicodeDecodeError:
-                                    reason = 'unsupported_HTML_encoding'
-                                else:
-                                    units = service.parse_units(db, parse, version_id)
-                                    complete = bool(units) and all(u['status'] == 'succeeded' for u, _ in units)
-                                    blocks = service.parse_blocks(db, parse_id, version_id) if complete else []
-                                    reason = ('verified_raw_HTML_and_complete_parse_lineage' if complete else
-                                        'verified_raw_HTML_incomplete_parse_no_heading_ranges')
-                    else:
-                        reason = 'unsupported_format_or_parse_lineage'
+            soup, blocks, reason = load_html(service, db, version_id, parse_id)
             loaded[version_id, parse_id] = soup, blocks
             provenance.append(dict(source_version_id=version_id, parse_run_id=parse_id, status=reason))
     if len(keys) == 1:

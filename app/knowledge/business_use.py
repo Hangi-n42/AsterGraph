@@ -272,6 +272,73 @@ class SourceAnswer(Answer):
         return values
 
 
+def concept_read_view(service, db, parent, child_id):
+    """Read one explicit completed child; never mutate source, review, or snapshot state."""
+    from . import autoschema, concept_work
+    child = service.repository.get(db, 'runs', child_id)
+    fingerprint = autoschema.identifier('graph', parent['graph'])
+    if (child.get('kind') != 'business_concept' or child.get('status') != 'succeeded'
+            or child.get('parent_run_id') != parent['id'] or child.get('input_version_ids') != parent['input_version_ids']
+            or child.get('graph_fingerprint') != fingerprint
+            or autoschema.identifier('graph', autoschema.graph(parent['claims'])) != fingerprint):
+        raise ValueError('동일 부모·원문·현재 그래프의 성공 종료 개념 실행을 선택하세요.')
+    targets = {t['id']: t for t in autoschema.concept_targets(parent['graph'])}
+    blocks = {(b['source_version_id'], b['id']): b for b in parent['blocks']}
+    units = {u['id']: u for u in child.get('units', [])}
+    selected = set()
+    concepts = child.get('concepts', [])
+    if not concepts or len(concepts) != len(child.get('concept_bindings', [])):
+        raise ValueError('완결한 대상별 개념 binding이 필요합니다.')
+    for concept in concepts:
+        target = concept.get('target', {})
+        tid = target.get('id')
+        bindings = [b for b in child['concept_bindings'] if b.get('concept_id') == concept.get('id')]
+        unit = units.get(concept.get('request_id'), {})
+        if (tid in selected or target != targets.get(tid) or len(bindings) != 1
+                or concept.get('status') != 'unreviewed' or concept.get('relation') != 'has_concept'
+                or concept.get('approved_is_a') is not False or concept.get('discarded') or concept.get('superseded_by')
+                or not isinstance(concept.get('concepts'), list) or not concept['concepts']
+                or not all(isinstance(t, str) and t.strip() for t in concept['concepts'])
+                or not concept_work.complete(unit) or unit.get('stage') != 'concept_' + target.get('kind', '')
+                or (unit.get('concept_work_input') or {}).get('version') != concept_work.VERSION):
+            raise ValueError('현재 대상에 대응하는 완결·미검증 단독 개념 결과가 필요합니다.')
+        binding = bindings[0]
+        selection = concept.get('selection') or {}
+        refs = selection.get('source_reference_map') or {}
+        deps = selection.get('source_dependencies') or []
+        if (binding.get('target_id') != tid or binding.get('target') != target
+                or binding.get('request_id') != unit['id'] or binding.get('work_id') != concept.get('work_id')
+                or binding.get('work_id') not in child.get('concept_work', {})
+                or unit.get('concept_work_id') != binding.get('work_id')
+                or binding.get('status') != 'unreviewed' or binding.get('relation') != 'has_concept'
+                or binding.get('approved_is_a') is not False or binding.get('source_reference_map') != refs
+                or unit.get('reference_map') != refs or len(refs) != len(deps)
+                or {d.get('alias') for d in deps} != set(refs)):
+            raise ValueError('개념 결과와 대상·원문 binding이 일치하지 않습니다.')
+        work = child['concept_work'][binding['work_id']]
+        if (work.get('status') != 'complete' or work.get('input') != unit.get('concept_work_input')
+                or work.get('fingerprint') != concept_work.digest(work.get('input'))):
+            raise ValueError('완결된 개념 work와 원시 요청 연결이 일치하지 않습니다.')
+        for dep in deps:
+            ref = refs[dep['alias']]
+            block = blocks.get((ref.get('source_version_id'), ref.get('block_id')))
+            if block is None:
+                raise ValueError('개념의 원문 의존 구간이 현재 부모 범위에 없습니다.')
+            span = ref.get('span') or [0, len(block['text'])]
+            if (not isinstance(span, list) or len(span) != 2 or not all(isinstance(v, int) for v in span)
+                    or not 0 <= span[0] < span[1] <= len(block['text'])
+                    or any(dep.get(k) != ref.get(k) for k in ('source_version_id','block_id','span'))
+                    or dep.get('parse_run_id') != block.get('parse_run_id') or dep.get('locator') != block.get('locator')
+                    or dep.get('text_sha256') != concept_work.digest(block['text'][span[0]:span[1]])):
+                raise ValueError('개념의 원문 파싱·구간·본문 의존성이 변경됐습니다.')
+        selected.add(tid)
+    view = [deepcopy(c) for c in parent['concepts'] if c['target']['id'] not in selected] + deepcopy(concepts)
+    provenance = dict(contract='explicit-child-concept-read-view-v1', concept_run_id=child_id,
+        source_run_id=parent['id'], graph_fingerprint=fingerprint, target_ids=sorted(selected),
+        states='unreviewed; has_concept; approved_is_a=false', parent_and_snapshot_persisted=False)
+    return view, provenance
+
+
 def concept_hints(snapshot):
     """Candidate concepts help retrieval only; they never become answer evidence."""
     hints = {c['id']: [] for c in snapshot['claims']}
@@ -840,6 +907,7 @@ def query(service, request, *, context_mode='graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
     source_reader = bool(request.source_run_id)
+    concept_view = None
     structured_reader = False
     if context_mode not in {'graph', 'document'}:
         raise ValueError('Unknown query context')
@@ -853,11 +921,14 @@ def query(service, request, *, context_mode='graph'):
             original = service.repository.get(db, 'runs', request.source_run_id)
             if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'review_ready', 'failed', 'cancelled'}:
                 raise ValueError('종료된 업무 지식 추출 실행을 선택하세요.')
+            concepts = original['concepts']
+            if request.concept_run_id:
+                concepts, concept_view = concept_read_view(service, db, original, request.concept_run_id)
             # A transient read view, never an approval or a stored snapshot.
             snapshot = dict(id='run:' + original['id'], kind='source_graph', run_id=original['id'],
                 source_versions=original['sources'], blocks=original['blocks'],
                 claims=[c for c in original['claims'] if not c.get('superseded_by') and not c.get('extraction_error')],
-                concepts=original['concepts'], requirements=[], assessments={}, include_unlinked_blocks=True)
+                concepts=concepts, requirements=[], assessments={}, include_unlinked_blocks=True)
         else:
             snapshot = service.repository.get(db, 'snapshots', request.snapshot_id)
         if snapshot.get('kind') != 'source_graph':
@@ -918,6 +989,8 @@ def query(service, request, *, context_mode='graph'):
                    answer_basis='source_passages_not_ontology_approval' if source_reader else 'reviewed_claims',
                    source_extraction_status=original['status'] if source_reader else None,
                    answer_contract=ANSWER_CONTRACT, required_context_ids=sorted(required_ids))
+        if concept_view is not None:
+            run['concept_view'] = concept_view
         if request.answer_mode == 'reviewed_items':
             run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, requirement_ids)
         run['execution_boundary'] = dict(
@@ -1166,4 +1239,5 @@ def query(service, request, *, context_mode='graph'):
     return dict(run_id=run['id'], status=status, answer=output, retrieval=hits,
                 context_mode=context_mode, snapshot_id=None if source_reader else snapshot['id'],
                 source_run_id=request.source_run_id, answer_basis=run['answer_basis'], limitations=limitations,
-                execution_boundary=run['execution_boundary'])
+                execution_boundary=run['execution_boundary'],
+                **({'concept_run_id': request.concept_run_id} if concept_view is not None else {}))

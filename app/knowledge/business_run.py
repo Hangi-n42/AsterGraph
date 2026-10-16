@@ -173,12 +173,14 @@ def start(service, request):
                 if parent['input_version_ids'] != list(sources) or parent['blocks'] != blocks:
                     raise ValueError('저장 후보 재검토는 같은 원문 버전·파싱 범위에서만 가능합니다.')
                 chunks = deepcopy(parent['chunks'])
+        options = request.model_dump()
+        options['concept_source_context'] = request.concept_source_context or (parent['recipe']['options'].get('concept_source_context') if parent else None) or 'whole'
         run = dict(id=uuid4().hex, kind='business', status='queued', units=[], analysis_units=[],
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
                    requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
                        parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
                    review_contract=business_review.CONTRACT, generation=config,
-                   models=models, options=request.model_dump()), model_identity=identity,
+                   models=models, options=options), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
                    parent_run_id=parent['id'] if parent else None,
                    reusable_units=deepcopy(parent['units']) if parent else [],
@@ -1580,7 +1582,7 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         run['conceptualization_scope'] = 'deferred_for_capacity_recovery' if defer_concepts else 'stored_pool_preserved' if run.get('stored_pool') and not projected else (
             'all' if options.get('conceptualize', True) else 'deferred_to_selected_targets')
         targets = autoschema.concept_targets(run['graph']) if not defer_concepts and options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []
-        planned = business_concepts.prepare(run, targets, options['neighbor_mode'])
+        planned = business_concepts.prepare(run, targets, options['neighbor_mode'], service=service)
         if projected:
             projected['planned_concept_target_ids'] = [item['target']['id'] for item in planned]
         for item in planned:
