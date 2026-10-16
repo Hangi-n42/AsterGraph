@@ -149,6 +149,13 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
         source_order = {b['id']: n for n, b in enumerate(group)}
         list_ancestors = [b for b in group if list_text_parent(b.get('locator', {}).get('element_path', ''))
                           != b.get('locator', {}).get('element_path', '')]
+        blocks_by_path, siblings_by_parent = {}, {}
+        for b in group:
+            loc = b.get('locator', {})
+            blocks_by_path.setdefault(loc.get('element_path'), []).append(b)
+            if 'row' not in loc:
+                parent = loc.get('element_path', '').rsplit(' > ', 1)[0]
+                siblings_by_parent.setdefault(parent, []).append(b)
         heading, bundles = [], []
         for block in group:
             loc = block.get('locator', {})
@@ -170,14 +177,14 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
                     and re.match(r'(?:ul|ol)(?::[^>]*)? > ', b['locator']['element_path'][len(prefix):])]
             if 'row' in loc:
                 # Keep full table row plus headers, including rowspan parent cells.
-                context += [dict(b, context_only=True) for b in group if b['id'] != block['id']
+                context += [dict(b, context_only=True) for b in blocks_by_path.get(path, []) if b['id'] != block['id']
                     and b.get('locator', {}).get('element_path') == path
                     and (b['locator'].get('row') == 0 or b['locator'].get('row') == loc['row'] or
                          b['locator'].get('row', -1) < loc['row'] < b['locator'].get('row', -1) + b['locator'].get('merged_span', {}).get('rows', 1))]
             # Keep the direct list's base items with its notes. A bare exception
             # without its preceding item can change the apparent referent.
             parent = path.rsplit(' > ', 1)[0]
-            siblings = [b for b in group if ' > ' in path and
+            siblings = [b for b in siblings_by_parent.get(parent, []) if ' > ' in path and
                         'row' not in b.get('locator', {}) and
                         b.get('locator', {}).get('element_path', '').rsplit(' > ', 1)[0] == parent]
             notes = [b for b in siblings if re.search('다만|예외|제외|경우|생략|제\\d+조|별표|다음 각', b['text'])]
