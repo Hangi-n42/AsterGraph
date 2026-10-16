@@ -1005,10 +1005,14 @@ def query(service, request, *, context_mode='graph'):
             review_provenance_scope='source_run_recipe_not_all_snapshot_assessments',
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
+    built = None
     if source_reader:
         from . import graph_retrieval
-        _, _, passages, _ = graph_retrieval.build(snapshot, request.graph_variant)
+        built = graph_retrieval.build(snapshot, request.graph_variant)
+        passages = built[2]
         candidates = graph_retrieval.passage_candidates(passages)
+        if request.retrieval == 'bm25':
+            built = None
     elif context_mode == 'graph':
         candidates = [dict(id=c['id'], text=encode(business_run.compact_claim(c)),
                            file_id=c['source_version_ids'][0], source_group=c['source_version_ids'][0]) for c in snapshot['claims']]
@@ -1031,7 +1035,8 @@ def query(service, request, *, context_mode='graph'):
     else:
         from . import graph_retrieval
         try:
-            hits = graph_retrieval.retrieve(service, run, snapshot, request)
+            hits = graph_retrieval.retrieve(service, run, snapshot, request, **({'built': built} if built is not None else {}))
+            built = None
         except Exception as exc:
             run.update(status='failed', finished_at=utcnow(), error=f'{type(exc).__name__}: {exc}')
             run['metrics']['elapsed_s'] = monotonic() - started

@@ -147,6 +147,8 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
     output = []
     for group in groups:
         source_order = {b['id']: n for n, b in enumerate(group)}
+        list_ancestors = [b for b in group if list_text_parent(b.get('locator', {}).get('element_path', ''))
+                          != b.get('locator', {}).get('element_path', '')]
         heading, bundles = [], []
         for block in group:
             loc = block.get('locator', {})
@@ -158,7 +160,7 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
             context = [dict(b, context_only=True) for b in heading if b['id'] != block['id']]
             # Parser text nodes on an ancestor list item carry its applicability
             # (for example a missing applicant); preserve the actual parent text.
-            context += [dict(b, context_only=True) for b in list_parents(block, group)]
+            context += [dict(b, context_only=True) for b in list_parents(block, list_ancestors)]
             # A retrieved list label needs the contents of its own nested list.
             parent_item = list_text_parent(path)
             if parent_item != path and re.search(r'(?:^| > )li(?::[^>]*)?$', parent_item):

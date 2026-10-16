@@ -334,9 +334,9 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
-def retrieve(service, run, snapshot, request):
+def retrieve(service, run, snapshot, request, *, built=None):
     started = monotonic()
-    graph, edges, passages, ignored = build(snapshot, request.graph_variant)
+    graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
     if not passages:
         raise ValueError('출처가 있는 검색 구간이 없습니다.')
     from app.core.config import settings
