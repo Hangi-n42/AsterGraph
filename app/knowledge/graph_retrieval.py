@@ -229,11 +229,13 @@ def source_context_bundles(blocks, options):
 def source_context(blocks, context, options, *, get_bundles=None):
     """Reuse extraction's mandatory table/list/heading bundles at the reader boundary."""
     selected = {}
+    contexts_by_block = {}
     originals = {(b['source_version_id'], b['id']): b for b in blocks}
     for item in context:
         ref = item['source_reference']
         key = (ref['source_version_id'], ref['block_id'])
         selected.setdefault(key, []).append(item['id'])
+        contexts_by_block.setdefault(key, []).append(item)
         if key in originals:
             item['locator'] = reader_locator(originals[key])
     views = {}
@@ -259,15 +261,13 @@ def source_context(blocks, context, options, *, get_bundles=None):
                 continue
             span = b.get('span', [0, len(b['text'])])
             key = (b['source_version_id'], b['id'], tuple(span))
-            existing = next((c['id'] for c in context if c['source_reference']['block_id'] == b['id']
-                and c['source_reference']['source_version_id'] == b['source_version_id']
-                and [c['source_reference']['start_char'], c['source_reference']['end_char']] == span), None)
-            if existing:
-                row = views.setdefault(key, dict(context_id=existing, supports_context_ids=[]))
-            else:
-                row = views.setdefault(key, dict(autoschema.source_packet([b])[0], span=span,
-                    locator=reader_locator(b),
-                    parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
+            existing = next((c['id'] for c in contexts_by_block.get((b['source_version_id'], b['id']), [])
+                if [c['source_reference']['start_char'], c['source_reference']['end_char']] == span), None)
+            if key not in views:
+                views[key] = (dict(context_id=existing, supports_context_ids=[]) if existing else
+                    dict(autoschema.source_packet([b])[0], span=span, locator=reader_locator(b),
+                         parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
+            row = views[key]
             row['supports_context_ids'] = list(dict.fromkeys(row['supports_context_ids'] + targets))
     return list(views.values())
 

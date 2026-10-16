@@ -10,14 +10,17 @@ def serialize(body, soup, source_blocks):
     required = original.pop('source_context')
     records, originals, context_rows, source_rows, paths, roots, unresolved = [], [], [], [], {}, [], []
     nodes = {}
+    selections = {}
 
     def select(path):
         if soup is None:
             return []
-        try:
-            return soup.select(path)
-        except SelectorSyntaxError:
-            return []
+        if path not in selections:
+            try:
+                selections[path] = soup.select(path)
+            except SelectorSyntaxError:
+                selections[path] = []
+        return selections[path]
 
     def node_path(path):
         selector, marker, tail = path.partition('::text(')
