@@ -1006,11 +1006,13 @@ def query(service, request, *, context_mode='graph'):
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     built = None
+    get_bundles = None
     if source_reader:
         from . import graph_retrieval
         built = graph_retrieval.build(snapshot, request.graph_variant)
         passages = built[2]
         candidates = graph_retrieval.passage_candidates(passages)
+        get_bundles = graph_retrieval.source_context_bundles(snapshot['blocks'], run['recipe']['options'])
         if request.retrieval == 'bm25':
             built = None
     elif context_mode == 'graph':
@@ -1022,7 +1024,8 @@ def query(service, request, *, context_mode='graph'):
     hints = concept_hints(snapshot) if context_mode == 'graph' and not source_reader else {}
     if request.retrieval == 'bm25':
         if source_reader:
-            search_texts = graph_retrieval.passage_search_texts(candidates, snapshot['blocks'], run['recipe']['options'])
+            search_texts = graph_retrieval.passage_search_texts(candidates, snapshot['blocks'], run['recipe']['options'],
+                                                             get_bundles=get_bundles)
             run['passage_index'] = dict(contract=graph_retrieval.INDEX_CONTRACT, texts=search_texts)
             index_candidates = [dict(c, text=search_texts[c['id']]) for c in candidates]
         else:
@@ -1035,7 +1038,8 @@ def query(service, request, *, context_mode='graph'):
     else:
         from . import graph_retrieval
         try:
-            hits = graph_retrieval.retrieve(service, run, snapshot, request, **({'built': built} if built is not None else {}))
+            hits = graph_retrieval.retrieve(service, run, snapshot, request,
+                **({'built': built, 'get_bundles': get_bundles} if built is not None else {}))
             built = None
         except Exception as exc:
             run.update(status='failed', finished_at=utcnow(), error=f'{type(exc).__name__}: {exc}')
@@ -1045,7 +1049,7 @@ def query(service, request, *, context_mode='graph'):
                         snapshot_id=snapshot['id'], error=run['error'], execution_boundary=run['execution_boundary'])
     if source_reader:
         hits, run['passage_selection'] = graph_retrieval.select_passages(
-            candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit)
+            candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit, get_bundles=get_bundles)
     if required_ids:
         by_id = {h['block_id']: h for h in hits}
         mandatory = [dict(by_id.get(c['id']) or dict(block_id=c['id'], file_id=c['file_id'], score=None),
@@ -1085,7 +1089,9 @@ def query(service, request, *, context_mode='graph'):
     required_source_context = []
     if source_reader:
         context = [{k: v for k, v in c.items() if k != 'linked_claim_ids'} for c in context]
-        required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'])
+        required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'],
+                                                               get_bundles=get_bundles)
+        get_bundles = None
         run['source_context_contract'] = 'existing-table-rowspan-heading-list-bundles-v1'
         run['source_context'] = deepcopy(required_source_context)
         reader_context = dict(context=context, source_context=required_source_context)

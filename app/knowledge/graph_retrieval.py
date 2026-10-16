@@ -202,7 +202,18 @@ def reader_locator(block):
                if k in {'block_order', 'element_path'}}}
 
 
-def source_context(blocks, context, options):
+def source_context_bundles(blocks, options):
+    """One request's bundles, deferred to preserve the existing failure boundary."""
+    bundles = None
+    def get():
+        nonlocal bundles
+        if bundles is None:
+            bundles = autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1)
+        return bundles
+    return get
+
+
+def source_context(blocks, context, options, *, get_bundles=None):
     """Reuse extraction's mandatory table/list/heading bundles at the reader boundary."""
     selected = {}
     originals = {(b['source_version_id'], b['id']): b for b in blocks}
@@ -215,7 +226,8 @@ def source_context(blocks, context, options):
     views = {}
     # One indivisible target unit per bundle; this reuses the existing required
     # context selection without packing unrelated targets up to the model limit.
-    bundles = autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1)
+    bundles = (get_bundles() if get_bundles is not None else
+               autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1))
     continuation_targets = {}
     for bundle in bundles:
         for b in bundle['blocks']:
@@ -247,18 +259,18 @@ def source_context(blocks, context, options):
     return list(views.values())
 
 
-def passage_search_texts(candidates, blocks, options):
+def passage_search_texts(candidates, blocks, options, *, get_bundles=None):
     """Index the same source scope that the reader will receive, for every arm."""
     by_id = {c['id']: c for c in candidates}
     texts = {cid: [c['text']] for cid, c in by_id.items()}
-    for row in source_context(blocks, [dict(c) for c in candidates], options):
+    for row in source_context(blocks, [dict(c) for c in candidates], options, get_bundles=get_bundles):
         text = by_id[row['context_id']]['text'] if row.get('context_id') else row['text']
         for cid in row['supports_context_ids']:
             texts[cid].append(text)
     return {cid: '\n'.join(parts) for cid, parts in texts.items()}
 
 
-def select_passages(candidates, ranked, blocks, options, limit):
+def select_passages(candidates, ranked, blocks, options, limit, *, get_bundles=None):
     """Defer only evidence already supplied with the same mandatory source context.
 
     No document quotas or text-only equivalence: source/version/parse/block/span
@@ -271,7 +283,7 @@ def select_passages(candidates, ranked, blocks, options, limit):
         return (ref['source_version_id'], ref.get('parse_run_id'),
                 ref.get('block_id', row.get('id')), *span)
     bundles = {cid: [location(c)] for cid, c in by_id.items()}
-    context = source_context(blocks, [dict(c) for c in candidates], options)
+    context = source_context(blocks, [dict(c) for c in candidates], options, get_bundles=get_bundles)
     for row in context:
         span = location(by_id[row['context_id']]) if row.get('context_id') else location(row)
         for cid in row['supports_context_ids']:
@@ -334,7 +346,7 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
-def retrieve(service, run, snapshot, request, *, built=None):
+def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
     if not passages:
@@ -354,7 +366,8 @@ def retrieve(service, run, snapshot, request, *, built=None):
     if request.retrieval not in {'hipporag2', 'hybrid_graph'}:
         edges = []
     query = request.question + '\n' + '\n'.join(request.choices)
-    search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'])
+    search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'],
+                                      get_bundles=get_bundles)
     run['passage_index'] = dict(contract=INDEX_CONTRACT, texts=search_texts)
     # Cached only on this service and immutable snapshot content; model/settings are in key.
     cache = getattr(service, '_graph_embedding_cache', {})
