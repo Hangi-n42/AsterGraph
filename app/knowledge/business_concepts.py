@@ -1,6 +1,5 @@
 """Reconceptualize selected entities from a fixed stored extraction pool."""
 from copy import deepcopy
-import json
 from time import monotonic
 from uuid import uuid4
 
@@ -190,8 +189,7 @@ def start(service, request):
     for item in planned:
         donor_inputs.append((item['messages'], item['selection']['source_reference_map']))
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('기존 실행 종료 후 개념화를 시작하세요.')
         recipe = deepcopy(parent['recipe']); recipe['options']['neighbor_mode'] = request.neighbor_mode
         recipe['options']['concept_source_context'] = request.concept_source_context or recipe['options'].get('concept_source_context') or 'whole'

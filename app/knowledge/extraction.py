@@ -100,7 +100,7 @@ def plan_units(blocks):
 def start(service, request):
     from .ontology_schema import get_ontology
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued','running','cancel_requested'} for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('실행 중이거나 종료 중인 작업이 있습니다.')
         if request.retry_of_run_id:
             old = service.repository.get(db, 'runs', request.retry_of_run_id)

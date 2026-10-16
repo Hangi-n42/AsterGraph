@@ -129,8 +129,7 @@ def start(service, request):
     identity = ModelClient(config).identities(models, dict(draft=request.context_tokens,
         review=max(request.context_tokens, request.representation_context_tokens or request.context_tokens)))
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('실행 중이거나 종료 중입니다.')
         requirements = [service.repository.get(db, 'requirements', rid) for rid in request.requirement_ids]
         parent_id = request.resume_run_id or request.reuse_run_id or request.reassess_run_id

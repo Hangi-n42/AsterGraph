@@ -237,8 +237,7 @@ def analyze(service, request):
     models = dict(draft=settings.STRUCTURING_MODEL, review=settings.KNOWLEDGE_REVIEW_MODEL)
     identity = ModelClient(config).identities(models, {r:49152 for r in models})
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('다른 실행이 종료된 뒤 변경 영향을 확인하세요.')
         versions = [service.repository.get(db, 'versions', identifier) for identifier in (request.before_version_id, request.after_version_id)]
         if versions[0]['source_id'] != versions[1]['source_id']:

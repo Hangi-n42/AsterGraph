@@ -82,8 +82,7 @@ def bind_gaps(parent, qa, basis, snapshot, task_ids):
 
 def start(service, run_id, request):
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('기존 실행 종료 후 재검수하세요.')
         parent = service.repository.get(db, 'runs', run_id)
         qa = service.repository.get(db, 'runs', request.qa_run_id)

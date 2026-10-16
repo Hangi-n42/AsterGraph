@@ -54,8 +54,7 @@ def start(service, request):
     with service.lock, service.repository.connect() as db:
         if service.closed:
             raise KnowledgeConflict('서비스가 종료 중입니다.')
-        if any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-               for r in db.execute('SELECT payload FROM runs').fetchall()):
+        if service.repository.has_active_runs(db):
             raise KnowledgeConflict('실행 중인 작업이 있습니다.')
         if request.retry_of_run_id:
             run = service.repository.get(db, 'runs', request.retry_of_run_id)

@@ -95,8 +95,7 @@ def start(service, request):
     if request.model_fields_set - allowed:
         raise ValueError('A2는 A1 input_run_id와 분석 설정 또는 변경 없는 재개만 받습니다.')
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('실행 중이거나 종료 중인 작업이 있습니다.')
         if request.retry_of_run_id:
             run = service.repository.get(db, 'runs', request.retry_of_run_id)

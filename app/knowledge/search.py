@@ -2,7 +2,6 @@
 import asyncio
 from collections import defaultdict, deque
 from hashlib import sha256
-import json
 import re
 from time import monotonic
 from uuid import uuid4
@@ -395,7 +394,7 @@ def search(service, request, *, answer_variant="A", model=None, think=None):
     model=model or settings.KNOWLEDGE_SEARCH_MODEL or settings.OLLAMA_MODEL
     if think is None:think=False
     with service.lock,service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued','running','cancel_requested'} for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('실행 중이거나 종료 중인 작업이 있습니다.')
         run=dict(id=uuid4().hex,kind='search',status='queued',units=[],input_version_ids=[],request=request.model_dump(mode='json'),
                  generation=configuration(),

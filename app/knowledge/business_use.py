@@ -916,8 +916,7 @@ def query(service, request, *, context_mode='graph'):
     if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
         raise ValueError('문서 기준선은 bm25 또는 hybrid를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('다른 실행이 종료된 뒤 답변을 요청하세요.')
         if source_reader:
             original = service.repository.get(db, 'runs', request.source_run_id)
