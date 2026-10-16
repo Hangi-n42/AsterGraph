@@ -16,10 +16,18 @@ def plan(service, request):
     targets = {t['id']: t for t in autoschema.concept_targets(parent['graph']) if t['kind'] == 'entity'}
     if not set(request.target_ids) <= targets.keys():
         raise ValueError('현재 그래프의 개체 대상만 선택하세요.')
-    return parent, prepare(parent, [targets[i] for i in dict.fromkeys(request.target_ids)], request.neighbor_mode)
+    return parent, prepare(parent, [targets[i] for i in dict.fromkeys(request.target_ids)], request.neighbor_mode,
+        service=service, source_context=request.concept_source_context)
 
 
-def prepare(parent, targets, mode):
+def prepare(parent, targets, mode, *, service=None, source_context=None):
+    policy = source_context or parent['recipe']['options'].get('concept_source_context') or 'whole'
+    context = None
+    if policy != 'whole' and targets:
+        from .concept_source_context import Context, VERSION
+        if policy != VERSION:
+            raise ValueError('지원하지 않는 개념화 원문 문맥 계약입니다.')
+        context = Context(service, parent)
     chunks = business_run.source_chunks(parent)
     for claim in parent['claims']:
         if claim['chunk_id'] not in chunks:
@@ -32,7 +40,7 @@ def prepare(parent, targets, mode):
     planned = []
     options = parent['recipe']['options']
     for target in targets:
-        messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode)
+        messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode, source_context=context)
         estimate = business_run.request_tokens(messages, None, options['concept_tokens'])
         if target['kind'] != 'relation' or len(target['claim_ids']) < 2 or estimate <= options['context_tokens']:
             planned.append(dict(target=target, messages=messages, selection=selection))
@@ -41,7 +49,7 @@ def prepare(parent, targets, mode):
         groups, pending = [], []
         for claim_id in target['claim_ids']:
             trial = dict(target, claim_ids=pending + [claim_id])
-            trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode)
+            trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode, source_context=context)
             if pending and business_run.request_tokens(trial_messages, None, options['concept_tokens']) > options['context_tokens']:
                 groups.append(pending)
                 pending = []
@@ -50,7 +58,7 @@ def prepare(parent, targets, mode):
         for index, claim_ids in enumerate(groups):
             part = dict(target, id=autoschema.identifier('relation', [target['id'], claim_ids]),
                         claim_ids=claim_ids, partition_of=target['id'])
-            messages, selection = autoschema.concept_messages(part, parent['graph'], chunks, mode)
+            messages, selection = autoschema.concept_messages(part, parent['graph'], chunks, mode, source_context=context)
             selection['relation_input_partition'] = dict(original_target_id=target['id'],
                 original_claim_ids=list(target['claim_ids']), original_estimated_tokens=estimate,
                 context_tokens=options['context_tokens'], index=index, parts=len(groups))
@@ -63,7 +71,7 @@ def prepare(parent, targets, mode):
 def refresh_changed(service, run, changed_ids):
     options = run['recipe']['options']
     targets = [t for t in autoschema.concept_targets(run['graph']) if changed_ids.intersection(t['claim_ids'])]
-    planned = prepare(run, targets, options['neighbor_mode'])
+    planned = prepare(run, targets, options['neighbor_mode'], service=service)
     for item in planned:
         if business_run.cancelled(service, run):
             return
@@ -186,6 +194,7 @@ def start(service, request):
                                  for r in db.execute('SELECT payload FROM runs')):
             raise KnowledgeConflict('기존 실행 종료 후 개념화를 시작하세요.')
         recipe = deepcopy(parent['recipe']); recipe['options']['neighbor_mode'] = request.neighbor_mode
+        recipe['options']['concept_source_context'] = request.concept_source_context or recipe['options'].get('concept_source_context') or 'whole'
         recipe['concept_work_contract'] = concept_work.VERSION
         run = dict(id=uuid4().hex, kind='business_concept', status='running', parent_run_id=parent['id'],
             input_version_ids=parent['input_version_ids'], recipe=recipe, model_identity=parent['model_identity'],

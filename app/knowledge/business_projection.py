@@ -58,7 +58,7 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
         run['recipe']['options'].update(block_ids=list(block_ids), selection_reason=reason, conceptualize=True, repair=False)
         run['graph'] = autoschema.graph(run['claims'])
         targets = [item['target'] for item in business_concepts.prepare(
-            run, autoschema.concept_targets(run['graph']), run['recipe']['options']['neighbor_mode'])]
+            run, autoschema.concept_targets(run['graph']), run['recipe']['options']['neighbor_mode'], service=service)]
         target_block_ids = {b['id'] for c in chunks for b in c['blocks'] if not b.get('context_only')}
         run['stored_pool'] = dict(parent_run_id=parent_run_id, source_hash=autoschema.identifier('source', run['blocks']),
             claims_hash=autoschema.identifier('claims', run['claims']), graph_hash=autoschema.identifier('graph', run['graph']),
