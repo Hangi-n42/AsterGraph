@@ -274,13 +274,15 @@ class SourceAnswer(Answer):
 
 def concept_read_view(service, db, parent, child_id):
     """Read one explicit completed child; never mutate source, review, or snapshot state."""
-    from . import autoschema, concept_work
+    from . import autoschema, concept_work, business_html_debt_rows
     child = service.repository.get(db, 'runs', child_id)
     fingerprint = autoschema.identifier('graph', parent['graph'])
+    rebuilt = autoschema.graph(parent['claims'])
+    business_html_debt_rows.annotate_graph(rebuilt, parent['claims'])
     if (child.get('kind') != 'business_concept' or child.get('status') != 'succeeded'
             or child.get('parent_run_id') != parent['id'] or child.get('input_version_ids') != parent['input_version_ids']
             or child.get('graph_fingerprint') != fingerprint
-            or autoschema.identifier('graph', autoschema.graph(parent['claims'])) != fingerprint):
+            or autoschema.identifier('graph', rebuilt) != fingerprint):
         raise ValueError('동일 부모·원문·현재 그래프의 성공 종료 개념 실행을 선택하세요.')
     targets = {t['id']: t for t in autoschema.concept_targets(parent['graph'])}
     blocks = {(b['source_version_id'], b['id']): b for b in parent['blocks']}
