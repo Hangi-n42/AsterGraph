@@ -20,6 +20,7 @@ from .vendor.autoschemakg.rag_prompt import filter_triple_messages
 CONTRACT = 'autoschemakg-hipporag2-source-passages-v2'
 SELECTION_CONTRACT = 'ranked-novel-source-context-v1'
 INDEX_CONTRACT = 'passage-with-mandatory-source-context-v1'
+EDGE_CACHE_BYTES = 64 * 1024 * 1024
 
 
 @lru_cache(maxsize=1)
@@ -31,13 +32,45 @@ def encoder():
                                local_files_only=True)
 
 
-def embed(texts):
+def embed(texts, *, service=None):
     model = encoder()
     # No silent embedding truncation. Source conditions cannot disappear here.
     for text in texts:
         if len(model.tokenizer.encode(text, add_special_tokens=True, truncation=False)) > model.max_seq_length:
             raise ValueError('검색 임베딩 입력이 모델 한도를 넘습니다. 원문 구간을 분할해야 합니다.')
-    return np.asarray(model.encode(texts, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+    if service is None:
+        return np.asarray(model.encode(texts, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+    dimension = model.get_sentence_embedding_dimension()
+    # Loaded objects pin weights/runtime in this process; no persistent or cross-service reuse.
+    contract = (model, model.tokenizer, str(model.device), str(next(model.parameters()).dtype),
+                model.max_seq_length, dimension, model.truncate_dim,
+                model.default_prompt_name, tuple(sorted(model.prompts.items())))
+    previous, cached = getattr(service, '_graph_edge_embedding_cache', (None, {}))
+    if previous != contract:
+        cached = {}
+    unique = list(dict.fromkeys(texts))
+    def valid(vector):
+        return (isinstance(vector, np.ndarray) and vector.shape == (dimension,)
+                and vector.dtype == np.dtype(float) and np.isfinite(vector).all()
+                and np.isclose(np.linalg.norm(vector), 1., atol=1e-5))
+    vectors = {text: cached[text] for text in unique if text in cached and valid(cached[text])}
+    missing = [text for text in unique if text not in vectors]
+    reused = sum(text in vectors for text in texts)
+    if missing:
+        fresh = np.asarray(model.encode(missing, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+        if fresh.shape != (len(missing), dimension) or not all(valid(v) for v in fresh):
+            raise ValueError('관계 임베딩의 개수·차원·정규화·유한 값을 확인할 수 없습니다.')
+        vectors.update((text, vector.copy()) for text, vector in zip(missing, fresh))
+    result = np.asarray([vectors[text] for text in texts], dtype=float)
+    kept, size = {}, 0
+    for text in reversed(unique):
+        size += vectors[text].nbytes
+        if size <= EDGE_CACHE_BYTES:
+            kept[text] = vectors[text]
+    service._graph_edge_embedding_cache = (contract, kept)
+    service._graph_edge_embedding_stats = dict(rows=len(texts), unique_texts=len(unique),
+        encoded_texts=len(missing), reused_rows=reused, retained_bytes=sum(v.nbytes for v in kept.values()))
+    return result
 
 
 def normalize(values):
@@ -336,14 +369,9 @@ def retrieve(service, run, snapshot, request):
     else:
         trace['index_cache_hit'] = True
     passage_vectors = cache[key]
-    edge_cache = getattr(service, '_graph_edge_embedding_cache', {})
-    edge_key = autoschema.identifier('edges', [key, edges])
-    trace['edge_index_cache_hit'] = bool(edges and edge_key in edge_cache)
-    if edges and edge_key not in edge_cache:
-        edge_cache.clear()
-        edge_cache[edge_key] = embed([e['text'] for e in edges])
-        service._graph_edge_embedding_cache = edge_cache
-    edge_vectors = edge_cache[edge_key] if edges else np.array([])
+    edge_vectors = embed([e['text'] for e in edges], service=service) if edges else np.array([])
+    trace['edge_embedding'] = dict(getattr(service, '_graph_edge_embedding_stats', {})) if edges else {}
+    trace['edge_index_cache_hit'] = bool(edges and trace['edge_embedding'].get('encoded_texts') == 0)
     trace['index_elapsed_s'] = monotonic() - started
     q = embed([query])[0]
     passage_scores = normalize(passage_vectors @ q)

@@ -105,7 +105,7 @@ def test_product_query_runs_filter_then_qa_and_does_not_pass_concepts_as_facts(t
     with service.repository.connect() as db:
         db.execute('INSERT INTO snapshots VALUES(?,?)', ('s', json.dumps(s)))
         db.execute('INSERT INTO runs VALUES(?,?)', ('origin', json.dumps(original)))
-    monkeypatch.setattr(gr, 'embed', lambda texts: np.asarray([[1., .5] for _ in texts]))
+    monkeypatch.setattr(gr, 'embed', lambda texts, *, service=None: np.asarray([[1., .5] for _ in texts]))
     stages = []
     def call(service, run, stage, instruction, context, schema, **kwargs):
         stages.append(stage)
@@ -127,7 +127,7 @@ def test_product_query_runs_filter_then_qa_and_does_not_pass_concepts_as_facts(t
         assert run['retrieval_concept_hints'] == {}
         assert all(h['block_id'] in {'c0', 'c1', 'c2', 'c3'} for h in result['retrieval'])
         stages.clear()
-        monkeypatch.setattr(gr, 'embed', lambda _: (_ for _ in ()).throw(ValueError('embedding failed')))
+        monkeypatch.setattr(gr, 'embed', lambda _, *, service=None: (_ for _ in ()).throw(ValueError('embedding failed')))
         result = business_use.query(service, request)
         assert result['status'] == 'retrieval_failed' and not stages
         assert service.run(result['run_id'])['status'] == 'failed'
@@ -191,7 +191,7 @@ def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, 
     service = KnowledgeService(tmp_path/'knowledge.db')
     with service.repository.connect() as db:
         db.execute('INSERT INTO runs VALUES(?,?)', ('origin', json.dumps(original)))
-    monkeypatch.setattr(gr, 'embed', lambda texts: np.asarray([[1., .5] for _ in texts]))
+    monkeypatch.setattr(gr, 'embed', lambda texts, *, service=None: np.asarray([[1., .5] for _ in texts]))
     def call(service, run, stage, instruction, context, schema, **kwargs):
         if stage == 'graph_retrieval_filter':
             return dict(selected_ids=[context['candidate_facts'][0]['id']])

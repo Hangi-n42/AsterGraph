@@ -40,7 +40,7 @@ def test_source_reader_shared_context_budget_and_no_forced_gold(tmp_path, monkey
     service = KnowledgeService(tmp_path/'knowledge.db')
     with service.repository.connect() as db:
         db.execute('INSERT INTO runs VALUES(?,?)', ('origin', json.dumps(original)))
-    monkeypatch.setattr(gr, 'embed', lambda texts: np.asarray([[1., .5] for _ in texts]))
+    monkeypatch.setattr(gr, 'embed', lambda texts, *, service=None: np.asarray([[1., .5] for _ in texts]))
     stages = []
     def call(service, run, stage, instruction, context, schema, **kwargs):
         stages.append(stage)

@@ -73,7 +73,7 @@ def test_product_source_query_consumes_only_explicit_child_and_keeps_other_targe
         captured.append(deepcopy(snapshot['concepts']))
         return original(snapshot,variant)
     monkeypatch.setattr(graph_retrieval,'build',inspect)
-    monkeypatch.setattr(graph_retrieval,'embed',lambda texts:np.asarray([[1.,.5] for _ in texts]))
+    monkeypatch.setattr(graph_retrieval,'embed',lambda texts, *, service=None:np.asarray([[1.,.5] for _ in texts]))
     def call(service,run,stage,instruction,context,schema,**kwargs):
         stages.append(stage)
         if stage=='graph_retrieval_filter':return dict(selected_ids=[context['candidate_facts'][0]['id']])
