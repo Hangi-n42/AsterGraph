@@ -52,8 +52,9 @@ def repair(service, run, plan):
         assert original['status'] == 'failed' and original['error'] == 'truncated'
         assert original['stage'] == row['role'] and original['source_chunk_id'] == row['chunk_id']
         chunk = chunks[row['chunk_id']]
-        request = business_run.extraction_request(run, chunk, row['role'])
-        assert all(original[k] == request[k] for k in ('messages', 'schema', 'reference_map'))
+        assert original['messages'] == business_run.extraction_messages(run, chunk, row['role'])
+        assert original['schema'] == autoschema.extraction_schema(row['role'])
+        assert original['reference_map'] == chunk['source_reference_map']
         for view in views(chunk, row.get('groups'), row.get('required_context_views'),
                           row.get('additional_context_views', ()), run.get('blocks', ())):
             if business_run.cancelled(service, run):
@@ -61,8 +62,8 @@ def repair(service, run, plan):
             stored_view = run.get('capacity_repair_views', {}).get(view['id'])
             assert stored_view is None or stored_view == view
             run.setdefault('capacity_repair_views', {})[view['id']] = deepcopy(view)
-            request = business_run.extraction_request(run, view, row['role'])
-            messages, schema = request['messages'], request['schema']
+            messages = business_run.extraction_messages(run, view, row['role'])
+            schema = autoschema.extraction_schema(row['role'])
             metadata = dict(source_chunk_id=chunk['id'], repair_view_id=view['id'],
                 capacity_repair_origin=dict(run_id=row['origin_run_id'], unit_id=original['id'],
                     original_limits=deepcopy(original['executed_limits']), strategy=row['strategy']))

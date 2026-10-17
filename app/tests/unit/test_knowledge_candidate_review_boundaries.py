@@ -4,41 +4,48 @@ from copy import deepcopy
 import pytest
 
 from app.knowledge import autoschema, business_review, business_run
+from app.knowledge.business_models import BusinessRunRequest
+from app.tests.unit.test_knowledge_business import finish
 from app.tests.unit.test_knowledge_business_local_review import local_run
-from app.tests.unit.test_knowledge_extraction_target_contract import source, run
+from app.tests.unit.test_knowledge_business_rebuild_natural import natural
 
 
-def review_input():
-    chunk, raw, scope = source('permission')
-    current = run()
-    current['recipe']['options'] = dict(context_tokens=49152, review_tokens=4096)
-    current.update(chunks=[chunk], blocks=deepcopy(chunk['blocks']))
-    claim = autoschema.graph_record(chunk, 'entity_relation', raw, 0, scope=scope,
-                                   scope_contract=autoschema.DESCRIPTIVE_SCOPE_CONTRACT)
+@pytest.fixture
+def review_input(natural):
+    service, register, _, _, _, options, _, _ = natural
+    version = register('<h2>공통 상위 조건</h2><section id="one"><p>기관은 신청을 처리한다.</p>'
+        '<p>단, 별도 절차가 적용된다.</p></section><section id="two"><p>관청은 허가를 처리한다.</p></section>'
+        '<p>상세 기준은 별도 안내를 참조한다.</p>')
+    current = finish(service, service.start_business(BusinessRunRequest(
+        source_version_ids=[version], conceptualize=False, **options))['run_id'])
+    assert current['status'] == 'succeeded', current.get('error')
+    assert current['recipe']['scope_contract'] == autoschema.SCOPE_CONTRACT
+    claim = next(c for c in current['claims'] if c['role'] == 'entity_relation' and c['raw']['Head'] == '기관')
     return current, claim
 
 
-def test_review_preserves_actual_stored_support_context_and_legacy_request():
-    current, claim = review_input()
+def test_review_preserves_actual_stored_support_context_and_legacy_request(review_input):
+    current, claim = review_input
     original = deepcopy([current, claim])
     instruction, context, schema = business_review.candidate_request(current, [claim])
     assert context['blocks'] == current['chunks'][0]['blocks']
-    legacy = deepcopy(current);legacy['recipe']['version'] = autoschema.VERSION
+    legacy = deepcopy(current);legacy['recipe']['options']['source_unit_policy'] = 'whole'
     old_instruction, old_context, old_schema = business_review.candidate_request(legacy, [claim])
     basis = [dict(evidence=[dict(block_id=b['id']) for b in business_review.candidate_source_basis(claim, legacy['blocks'])])]
     expected = business_review.related_blocks(legacy, basis,
         chunks=autoschema.chunks(legacy['blocks'], 49152, 4096, 1))
     assert old_context['blocks'] == expected
     assert old_context['claims'] == context['claims'] and instruction == old_instruction and schema is old_schema
-    assert 'reference' not in {b['id'] for b in expected}
-    assert 'reference' in {b['id'] for b in context['blocks']}
+    reference = next(b['id'] for b in current['blocks'] if b['text'].startswith('상세 기준'))
+    assert reference not in {b['id'] for b in expected}
+    assert reference in {b['id'] for b in context['blocks']}
     assert [current, claim] == original
 
 
 @pytest.mark.parametrize('field,value', [('text', '바뀐 문구'), ('locator', dict(other=True)),
                                         ('parse_run_id', '다른 파싱'), ('span', [1, 2])])
-def test_review_rejects_changed_stored_source_view(field, value):
-    current, claim = review_input()
+def test_review_rejects_changed_stored_source_view(review_input, field, value):
+    current, claim = review_input
     current['chunks'][0]['blocks'][-1][field] = value
     with pytest.raises(ValueError, match='보존 문맥'):
         business_review.candidate_request(current, [claim])
@@ -75,36 +82,28 @@ def test_both_review_connections_validate_real_field_paths(monkeypatch, field, v
     assert claim == original
 
 
-def scoped_review_input():
-    current, claim = review_input()
-    chunk = current['chunks'][0]
-    current['recipe']['options']['source_unit_policy'] = 'explicit_html_sections_v1'
-    current['source_structure'] = dict(contract='explicit_html_sections_v1',
-        chunk_units={chunk['id']:'one'}, versions={'fixture-v':dict(
-            units={'one':dict(block_ids=['body'], chunk_ids=[chunk['id']])},
-            global_context_block_ids=['notice', 'heading', 'reference'])})
-    return current, claim
-
-
 @pytest.mark.parametrize('fault', [None, 'foreign_version', 'sibling', 'unprovided', 'outside_span', 'wrong_unit', 'legacy'])
-def test_error_ownership_uses_only_delivered_same_unit_view(fault):
-    current, claim = scoped_review_input()
+def test_error_ownership_uses_only_delivered_same_unit_view(review_input, fault):
+    current, claim = review_input
     blocks = deepcopy(current['chunks'][0]['blocks'])
-    ref = business_run.exact_evidence([dict(block_id='reference', quote=blocks[-1]['text'])], blocks)[0]
+    ref = business_run.exact_evidence([dict(block_id=blocks[-1]['id'], quote=blocks[-1]['text'])], blocks)[0]
     if fault == 'foreign_version': ref['source_version_id'] = 'foreign'
-    elif fault == 'sibling': ref['block_id'] = 'sibling'
+    elif fault == 'sibling':
+        sibling = next(b for b in current['blocks'] if b['text'].startswith('관청'))
+        blocks.append(sibling)
+        ref = business_run.exact_evidence([dict(block_id=sibling['id'], quote=sibling['text'])], blocks)[0]
     elif fault == 'unprovided': blocks.pop()
     elif fault == 'outside_span': ref['end_char'] += 1
     elif fault == 'wrong_unit': current['source_structure']['chunk_units'][claim['chunk_id']] = 'other'
-    elif fault == 'legacy': current['recipe']['version'] = autoschema.VERSION
+    elif fault == 'legacy': current['recipe']['options']['source_unit_policy'] = 'whole'
     assert business_review.candidate_error_evidence(current, claim, [ref], blocks) == ([ref] if fault is None else [])
 
 
 @pytest.mark.parametrize('state', ['incorrect', 'unknown', 'supported'])
-def test_three_error_connections_accept_support_view_without_promoting_supported_claim(monkeypatch, state):
-    current, claim = scoped_review_input();current.update(units=[], repairs=[], claims=[claim])
+def test_three_error_connections_accept_support_view_without_promoting_supported_claim(review_input, monkeypatch, state):
+    current, claim = review_input;current.update(units=[], repairs=[], claims=[claim])
     original = deepcopy(claim)
-    ref = business_run.exact_evidence([dict(block_id='reference', quote=current['blocks'][-1]['text'])], current['blocks'])[0]
+    ref = business_run.exact_evidence([dict(block_id=current['blocks'][-1]['id'], quote=current['blocks'][-1]['text'])], current['blocks'])[0]
     def answer(service, run, stage, instruction, context, schema):
         run['units'].append(dict(id='review', status='succeeded', error=None))
         return dict(checks=[dict(claim_id=claim['id'], claim_support=state, evidence=[ref],

@@ -18,9 +18,7 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
         parent = service.repository.get(db, 'runs', parent_run_id)
         if parent.get('kind') != 'business' or parent.get('requirements') or parent.get('assessments'):
             raise ValueError('요구 평가가 없는 종료된 원문 추출 실행만 연결할 수 있습니다.')
-        contracts = {autoschema.VERSION:autoschema.SCOPE_CONTRACT,
-                     autoschema.TARGET_CONTEXT_VERSION:autoschema.DESCRIPTIVE_SCOPE_CONTRACT}
-        if contracts.get(parent['recipe']['version']) != parent['recipe']['scope_contract']:
+        if parent['recipe']['version'] != autoschema.VERSION or parent['recipe']['scope_contract'] != autoschema.SCOPE_CONTRACT:
             raise ValueError('현재 추출 계약과 부모 실행이 다릅니다.')
         selected_blocks, selected_chunks = set(block_ids), set(chunk_ids)
         if (not selected_blocks or not selected_chunks or len(selected_blocks) != len(block_ids)
@@ -36,10 +34,11 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
             raise ValueError('진행 중 응답은 재사용할 수 없습니다.')
         for unit in units:
             chunk = next(c for c in chunks if c['id'] == unit['source_chunk_id'])
-            if unit['stage'] in autoschema.ROLES:
-                request = business_run.extraction_request(parent, chunk, unit['stage'])
-                if any(unit[k] != request[k] for k in ('messages', 'schema', 'reference_map')):
-                    raise ValueError('원문·프롬프트·출력 계약이 기존 응답과 다릅니다.')
+            if unit['stage'] in autoschema.ROLES and (
+                    unit['messages'] != business_run.extraction_messages(parent, chunk, unit['stage'])
+                    or unit['schema'] != autoschema.extraction_schema(unit['stage'])
+                    or unit['reference_map'] != chunk['source_reference_map']):
+                raise ValueError('원문·프롬프트·출력 계약이 기존 응답과 다릅니다.')
             unit.update(reused_from=dict(run_id=parent_run_id, unit_id=unit['id'], original_status=unit['status']),
                         id=uuid4().hex, materialized_at=utcnow(), reuse_reason='preserved_completed_source_record; not_a_new_model_call')
         run = deepcopy(parent)

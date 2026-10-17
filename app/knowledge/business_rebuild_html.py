@@ -171,7 +171,8 @@ def project(value, mapping):
 def extraction_request(run, chunk, stage):
     from . import business_run
     if stage in autoschema.ROLES:
-        return business_run.extraction_request(run, chunk, stage)
+        return dict(messages=business_run.extraction_messages(run, chunk, stage),
+            schema=autoschema.extraction_schema(stage), reference_map=chunk['source_reference_map'])
     return business_run.json_request(run, stage, business_run.DEFINITION_INSTRUCTION,
         dict(blocks=autoschema.source_packet(chunk['blocks'])), business_run.Definitions)
 
@@ -228,10 +229,9 @@ def bind_claims(service, db, parent, run, plan):
                     if rejected:
                         raise ValueError('불완전 추출 응답을 새 주소로 연결할 수 없습니다.')
                     for row in valid:
-                        for chunk, dest, recipe in ((old, original, parent['recipe']), (new, rebound, run['recipe'])):
+                        for chunk, dest in ((old, original), (new, rebound)):
                             dest.append(autoschema.graph_record(chunk, stage, row['value'], row['index'],
-                                scope=row['scope'], scope_required=True,
-                                scope_contract=recipe.get('scope_contract', autoschema.SCOPE_CONTRACT)))
+                                scope=row['scope'], scope_required=True))
                 else:
                     for n, definition in enumerate(unit['response']['parsed']['definitions']):
                         raw = dict(Head=definition['term'], Relation='정의', Tail=definition['definition'])

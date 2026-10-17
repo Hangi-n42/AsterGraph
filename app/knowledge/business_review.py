@@ -1871,26 +1871,34 @@ def candidate_source_basis(claim, blocks):
         for e in claim.get('evidence', []))]
 
 
+def explicit_candidate_views(run, claim):
+    """Return only canonical views owned by this server-created HTML unit."""
+    structure = run.get('source_structure', {})
+    if (run['recipe']['options'].get('source_unit_policy') != 'explicit_html_sections_v1'
+            or structure.get('contract') != 'explicit_html_sections_v1'):
+        return []
+    from .business_rebuild import validate_views
+    from .business_run import source_chunks
+    chunk = source_chunks(run).get(claim['chunk_id'], {})
+    version = chunk.get('source_version_id')
+    profile = structure.get('versions', {}).get(version, {})
+    unit = profile.get('units', {}).get(structure.get('chunk_units', {}).get(claim['chunk_id']), {})
+    allowed = set(unit.get('block_ids', [])) | set(profile.get('global_context_block_ids', []))
+    stored = chunk.get('blocks', [])
+    if (claim['source_version_ids'] != [version] or chunk.get('id') not in unit.get('chunk_ids', [])
+            or any(b['source_version_id'] != version or b['id'] not in allowed for b in stored)):
+        return []
+    validate_views(stored, run['blocks'])
+    return stored
+
+
 def candidate_error_evidence(run, claim, refs, blocks):
     """Error attribution may use the delivered, verified explicit-unit context."""
     views = candidate_source_basis(claim, blocks)
-    structure = run.get('source_structure', {})
-    scoped = (run['recipe'].get('version') == autoschema.TARGET_CONTEXT_VERSION
-        and run['recipe']['options'].get('source_unit_policy') == 'explicit_html_sections_v1'
-        and structure.get('contract') == 'explicit_html_sections_v1')
+    scoped = (run['recipe']['options'].get('source_unit_policy') == 'explicit_html_sections_v1'
+        and run.get('source_structure', {}).get('contract') == 'explicit_html_sections_v1')
     if scoped:
-        from .business_rebuild import validate_views
-        from .business_run import source_chunks
-        chunk = source_chunks(run).get(claim['chunk_id'], {})
-        version = chunk.get('source_version_id')
-        profile = structure.get('versions', {}).get(version, {})
-        unit = profile.get('units', {}).get(structure.get('chunk_units', {}).get(claim['chunk_id']), {})
-        allowed = set(unit.get('block_ids', [])) | set(profile.get('global_context_block_ids', []))
-        stored = chunk.get('blocks', [])
-        if (claim['source_version_ids'] != [version] or chunk.get('id') not in unit.get('chunk_ids', [])
-                or any(b['source_version_id'] != version or b['id'] not in allowed for b in stored)):
-            return []
-        validate_views(stored, run['blocks'])
+        stored = explicit_candidate_views(run, claim)
         def identity(b):
             return (b['source_version_id'], b.get('parse_run_id') or b.get('run_id'), b['id'],
                     tuple(b.get('span', [0, len(b['text'])])), b['text'])
@@ -1981,11 +1989,8 @@ def candidate_request(run, claims, repair_context=(), *, challenges=None):
     options = run['recipe']['options']
     blocks = related_blocks(run, [dict(evidence=[dict(block_id=bid) for bid in basis])],
         chunks=autoschema.chunks(run['blocks'], options['context_tokens'], options['review_tokens'], 1))
-    if run['recipe'].get('version') == autoschema.TARGET_CONTEXT_VERSION:
-        from .business_rebuild import validate_views
-        chunks = execution.source_chunks(run)
-        stored = [b for claim in claims for b in chunks.get(claim['chunk_id'], {}).get('blocks', [])]
-        validate_views(stored, run['blocks'])
+    stored = [b for claim in claims for b in explicit_candidate_views(run, claim)]
+    if stored:
         selected = {(b['id'], tuple(b.get('span', [0, len(b['text'])]))): b for b in [*blocks, *stored]}
         order = {b['id']: n for n, b in enumerate(run['blocks'])}
         blocks = sorted(selected.values(), key=lambda b: (order[b['id']], b.get('span', [0])[0]))
