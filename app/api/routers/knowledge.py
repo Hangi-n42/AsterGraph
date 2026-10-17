@@ -23,7 +23,7 @@ from app.knowledge import extraction_store
 from app.knowledge import snapshots
 from app.knowledge.schemas import SearchRequest, LocalEntityRequest
 from app.knowledge import business_store, business_use
-from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, SourceRebuildPlanRequest
+from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
 
 
 class KnowledgeRoute(APIRoute):
@@ -185,6 +185,12 @@ def business_search(request: BusinessQuery, service=Depends(get_knowledge_servic
 def business_answer_recheck(run_id: str, request: BusinessAnswerRecheck, service=Depends(get_knowledge_service)):
     from app.knowledge.business_feedback import start
     return result(start(service, run_id, request))
+
+
+@router.post('/business/runs/{run_id}/participant-resumptions', response_model=KnowledgeResponse)
+def business_participant_resume(run_id: str, request: BusinessParticipantResume, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_participant_resume import start
+    return result(start(service, run_id, request.repair_id))
 
 
 @router.post('/business/changes', response_model=KnowledgeResponse)

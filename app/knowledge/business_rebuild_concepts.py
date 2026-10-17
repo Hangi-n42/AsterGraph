@@ -12,9 +12,9 @@ def projected_parent(parent, run):
     view = deepcopy(parent)
     view['claims'] = [deepcopy(claims.get(mapping.get(c['id']), c)) for c in parent['claims']]
     view['chunks'] = [deepcopy(chunks.get(mapping.get(c['id']), c)) for c in parent['chunks']]
-    view['graph'] = autoschema.graph(view['claims'])
     view['blocks'] = [deepcopy(next((b for b in run['blocks'] if b['id'] == mapping.get(old['id'])), old))
                       for old in parent['blocks']]
+    view['graph'] = autoschema.graph(view['claims'], view['blocks'])
     return view
 
 

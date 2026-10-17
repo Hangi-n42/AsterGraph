@@ -362,7 +362,7 @@ def prepare_run(service, db, run, request):
             approval_inherited=False, completed_extraction=[], context_scope='full_stored_source; extraction_subset_only')
         run['units'].append(dict(id=autoschema.identifier('source_rebind', plan['id']), stage='source_row_rebind',
             status='succeeded', model_called=False, bindings=deepcopy(bindings), finished_at=utcnow()))
-    run['graph'] = autoschema.graph(run['claims'])
+    run['graph'] = autoschema.graph(run['claims'], run['blocks'])
     plan.setdefault('execution_run_ids', []).append(run['id'])
     service.repository.save(db, 'runs', plan)
 

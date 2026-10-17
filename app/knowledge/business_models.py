@@ -69,6 +69,11 @@ class BusinessAnswerRecheck(BaseModel):
     repair: bool = True
 
 
+class BusinessParticipantResume(BaseModel):
+    model_config = {'extra': 'forbid'}
+    repair_id: str = Field(min_length=1)
+
+
 class EvidenceQuote(BaseModel):
     block_id: str
     quote: str = Field(min_length=1)

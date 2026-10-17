@@ -54,7 +54,7 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
         run['extraction_rejections'] = deepcopy([r for r in parent.get('extraction_rejections', [])
                                                  if r['chunk_id'] in selected_chunks])
         run['recipe']['options'].update(block_ids=list(block_ids), selection_reason=reason, conceptualize=True, repair=False)
-        run['graph'] = autoschema.graph(run['claims'])
+        run['graph'] = autoschema.graph(run['claims'], run['blocks'])
         targets = [item['target'] for item in business_concepts.prepare(
             run, autoschema.concept_targets(run['graph']), run['recipe']['options']['neighbor_mode'], service=service)]
         target_block_ids = {b['id'] for c in chunks for b in c['blocks'] if not b.get('context_only')}

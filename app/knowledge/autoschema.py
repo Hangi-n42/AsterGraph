@@ -280,9 +280,12 @@ def graph_record(chunk, role, raw, index, *, scope=None, scope_required=False):
     return value
 
 
-def graph(claims):
+def graph(claims, blocks=None):
     """Directed multigraph in JSON. No loss of parallel relations or source claims."""
     nodes, edges = {}, []
+    from .business_participants import validate
+    literal = {c['id']: validate(c, blocks or []) for c in claims if c.get('literal_grounding')
+        and not c.get('superseded_by') and c.get('interpretation', {}).get('target_status') != 'reference_only'}
     event_mentions = {}
     address_fields = ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char')
     for claim in claims:
@@ -351,6 +354,11 @@ def graph(claims):
                 basis.insert(2, entity_index)
             identity = 'unresolved_item_address'
         key = identifier('node', basis)
+        participant = None
+        if claim['id'] in literal and field == 'Entity':
+            participant = literal[claim['id']][entity_index]
+            key = identifier('node', [kind, label, [participant[k] for k in address_fields]])
+            identity = 'source_version+parse+exact_literal_span+kind'
         nodes.setdefault(key, dict(id=key, kind=kind, label=label, chunk_id=claim['chunk_id'],
                                    chunk_ids=[], labels=[], identity_scope=identity, claim_ids=[]))
         if claim['chunk_id'] not in nodes[key]['chunk_ids']:
@@ -361,6 +369,8 @@ def graph(claims):
             nodes[key]['claim_ids'].append(claim['id'])
         if reused:
             nodes[key].setdefault('address_reuses', []).append(reused)
+        if participant:
+            nodes[key]['literal_evidence'] = deepcopy(participant)
         return key
     for claim in claims:
         if claim.get('superseded_by') or claim.get('interpretation', {}).get('target_status') == 'reference_only':
@@ -395,6 +405,8 @@ def graph(claims):
         for n, (head, relation, tail) in enumerate(pairs):
             edges.append(dict(id=identifier('edge', [claim['id'], n]), head=head, relation=relation,
                               tail=tail, claim_id=claim['id'], source_chunk_id=claim['chunk_id'], status=claim['review_status']))
+            if claim['id'] in literal:
+                edges[-1]['literal_participant'] = deepcopy(literal[claim['id']][n])
     return dict(nodes=list(nodes.values()), edges=edges,
                 interpretations={c['id']: c['interpretation'] for c in claims if c.get('interpretation')})
 

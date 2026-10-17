@@ -109,7 +109,7 @@ def start(service, changeset_id, request):
             candidate_requirement_ids=[r['id'] for r in run['impact_candidates']],
             basis='shared source scope is an impact candidate, not confirmed semantic impact')
         run['preservation_reuses'] = preservation_reuses(parent, run, edit_id=receipt_id)
-        run['graph'] = autoschema.graph(run['claims'])
+        run['graph'] = autoschema.graph(run['claims'], run['blocks'])
         # Consuming a revision prevents a second edit from silently overwriting this one.
         change['revision'] += 1
         change.setdefault('edit_run_ids', []).append(run['id'])

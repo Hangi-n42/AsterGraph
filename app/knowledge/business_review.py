@@ -1984,6 +1984,10 @@ def own_source_errors(run, check, claims, blocks):
 
 def candidate_request(run, claims, repair_context=(), *, challenges=None):
     from . import business_run as execution
+    from .business_participants import validate
+    for claim in claims:
+        if claim.get('literal_grounding'):
+            validate(claim, run['blocks'])
     from .business_models import CandidateSourceReview, FieldPreservationCheck, PreservationComparison
     basis = {b['id'] for claim in claims for b in candidate_source_basis(claim, run['blocks'])}
     options = run['recipe']['options']
@@ -2045,6 +2049,11 @@ source_block_ids는 blocks.id의 실제 대조 원문이다. 주소와 문자 �
 before_normal_meanings/after_locations는 []이며 서버가 유효 retained 행의 실제 구절·위치를 연결한다.
 status=preserved는 실제 이전 정상 의미가 모두 유지되고 정정/신규와 구별된 경우다. 불충분이면 unknown, 정상 소실이면 lost다.
 '''
+    if any(c.get('literal_grounding') for c in claims):
+        instruction += '''\nliteral_grounding의 unverified_proposal은 이전 미승인 제안이다. 그 Entity/행위자 역할을 정답으로 고정하지 않는다.
+현재 raw.Entity가 고정된 Event·조건의 실제 참여 대상인지 원문과 직접 대조한다. participation은 일반 참여 관계이며 행위자만 뜻하지 않는다.
+원문 문자·주소 일치는 의미 지지의 증거가 아니다. 무관한 명사·역할 오류·범위 확대는 실제 raw.Entity/raw.Event 필드에 판정한다.
+미사용 Scope를 승인하거나 현재 후보의 양태로 적용하지 않는다. 이전 Entity와 달라졌다면 같은 행위자 주소 복원이라고 선언하지 않는다.\n'''
     return instruction, dict(blocks=blocks, claims=model_claims,
         repair_context=model_context, review_contract=run['recipe'].get('review_contract'), **(dict(candidate_challenges=[c for c in challenges
             if set(c['claim_ids']).intersection(provided)]) if challenges else {}),

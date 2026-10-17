@@ -285,7 +285,7 @@ def concept_read_view(service, db, parent, child_id):
     from . import autoschema, concept_work, business_html_debt_rows
     child = service.repository.get(db, 'runs', child_id)
     fingerprint = autoschema.identifier('graph', parent['graph'])
-    rebuilt = autoschema.graph(parent['claims'])
+    rebuilt = autoschema.graph(parent['claims'], parent['blocks'])
     business_html_debt_rows.annotate_graph(rebuilt, parent['claims'])
     if (child.get('kind') != 'business_concept' or child.get('status') != 'succeeded'
             or child.get('parent_run_id') != parent['id'] or child.get('input_version_ids') != parent['input_version_ids']

@@ -629,7 +629,7 @@ def exact_evidence(refs, blocks):
 
 def compact_claim(claim):
     value = {k: claim[k] for k in ('id', 'role', 'source_version_ids', 'statement', 'raw', 'conditions',
-             'exceptions', 'period', 'references', 'semantic_status', 'extraction_error', 'interpretation', 'evidence_context') if claim.get(k) not in (None, '', [])}
+             'exceptions', 'period', 'references', 'semantic_status', 'extraction_error', 'interpretation', 'evidence_context', 'literal_grounding') if claim.get(k) not in (None, '', [])}
     if claim.get('superseded_by'):
         value['superseded_by'] = claim['superseded_by']
     raw = claim.get('raw') or {}
@@ -1133,6 +1133,9 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
         raw = dict(Head=patch['head'], Relation=patch['relation'], Tail=patch['tail'])
         statement = patch['statement']
     value = deepcopy(old) if old else dict(id=uuid4().hex, chunk_id=autoschema.identifier('repair_chunk', refs))
+    if value.get('literal_grounding'):
+        value.setdefault('literal_grounding_history', []).append(dict(value.pop('literal_grounding'),
+            invalidated_by=repair_id, reason='claim_edited; previous_participant_selection_not_reapproved'))
     if old:
         value.setdefault('source_extraction_raw', deepcopy(old['raw']))
         if value.get('interpretation'):
@@ -1166,6 +1169,10 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
             value['edit_participants'] = deepcopy(participants)
             value['edit_sentences'] = deepcopy(patch['sentences'])
             value['evidence_context'] = exact_evidence(patch['evidence_context'], patch_blocks)
+            if patch.get('literal_grounding'):
+                from .business_participants import validate
+                value['literal_grounding'] = deepcopy(patch['literal_grounding'])
+                validate(value, run['blocks'])
     elif business_review.current(run):
         if not patch.get('scope'):
             raise ValueError('교정된 표현의 Scope 누락')
@@ -1245,7 +1252,7 @@ def event_meaning_edit(service, run, task, old, blocks):
         evidence_context=context, sentences=output['sentences'], server_participants=refs, origin='model_event_edit')
 
 
-def repair(service, run, requirement, assessment):
+def repair(service, run, requirement, assessment, *, replay_unit=None, proposals=None):
     targets = [a for a in assessment['actions'] if a['action'] in {'recover', 'correct'}]
     protected_claims = set()
     direct = business_review.current_candidate_reviews(run) if (business_review.separate_application(run)
@@ -1327,6 +1334,8 @@ def repair(service, run, requirement, assessment):
                 for m in t['meanings'])]
     for task in semantic_tasks:
         tasks.pop((task['target_id'], None))
+    if replay_unit is not None and semantic_tasks:
+        raise ValueError('Event 의미 교정이 혼합된 과거 복구 재개는 지원하지 않습니다.')
     semantic_patches = [patch for task in semantic_tasks
         if (patch := event_meaning_edit(service, run, task, by_id[task['target_id']], repair_blocks))]
     # One meaning may contain both a healthy candidate and an erroneous edge.
@@ -1350,17 +1359,27 @@ candidate_review_id가 있는 correct는 후보 자체의 원문 오류 판정�
 그 review_records의 실제 오류 필드·근거를 원문과 대조하여 고친다. source 의미의 누락/실패는 이 판정의 대체 정답이 아니다.
 before의 다른 정상 내용은 모두 보존한다. 요구에 무관한 정상 내용을 없애거나 질문 사용 시점을 원문 기간으로 넣지 않는다.
 ''' if direct_targets else '')
-    output = json_call(service, run, 'requirement_repair', instruction, dict(
+    context = dict(
         requirement=requirement, tasks=list(tasks.values()), source=source, blocks=repair_blocks,
         before=[compact_claim(by_id[c]) for c in target_ids], preserve_meanings=preserve,
         reuse_candidates=[compact_claim(by_id[cid]) for cid in sorted(maintained)
-            if cid in by_id and not by_id[cid].get('superseded_by')]), output_type) if tasks else None
+            if cid in by_id and not by_id[cid].get('superseded_by')])
+    if replay_unit is not None:
+        from .business_participants import verified_proposals
+        return verified_proposals(run, instruction, context, output_type, replay_unit)
+    output = deepcopy(proposals) if proposals is not None else json_call(service, run, 'requirement_repair',
+        instruction, context, output_type) if tasks else None
     if semantic_tasks:
         output = dict(patches=[*(output or {}).get('patches', []), *semantic_patches],
                       unresolved=(output or {}).get('unresolved', []))
     receipt = dict(id=uuid4().hex, origin='model', requirement_id=requirement['id'], assessment_id=assessment['id'],
                    before=before, patches=output, targets=targets, preserve_meanings=preserve,
                    status='unresolved', changes=[], errors=[], tabular_recovery=tabular_mappings)
+    if output and (assessment.get('source') or {}).get('public_scope'):
+        from .business_participants import select
+        output = select(service, run, output, repair_blocks,
+            {t['meaning_key'] for t in targets if t['action'] == 'recover' and not t['claim_ids']})
+        receipt['participant_selection'] = deepcopy(output.get('participant_selection'))
     if protected_rows:
         receipt['protected_source_rows'] = [dict(claim_id=cid, evidence=ref,
             meaning_keys=[t['meaning_key'] for t in targets if cid in t['claim_ids']],
@@ -1540,7 +1559,7 @@ def repair_extraction(service, run):
 
 def refresh_repaired_graph(service, run):
     options = run['recipe']['options']
-    run['graph'] = autoschema.graph(run['claims'])
+    run['graph'] = autoschema.graph(run['claims'], run['blocks'])
     changed_ids = {v['after']['id'] for r in run['repairs'] for v in r['changes']}
     for concept in run['concepts']:
         if changed_ids.intersection(concept['target'].get('claim_ids', [])):
@@ -1638,7 +1657,7 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             repair_extraction(service, run)
         # Rebuild the deterministic view of stored claims as well; this does not
         # extract, reassess, approve, or conceptualize them.
-        run['graph'] = autoschema.graph(run['claims'])
+        run['graph'] = autoschema.graph(run['claims'], run['blocks'])
         save(service, run)
         from . import business_concepts
         projected = run.get('source_projection')
