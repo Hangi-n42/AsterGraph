@@ -22,7 +22,7 @@ def test_hybrid_graph_reuses_b_and_keeps_graph_fallback_explicit(monkeypatch, se
     ids = list(passages)
     lexical = [dict(block_id=p, score=float(i)) for i, p in enumerate(reversed(ids))]
     monkeypatch.setattr(FrozenIndex, 'rank', lambda *_: lexical)
-    monkeypatch.setattr(gr, 'embed', lambda texts: np.asarray([[1., .5] for _ in texts]))
+    monkeypatch.setattr(gr, 'embed', lambda texts, *, service=None: np.asarray([[1., .5] for _ in texts]))
     monkeypatch.setattr(business_run, 'save', lambda *_: None)
     calls = []
 

@@ -55,8 +55,7 @@ def prepare(service, parent_run_id):
     """Prepare only; the caller uses the existing product execute after reviewing the receipt."""
     from .service import KnowledgeConflict, encode
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('다른 실행이 종료된 뒤 완료 기록을 이어갑니다.')
         parent = service.repository.get(db, 'runs', parent_run_id)
         complete, keys = completed_prefix(parent)

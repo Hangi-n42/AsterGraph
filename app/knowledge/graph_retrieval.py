@@ -14,12 +14,13 @@ import networkx as nx
 import numpy as np
 from pydantic import Field, create_model
 
-from . import autoschema, business_run
+from . import autoschema, business_run, business_html_debt_rows
 from .vendor.autoschemakg.rag_prompt import filter_triple_messages
 
 CONTRACT = 'autoschemakg-hipporag2-source-passages-v2'
 SELECTION_CONTRACT = 'ranked-novel-source-context-v1'
 INDEX_CONTRACT = 'passage-with-mandatory-source-context-v1'
+EDGE_CACHE_BYTES = 64 * 1024 * 1024
 
 
 @lru_cache(maxsize=1)
@@ -31,13 +32,45 @@ def encoder():
                                local_files_only=True)
 
 
-def embed(texts):
+def embed(texts, *, service=None):
     model = encoder()
     # No silent embedding truncation. Source conditions cannot disappear here.
     for text in texts:
         if len(model.tokenizer.encode(text, add_special_tokens=True, truncation=False)) > model.max_seq_length:
             raise ValueError('검색 임베딩 입력이 모델 한도를 넘습니다. 원문 구간을 분할해야 합니다.')
-    return np.asarray(model.encode(texts, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+    if service is None:
+        return np.asarray(model.encode(texts, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+    dimension = model.get_sentence_embedding_dimension()
+    # Loaded objects pin weights/runtime in this process; no persistent or cross-service reuse.
+    contract = (model, model.tokenizer, str(model.device), str(next(model.parameters()).dtype),
+                model.max_seq_length, dimension, model.truncate_dim,
+                model.default_prompt_name, tuple(sorted(model.prompts.items())))
+    previous, cached = getattr(service, '_graph_edge_embedding_cache', (None, {}))
+    if previous != contract:
+        cached = {}
+    unique = list(dict.fromkeys(texts))
+    def valid(vector):
+        return (isinstance(vector, np.ndarray) and vector.shape == (dimension,)
+                and vector.dtype == np.dtype(float) and np.isfinite(vector).all()
+                and np.isclose(np.linalg.norm(vector), 1., atol=1e-5))
+    vectors = {text: cached[text] for text in unique if text in cached and valid(cached[text])}
+    missing = [text for text in unique if text not in vectors]
+    reused = sum(text in vectors for text in texts)
+    if missing:
+        fresh = np.asarray(model.encode(missing, normalize_embeddings=True, show_progress_bar=False), dtype=float)
+        if fresh.shape != (len(missing), dimension) or not all(valid(v) for v in fresh):
+            raise ValueError('관계 임베딩의 개수·차원·정규화·유한 값을 확인할 수 없습니다.')
+        vectors.update((text, vector.copy()) for text, vector in zip(missing, fresh))
+    result = np.asarray([vectors[text] for text in texts], dtype=float)
+    kept, size = {}, 0
+    for text in reversed(unique):
+        size += vectors[text].nbytes
+        if size <= EDGE_CACHE_BYTES:
+            kept[text] = vectors[text]
+    service._graph_edge_embedding_cache = (contract, kept)
+    service._graph_edge_embedding_stats = dict(rows=len(texts), unique_texts=len(unique),
+        encoded_texts=len(missing), reused_rows=reused, retained_bytes=sum(v.nbytes for v in kept.values()))
+    return result
 
 
 def normalize(values):
@@ -69,6 +102,7 @@ def build(snapshot, variant):
     """Keep source-specific identities and parallel edges; concepts are search only."""
     claims = {c['id']: dict(c, evidence=reviewed_evidence(snapshot, c)) for c in snapshot['claims']}
     extracted = autoschema.graph(snapshot['claims'])
+    business_html_debt_rows.annotate_graph(extracted,snapshot['claims'])
     graph = nx.MultiDiGraph()
     for node in extracted['nodes']:
         if variant == 'entity' and node['kind'] != 'entity':
@@ -95,10 +129,14 @@ def build(snapshot, variant):
                 pid = autoschema.identifier('passage', ref)
                 passages[pid] = dict(id=pid, text=text, evidence=ref, claim_ids=[])
                 graph.add_node(pid, kind='passage', label=text)
+    passages_by_block = {}
+    for passage in passages.values():
+        loc = passage['evidence']
+        passages_by_block.setdefault((loc['source_version_id'], loc['block_id']), []).append(passage)
     for claim in claims.values():
         for ref in claim.get('evidence', []):
             if snapshot.get('include_unlinked_blocks'):
-                for passage in passages.values():
+                for passage in passages_by_block.get((ref.get('source_version_id'), ref.get('block_id')), []):
                     loc = passage['evidence']
                     if (all(loc[k] == ref.get(k) for k in ('source_version_id', 'block_id'))
                             and loc.get('parse_run_id') == ref.get('parse_run_id', loc.get('parse_run_id'))
@@ -113,12 +151,21 @@ def build(snapshot, variant):
             if claim['id'] not in row['claim_ids']:
                 row['claim_ids'].append(claim['id'])
             graph.add_node(pid, kind='passage', label=ref['quote'])
+    passage_order = {pid: index for index, pid in enumerate(passages)}
+    passages_by_claim = {}
+    for pid, passage in passages.items():
+        for cid in passage['claim_ids']:
+            passages_by_claim.setdefault(cid, []).append(pid)
     for node in extracted['nodes']:
         if node['id'] not in graph:
             continue
-        for pid, passage in passages.items():
-            linked = set(node['claim_ids']).intersection(passage['claim_ids'])
-            if linked and node.get('construction_method') == 'verified_html_classification_row_v1':
+        node_claims = set(node['claim_ids'])
+        candidates = {pid for cid in node_claims for pid in passages_by_claim.get(cid, [])}
+        # Restore the original passage order after combining claims' candidate lists.
+        for pid in sorted(candidates, key=passage_order.__getitem__):
+            passage = passages[pid]
+            linked = node_claims.intersection(passage['claim_ids'])
+            if linked and node.get('construction_method') in {'verified_html_classification_row_v1',business_html_debt_rows.PROFILE}:
                 loc = passage['evidence']
                 linked = linked if any(all(ref.get(k) == loc.get(k) for k in
                     ('source_version_id', 'parse_run_id', 'block_id'))
@@ -168,20 +215,34 @@ def reader_locator(block):
                if k in {'block_order', 'element_path'}}}
 
 
-def source_context(blocks, context, options):
+def source_context_bundles(blocks, options):
+    """One request's bundles, deferred to preserve the existing failure boundary."""
+    bundles = None
+    def get():
+        nonlocal bundles
+        if bundles is None:
+            bundles = autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1)
+        return bundles
+    return get
+
+
+def source_context(blocks, context, options, *, get_bundles=None):
     """Reuse extraction's mandatory table/list/heading bundles at the reader boundary."""
     selected = {}
+    contexts_by_block = {}
     originals = {(b['source_version_id'], b['id']): b for b in blocks}
     for item in context:
         ref = item['source_reference']
         key = (ref['source_version_id'], ref['block_id'])
         selected.setdefault(key, []).append(item['id'])
+        contexts_by_block.setdefault(key, []).append(item)
         if key in originals:
             item['locator'] = reader_locator(originals[key])
     views = {}
     # One indivisible target unit per bundle; this reuses the existing required
     # context selection without packing unrelated targets up to the model limit.
-    bundles = autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1)
+    bundles = (get_bundles() if get_bundles is not None else
+               autoschema.chunks(blocks, options['context_tokens'], options['review_tokens'], target_chars=1))
     continuation_targets = {}
     for bundle in bundles:
         for b in bundle['blocks']:
@@ -200,31 +261,29 @@ def source_context(blocks, context, options):
                 continue
             span = b.get('span', [0, len(b['text'])])
             key = (b['source_version_id'], b['id'], tuple(span))
-            existing = next((c['id'] for c in context if c['source_reference']['block_id'] == b['id']
-                and c['source_reference']['source_version_id'] == b['source_version_id']
-                and [c['source_reference']['start_char'], c['source_reference']['end_char']] == span), None)
-            if existing:
-                row = views.setdefault(key, dict(context_id=existing, supports_context_ids=[]))
-            else:
-                row = views.setdefault(key, dict(autoschema.source_packet([b])[0], span=span,
-                    locator=reader_locator(b),
-                    parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
+            existing = next((c['id'] for c in contexts_by_block.get((b['source_version_id'], b['id']), [])
+                if [c['source_reference']['start_char'], c['source_reference']['end_char']] == span), None)
+            if key not in views:
+                views[key] = (dict(context_id=existing, supports_context_ids=[]) if existing else
+                    dict(autoschema.source_packet([b])[0], span=span, locator=reader_locator(b),
+                         parse_run_id=b.get('parse_run_id'), supports_context_ids=[]))
+            row = views[key]
             row['supports_context_ids'] = list(dict.fromkeys(row['supports_context_ids'] + targets))
     return list(views.values())
 
 
-def passage_search_texts(candidates, blocks, options):
+def passage_search_texts(candidates, blocks, options, *, get_bundles=None):
     """Index the same source scope that the reader will receive, for every arm."""
     by_id = {c['id']: c for c in candidates}
     texts = {cid: [c['text']] for cid, c in by_id.items()}
-    for row in source_context(blocks, [dict(c) for c in candidates], options):
+    for row in source_context(blocks, [dict(c) for c in candidates], options, get_bundles=get_bundles):
         text = by_id[row['context_id']]['text'] if row.get('context_id') else row['text']
         for cid in row['supports_context_ids']:
             texts[cid].append(text)
     return {cid: '\n'.join(parts) for cid, parts in texts.items()}
 
 
-def select_passages(candidates, ranked, blocks, options, limit):
+def select_passages(candidates, ranked, blocks, options, limit, *, get_bundles=None):
     """Defer only evidence already supplied with the same mandatory source context.
 
     No document quotas or text-only equivalence: source/version/parse/block/span
@@ -237,7 +296,7 @@ def select_passages(candidates, ranked, blocks, options, limit):
         return (ref['source_version_id'], ref.get('parse_run_id'),
                 ref.get('block_id', row.get('id')), *span)
     bundles = {cid: [location(c)] for cid, c in by_id.items()}
-    context = source_context(blocks, [dict(c) for c in candidates], options)
+    context = source_context(blocks, [dict(c) for c in candidates], options, get_bundles=get_bundles)
     for row in context:
         span = location(by_id[row['context_id']]) if row.get('context_id') else location(row)
         for cid in row['supports_context_ids']:
@@ -300,9 +359,9 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
-def retrieve(service, run, snapshot, request):
+def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     started = monotonic()
-    graph, edges, passages, ignored = build(snapshot, request.graph_variant)
+    graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
     if not passages:
         raise ValueError('출처가 있는 검색 구간이 없습니다.')
     from app.core.config import settings
@@ -320,7 +379,8 @@ def retrieve(service, run, snapshot, request):
     if request.retrieval not in {'hipporag2', 'hybrid_graph'}:
         edges = []
     query = request.question + '\n' + '\n'.join(request.choices)
-    search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'])
+    search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'],
+                                      get_bundles=get_bundles)
     run['passage_index'] = dict(contract=INDEX_CONTRACT, texts=search_texts)
     # Cached only on this service and immutable snapshot content; model/settings are in key.
     cache = getattr(service, '_graph_embedding_cache', {})
@@ -335,14 +395,9 @@ def retrieve(service, run, snapshot, request):
     else:
         trace['index_cache_hit'] = True
     passage_vectors = cache[key]
-    edge_cache = getattr(service, '_graph_edge_embedding_cache', {})
-    edge_key = autoschema.identifier('edges', [key, edges])
-    trace['edge_index_cache_hit'] = bool(edges and edge_key in edge_cache)
-    if edges and edge_key not in edge_cache:
-        edge_cache.clear()
-        edge_cache[edge_key] = embed([e['text'] for e in edges])
-        service._graph_edge_embedding_cache = edge_cache
-    edge_vectors = edge_cache[edge_key] if edges else np.array([])
+    edge_vectors = embed([e['text'] for e in edges], service=service) if edges else np.array([])
+    trace['edge_embedding'] = dict(getattr(service, '_graph_edge_embedding_stats', {})) if edges else {}
+    trace['edge_index_cache_hit'] = bool(edges and trace['edge_embedding'].get('encoded_texts') == 0)
     trace['index_elapsed_s'] = monotonic() - started
     q = embed([query])[0]
     passage_scores = normalize(passage_vectors @ q)

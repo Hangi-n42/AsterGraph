@@ -68,6 +68,21 @@ class KnowledgeRepository:
             db.close()
 
     @staticmethod
+    def has_active_runs(db):
+        """Read only top-level statuses; retain JSON errors and last duplicate-key semantics."""
+        rows = db.execute('''
+            SELECT id, CASE WHEN json_valid(payload) THEN
+                (SELECT json_group_array(value) FROM json_each(payload) WHERE key='status')
+                END AS statuses FROM runs
+        ''')
+        for row in rows:
+            statuses = json.loads(row['statuses']) if row['statuses'] else []
+            status = statuses[-1] if statuses else KnowledgeRepository.get(db, 'runs', row['id'])['status']
+            if status in {'queued', 'running', 'cancel_requested'}:
+                return True
+        return False
+
+    @staticmethod
     def get(db, table, object_id):
         if table not in {'sources', 'versions', 'runs', 'blocks', 'ontology_versions', 'changesets', 'decisions',
                          'entities', 'entity_links', 'assertions', 'evidence', 'snapshots', 'requirements'}:

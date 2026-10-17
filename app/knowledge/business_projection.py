@@ -1,7 +1,6 @@
 """Preserve a completed extraction subset without re-chunking or retrying failures."""
 from copy import deepcopy
 from datetime import datetime, timezone
-import json
 from uuid import uuid4
 
 from . import autoschema, business_concepts, business_run
@@ -14,8 +13,7 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
         raise ValueError('원문 선택 이유와 시간대가 있는 요청 중단 시각이 필요합니다.')
     with service.lock, service.repository.connect() as db:
         db.execute('BEGIN IMMEDIATE')
-        if service.closed or any(json.loads(row['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                for row in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('기존 실행 종료 후 완료 추출 풀을 연결하세요.')
         parent = service.repository.get(db, 'runs', parent_run_id)
         if parent.get('kind') != 'business' or parent.get('requirements') or parent.get('assessments'):
@@ -58,7 +56,7 @@ def start(service, parent_run_id, *, block_ids, chunk_ids, reason, stop_new_requ
         run['recipe']['options'].update(block_ids=list(block_ids), selection_reason=reason, conceptualize=True, repair=False)
         run['graph'] = autoschema.graph(run['claims'])
         targets = [item['target'] for item in business_concepts.prepare(
-            run, autoschema.concept_targets(run['graph']), run['recipe']['options']['neighbor_mode'])]
+            run, autoschema.concept_targets(run['graph']), run['recipe']['options']['neighbor_mode'], service=service)]
         target_block_ids = {b['id'] for c in chunks for b in c['blocks'] if not b.get('context_only')}
         run['stored_pool'] = dict(parent_run_id=parent_run_id, source_hash=autoschema.identifier('source', run['blocks']),
             claims_hash=autoschema.identifier('claims', run['claims']), graph_hash=autoschema.identifier('graph', run['graph']),

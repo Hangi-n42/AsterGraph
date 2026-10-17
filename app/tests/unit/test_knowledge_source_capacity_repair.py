@@ -17,13 +17,18 @@ def recovery(tmp_path, monkeypatch):
     control = dict(kind='truncated', calls=[])
     service = KnowledgeService(tmp_path / 'knowledge.db')
     run = dict(id=uuid4().hex, status='running', kind='business', chunks=[chunk], claims=[], units=[],
-        recipe=dict(version=autoschema.VERSION, generation=dict(provider='ollama'), models=dict(draft='draft', review='review'),
+        recipe=dict(concept_work_contract='exact-original-concept-work-v1',version=autoschema.VERSION, generation=dict(provider='ollama'), models=dict(draft='draft', review='review'),
                     options=dict(context_tokens=49152, extraction_tokens=8192, review_tokens=4096, concept_tokens=512, think=False, timeout=1800, neighbor_mode='plain')),
-        model_identity=dict(draft='fixture', review='fixture'), metrics=dict(llm_calls=0, model_total_s=0))
+        model_identity=dict(draft=dict(digest='a'*64), review=dict(digest='a'*64)), metrics=dict(llm_calls=0, model_total_s=0))
     with service.repository.connect() as db:
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], json.dumps(run)))
     class Client:
         def __init__(self, *_): pass
+        def execution_identity(self,model,temperature,**limits):
+            return dict(engine='ollama',engine_version='fixture-only',model_digest='a'*64,
+                precision=dict(weights='fixture'),sampling=dict(contract='ollama-request-and-model-defaults-v1',
+                    request_options=dict(temperature=temperature,num_predict=limits['max_tokens'],num_ctx=limits['context_tokens']),
+                    think=limits['think'],model_parameters='fixture defaults',model_configuration_sha256='b'*64))
         async def generate(self, request, cancelled=None):
             control['calls'].append(request)
             if request.stage.startswith('capacity_repair_'):
@@ -36,7 +41,7 @@ def recovery(tmp_path, monkeypatch):
             return dict(request_id=request.request_id, parsed=None if failed else deepcopy(parsed),
                         text=json.dumps(['접수']) if request.stage.startswith('concept_') else json.dumps(parsed),
                         failure_kind=control['kind'] if failed else None,
-                        done_reason='length' if failed else 'stop', elapsed_s=0)
+                        done=not failed, done_reason='length' if failed else 'stop', elapsed_s=0)
     monkeypatch.setattr(business_run, 'ModelClient', Client)
     business_run.call(service, run, 'entity_relation', business_run.extraction_messages(run, chunk, 'entity_relation'),
                       autoschema.extraction_schema('entity_relation'), reference_map=chunk['source_reference_map'])

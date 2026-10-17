@@ -196,8 +196,7 @@ class KnowledgeService:
         with self.lock, self.repository.connect() as db:
             if self.closed:
                 raise KnowledgeConflict('서비스가 종료 중입니다.')
-            active = [json.loads(row['payload']) for row in db.execute('SELECT payload FROM runs')]
-            if any(r['status'] in {'queued', 'running', 'cancel_requested'} for r in active):
+            if self.repository.has_active_runs(db):
                 raise KnowledgeConflict('실행 중인 작업이 있습니다.')
             run = self._create_parse(db, request)
         self.executor.submit(self._execute, run['id'])

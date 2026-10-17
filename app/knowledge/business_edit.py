@@ -10,8 +10,7 @@ from .service import KnowledgeConflict, encode, utcnow
 
 def start(service, changeset_id, request):
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('기존 실행 종료 후 편집하세요.')
         change = service.repository.get(db, 'changesets', changeset_id)
         if change.get('kind') != 'source_graph' or change['revision'] != request.expected_revision:

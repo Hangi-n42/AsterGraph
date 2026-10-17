@@ -1,4 +1,5 @@
 from copy import deepcopy
+from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 import json
 
@@ -22,6 +23,7 @@ def parent_run():
         claims=claims, graph=dict(nodes=[], edges=[]), concepts=[], requirements=[], assessments=[], repairs=[],
         units=[], input_version_ids=['v'], sources={'v':dict(title='원문')}, model_identity={},
         recipe=dict(version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
+                    generation=dict(provider='ollama'),models=dict(draft='fixture',review='fixture'),
                     options=dict(context_tokens=49152, extraction_tokens=8192, concept_tokens=512,
                         review_tokens=4096, neighbor_mode='plain', conceptualize=True, repair=False, answer_items=[])))
     for role in autoschema.ROLES:
@@ -45,10 +47,12 @@ def test_projection_preserves_source_failures_and_all_concept_kinds(tmp_path, mo
         calls.append(stage)
         if past_deadline == 'after_first':
             run['source_projection']['stop_new_requests_at']='2000-01-01T00:00:00+00:00'
-        run['units'].append(dict(id=str(len(calls)),stage=stage,status='succeeded',response=dict(text='개념')))
+        run['units'].append(dict(id=str(len(calls)),stage=stage,status='succeeded',
+            response=dict(text='개념',done=True,done_reason='stop',failure_kind=None)))
         business_run.save(service, run)
         return dict(text='개념')
     monkeypatch.setattr(business_run, 'call', call)
+    monkeypatch.setattr(business_run, 'ModelClient', lambda *a: SimpleNamespace())
     try:
         result = service.project_business_source('parent', block_ids=['b0','b1'],
             chunk_ids=[parent['chunks'][0]['id']], reason='원문 업무 범위',

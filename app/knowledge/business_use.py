@@ -272,6 +272,75 @@ class SourceAnswer(Answer):
         return values
 
 
+def concept_read_view(service, db, parent, child_id):
+    """Read one explicit completed child; never mutate source, review, or snapshot state."""
+    from . import autoschema, concept_work, business_html_debt_rows
+    child = service.repository.get(db, 'runs', child_id)
+    fingerprint = autoschema.identifier('graph', parent['graph'])
+    rebuilt = autoschema.graph(parent['claims'])
+    business_html_debt_rows.annotate_graph(rebuilt, parent['claims'])
+    if (child.get('kind') != 'business_concept' or child.get('status') != 'succeeded'
+            or child.get('parent_run_id') != parent['id'] or child.get('input_version_ids') != parent['input_version_ids']
+            or child.get('graph_fingerprint') != fingerprint
+            or autoschema.identifier('graph', rebuilt) != fingerprint):
+        raise ValueError('동일 부모·원문·현재 그래프의 성공 종료 개념 실행을 선택하세요.')
+    targets = {t['id']: t for t in autoschema.concept_targets(parent['graph'])}
+    blocks = {(b['source_version_id'], b['id']): b for b in parent['blocks']}
+    units = {u['id']: u for u in child.get('units', [])}
+    selected = set()
+    concepts = child.get('concepts', [])
+    if not concepts or len(concepts) != len(child.get('concept_bindings', [])):
+        raise ValueError('완결한 대상별 개념 binding이 필요합니다.')
+    for concept in concepts:
+        target = concept.get('target', {})
+        tid = target.get('id')
+        bindings = [b for b in child['concept_bindings'] if b.get('concept_id') == concept.get('id')]
+        unit = units.get(concept.get('request_id'), {})
+        if (tid in selected or target != targets.get(tid) or len(bindings) != 1
+                or concept.get('status') != 'unreviewed' or concept.get('relation') != 'has_concept'
+                or concept.get('approved_is_a') is not False or concept.get('discarded') or concept.get('superseded_by')
+                or not isinstance(concept.get('concepts'), list) or not concept['concepts']
+                or not all(isinstance(t, str) and t.strip() for t in concept['concepts'])
+                or not concept_work.complete(unit) or unit.get('stage') != 'concept_' + target.get('kind', '')
+                or (unit.get('concept_work_input') or {}).get('version') != concept_work.VERSION):
+            raise ValueError('현재 대상에 대응하는 완결·미검증 단독 개념 결과가 필요합니다.')
+        binding = bindings[0]
+        selection = concept.get('selection') or {}
+        refs = selection.get('source_reference_map') or {}
+        deps = selection.get('source_dependencies') or []
+        if (binding.get('target_id') != tid or binding.get('target') != target
+                or binding.get('request_id') != unit['id'] or binding.get('work_id') != concept.get('work_id')
+                or binding.get('work_id') not in child.get('concept_work', {})
+                or unit.get('concept_work_id') != binding.get('work_id')
+                or binding.get('status') != 'unreviewed' or binding.get('relation') != 'has_concept'
+                or binding.get('approved_is_a') is not False or binding.get('source_reference_map') != refs
+                or unit.get('reference_map') != refs or len(refs) != len(deps)
+                or {d.get('alias') for d in deps} != set(refs)):
+            raise ValueError('개념 결과와 대상·원문 binding이 일치하지 않습니다.')
+        work = child['concept_work'][binding['work_id']]
+        if (work.get('status') != 'complete' or work.get('input') != unit.get('concept_work_input')
+                or work.get('fingerprint') != concept_work.digest(work.get('input'))):
+            raise ValueError('완결된 개념 work와 원시 요청 연결이 일치하지 않습니다.')
+        for dep in deps:
+            ref = refs[dep['alias']]
+            block = blocks.get((ref.get('source_version_id'), ref.get('block_id')))
+            if block is None:
+                raise ValueError('개념의 원문 의존 구간이 현재 부모 범위에 없습니다.')
+            span = ref.get('span') or [0, len(block['text'])]
+            if (not isinstance(span, list) or len(span) != 2 or not all(isinstance(v, int) for v in span)
+                    or not 0 <= span[0] < span[1] <= len(block['text'])
+                    or any(dep.get(k) != ref.get(k) for k in ('source_version_id','block_id','span'))
+                    or dep.get('parse_run_id') != block.get('parse_run_id') or dep.get('locator') != block.get('locator')
+                    or dep.get('text_sha256') != concept_work.digest(block['text'][span[0]:span[1]])):
+                raise ValueError('개념의 원문 파싱·구간·본문 의존성이 변경됐습니다.')
+        selected.add(tid)
+    view = [deepcopy(c) for c in parent['concepts'] if c['target']['id'] not in selected] + deepcopy(concepts)
+    provenance = dict(contract='explicit-child-concept-read-view-v1', concept_run_id=child_id,
+        source_run_id=parent['id'], graph_fingerprint=fingerprint, target_ids=sorted(selected),
+        states='unreviewed; has_concept; approved_is_a=false', parent_and_snapshot_persisted=False)
+    return view, provenance
+
+
 def concept_hints(snapshot):
     """Candidate concepts help retrieval only; they never become answer evidence."""
     hints = {c['id']: [] for c in snapshot['claims']}
@@ -840,24 +909,27 @@ def query(service, request, *, context_mode='graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
     source_reader = bool(request.source_run_id)
+    concept_view = None
     structured_reader = False
     if context_mode not in {'graph', 'document'}:
         raise ValueError('Unknown query context')
     if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
         raise ValueError('문서 기준선은 bm25 또는 hybrid를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
     with service.lock, service.repository.connect() as db:
-        if service.closed or any(json.loads(r['payload'])['status'] in {'queued', 'running', 'cancel_requested'}
-                                 for r in db.execute('SELECT payload FROM runs')):
+        if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('다른 실행이 종료된 뒤 답변을 요청하세요.')
         if source_reader:
             original = service.repository.get(db, 'runs', request.source_run_id)
             if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'review_ready', 'failed', 'cancelled'}:
                 raise ValueError('종료된 업무 지식 추출 실행을 선택하세요.')
+            concepts = original['concepts']
+            if request.concept_run_id:
+                concepts, concept_view = concept_read_view(service, db, original, request.concept_run_id)
             # A transient read view, never an approval or a stored snapshot.
             snapshot = dict(id='run:' + original['id'], kind='source_graph', run_id=original['id'],
                 source_versions=original['sources'], blocks=original['blocks'],
                 claims=[c for c in original['claims'] if not c.get('superseded_by') and not c.get('extraction_error')],
-                concepts=original['concepts'], requirements=[], assessments={}, include_unlinked_blocks=True)
+                concepts=concepts, requirements=[], assessments={}, include_unlinked_blocks=True)
         else:
             snapshot = service.repository.get(db, 'snapshots', request.snapshot_id)
         if snapshot.get('kind') != 'source_graph':
@@ -918,6 +990,8 @@ def query(service, request, *, context_mode='graph'):
                    answer_basis='source_passages_not_ontology_approval' if source_reader else 'reviewed_claims',
                    source_extraction_status=original['status'] if source_reader else None,
                    answer_contract=ANSWER_CONTRACT, required_context_ids=sorted(required_ids))
+        if concept_view is not None:
+            run['concept_view'] = concept_view
         if request.answer_mode == 'reviewed_items':
             run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, requirement_ids)
         run['execution_boundary'] = dict(
@@ -930,10 +1004,16 @@ def query(service, request, *, context_mode='graph'):
             review_provenance_scope='source_run_recipe_not_all_snapshot_assessments',
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
+    built = None
+    get_bundles = None
     if source_reader:
         from . import graph_retrieval
-        _, _, passages, _ = graph_retrieval.build(snapshot, request.graph_variant)
+        built = graph_retrieval.build(snapshot, request.graph_variant)
+        passages = built[2]
         candidates = graph_retrieval.passage_candidates(passages)
+        get_bundles = graph_retrieval.source_context_bundles(snapshot['blocks'], run['recipe']['options'])
+        if request.retrieval == 'bm25':
+            built = None
     elif context_mode == 'graph':
         candidates = [dict(id=c['id'], text=encode(business_run.compact_claim(c)),
                            file_id=c['source_version_ids'][0], source_group=c['source_version_ids'][0]) for c in snapshot['claims']]
@@ -943,7 +1023,8 @@ def query(service, request, *, context_mode='graph'):
     hints = concept_hints(snapshot) if context_mode == 'graph' and not source_reader else {}
     if request.retrieval == 'bm25':
         if source_reader:
-            search_texts = graph_retrieval.passage_search_texts(candidates, snapshot['blocks'], run['recipe']['options'])
+            search_texts = graph_retrieval.passage_search_texts(candidates, snapshot['blocks'], run['recipe']['options'],
+                                                             get_bundles=get_bundles)
             run['passage_index'] = dict(contract=graph_retrieval.INDEX_CONTRACT, texts=search_texts)
             index_candidates = [dict(c, text=search_texts[c['id']]) for c in candidates]
         else:
@@ -956,7 +1037,9 @@ def query(service, request, *, context_mode='graph'):
     else:
         from . import graph_retrieval
         try:
-            hits = graph_retrieval.retrieve(service, run, snapshot, request)
+            hits = graph_retrieval.retrieve(service, run, snapshot, request,
+                **({'built': built, 'get_bundles': get_bundles} if built is not None else {}))
+            built = None
         except Exception as exc:
             run.update(status='failed', finished_at=utcnow(), error=f'{type(exc).__name__}: {exc}')
             run['metrics']['elapsed_s'] = monotonic() - started
@@ -965,7 +1048,7 @@ def query(service, request, *, context_mode='graph'):
                         snapshot_id=snapshot['id'], error=run['error'], execution_boundary=run['execution_boundary'])
     if source_reader:
         hits, run['passage_selection'] = graph_retrieval.select_passages(
-            candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit)
+            candidates, hits, snapshot['blocks'], run['recipe']['options'], request.limit, get_bundles=get_bundles)
     if required_ids:
         by_id = {h['block_id']: h for h in hits}
         mandatory = [dict(by_id.get(c['id']) or dict(block_id=c['id'], file_id=c['file_id'], score=None),
@@ -1005,7 +1088,9 @@ def query(service, request, *, context_mode='graph'):
     required_source_context = []
     if source_reader:
         context = [{k: v for k, v in c.items() if k != 'linked_claim_ids'} for c in context]
-        required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'])
+        required_source_context = graph_retrieval.source_context(snapshot['blocks'], context, run['recipe']['options'],
+                                                               get_bundles=get_bundles)
+        get_bundles = None
         run['source_context_contract'] = 'existing-table-rowspan-heading-list-bundles-v1'
         run['source_context'] = deepcopy(required_source_context)
         reader_context = dict(context=context, source_context=required_source_context)
@@ -1166,4 +1251,5 @@ def query(service, request, *, context_mode='graph'):
     return dict(run_id=run['id'], status=status, answer=output, retrieval=hits,
                 context_mode=context_mode, snapshot_id=None if source_reader else snapshot['id'],
                 source_run_id=request.source_run_id, answer_basis=run['answer_basis'], limitations=limitations,
-                execution_boundary=run['execution_boundary'])
+                execution_boundary=run['execution_boundary'],
+                **({'concept_run_id': request.concept_run_id} if concept_view is not None else {}))

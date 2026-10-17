@@ -75,6 +75,34 @@ class ModelClient:
                 result[role] = dict(name=name, digest=installed[name]['digest'], context_length=min(lengths))
             return result
 
+    def execution_identity(self, model, temperature, *, max_tokens, context_tokens, think):
+        identity = dict(engine=self.provider, engine_version=None, model_digest=None,
+            precision=dict(weights=None), sampling=dict(contract='ollama-request-and-model-defaults-v1',
+                request_options=dict(temperature=temperature, num_predict=max_tokens, num_ctx=context_tokens),
+                think=think, model_parameters=None, model_configuration_sha256=None))
+        if self.provider != 'ollama':
+            return identity
+        try:
+            with httpx.Client(timeout=15, trust_env=False, follow_redirects=False, transport=self.transport) as client:
+                response = client.get(self.endpoint + '/api/version'); response.raise_for_status()
+                identity['engine_version'] = response.json().get('version')
+                response = client.get(self.endpoint + '/api/tags'); response.raise_for_status()
+                installed = next((m for m in response.json()['models'] if m['name'] == model), {})
+                identity['model_digest'] = installed.get('digest')
+                identity['precision']['weights'] = installed.get('details', {}).get('quantization_level')
+                response = client.post(self.endpoint + '/api/show', json={'model': model}); response.raise_for_status()
+                shown = response.json()
+                identity['sampling']['model_parameters'] = shown.get('parameters')
+                from hashlib import sha256
+                identity['sampling']['model_configuration_sha256'] = sha256(json.dumps(
+                    {k:shown.get(k) for k in ('parameters','template','model_info','requires')},
+                    ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        except (httpx.HTTPError, KeyError, TypeError, ValueError):
+            identity['observation_error'] = 'runtime_metadata_unavailable'
+        # Match engine version, weight quantization, actual options and reported model defaults;
+        # this is an execution contract, not a claim of bit-identical arithmetic or cache timing.
+        return identity
+
     async def generate(self, request: ModelRequest, cancelled: Callable[[], bool] | None = None):
         if request.max_tokens <= 0 or request.context_tokens <= request.max_tokens or request.timeout <= 0:
             raise ValueError('Invalid generation limits')

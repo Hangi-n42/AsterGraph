@@ -526,6 +526,10 @@ def test_requirement_revision_and_service_review_path(tmp_path, monkeypatch):
         def __init__(self, *_): pass
         def identities(self, models, required):
             return {k: {'name': v, 'digest': 'mock', 'context_length': required[k]} for k, v in models.items()}
+        def execution_identity(self,model,temperature,**limits):
+            return dict(engine='ollama',engine_version='fixture-only',model_digest='mock',precision=dict(weights='fixture'),
+                sampling=dict(contract='ollama-request-and-model-defaults-v1',model_parameters='fixture defaults',model_configuration_sha256='b'*64,
+                    request_options=dict(temperature=temperature,num_predict=limits['max_tokens'],num_ctx=limits['context_tokens']),think=limits['think']))
         async def generate(self, request, cancelled=None):
             context = json.loads(request.messages[-1]['content']) if request.stage.startswith(('requirement_', 'direct_', 'business_')) else {}
             if request.stage == 'entity_relation':
@@ -1021,7 +1025,7 @@ def test_neighbor_arms_execute_new_calls_on_identical_stored_information(tmp_pat
         def __init__(self, *_): pass
         async def generate(self, request, cancelled):
             calls.append(request)
-            return dict(text='기관, 접수처', parsed=None, failure_kind=None, elapsed_s=.001)
+            return dict(text='기관, 접수처', parsed=None, failure_kind=None, done=True, done_reason='stop', elapsed_s=.001)
     monkeypatch.setattr(business_run, 'ModelClient', Client)
     service = KnowledgeService(tmp_path / 'knowledge.db')
     try:
