@@ -464,7 +464,7 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     if stage != 'direct_definitions':
         if 'blocks' in context:
             if issubclass(output_type, (LocalSourceCheck, CandidateSourceReview)) or stage == 'source_reassessment':
-                parents = {b['id']: list(dict.fromkeys(p['id'] for p in autoschema.list_parents(b, context['blocks'])))
+                parents = {b['id']: list(dict.fromkeys(p['id'] for p in autoschema.strict_list_parents(b, context['blocks'])))
                            for b in context['blocks']}
                 if any(parents.values()):
                     context['source_parents'] = [dict(block_id=bid, parent_block_ids=ids) for bid, ids in parents.items() if ids]

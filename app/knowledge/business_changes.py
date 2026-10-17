@@ -145,8 +145,8 @@ def review_impacts(service, run, requirements, diff, versions, direct):
         dict(requirements=[{k: v for k, v in r.items() if k not in {'history', 'change_history', 'current_assessment'}} for r in requirements],
              direct_dependency_ids=direct, diff=dict(diff, changes=changes), versions=versions,
              stored_dependencies=dependencies, blocks=blocks,
-             source_parents=[dict(block_id=b['id'], parent_block_ids=[p['id'] for p in autoschema.list_parents(b, blocks)])
-                             for b in blocks if autoschema.list_parents(b, blocks)]), Impacts)
+             source_parents=[dict(block_id=b['id'], parent_block_ids=[p['id'] for p in autoschema.strict_list_parents(b, blocks)])
+                             for b in blocks if autoschema.strict_list_parents(b, blocks)]), Impacts)
     valid = bool(result and len(result['items']) == len(requirements)
         and {r['requirement_id'] for r in result['items']} == {r['id'] for r in requirements})
     if valid and any(not set(r['change_ids']) <= {c['id'] for c in diff['changes']} for r in result['items']):
