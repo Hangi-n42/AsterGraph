@@ -40,6 +40,7 @@ class BusinessRunRequest(BaseModel):
     neighbor_mode: Literal['structured', 'plain'] = 'plain'
     concept_work_contract: Literal['legacy', 'exact-original-concept-work-v1'] | None = None
     concept_source_context: Literal['whole', 'verified_table_rows_v1'] | None = None
+    source_unit_policy: Literal['whole', 'explicit_html_sections_v1'] = 'whole'
     model: str | None = None
     review_model: str | None = None
     context_tokens: int = Field(default=49152, ge=4096)
@@ -57,6 +58,7 @@ class BusinessRunRequest(BaseModel):
     resume_run_id: str | None = None
     reuse_run_id: str | None = None
     reassess_run_id: str | None = None
+    source_rebuild_plan_id: str | None = None
     conceptualize: bool = True
 
 
@@ -591,6 +593,12 @@ class ChangeRequest(BaseModel):
     after_version_id: str
     requirement_ids: list[str] = Field(default_factory=list)
     key_fields: list[str] = Field(default_factory=list)
+
+
+class SourceRebuildPlanRequest(ChangeRequest):
+    model_config = {'extra': 'forbid'}
+    parent_run_id: str
+    base_snapshot_id: str | None = None
 
 
 class HtmlLiteralRowsRequest(BaseModel):

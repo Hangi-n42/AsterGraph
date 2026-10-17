@@ -154,7 +154,12 @@ def start(service, request):
             raise ValueError('원문 블록이 없습니다.')
         for b in blocks:
             b['source_id'] = sources[b['source_version_id']]['source_id']
-        chunks = autoschema.chunks(blocks, request.context_tokens, request.extraction_tokens, request.extraction_target_chars)
+        source_structure = None
+        if request.source_unit_policy == 'whole':
+            chunks = autoschema.chunks(blocks, request.context_tokens, request.extraction_tokens, request.extraction_target_chars)
+        else:
+            from .business_rebuild_html import source_chunks
+            chunks, source_structure = source_chunks(service, db, blocks, request)
         if sum(bool(v) for v in (request.resume_run_id, request.reuse_run_id, request.reassess_run_id)) > 1:
             raise ValueError('재개·일부 재사용·저장 후보 재검토는 하나만 지정하세요.')
         if parent:
@@ -221,12 +226,22 @@ def start(service, request):
         if request.answer_items:
             from .business_use import bind_answer_items
             run['answer_items'] = bind_answer_items(request, requirements)
+        if source_structure is not None:
+            run['source_structure'] = source_structure
         if request.target_parse_run_ids:
             run['source_target_plan'] = business_review.freeze_target_plan(service, db, run, request.target_parse_run_ids)
         elif request.resume_run_id and parent.get('source_target_plan'):
             run['source_target_plan'] = deepcopy(parent['source_target_plan'])
         if request.resume_run_id and run.get('source_target_plan') != parent.get('source_target_plan'):
             raise ValueError('재개는 같은 고정 원문 대상 계획에서만 가능합니다. 새 재검토 실행을 사용하세요.')
+        if request.source_rebuild_plan_id:
+            from .business_rebuild import prepare_run
+            duplicate = prepare_run(service, db, run, request)
+            if duplicate:
+                return duplicate
+        elif parent and (request.reassess_run_id or request.resume_run_id):
+            from .business_rebuild import inherit_review_guard
+            inherit_review_guard(service, db, parent, run)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     service.executor.submit(execute, service, run['id'])
     return dict(run_id=run['id'], status='queued')
@@ -449,7 +464,7 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     if stage != 'direct_definitions':
         if 'blocks' in context:
             if issubclass(output_type, (LocalSourceCheck, CandidateSourceReview)) or stage == 'source_reassessment':
-                parents = {b['id']: list(dict.fromkeys(p['id'] for p in autoschema.list_parents(b, context['blocks'])))
+                parents = {b['id']: list(dict.fromkeys(p['id'] for p in autoschema.strict_list_parents(b, context['blocks'])))
                            for b in context['blocks']}
                 if any(parents.values()):
                     context['source_parents'] = [dict(block_id=bid, parent_block_ids=ids) for bid, ids in parents.items() if ids]
@@ -537,7 +552,7 @@ def reuse_source(service, run, stage, chunk_index):
     old = next((u for u in units if u.get('source_chunk_id') == chunk_id), None)
     if old is None and len(units) == len(run['parent_chunk_ids']):
         old = units[run['parent_chunk_ids'].index(chunk_id)]
-    if old is None or not old.get('response') or old['response'].get('failure_kind'):
+    if old is None or old.get('status') != 'succeeded' or old.get('error') or not old.get('response') or old['response'].get('failure_kind'):
         return None
     if stage in autoschema.ROLES and run['recipe'].get('version') == autoschema.VERSION:
         chunk = run['chunks'][chunk_index]
@@ -780,6 +795,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 pending_meaning_keys=sorted(all_keys - active), public_scope_unit_id=public.get('unit_id'),
                 scope_selection_is_historical=True, whole_requirement_complete=False)
         elif any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
+            candidates = business_review.public_evidence_candidates(run, source, selected_candidates)
+            business_review.review_candidate_pool(service, run, candidates)
             source = business_review.public_requirement_scope(service, run, requirement, source)
     assessment = dict(id=uuid4().hex, requirement_id=requirement['id'], revision=requirement['revision'],
                       phase=phase, source=source, representation=None, status='unknown', claim_ids=[], actions=[], errors=[],
@@ -1429,10 +1446,40 @@ before의 다른 정상 내용은 모두 보존한다. 요구에 무관한 정�
     return receipt['status'] == 'applied_awaiting_recheck'
 
 
+def append_claim_records(run, created):
+    if run.get('source_rebuild'):
+        existing = {c['id']: c for c in run['claims']}
+        if any(c['id'] in existing and c != existing[c['id']] for c in created):
+            raise ValueError('같은 재구축 후보의 저장 내용이 다릅니다.')
+        created = [c for c in created if c['id'] not in existing]
+    run['claims'].extend(created)
+
+
+DEFINITION_INSTRUCTION = ('원문의 명시적인 정의만 한국어로 추출한다. 없는 정의/상위유형은 만들지 않는다. term/definition과 정확 인용. '
+    'context_only는 참고용이며 새 정의는 대상 구간에서만 만든다. 정의가 없으면 빈 배열.')
+
+
+def store_definitions(run, chunk, definitions):
+    created = []
+    for n, definition in enumerate(definitions['definitions']):
+        refs = exact_evidence(definition['evidence'], chunk['blocks'])
+        raw = dict(Head=definition['term'], Relation='정의', Tail=definition['definition'])
+        claim = autoschema.graph_record(chunk, 'direct_definition', raw, n)
+        claim['evidence'] = refs
+        if not any(b['id'] == e['block_id'] and not b.get('context_only') and
+                   b.get('span', [0, len(b['text'])])[0] <= e['start_char'] and
+                   e['end_char'] <= b.get('span', [0, len(b['text'])])[1]
+                   for e in refs for b in chunk['blocks']):
+            claim['extraction_error'] = 'reference_only_definition_outside_extraction_target'
+        created.append(claim)
+    append_claim_records(run, created)
+
+
 def store_extraction(run, chunk, role, response, unit):
     valid, rejected = autoschema.partition(response['parsed'], role)
-    run['claims'].extend(autoschema.graph_record(chunk, role, row['value'], row['index'], scope=row['scope'],
-        scope_required=run.get('recipe', {}).get('version') == autoschema.VERSION) for row in valid)
+    created = [autoschema.graph_record(chunk, role, row['value'], row['index'], scope=row['scope'],
+        scope_required=run.get('recipe', {}).get('version') == autoschema.VERSION) for row in valid]
+    append_claim_records(run, created)
     for claim in run['claims']:
         if claim.get('interpretation', {}).get('target_status') == 'reference_only':
             claim['extraction_error'] = 'reference_only_claim_outside_extraction_target'
@@ -1443,7 +1490,7 @@ def store_extraction(run, chunk, role, response, unit):
         raw = item['raw'] if isinstance(item['raw'], dict) else dict(Event=encode(item['raw']))
         claim = autoschema.graph_record(chunk, 'incomplete_extraction', raw, item['index'])
         claim.update(original_role=role, extraction_error=item['error'])
-        run['claims'].append(claim)
+        append_claim_records(run, [claim])
         run.setdefault('extraction_rejections', []).append(dict(
             claim_id=claim['id'], chunk_id=chunk['id'], role=role, raw=deepcopy(item['raw']),
             index=item['index'], unit_id=unit['id'], error=item['error'], status='unresolved'))
@@ -1516,7 +1563,15 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         options = run['recipe']['options']
         from . import business_checkpoint
         inherited = business_checkpoint.validate(service, run)
+        if run.get('source_rebuild'):
+            from . import business_rebuild
+            inherited |= business_rebuild.completed(service, run)
         for chunk_index, chunk in enumerate([] if run.get('stored_pool') else run['chunks']):
+            if run.get('source_rebuild'):
+                if cancelled(service, run):
+                    return
+                if chunk['id'] not in run['source_rebuild']['extraction_chunk_ids']:
+                    continue
             if all(b.get('locator', {}).get('format') in {'json', 'xlsx'} and
                    isinstance(b['locator'].get('fields'), dict) for b in chunk['blocks']):
                 # Already-structured rows do not need generative triple extraction.
@@ -1525,9 +1580,19 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
                 for index, block in enumerate(chunk['blocks']):
                     if block.get('context_only'):
                         continue
-                    run['claims'].append(direct_tabular_row(chunk, block, index))
+                    if run.get('source_rebuild') and block['id'] not in run['source_rebuild']['target_block_ids']:
+                        continue
+                    claim = direct_tabular_row(chunk, block, index)
+                    if not run.get('source_rebuild') or not any(c['id'] == claim['id'] for c in run['claims']):
+                        run['claims'].append(claim)
+                if (chunk['id'], 'structured_table_load') in inherited:
+                    continue
                 run['units'].append(dict(id=uuid4().hex, stage='structured_table_load', status='succeeded',
-                    model_called=False, block_ids=[b['id'] for b in chunk['blocks']], finished_at=utcnow()))
+                    model_called=False, block_ids=[b['id'] for b in chunk['blocks'] if not run.get('source_rebuild')
+                        or b['id'] in run['source_rebuild']['target_block_ids']], finished_at=utcnow()))
+                if run.get('source_rebuild'):
+                    run['units'][-1]['source_chunk_id'] = chunk['id']
+                    business_rebuild.record_completion(run, chunk['id'], 'structured_table_load')
                 save(service, run)
                 continue
             for role in autoschema.ROLES:
@@ -1545,28 +1610,27 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
                         store_extraction(run, chunk, role, response, run['units'][-1])
                     except ValueError as exc:
                         run['units'][-1].update(status='failed', error=str(exc))
+                if run.get('source_rebuild') and run['units'][-1]['status'] == 'succeeded':
+                    business_rebuild.record_completion(run, chunk['id'], role)
                 save(service, run)
             if (chunk['id'], 'direct_definitions') in inherited:
                 continue
             # Explicit definitions remain independent of the three extraction successes.
             previous = reuse_source(service, run, 'direct_definitions', chunk_index)
             definitions = Definitions.model_validate(previous['parsed']).model_dump() if previous else json_call(service, run, 'direct_definitions',
-                '원문의 명시적인 정의만 한국어로 추출한다. 없는 정의/상위유형은 만들지 않는다. term/definition과 정확 인용. '
-                'context_only는 참고용이며 새 정의는 대상 구간에서만 만든다. 정의가 없으면 빈 배열.',
+                DEFINITION_INSTRUCTION,
                 dict(blocks=autoschema.source_packet(chunk['blocks'])), Definitions)
             run['units'][-1]['source_chunk_id'] = chunk['id']
             if definitions:
-                for n, definition in enumerate(definitions['definitions']):
-                    refs = exact_evidence(definition['evidence'], chunk['blocks'])
-                    raw = dict(Head=definition['term'], Relation='정의', Tail=definition['definition'])
-                    claim = autoschema.graph_record(chunk, 'direct_definition', raw, n)
-                    claim['evidence'] = refs
-                    if not any(b['id'] == e['block_id'] and not b.get('context_only') and
-                               b.get('span', [0, len(b['text'])])[0] <= e['start_char'] and
-                               e['end_char'] <= b.get('span', [0, len(b['text'])])[1]
-                               for e in refs for b in chunk['blocks']):
-                        claim['extraction_error'] = 'reference_only_definition_outside_extraction_target'
-                    run['claims'].append(claim)
+                try:
+                    store_definitions(run, chunk, definitions)
+                except ValueError as exc:
+                    run['units'][-1].update(status='failed', error=str(exc))
+                    save(service, run)
+                    raise
+            if run.get('source_rebuild') and run['units'][-1]['status'] == 'succeeded':
+                business_rebuild.record_completion(run, chunk['id'], 'direct_definitions')
+                save(service, run)
         if capacity_repairs:
             from . import source_capacity_repair
             source_capacity_repair.repair(service, run, capacity_repairs)
@@ -1582,9 +1646,13 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             'all' if options.get('conceptualize', True) else 'deferred_to_selected_targets')
         targets = autoschema.concept_targets(run['graph']) if not defer_concepts and options.get('conceptualize', True) and (not run.get('stored_pool') or projected) else []
         planned = business_concepts.prepare(run, targets, options['neighbor_mode'], service=service)
+        from .business_rebuild_concepts import bind_unchanged
+        source_bound = bind_unchanged(service, run, planned)
         if projected:
             projected['planned_concept_target_ids'] = [item['target']['id'] for item in planned]
         for item in planned:
+            if item['target']['id'] in source_bound:
+                continue
             if cancelled(service, run):
                 return
             if projected and datetime.now(timezone.utc) >= datetime.fromisoformat(projected['stop_new_requests_at']):
@@ -1627,6 +1695,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         run['status'] = 'review_ready' if all(a['status'] == 'satisfied' for a in latest.values()) and len(latest) == len(run['requirements']) else 'partial'
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
+        if run.get('source_rebuild', {}).get('unresolved_source_units'):
+            run['extraction_complete'] = False
         if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
                           or projected['unattempted_concept_target_ids']):
             run['extraction_complete'] = False

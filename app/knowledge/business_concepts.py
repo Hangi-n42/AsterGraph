@@ -69,12 +69,38 @@ def prepare(parent, targets, mode, *, service=None, source_context=None):
 
 def refresh_changed(service, run, changed_ids):
     options = run['recipe']['options']
-    targets = [t for t in autoschema.concept_targets(run['graph']) if changed_ids.intersection(t['claim_ids'])]
+    targets = autoschema.concept_targets(run['graph'])
     planned = prepare(run, targets, options['neighbor_mode'], service=service)
+    live = {(i['target']['kind'], i['target']['id']) for i in planned}
+    previous = {(c['target']['kind'], c['target']['id']) for c in run['concepts']
+                if c['status'] in {'unreviewed', 'accepted'}}
+    previous_groups = {(c['target']['kind'], c['target'].get('partition_of', c['target']['id'])) for c in run['concepts']
+                       if c['status'] in {'unreviewed', 'accepted'}}
+    def stale(concept, reason):
+        concept.update(previous_status=concept['status'], status='needs_review', stale_reason=reason)
+        for binding in [*run.get('concept_bindings', []), *run.get('source_concept_bindings', [])]:
+            if binding['concept_id'] == concept['id']:
+                binding.update(previous_status=binding['status'], status='needs_review')
+    for concept in run['concepts']:
+        if concept['status'] in {'unreviewed', 'accepted'} and (concept['target']['kind'], concept['target']['id']) not in live:
+            stale(concept, 'concept_target_removed')
     for item in planned:
+        prior = [c for c in run['concepts'] if c['target']['id'] == item['target']['id']
+                 and c['target']['kind'] == item['target']['kind'] and c['status'] in {'unreviewed', 'accepted'}]
+        units = {u['id']: u for u in run['units']}
+        target = item['target']
+        regrouped = ((target['kind'], target['id']) not in previous
+                     and (target['kind'], target.get('partition_of', target['id'])) in previous_groups)
+        if not regrouped and not changed_ids.intersection(target['claim_ids']) and not any(
+                not concept_work.same_input(units.get(c.get('request_id'), {}), c, item) for c in prior):
+            continue
         if business_run.cancelled(service, run):
             return
+        for concept in prior:
+            if concept['target'] != item['target']:
+                stale(concept, 'concept_target_input_changed')
         apply_selected_contract(service, run, item, refreshed=True)
+    business_run.save(service, run)
 
 
 

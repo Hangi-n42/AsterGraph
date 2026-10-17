@@ -254,3 +254,30 @@ def test_resume_of_legacy_parent_keeps_recorded_contract_before_any_worker(envir
         assert service.repository.get(db,'runs',parent['id'])==parent
     assert child['recipe']['concept_work_contract']=='legacy' and child['status']=='queued'
     assert requests==[]
+
+
+def test_refresh_detects_deleted_neighbor_and_retires_missing_target(environment):
+    from app.knowledge import autoschema, business_use, graph_retrieval
+    service, requests = environment
+    run = pool('v')
+    extra = autoschema.graph_record(run['chunks'][0], 'entity_relation',
+        dict(Head='기관', Relation='보조 관계', Tail='신청'), 1)
+    run['claims'].append(extra)
+    run['graph'] = autoschema.graph(run['claims'])
+    store(service, run)
+    for item in plans(run):
+        business_concepts.apply(service, run, item)
+    affected = [c for c in run['concepts'] if extra['id'] in c['target']['claim_ids']]
+    for concept in affected:
+        concept['concepts'] = ['삭제전 이웃 전용 유형']
+    business_run.save(service, run)
+    count = len(requests)
+    run['claims'] = [c for c in run['claims'] if c['id'] != extra['id']]
+    run['graph'] = autoschema.graph(run['claims'])
+    business_concepts.refresh_changed(service, run, {extra['id']})
+    assert len(requests) == count + 2
+    assert all(c['status'] == 'needs_review' for c in affected)
+    assert any(c.get('stale_reason') == 'concept_target_removed' for c in affected)
+    assert all('삭제전 이웃 전용 유형' not in values for values in business_use.concept_hints(run).values())
+    graph, _, _, _ = graph_retrieval.build(run, 'full')
+    assert '삭제전 이웃 전용 유형' not in {n['label'] for _, n in graph.nodes(data=True)}

@@ -1871,6 +1871,67 @@ def candidate_source_basis(claim, blocks):
         for e in claim.get('evidence', []))]
 
 
+def explicit_candidate_views(run, claim):
+    """Return only canonical views owned by this server-created HTML unit."""
+    structure = run.get('source_structure', {})
+    if (run['recipe']['options'].get('source_unit_policy') != 'explicit_html_sections_v1'
+            or structure.get('contract') != 'explicit_html_sections_v1'):
+        return []
+    from .business_rebuild import validate_views
+    from .business_run import source_chunks
+    chunk = source_chunks(run).get(claim['chunk_id'], {})
+    version = chunk.get('source_version_id')
+    profile = structure.get('versions', {}).get(version, {})
+    unit = profile.get('units', {}).get(structure.get('chunk_units', {}).get(claim['chunk_id']), {})
+    allowed = set(unit.get('block_ids', [])) | set(profile.get('global_context_block_ids', []))
+    stored = chunk.get('blocks', [])
+    if (claim['source_version_ids'] != [version] or chunk.get('id') not in unit.get('chunk_ids', [])
+            or any(b['source_version_id'] != version or b['id'] not in allowed for b in stored)):
+        return []
+    validate_views(stored, run['blocks'])
+    return stored
+
+
+def candidate_error_evidence(run, claim, refs, blocks):
+    """Error attribution may use the delivered, verified explicit-unit context."""
+    views = candidate_source_basis(claim, blocks)
+    scoped = (run['recipe']['options'].get('source_unit_policy') == 'explicit_html_sections_v1'
+        and run.get('source_structure', {}).get('contract') == 'explicit_html_sections_v1')
+    if scoped:
+        stored = explicit_candidate_views(run, claim)
+        def identity(b):
+            return (b['source_version_id'], b.get('parse_run_id') or b.get('run_id'), b['id'],
+                    tuple(b.get('span', [0, len(b['text'])])), b['text'])
+        delivered = {identity(b) for b in blocks}
+        views = [b for b in stored if identity(b) in delivered]
+    return [e for e in refs if any(e['block_id'] == b['id'] and e['source_version_id'] == b['source_version_id']
+        and (not scoped or b.get('span', [0, len(b['text'])])[0] <= e['start_char']
+             < e['end_char'] <= b.get('span', [0, len(b['text'])])[1]) for b in views)]
+
+
+def public_evidence_candidates(run, source, candidates):
+    from .business_run import exact_evidence
+    refs = []
+    for meaning in source.get('meanings', []):
+        try:
+            refs.extend(exact_evidence(meaning.get('evidence', []), run['blocks']))
+        except ValueError:
+            continue  # Invalid E evidence remains pending in the usual source validation.
+    result = []
+    for claim in candidates:
+        try:
+            own = [e for e in exact_evidence(claim.get('evidence', []), run['blocks'])
+                   if e['source_version_id'] in claim['source_version_ids']]
+        except ValueError:
+            continue
+        if any((a['source_version_id'], a['parse_run_id'], a['block_id']) ==
+               (b['source_version_id'], b['parse_run_id'], b['block_id'])
+               and max(a['start_char'], b['start_char']) < min(a['end_char'], b['end_char'])
+               for a in refs for b in own):
+            result.append(claim)
+    return result
+
+
 def own_source_errors(run, check, claims, blocks):
     """Keep raw allegations in receipts; only attributed source errors drive repair."""
     from .business_run import exact_direct_row, exact_evidence
@@ -1884,13 +1945,11 @@ def own_source_errors(run, check, claims, blocks):
     for cid in sorted(alleged & by_id.keys()):
         candidate = by_id[cid]
         fields = check.get('error_fields', {}).get(cid, [])
-        own = candidate_source_basis(candidate, blocks)
         try:
             refs = exact_evidence(check.get('error_evidence', []), blocks)
         except ValueError:
             refs = []
-        own_refs = [e for e in refs if any(e['block_id'] == b['id']
-                    and e['source_version_id'] == b['source_version_id'] for b in own)]
+        own_refs = candidate_error_evidence(run, candidate, refs, blocks)
         literal = exact_direct_row(candidate, run['blocks'])
         literal_fields = literal and fields and all(f in {'raw', 'raw.Event', 'raw.fields'}
             or f.startswith('raw.fields.') and f[len('raw.fields.'):] in candidate['raw']['fields']
@@ -1930,6 +1989,11 @@ def candidate_request(run, claims, repair_context=(), *, challenges=None):
     options = run['recipe']['options']
     blocks = related_blocks(run, [dict(evidence=[dict(block_id=bid) for bid in basis])],
         chunks=autoschema.chunks(run['blocks'], options['context_tokens'], options['review_tokens'], 1))
+    stored = [b for claim in claims for b in explicit_candidate_views(run, claim)]
+    if stored:
+        selected = {(b['id'], tuple(b.get('span', [0, len(b['text'])]))): b for b in [*blocks, *stored]}
+        order = {b['id']: n for n, b in enumerate(run['blocks'])}
+        blocks = sorted(selected.values(), key=lambda b: (order[b['id']], b.get('span', [0])[0]))
     provided = {c['id']: execution.compact_claim(c) for c in claims}
     challenges = run.get('candidate_challenges', []) if challenges is None else challenges
     views = preservation_views(repair_context)
@@ -2064,6 +2128,18 @@ def review_candidate_pool(service, run, claims):
         review_candidates(service, run, batch, repair_context=context)
 
 
+def candidate_field(value, field):
+    """Resolve only existing dict keys and canonical, in-range list indices."""
+    for part in field.split('.'):
+        if isinstance(value, dict) and part in value:
+            value = value[part]
+        elif isinstance(value, list) and re.fullmatch(r'0|[1-9][0-9]*', part) and int(part) < len(value):
+            value = value[int(part)]
+        else:
+            raise ValueError('candidate_error_field_not_provided')
+    return value
+
+
 def attach_candidate_support(run, output, claims, blocks):
     """R reports contribution; fresh direct receipts alone supply whole-candidate verdicts."""
     from . import business_run as execution
@@ -2074,13 +2150,10 @@ def attach_candidate_support(run, output, claims, blocks):
                 raise ValueError('candidate_challenge_outside_input')
             refs = execution.exact_evidence(challenge['evidence'], blocks)
             for cid in challenge['claim_ids']:
-                own = {b['id'] for b in candidate_source_basis(by_id[cid], blocks)}
-                if not any(e['block_id'] in own for e in refs):
+                if not candidate_error_evidence(run, by_id[cid], refs, blocks):
                     raise ValueError('candidate_challenge_without_own_source')
                 for field in challenge['fields']:
-                    value = execution.compact_claim(by_id[cid])
-                    for part in field.split('.'):
-                        value = value[part]
+                    candidate_field(execution.compact_claim(by_id[cid]), field)
             if challenge not in run.setdefault('candidate_challenges', []):
                 run['candidate_challenges'].append(deepcopy(challenge))
         except (ValueError, KeyError, TypeError) as exc:
@@ -2131,8 +2204,10 @@ def review_candidates(service, run, claims, *, repair_context=()):
                 continue
             try:
                 refs = execution.exact_evidence(row['evidence'], blocks)
-                own = {b['id'] for b in candidate_source_basis(next(c for c in claims if c['id'] == cid), blocks)}
-                if not refs or not any(e['block_id'] in own for e in refs):
+                claim = next(c for c in claims if c['id'] == cid)
+                owned = (candidate_error_evidence(run, claim, refs, blocks) if status != 'supported' else
+                    [e for e in refs if any(e['block_id'] == b['id'] for b in candidate_source_basis(claim, blocks))])
+                if not refs or not owned:
                     raise ValueError('candidate_support_without_own_source')
                 if status != 'supported' and (not row['error_fields'] or not row['error_evidence']):
                     raise ValueError('candidate_uncertainty_without_field_and_source')
@@ -2142,11 +2217,7 @@ def review_candidates(service, run, claims, *, repair_context=()):
                     'raw.' + field if '.' not in field and field in provided[cid].get('raw', {}) else field
                     for field in row['error_fields']]
                 for field in fields:
-                    value = provided[cid]
-                    for part in field.split('.'):
-                        if not isinstance(value, dict) or part not in value:
-                            raise ValueError('candidate_error_field_not_provided')
-                        value = value[part]
+                    candidate_field(provided[cid], field)
                 check = dict(meaning_key='candidate:' + cid, status='represented' if status == 'supported' else status,
                     claim_ids=[cid], incorrect_claim_ids=[cid] if status == 'incorrect' else [],
                     claim_support={cid: status}, error_fields={cid: fields} if fields else {},

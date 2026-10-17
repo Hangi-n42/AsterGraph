@@ -121,11 +121,28 @@ def list_text_parent(path):
 
 
 def list_parents(block, blocks):
-    """Parser list ancestors only; their semantic applicability remains a model judgment."""
+    """Reading context includes same-li text carriers; strict_list_parents declares ancestry."""
     path = block.get('locator', {}).get('element_path', '')
     return [b for b in blocks if b['id'] != block['id'] and b['source_version_id'] == block['source_version_id']
             and list_text_parent(b.get('locator', {}).get('element_path', '')) != b.get('locator', {}).get('element_path', '')
             and path.startswith(list_text_parent(b['locator']['element_path']) + ' > ')]
+
+
+def strict_list_parents(block, blocks):
+    """Declared ancestry requires a strictly enclosing list-item owner."""
+    path = block.get('locator', {}).get('element_path', '').split('::text(')[0].split(' > ')
+    items = [n for n, part in enumerate(path) if re.fullmatch(r'li(?::[^>]*)?', part)]
+    if not items:
+        return []
+    owner = path[:items[-1] + 1]
+    parents = []
+    for candidate in list_parents(block, blocks):
+        parent = list_text_parent(candidate['locator']['element_path']).split(' > ')
+        if (len(parent) < len(owner) and owner[:len(parent)] == parent
+                and (candidate.get('parse_run_id') or candidate.get('run_id'))
+                    == (block.get('parse_run_id') or block.get('run_id'))):
+            parents.append(candidate)
+    return parents
 
 
 def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
