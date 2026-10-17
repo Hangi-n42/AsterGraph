@@ -1,0 +1,567 @@
+{
+  "purpose": "historical research preservation only",
+  "base_main": "bebf7b3aaca0e8cabe2c29f4d2def518e48ac661",
+  "original_to_research_commits": [
+    {
+      "original_sha": "be543a89abaff64e277029c63bd080d8a4eb437c",
+      "research_sha": "ab908ed176b85a5141835b0f168b4f1d43492fa3",
+      "method": "cherry-pick -x research-only original"
+    },
+    {
+      "original_sha": "ade0185c5de6ca14e4ddfd872c4af57bf5ce534b",
+      "research_sha": "03e75f78835bb5ad61720c1ffa3b7ad86c6ebfaf",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "545e3ad88aded60528c6f79e18d0885547eeaa10",
+      "research_sha": "83a9a9c7ac3f0720085df6dd815ac5f4a4a66697",
+      "method": "cherry-pick -x research-only original"
+    },
+    {
+      "original_sha": "cb42d4116468d8e214ce9d23be4d50ee7ab9310c",
+      "research_sha": "ee4df19dcfd4949397acf57b013b30724a819b77",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "4328a8ff50c60a0b802454731cdf7d18c10ea73a",
+      "research_sha": "48bbf52f59339723e871c02180bb02b4dd7a5b6e",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "cef86b335125be150b0087321bcda9b3a3a5b961",
+      "research_sha": "990a90fdd259058a525005c21d6a2d3e6b1c8188",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "dd53dc3b27fad6c42a0a71b7bd39a96c62328181",
+      "research_sha": "e42889a2ccd8b317a00211aaec503f39910528fa",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "86a277fd07914e6da2c64319f1610486a73aff78",
+      "research_sha": "35959123be92a48b0149f6a796283f83eb62d718",
+      "method": "path-scoped original research patch"
+    },
+    {
+      "original_sha": "cc3922f9f453ef9d02f934495dc16dbaf7229f73",
+      "research_sha": "065d1a4177d4d1673df7dcf01b7659f5fee1bbe4",
+      "method": "path-scoped original research patch"
+    }
+  ],
+  "adopted_uncommitted_files": [
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_hybrid_graph_20261013.md",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_hybrid_graph_20261013.md",
+      "sha256": "6e6a25967fbf3e75da7ef261bde7cd1971174cd33f2a0a0de562583ec5787245",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/full_build_v7_terminal_actual_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/full_build_v7_terminal_actual_v1.json",
+      "sha256": "1323be140d13690abad5afe75061b8bcfc4e6479f3a069cc1871d692448ed175",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first13_v2.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first13_v2.json",
+      "sha256": "860b5ad4c922c1c51f3adb78b59ecc090ddf401d60740776157bda486ef3a840",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first26_v3.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first26_v3.json",
+      "sha256": "0fe574322054d1cc5f749f292cc0c37ea85fea81bdd6ead9590e215f830fc21a",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first9_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first9_v1.json",
+      "sha256": "7428a9d7f565fdaad9aceeed50cc4a59ff604e51d58d9a60f5264ad76567f65b",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_dependencies_v4.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_dependencies_v4.json",
+      "sha256": "ebac9bf3b1a9a5a4234c073cd89f62fa67255b4f640f58a00b58ae43eeadb11e",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_lifecycle_v3.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_lifecycle_v3.json",
+      "sha256": "daaccbed909581361c56c818e98fb1b16bd6fd4e074b079d8e8c1d106062aecb",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_portability_v2.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_portability_v2.json",
+      "sha256": "cc2d6eae6490c553f82629c0c1b9030046b3d1e29a843c48863a8279f2af9010",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_preparation_v1.json",
+      "sha256": "024018c7398b25d15401a77035d419d4358a70dc7e4ef28687c2b8e17a9bd0ef",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_computing_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_computing_recovery_preparation_v1.json",
+      "sha256": "361e56de031730973cbeadd815e5251940abaa58a4b7d581512e1649af87b80f",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_content_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_content_recovery_preparation_v1.json",
+      "sha256": "f5460609e03864a19034dfa551a54f90b772c856cb059b219f665ad3aa440138",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_culture_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_culture_recovery_preparation_v1.json",
+      "sha256": "903bb9b483d623c24fc5806b8b02365ee75856507b4f93b60f335283b36dbf8b",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_material_rows_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_material_rows_recovery_preparation_v1.json",
+      "sha256": "732800ba9fdba6bc9e5f37a2cbea73e42dbe50e69dc5f7402dcfb125a87c04f3",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_relation_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_relation_recovery_preparation_v1.json",
+      "sha256": "2ed03183460e850e336fccbe5b02bdf1f9950f8eccace34376b5ee102cb3a73f",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_root_lists_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_root_lists_recovery_preparation_v1.json",
+      "sha256": "eb0b4d681cf1ffd880afed2e526d3f4655cae592f8689b5d1aa91bcd9b77c1d5",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_sensor_recovery_preparation_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_sensor_recovery_preparation_v1.json",
+      "sha256": "e9a816a9df53cdcd8640c3b845e29983cc3ebb669aa434454f9592bfa15d8095",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_identity_receipt_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_identity_receipt_v1.json",
+      "sha256": "3f0f36cfbcf4065455f38fd93c2fcabe2946b0f6db538b268c076f0022d4d604",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_path_fix_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_path_fix_v1.json",
+      "sha256": "a299f4d7e3e1f050acfad2c24508e00bc38c7d38a82626b12c14c5bc6d08abe6",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/scope_usage_context_clarification_v1.json",
+      "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/scope_usage_context_clarification_v1.json",
+      "sha256": "55b67c2744ee59c4d6bee84d505dccc8b1e29d21a7bab896ea0bcd03fe5d8335",
+      "status": "research historical intermediate/preparation; not new product behavior or completed W7 result"
+    }
+  ],
+  "static_validation": {
+    "json_files": 48,
+    "python_AST_files": 9,
+    "credential_pattern_hits": [],
+    "forbidden_paths": [],
+    "files": [
+      {
+        "path": "docs/70_research/company_knowledge/business_change_field_edit_boundary_20261015.md",
+        "sha256": "23b67763e726d75b3c331f37d8c8d193970e8fb13c8dabbf0c681a259768ac28",
+        "size_bytes": 7195
+      },
+      {
+        "path": "docs/70_research/company_knowledge/business_change_ui_reuse_boundary_20261015.md",
+        "sha256": "3d82348f123dd4a8bf639c4fa634ffed96d83030b77a691cda527722c9ba878d",
+        "size_bytes": 6848
+      },
+      {
+        "path": "docs/70_research/company_knowledge/business_feedback_record_boundary_20261015.md",
+        "sha256": "0c25e661d94cdf48951c4823335d339c6f96c756576e8e8016e54dfae35c95e8",
+        "size_bytes": 8844
+      },
+      {
+        "path": "docs/70_research/company_knowledge/business_new_relevance_links_20261015.md",
+        "sha256": "6c77f2e7fbcf74914e9bbaf49224c4cc9740e351e160b9ed6ad83d00af377129",
+        "size_bytes": 5488
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_baseline_20261015.md",
+        "sha256": "0cd595dd61637886305a81f2f4bdf306debdd45992769ce4b717250544d56198",
+        "size_bytes": 4286
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/full_build_v7_terminal_actual_v1.json",
+        "sha256": "1323be140d13690abad5afe75061b8bcfc4e6479f3a069cc1871d692448ed175",
+        "size_bytes": 992
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first13_v2.json",
+        "sha256": "860b5ad4c922c1c51f3adb78b59ecc090ddf401d60740776157bda486ef3a840",
+        "size_bytes": 9968
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first26_v3.json",
+        "sha256": "0fe574322054d1cc5f749f292cc0c37ea85fea81bdd6ead9590e215f830fc21a",
+        "size_bytes": 2660
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/interim_first9_v1.json",
+        "sha256": "7428a9d7f565fdaad9aceeed50cc4a59ff604e51d58d9a60f5264ad76567f65b",
+        "size_bytes": 19496
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_dependencies_v4.json",
+        "sha256": "ebac9bf3b1a9a5a4234c073cd89f62fa67255b4f640f58a00b58ae43eeadb11e",
+        "size_bytes": 1046
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_lifecycle_v3.json",
+        "sha256": "daaccbed909581361c56c818e98fb1b16bd6fd4e074b079d8e8c1d106062aecb",
+        "size_bytes": 1228
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_portability_v2.json",
+        "sha256": "cc2d6eae6490c553f82629c0c1b9030046b3d1e29a843c48863a8279f2af9010",
+        "size_bytes": 836
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/output_contract_efficiency_preparation_v1.json",
+        "sha256": "024018c7398b25d15401a77035d419d4358a70dc7e4ef28687c2b8e17a9bd0ef",
+        "size_bytes": 10563
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_computing_recovery_preparation_v1.json",
+        "sha256": "361e56de031730973cbeadd815e5251940abaa58a4b7d581512e1649af87b80f",
+        "size_bytes": 3237
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_content_recovery_preparation_v1.json",
+        "sha256": "f5460609e03864a19034dfa551a54f90b772c856cb059b219f665ad3aa440138",
+        "size_bytes": 3635
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_culture_recovery_preparation_v1.json",
+        "sha256": "903bb9b483d623c24fc5806b8b02365ee75856507b4f93b60f335283b36dbf8b",
+        "size_bytes": 3315
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_material_rows_recovery_preparation_v1.json",
+        "sha256": "732800ba9fdba6bc9e5f37a2cbea73e42dbe50e69dc5f7402dcfb125a87c04f3",
+        "size_bytes": 3344
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_relation_recovery_preparation_v1.json",
+        "sha256": "2ed03183460e850e336fccbe5b02bdf1f9950f8eccace34376b5ee102cb3a73f",
+        "size_bytes": 2934
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_root_lists_recovery_preparation_v1.json",
+        "sha256": "eb0b4d681cf1ffd880afed2e526d3f4655cae592f8689b5d1aa91bcd9b77c1d5",
+        "size_bytes": 3422
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/residual_sensor_recovery_preparation_v1.json",
+        "sha256": "e9a816a9df53cdcd8640c3b845e29983cc3ebb669aa434454f9592bfa15d8095",
+        "size_bytes": 3237
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_identity_receipt_v1.json",
+        "sha256": "3f0f36cfbcf4065455f38fd93c2fcabe2946b0f6db538b268c076f0022d4d604",
+        "size_bytes": 1034
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/review_export_path_fix_v1.json",
+        "sha256": "a299f4d7e3e1f050acfad2c24508e00bc38c7d38a82626b12c14c5bc6d08abe6",
+        "size_bytes": 794
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_build_recovery_20261014/scope_usage_context_clarification_v1.json",
+        "sha256": "55b67c2744ee59c4d6bee84d505dccc8b1e29d21a7bab896ea0bcd03fe5d8335",
+        "size_bytes": 1128
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013.json",
+        "sha256": "38d9e807c56f49c5691c9ed6ef656cc23ec3989c894123ccafbda98880a45867",
+        "size_bytes": 185517
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013.md",
+        "sha256": "0cb0d887c76ba0db7f402ef7368ab2cd5d8e89ccc12da07ca270ce50420baf95",
+        "size_bytes": 10864
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/P3_P4_driver.py",
+        "sha256": "9106f00e9ae3073bc9c95bc577c1c901f5ad133dbcefadaaf44d60c274f1aeab",
+        "size_bytes": 12196
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/P4_gap_B_driver.py",
+        "sha256": "49ceecf980992574cc802d6d1de8af373a65869b17399f695f359d803fe1e2f3",
+        "size_bytes": 12263
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/README.md",
+        "sha256": "f49a8f3a74c9e8313f370e4f3d1b407820022cb0723c5639cb43f553445900ea",
+        "size_bytes": 2824
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/audit_saved_results.py",
+        "sha256": "31112ac4471a4d7076ab44a1cdce5dfc5a23afb275a9bdad679b83d7f13049f4",
+        "size_bytes": 6722
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/current_baseline_driver.py",
+        "sha256": "072ab51129b673705ce4fe0de141d2b70e8c701dbd10e0db02b4fe0b6f0af358",
+        "size_bytes": 12105
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/post_P3_capture_driver.py",
+        "sha256": "a3e2e826975e54f12404bdbc9d02098cf9a321c476fad9261678e3899c32bd98",
+        "size_bytes": 4568
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/preservation_manifest.json",
+        "sha256": "82cb4c4d0e3171fe84abc26f6ef0829d1a565fac03bfbe1b60f0587fd643d6fe",
+        "size_bytes": 27809
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/prototype_vs_ade.patch",
+        "sha256": "b31155888371ac0d9ab89dc829a8a16868854b8ba53293ad50063789fc237d9d",
+        "size_bytes": 19988
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012.json",
+        "sha256": "ea4bb45136ac69cafd647fd3527d0d93ddda54a53a911ed8c13cd631d98003d3",
+        "size_bytes": 27079
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012.md",
+        "sha256": "4e527a8c29491af0d5e8cc6e61ef4c2607085adefd42d4b1a9f7ee67e5554158",
+        "size_bytes": 8800
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012/P1_offline.py",
+        "sha256": "ce5e6e62db68d3182e893753dd739501a6a889d544ee2fec51b9117943eec489",
+        "size_bytes": 4298
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012/P1_selection_policy.py",
+        "sha256": "3c610d473277aa5ef3d68aef60a9ff104b3ff20a35f9ed82a302951c60695130",
+        "size_bytes": 1040
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012/P2_driver.py",
+        "sha256": "8bc661218aa2d6ebcd2bef7c2e33b379b803cebc963dd97d22a2aabf7d683a01",
+        "size_bytes": 9784
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012/README.md",
+        "sha256": "867393f15d11b9c82b8b7a70abbfc03afa6809c0c4f5ce6cbdd10296607b356c",
+        "size_bytes": 2286
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012/preservation_manifest.json",
+        "sha256": "05dccde67cc008bb833099f096a9133133fc40329e600e3212b0ac9b9c36ff5f",
+        "size_bytes": 18282
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_followup_20261012_plan.md",
+        "sha256": "d650e60c664a2f04e8e72f0d7cd1355e843510b957a5092e98df8315abc93717",
+        "size_bytes": 17287
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_hybrid_graph_20261013.md",
+        "sha256": "6e6a25967fbf3e75da7ef261bde7cd1971174cd33f2a0a0de562583ec5787245",
+        "size_bytes": 98193
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012.md",
+        "sha256": "d58b3b4ff7a7c3bc702c843fe799a5753531bcc64699a4c3a49729290a512e8a",
+        "size_bytes": 15796
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/README.md",
+        "sha256": "2cb75bb17d0a1981ee183d9cf044fc6bd30142cbc8a42009e088917873f08b9b",
+        "size_bytes": 3824
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/audit_execution_costs.py",
+        "sha256": "e3dd082f2885f9bc702caa9c73e76d5d84fe4f63106eb4ddf523c160dadebac1",
+        "size_bytes": 22796
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/build_receipt_summary.json",
+        "sha256": "ca9ea43b79c0fda584d8defa006e396c3fdfd7d36899cc8c3f96ffb0890e09b7",
+        "size_bytes": 1773
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/evaluation_reference_only.json",
+        "sha256": "a7e8304d351970c74ec31f2a6d3289d34af109fa1984504e79278492fa40e8d7",
+        "size_bytes": 52072
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/execution_cost_audit.json",
+        "sha256": "33dd30b4a3215d86651b3872695777989cf23f7efbd0e683b39021fc60ec2256",
+        "size_bytes": 215365
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/execution_cost_audit.md",
+        "sha256": "4a1377c83bc38c27f192b14b18774310758f3a83ee8d5e5bbf00f6aae22b1f9b",
+        "size_bytes": 9366
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/historical_extraction_costs.json",
+        "sha256": "1192413f8795b4fb464ef94814c06bc8b7101901461b8a4b0c2ff8f4dd83b0ec",
+        "size_bytes": 6826
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/presentation_methods_and_limits.md",
+        "sha256": "31d274bf8781a50b87339efbfeaa06175df542bbfa24bd5554f16c0176ee41eb",
+        "size_bytes": 5146
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/preservation_manifest.json",
+        "sha256": "6706a48c52ec818253e7143c496519ddb9eb9748b13ac496030c3892b59c18a9",
+        "size_bytes": 11347
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/priority_scope_freeze.json",
+        "sha256": "6ac1b8b0068d4fe20c983503bd8600961a3510efc64677b54c5dc4a6d4ed8914",
+        "size_bytes": 4193
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_continuation_manifest.json",
+        "sha256": "8503139a620a0dc0e808e0dc24734553ce86533a38e3e757612cbaa5e49dac3a",
+        "size_bytes": 3253
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_execution_ledger.json",
+        "sha256": "ba16dfe0650fdabbc21f97c6ffabcf30c2dcc61123d3e3039fe7d7e53e57b95f",
+        "size_bytes": 2460
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_execution_manifest.json",
+        "sha256": "f818a40dc2e63efc24cd71dcdaf2cd606856f97163dc687132600a94cc4253ae",
+        "size_bytes": 1567
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_settings_manifest.json",
+        "sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf",
+        "size_bytes": 2703
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/question_results.csv",
+        "sha256": "171c15b759f1cad72eb92380b02d4842f86ce7185a995ff9399f38a2b2839724",
+        "size_bytes": 1654
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/questions_only.json",
+        "sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4",
+        "size_bytes": 6091
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/result_summary.json",
+        "sha256": "51d8b74b47300c3a6b37a9c5dc0335ffefa59ecf198b1e31989d4be5b83b4fa8",
+        "size_bytes": 1241
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/scoring_ledger.json",
+        "sha256": "6eaeea7b08855eff47148068684418e3ede163446dc55bf1588158525fdf662f",
+        "size_bytes": 61457
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/snapshot_connection.json",
+        "sha256": "08915de7c1cf3dd72f2e9f07e29298f49e5436f0e79bae61f4c7464ad400fe0f",
+        "size_bytes": 1314
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/source_build_manifest.json",
+        "sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240",
+        "size_bytes": 229118
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/source_closure_receipt.json",
+        "sha256": "af789209ec503f2569505cc4f914a1c9f91fc11e161c45c607660d1a904bf638",
+        "size_bytes": 135315
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/coordinator_meaning_grades_v1.json",
+        "sha256": "f9382f6660aba6659856bcc7b09a1c5f3047912a8a5e825a6ebe9711b5d40ec9",
+        "size_bytes": 4026
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/eight_saved_input_boundary_checks.json",
+        "sha256": "cd07a6d0497dc56e4083dba30260eede93ad17063d6aa4a47ddde1e2a0c64953",
+        "size_bytes": 5294
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/first4_execution_addendum.json",
+        "sha256": "dab1ed28905672cc33635edfe7416cb92113a2fde6978b238271c27cbeefa32d",
+        "size_bytes": 9153
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/first4_validity_and_cost_audit.json",
+        "sha256": "f6fdb75a89ebdb040f91c7bf20aec706eefb10dab5acbcfc1a17020cc50f65bf",
+        "size_bytes": 10257
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/flat_replay_boundary_check.json",
+        "sha256": "f2931b7ad771b534dbaabcb449b111227aaca45245f9329f0862a48ffcacd18b",
+        "size_bytes": 1235
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/normal4_execution_addendum.json",
+        "sha256": "040bbaa6dd545e8b475365c5f56de2fd020b7cbe28d38a0a84848bd7c40c26ab",
+        "size_bytes": 3536
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/normal4_validity_and_cost_audit.json",
+        "sha256": "71b99fdc3f5c718005e1d735c03aff9976b143521a16402be1c10425d11e0404",
+        "size_bytes": 5925
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/original_execution_manifest.json",
+        "sha256": "29ddc84318ea73c32a038548093f4f756faf3acf4b54e1512cb3be25a40110b1",
+        "size_bytes": 8448
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/preexisting_business_fixture_failures.json",
+        "sha256": "36a81d6cc4ca07179ffa37ef3db1c206bac96dcbfd3ac9ee9507e2400e41d9cc",
+        "size_bytes": 1377
+      },
+      {
+        "path": "docs/70_research/company_knowledge/document_graph_rag_reader_serialization_20261013/summary.json",
+        "sha256": "3a5964d471aefe1c26158ab5669a1abdd7b5e85c92737274f093fc017e9b3a5d",
+        "size_bytes": 1631
+      },
+      {
+        "path": "docs/70_research/company_knowledge/knowledge_space_run_address_restore_20261015.md",
+        "sha256": "a40a20e7fc62ea12a8e7fe05fa9f50488bb111a21d20f73da03b1479cd903a50",
+        "size_bytes": 3157
+      }
+    ]
+  },
+  "executed_research_scripts": false,
+  "new_model_calls": 0,
+  "new_scores": false,
+  "raw_DB_and_large_responses_included": false,
+  "historical_absolute_paths_are_local": true,
+  "initial_base_main": "bb046c2686d04219afafab83caeb61ec5889421a",
+  "main_integration": {
+    "initial_base_main": "bb046c2686d04219afafab83caeb61ec5889421a",
+    "latest_base_main": "bebf7b3aaca0e8cabe2c29f4d2def518e48ac661",
+    "merge_commit": "2b96d26b5e1e6215d1bbe10a4b210b1889a1f699",
+    "method": "normal merge of origin/main into this integration branch; no original history rewrite",
+    "main_PR659_status": "merged into main; automatic semantic judgment research differs from this RAG record scope",
+    "new_main_paths": 147,
+    "overlapping_integration_paths": [],
+    "product_runtime_frontend_and_dependency_files_changed_by_main_merge": false,
+    "repeated_model_or_runtime_checks": false
+  }
+}

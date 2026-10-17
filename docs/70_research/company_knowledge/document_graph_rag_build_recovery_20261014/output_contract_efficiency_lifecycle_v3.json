@@ -1,0 +1,27 @@
+{
+  "preparation_version": 3,
+  "archive": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/output_contract_efficiency_preparation_v3",
+  "manifest_sha256": "0624c22619e1ae2523bf4270093e5099aad6f2f3a1612c533484430f53cb0693",
+  "native_driver_sha256": "bab34445ec8d57dc8f1f4960aa7ab00899034f7bb46fc49361fd11a985f7139f",
+  "changed_files_all_archived": [
+    "app/knowledge/autoschema.py",
+    "app/knowledge/business_run.py",
+    "app/knowledge/business_checkpoint.py",
+    "app/knowledge/business_projection.py",
+    "app/knowledge/source_capacity_repair.py",
+    "app/knowledge/extraction_wire.py",
+    "app/tests/unit/test_knowledge_business_scope.py",
+    "app/tests/unit/test_knowledge_extraction_wire.py"
+  ],
+  "live_code_unchanged": true,
+  "new_native_calls": 0,
+  "clone_final_status_and_graph_mock_verified": true,
+  "unload_oserror_timeout_mock_verified": true,
+  "portable_tests6_and_total28_passed": true,
+  "actual244_replay_separate": true,
+  "roundtrip35_retained": true,
+  "previous_archives_unchanged": true,
+  "model_comparisons_pending_v7_terminal": true,
+  "residual105_held": true,
+  "adopted": false
+}

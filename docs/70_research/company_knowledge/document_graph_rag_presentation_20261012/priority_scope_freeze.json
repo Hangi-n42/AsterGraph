@@ -1,0 +1,111 @@
+{
+  "version": "presentation-priority-freeze-v1-20261012",
+  "created_at": "2026-10-11T20:10:50.437824+00:00",
+  "goal": "Existing full comparison goal retained; priority changed to presentation emergency scope, no duplicate goal",
+  "scope": {
+    "business": "창업기업자금 전체",
+    "paragraph_ranges_inclusive": [
+      [
+        1,
+        430
+      ],
+      [
+        653,
+        3973
+      ],
+      [
+        4325,
+        4361
+      ]
+    ],
+    "description": "Notice identity, policy purpose, whole common chapter and startup business; appendices1–11 including4-1, and16. Other businesses and appendices12–15 excluded as separate business content. External laws/web references absent from original source remain explicit gaps.",
+    "selection_reason": "Document TOC/business boundary plus existing reviewed questions and compatible completed responses, not extraction correctness or QA results.",
+    "raw_pool_must_include_unquoted_remainders": true,
+    "closure_receipt_required": true,
+    "verified_blocks": 3364,
+    "verified_characters": 45124,
+    "boundary_verified_at": "2026-10-11T20:11:50.078877+00:00"
+  },
+  "build": {
+    "parent_run_id": "58cd5e6727474ac8b332db3c0ce9fb3e",
+    "reuse": "Original13scopechunks preserve matching source/target/parent prompt/settings/contracts:46successful provider units and6truncated failures. Canonical order315–367 maps whole startup P356–430; verified against native paragraph map before execution.",
+    "failed_response_policy": "Preserve; never successful reuse; no unchanged retry",
+    "known_missing": "Referenced appendices unextracted;6truncated units have no successful extraction; no conceptualization yet. All selected source paragraphs remain searchable in botharms.",
+    "publication_status": "If missing extraction remains, explicitly partial-build emergency comparison over a complete limited source pool; never complete graph comparison.",
+    "concept_order": "Existing deterministic all-target product order, not answer-selected nodes",
+    "deadline_kst": "2026-10-12T09:00:00+09:00"
+  },
+  "query_order": [
+    {
+      "position": 1,
+      "id": "SUP03",
+      "arms": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "position": 2,
+      "id": "SUP01",
+      "arms": [
+        "C",
+        "B"
+      ]
+    },
+    {
+      "position": 3,
+      "id": "ACT501070",
+      "arms": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "position": 4,
+      "id": "SUP02",
+      "arms": [
+        "C",
+        "B"
+      ]
+    },
+    {
+      "position": 5,
+      "id": "SUP04",
+      "arms": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "position": 6,
+      "id": "ACT501108",
+      "arms": [
+        "C",
+        "B"
+      ]
+    }
+  ],
+  "types": {
+    "SUP03": "single_fact",
+    "SUP01": "dependent_multihop",
+    "ACT501070": "multi_evidence_with_material_gap",
+    "SUP02": "dependent_multihop",
+    "SUP04": "multi_evidence",
+    "ACT501108": "gap_boundary"
+  },
+  "type_note": "ACT501070 retains original gap_mixed classification; not relabeled pure evidence collection to satisfy a quota. Four official supplementary and two actual consultation questions reported separately. SUP01/SUP02 dependency depth2, no claim of3serialhops.",
+  "qa": "Reuse frozen QA settings and productQA v3, samefullscopepool+embedding+readerbudget/model. No gold/required-evidence injection. Execute each pair and grade immediately. No favorable-run selection.",
+  "deadlines_kst": {
+    "new_requests_stop": "2026-10-12T13:00:00+09:00",
+    "materials": "2026-10-12T16:00:00+09:00"
+  },
+  "deferred": [
+    "A historical-consultation comparison",
+    "original26question final comparison",
+    "whole-noticegraph completion",
+    "unrelatedperformanceoptimizations"
+  ],
+  "questions_sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4",
+  "reference_sha256": "a7e8304d351970c74ec31f2a6d3289d34af109fa1984504e79278492fa40e8d7",
+  "grading": "Original source-based rubric; retrieval and answer separate; improved/worse/same/uncertain; all6planned stay denominator inclfailed/unexecuted; majorerrors explicit. Rawconceptcount not quality. Graph use vs densefallback logged."
+}

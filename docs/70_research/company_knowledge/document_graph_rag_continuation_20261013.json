@@ -1,0 +1,3619 @@
+{
+  "version": "p3-p4-saved-native-audit-v1",
+  "start_head": "ade0185c5de6ca14e4ddfd872c4af57bf5ce534b",
+  "phase_costs": {
+    "P3_selection": {
+      "rows": [
+        {
+          "case": "ACT501070_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/ACT501070_B_selection.json",
+          "sha256": "cd938da5175b903b6b413c906ca7cc0c063a24314e8d1bdc4ea86d17473008d2",
+          "run_id": "f76f2b3247644e0bb2cfaade7e3a9a8b",
+          "run_status": "failed",
+          "result": null,
+          "outer_elapsed_s": 194.7806485000001,
+          "service_elapsed_s": 0,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 6811,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "f76f2b3247644e0bb2cfaade7e3a9a8b",
+              "unit_id": "fd498ee3336b4baca1c516d7343a4ce9",
+              "stage": "source_passage_selection",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 15446,
+              "output_tokens": 1120,
+              "request_elapsed_s": 154.241415,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 5362217416,
+              "raw_response_sha256": "c7297f37bd1c1471acc7ae8469a4334aa05f657c1eab5682fa3c95cc62e8883f",
+              "messages_sha256": "b844d3381fe00a570830763e9e16de02de5aca20049fbcfb6974cecf03961783",
+              "schema_sha256": "b2f8e6352851d24cb3621bc4da270af365d39b009d60014218030db9e6d03b47",
+              "input_budget": {
+                "estimate_tokens": 30154,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "3f6d912a7ce4469ca8cb2b61ac62be57",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "eda46fc86296322dac59dfdd063a5880afddaeac71506953a5db4a8830be8cc3",
+          "source_selection": {
+            "contract": "whole-query-bounded-source-selection-v1",
+            "pool_ids": [
+              "passage_fc31af4a77436fe1b40094d2",
+              "passage_6e4cdda84e89cea02faa6be9",
+              "passage_2488d60f76c1309a43ae269c",
+              "passage_8a8658d75ced13507e0d6d34",
+              "passage_54d1210723a0cbcf6b5bfb22",
+              "passage_be5dc7fea39249ac67aa7eda",
+              "passage_bce55ddbd3db6ce26235eb3e",
+              "passage_d28718465f023cbad5136779",
+              "passage_d1ae9b4ab00768116a9b78fd",
+              "passage_eb367c12d17fc44a7bf24ead",
+              "passage_9d02715c57293654f580419e",
+              "passage_9c67849672198016effbf709",
+              "passage_3938459a5ab828d49b07b56b",
+              "passage_ca2e5b9a1a1aa1b39f4abd6c",
+              "passage_e0d03e8a45abfc6f18316953",
+              "passage_e95eff5ef09170d89e7f99ed",
+              "passage_b955d7821cab6a0bdd285a56",
+              "passage_5acfc96a9e916b4a30cc21b4",
+              "passage_2e311f4b234c53f77f330eca",
+              "passage_8017bb7203f87f5a733dba7d",
+              "passage_2725c54ad794d381e7223ac3",
+              "passage_61bf9dbc19c9b002eb6c4849",
+              "passage_6d563b2963940e90c2778286",
+              "passage_a99baa2dc2306d101cf9a282",
+              "passage_b3e6c240d32a01320438f050",
+              "passage_6065f18867c422e15e363adf",
+              "passage_19e510eb1cf2615627765036",
+              "passage_b911aba6e3e7a6d50613c152",
+              "passage_3f8a82ecf00b954758424124",
+              "passage_32c06d4bfd7f4aac95d49cb3",
+              "passage_ead4f9ad0f235301b5b51fa3",
+              "passage_ff882ae637fecbc6e706dea6",
+              "passage_a359eb5a2603c2160d2bb2f0",
+              "passage_ef9070c264d8f41c4c0cb496",
+              "passage_f52295df83036d97189f630f",
+              "passage_a59063ddda9adad0621734c3",
+              "passage_339f236e81a58e26ae973a55",
+              "passage_754ecdb7892c4f3277cd896e",
+              "passage_ca736079ecb356a510e0cc46",
+              "passage_12c4ca17d67725e858746230",
+              "passage_5c5f4a7b0a5098075dbaa1a1",
+              "passage_59d706cfc29fae986825d899",
+              "passage_65a94278e6b3e1a241874aae",
+              "passage_ba08f2eb375e9738686eb752",
+              "passage_52db78b637c2dd89b20a87ef",
+              "passage_1ff7357287f912eec8bb750a",
+              "passage_0d62d96f9fbded51608916a8",
+              "passage_d0ae7fff8f1234994fa2b41b",
+              "passage_2bc4febe18dee8203737caed",
+              "passage_855e000515a93bebd0b61c64",
+              "passage_e53b998bb7e62c3bced1dfe4",
+              "passage_2d04cc30d0c98ec1f73c44ae",
+              "passage_673fe82274c72169af40faa6",
+              "passage_480a422da098b9bb9b636c36",
+              "passage_bbd761a02f08c63d416e0d74",
+              "passage_d21666503c2e1e6c001177f2",
+              "passage_355334ac66175aa0b8b9dad1",
+              "passage_67fde967b6e374236f97ea36",
+              "passage_e9d3a650167d919f4787d0e5",
+              "passage_288105da8b809ae70db5152c"
+            ],
+            "pool_multiplier": 5,
+            "selection_limit": 12,
+            "ranking_is_semantic_validation": false,
+            "selections": [
+              {
+                "candidate_id": "passage_fc31af4a77436fe1b40094d2",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 1번(기술 해당) 요건을 명시하여 자격요건 구조를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_2488d60f76c1309a43ae269c",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다.",
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 2번(기업 유형) 요건을 명시하며, 질문자가 언급한 '기타 인증' 부재와 관련된 Inno-Biz, 벤처기업 등 조건을 포함."
+              },
+              {
+                "candidate_id": "passage_d28718465f023cbad5136779",
+                "request_quotes": [
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "신청대상 1번에 해당하는 '기술'의 구체적 정의(특허, 실용신안 등)를 제시하여 질문자의 특허 보유 상태가 요건에 부합하는지 판단하는 근거."
+              },
+              {
+                "candidate_id": "passage_6e4cdda84e89cea02faa6be9",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 업력 제한이 없음을 명시하여 자격요건 판단 시 참고할 조건."
+              },
+              {
+                "candidate_id": "passage_8a8658d75ced13507e0d6d34",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금 대상에서 제외되는 경우(제품 양산 후 3년 경과)를 명시하여 자격요건 판단 시 예외 조건 확인."
+              },
+              {
+                "candidate_id": "passage_b911aba6e3e7a6d50613c152",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금 내 '시설자금' 항목의 헤딩으로, 질문자가 요청한 시설자금 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_b3e6c240d32a01320438f050",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "시설자금 지원 용도 중 생산설비 도입 비용에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_32c06d4bfd7f4aac95d49cb3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금 내 '운전자금' 항목의 헤딩으로, 질문자가 요청한 운전자금 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_ba08f2eb375e9738686eb752",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "운전자금 지원 용도 중 창업소요 비용, 제품생산 비용 등에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "운전자금 지원 용도 중 개발기술 사업화에 소요되는 원부자재, 시장개척 비용 등에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_e0d03e8a45abfc6f18316953",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "시설자금 내 '투자자금' 항목의 헤딩으로, 무형자산 확보 등 추가 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "투자자금 지원 용도 중 지식재산권(특허) 매입 비용 등에 대한 근거."
+              }
+            ],
+            "status": "selected",
+            "reasons_are_answer_evidence": false
+          }
+        },
+        {
+          "case": "ACT501070_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/ACT501070_C_selection.json",
+          "sha256": "b50c0d8ec9cf48fdeb2f58bad28d81864f671fb9797c127f8abe5cb164a8166b",
+          "run_id": "470d97f0496241948a605253ad955724",
+          "run_status": "failed",
+          "result": null,
+          "outer_elapsed_s": 204.4783040000002,
+          "service_elapsed_s": 0,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 8228,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "470d97f0496241948a605253ad955724",
+              "unit_id": "b82769bc1a754a1d9bef78933f9fed32",
+              "stage": "source_passage_selection",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 16150,
+              "output_tokens": 1231,
+              "request_elapsed_s": 163.700248,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 9506875,
+              "raw_response_sha256": "c01aa88288927706d6cf0a83dac59aaa60d32c0658f928a7fea9f7995272f960",
+              "messages_sha256": "78af005527ad40c1ed474629dfb79a6e0dbc9ca79992e9425cb03fccab8759c8",
+              "schema_sha256": "b2f8e6352851d24cb3621bc4da270af365d39b009d60014218030db9e6d03b47",
+              "input_budget": {
+                "estimate_tokens": 31332,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "2e51759757424984be3416a3f47cae45",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "eda46fc86296322dac59dfdd063a5880afddaeac71506953a5db4a8830be8cc3",
+          "source_selection": {
+            "contract": "whole-query-bounded-source-selection-v1",
+            "pool_ids": [
+              "passage_fc31af4a77436fe1b40094d2",
+              "passage_2488d60f76c1309a43ae269c",
+              "passage_6e4cdda84e89cea02faa6be9",
+              "passage_be5dc7fea39249ac67aa7eda",
+              "passage_8a8658d75ced13507e0d6d34",
+              "passage_bce55ddbd3db6ce26235eb3e",
+              "passage_eb367c12d17fc44a7bf24ead",
+              "passage_d28718465f023cbad5136779",
+              "passage_9d02715c57293654f580419e",
+              "passage_d1ae9b4ab00768116a9b78fd",
+              "passage_54d1210723a0cbcf6b5bfb22",
+              "passage_5acfc96a9e916b4a30cc21b4",
+              "passage_2e311f4b234c53f77f330eca",
+              "passage_e95eff5ef09170d89e7f99ed",
+              "passage_ca2e5b9a1a1aa1b39f4abd6c",
+              "passage_ead4f9ad0f235301b5b51fa3",
+              "passage_a59063ddda9adad0621734c3",
+              "passage_2725c54ad794d381e7223ac3",
+              "passage_754ecdb7892c4f3277cd896e",
+              "passage_b3e6c240d32a01320438f050",
+              "passage_8017bb7203f87f5a733dba7d",
+              "passage_9c67849672198016effbf709",
+              "passage_3938459a5ab828d49b07b56b",
+              "passage_19e510eb1cf2615627765036",
+              "passage_b955d7821cab6a0bdd285a56",
+              "passage_ef9070c264d8f41c4c0cb496",
+              "passage_e0d03e8a45abfc6f18316953",
+              "passage_6065f18867c422e15e363adf",
+              "passage_339f236e81a58e26ae973a55",
+              "passage_61bf9dbc19c9b002eb6c4849",
+              "passage_12c4ca17d67725e858746230",
+              "passage_855e000515a93bebd0b61c64",
+              "passage_a99baa2dc2306d101cf9a282",
+              "passage_2d04cc30d0c98ec1f73c44ae",
+              "passage_a359eb5a2603c2160d2bb2f0",
+              "passage_65a94278e6b3e1a241874aae",
+              "passage_373269b57481cf77e014ac45",
+              "passage_3f8a82ecf00b954758424124",
+              "passage_ff882ae637fecbc6e706dea6",
+              "passage_6d563b2963940e90c2778286",
+              "passage_355334ac66175aa0b8b9dad1",
+              "passage_ca736079ecb356a510e0cc46",
+              "passage_b911aba6e3e7a6d50613c152",
+              "passage_6c89e6c38ecbba821dbd57f1",
+              "passage_ba08f2eb375e9738686eb752",
+              "passage_bc46cb1314b78160f4912123",
+              "passage_e18ebf61adc45267c30b26fb",
+              "passage_0d62d96f9fbded51608916a8",
+              "passage_10dd7f2078ef758e16a3f382",
+              "passage_59d706cfc29fae986825d899",
+              "passage_5c5f4a7b0a5098075dbaa1a1",
+              "passage_52db78b637c2dd89b20a87ef",
+              "passage_f52295df83036d97189f630f",
+              "passage_6c2abf8aa40d3b5f4db343b5",
+              "passage_32c06d4bfd7f4aac95d49cb3",
+              "passage_0f5ae70c7c510783fd2130a9",
+              "passage_547f60875382c5eb9bf7abc8",
+              "passage_9d055388cc330aa2539e7707",
+              "passage_d0ae7fff8f1234994fa2b41b",
+              "passage_7e9e516485ba2bd12f230ea2"
+            ],
+            "pool_multiplier": 5,
+            "selection_limit": 12,
+            "ranking_is_semantic_validation": false,
+            "selections": [
+              {
+                "candidate_id": "passage_fc31af4a77436fe1b40094d2",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 1번(기술 사업화) 요건을 명시하여, 질문의 자격요건 구조를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_2488d60f76c1309a43ae269c",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다.",
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 2번(기업 유형/인증) 요건을 명시하여, 질문의 자격요건 구조와 신청자의 상황(특허 보유, 인증 없음)을 대조하는 근거."
+              },
+              {
+                "candidate_id": "passage_d28718465f023cbad5136779",
+                "request_quotes": [
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 '기술' 범위에 '특허, 실용신안 또는 저작권 등록 기술'이 포함됨을 명시하여, 신청자의 특허 보유가 기술 요건에 부합하는지 판단하는 근거."
+              },
+              {
+                "candidate_id": "passage_8a8658d75ced13507e0d6d34",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대상에서 제외되는 경우(제품 양산 후 3년 경과)를 명시하여, 자격요건 충족 시에도 제외될 수 있는 예외 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_6e4cdda84e89cea02faa6be9",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 업력 제한이 없음을 명시하여, 신청자의 창업기업/중소기업 자격과 무관하게 기술 요건 충족 시 대상이 될 수 있음을 시사하는 근거."
+              },
+              {
+                "candidate_id": "passage_b3e6c240d32a01320438f050",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금의 시설자금 용도로 '생산설비 및 시험검사장비 도입'이 가능함을 명시하여, 특허 사업화 시설 자금 지원 가능성을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ba08f2eb375e9738686eb752",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금의 운전자금 용도로 '창업소요 비용, 제품생산 비용' 등이 가능함을 명시하여, 특허 사업화 운영 자금 지원 가능성을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 용도로 '원부자재 구입비용, 시장개척비용' 등이 가능함을 명시하여, 특허 사업화 관련 자금 지원 범위를 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ead4f9ad0f235301b5b51fa3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 지원 불가 항목(건축, 토지구입, 임차보증금)을 명시하여, 시설 자금 지원 시 주의할 예외 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_b955d7821cab6a0bdd285a56",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대출 한도(20억원)를 명시하여, 자금 지원 규모를 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_2725c54ad794d381e7223ac3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대출 금리(정책자금 기준금리 변동)를 명시하여, 자금 지원 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 융자 방식(중진공 직접대출)을 명시하여, 자금 신청 및 실행 방식을 확인하는 근거."
+              }
+            ],
+            "status": "selected",
+            "reasons_are_answer_evidence": false
+          }
+        }
+      ],
+      "native_calls": 2,
+      "input_tokens": 31596,
+      "output_tokens": 2351,
+      "request_elapsed_s": 317.94166299999995,
+      "outer_elapsed_s": 399.2589525000003,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    },
+    "P3_current_baseline": {
+      "rows": [
+        {
+          "case": "ACT501070_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3_current_baseline/ACT501070_B_qa.json",
+          "sha256": "6a1024c5340c4c46b71b42d350289e5c6a18a463c403840d36230b042fc96cdd",
+          "run_id": "3792d3ac69034b77ae9171c129b222cd",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "3792d3ac69034b77ae9171c129b222cd",
+            "status": "answered",
+            "answer": {
+              "answer": "1. 개발기술사업화자금의 신청대상은 ①과 ② 중 하나라도 충족하면 해당합니다. ①은 특허, 실용신안 또는 저작권 등록 기술 등 특정 기술을 사업화하고자 하는 기업을 포함하며, ②는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업 등 자체 기술을 사업화하고자 하는 기업을 대상으로 합니다. 질문자님은 특허를 보유하고 있으므로 ①의 요건을 충족하여 대상에 해당할 수 있습니다. 단, 제품 양산 후 3년이 경과한 기술은 대상에서 제외됩니다.\n\n2. 특허 사업화를 위한 시설자금 및 운전자금 안내는 다음과 같습니다.\n- 시설자금: 지식재산권(특허, 상표권 등) 매입에 소요되는 비용, 디자인 개발, 전산 개발 등 외부 연구용역에 소요되는 비용, SW 구입 등 정보화 촉진 및 서비스 제공 등에 소요되는 자금 등이 포함됩니다.\n- 운전자금: 개발기술 사업화에 소요되는 원부자재 구입비용, 시장개척비용 등이 포함됩니다.\n- 융자조건: 개발기술사업화자금은 정책자금 기준금리(변동)에서 0.3%p 차감된 금리가 적용되며, 대출한도는 20억원 이내입니다. 융자방식은 중진공 직접대출입니다.",
+              "choice": null,
+              "citations": [
+                "passage_d1ae9b4ab00768116a9b78fd",
+                "passage_be5dc7fea39249ac67aa7eda",
+                "passage_fc31af4a77436fe1b40094d2",
+                "passage_6e4cdda84e89cea02faa6be9",
+                "passage_54d1210723a0cbcf6b5bfb22",
+                "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "passage_2725c54ad794d381e7223ac3",
+                "passage_b955d7821cab6a0bdd285a56",
+                "passage_bce55ddbd3db6ce26235eb3e"
+              ],
+              "limitations": [
+                "개발기술사업화자금의 ①과 ②가 '또는' 관계인지 '그리고' 관계인지에 대한 명시적 문장이 원문에 없으나, 각 항목이 독립된 신청대상으로 나열되어 있어 하나라도 충족하면 대상이 된다고 해석됩니다.",
+                "특허 보유만으로 ①의 요건을 충족하는지, 추가적인 기술개발 성공이나 기술평가 등 다른 조건이 필요한지는 원문의 ① 항목 목록에 '특허, 실용신안 또는 저작권 등록 기술'이 포함되어 있으므로 충족한다고 판단됩니다.",
+                "제품 양산 후 3년 경과 여부에 대한 질문자님의 상황은 원문에 명시되지 않아 확인이 필요합니다."
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_fc31af4a77436fe1b40094d2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03252247488101534,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_6e4cdda84e89cea02faa6be9",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.032266458495966696,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03021353930031804,
+                "selection_reason": "novel_source_context",
+                "original_rank": 5,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.029910714285714284,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.029236022193768675,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02817460317460317,
+                "selection_reason": "novel_source_context",
+                "original_rank": 9,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_9c67849672198016effbf709",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02712049508554787,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02666666666666667,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_e95eff5ef09170d89e7f99ed",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025859192525859193,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_b955d7821cab6a0bdd285a56",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02546333601933924,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025252525252525252,
+                "selection_reason": "novel_source_context",
+                "original_rank": 18,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_2725c54ad794d381e7223ac3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.023024594453165882,
+                "selection_reason": "novel_source_context",
+                "original_rank": 21,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 79.05645645899858,
+          "service_elapsed_s": 77.54973337499905,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11966,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "3792d3ac69034b77ae9171c129b222cd",
+              "unit_id": "74021f8c99234bfb9b67255debd5c279",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 6461,
+              "output_tokens": 551,
+              "request_elapsed_s": 64.090138,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7859917,
+              "raw_response_sha256": "1ac2681a0781528ee4afc89ff2fd750fb763433998b811eb847c8ca378e5f030",
+              "messages_sha256": "2a41ee9c21606bdf289107601c4ba02bcca6f66535ab5c8060fa1d2511ba9954",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 16137,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "3f6d912a7ce4469ca8cb2b61ac62be57",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "4890a7962fbefcd164619e42ccdca616fa541f02f4bc2016a005e85da416c384"
+        },
+        {
+          "case": "ACT501070_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3_current_baseline/ACT501070_C_qa.json",
+          "sha256": "978111fd2d193640e66d06f47cb1b0d737a228d53cff7eb9a45a6bc65d393796",
+          "run_id": "32f3562d9bb54405ada0e9777f773290",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "32f3562d9bb54405ada0e9777f773290",
+            "status": "answered",
+            "answer": {
+              "answer": "1. 개발기술사업화자금의 신청대상은 창업기업자금의 기본 요건(중소기업창업지원법 제2조 창업자 등)과 개발기술사업화 세부 요건(① 해당 기술 사업화, ② Inno-Biz 등 특정 기업 유형)으로 구성됩니다. 제공된 원문은 ①과 ②가 모두 개발기술사업화 항목의 하위 조건으로 나열되어 있어, 두 조건을 모두 충족해야 대상이 되는 구조로 읽히지만, ②번의 'Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업, 크라우드펀딩 투자 유치 기업' 중 하나라도 해당해야 하는지, 아니면 ①번의 기술 요건만 충족하면 되는지에 대한 명시적 'AND/OR' 논리 문장은 원문에 없습니다. 질문자처럼 '특허만 있고 기타 인증(Inno-Biz 등)이 없는' 경우, ②번의 특정 기업 유형 요건을 충족하지 못하므로 대상에서 제외될 가능성이 높으나, 원문에는 '특허 보유 기업'이 ②번의 '지식재산경영인증 기업(특허청 인증)'과 동일한지, 또는 ①번의 '특허 등록 기술' 보유만으로 ②번 요건을 대체할 수 있는지에 대한 명확한 예외 규정이 제시되지 않아 확인이 어렵습니다.\n\n2. 특허 사업화를 위한 자금으로 개발기술사업화자금이 있으며, 융자 범위는 다음과 같습니다.\n- 시설자금: 지식재산권(특허, 상표권 등) 매입 비용, 디자인/전산 개발 등 외부 연구용역 비용, SW 구입 등 정보화 촉진 자금. (단, 건축 및 토지구입비, 임차보증금은 지원 불가)\n- 운전자금: 개발기술 사업화에 소요되는 원부자재 구입비용, 시장개척비용 등.\n- 융자조건: 정책자금 기준금리(변동) 적용, 중진공 직접대출 방식.",
+              "choice": null,
+              "citations": [
+                "passage_d1ae9b4ab00768116a9b78fd",
+                "passage_be5dc7fea39249ac67aa7eda",
+                "passage_fc31af4a77436fe1b40094d2",
+                "passage_2488d60f76c1309a43ae269c",
+                "passage_ead4f9ad0f235301b5b51fa3",
+                "passage_54d1210723a0cbcf6b5bfb22",
+                "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "passage_2725c54ad794d381e7223ac3",
+                "passage_bce55ddbd3db6ce26235eb3e"
+              ],
+              "limitations": [
+                "개발기술사업화자금의 ①번(기술 요건)과 ②번(기업 유형 요건)이 'AND' 관계인지 'OR' 관계인지, 또는 ②번의 특정 인증(Inno-Biz 등)이 없더라도 ①번의 특허 기술 보유만으로 신청 가능한지에 대한 명시적 논리 구조가 원문에 없어, '특허만 있고 인증이 없는' 기업의 최종 대상 여부를 단정할 수 없습니다.",
+                "원문에는 '지식재산경영인증 기업(특허청 인증)'이 ②번의 요건으로 명시되어 있으나, 단순 '특허 보유'와 '특허청 인증'의 법적/제도적 동일성 여부는 원문에 설명되어 있지 않습니다."
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_fc31af4a77436fe1b40094d2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0012011727393912853,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2488d60f76c1309a43ae269c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0012008430031663839,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000688411885835012,
+                "selection_reason": "novel_source_context",
+                "original_rank": 4,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006269467641755649,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006123554691007594,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006000922407851906,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005872425441465717,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_e95eff5ef09170d89e7f99ed",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000586065337076605,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005819912390032461,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_ead4f9ad0f235301b5b51fa3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005685950343006936,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_a59063ddda9adad0621734c3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005652974849376575,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_2725c54ad794d381e7223ac3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005649269070735791,
+                "selection_reason": "novel_source_context",
+                "original_rank": 18,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "graph",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 92.05241599999863,
+          "service_elapsed_s": 90.29600683299941,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 13408,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "32f3562d9bb54405ada0e9777f773290",
+              "unit_id": "01062e98bfa247ab8461e1099ee49d55",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 7258,
+              "output_tokens": 677,
+              "request_elapsed_s": 76.104831,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 8178625,
+              "raw_response_sha256": "943c5c279c20fe3dde60933224a9b3a65e27c77b320bdb24efc72db2ce1cbed8",
+              "messages_sha256": "2fc1f785d3e856cbcc0ab8ebdb91bac22037bbd2bc2547c46ef07e57ec82c29e",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 17405,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "2e51759757424984be3416a3f47cae45",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "4890a7962fbefcd164619e42ccdca616fa541f02f4bc2016a005e85da416c384"
+        }
+      ],
+      "native_calls": 2,
+      "input_tokens": 13719,
+      "output_tokens": 1228,
+      "request_elapsed_s": 140.19496900000001,
+      "outer_elapsed_s": 171.1088724589972,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    },
+    "P3_selected_QA": {
+      "rows": [
+        {
+          "case": "ACT501070_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/ACT501070_B_qa.json",
+          "sha256": "af64bb2706da2fda7390f1b156fa6855e7cb6530a806816641ecdfa79259eec5",
+          "run_id": "df543adf07b14653bfd546cd9436e66c",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "df543adf07b14653bfd546cd9436e66c",
+            "status": "answered",
+            "answer": {
+              "answer": "1. 개발기술사업화 자금의 신청대상은 ①과 ②를 모두 충족해야 합니다. ①은 사업화하고자 하는 기술의 요건(특허, 실용신안, 저작권 등록 기술 등 포함)이며, ②는 자체 기술을 사업화하고자 하는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업 등 기업 요건입니다. 질문자님은 특허를 보유하고 있으므로 ①의 요건은 충족하지만, ②의 기업 요건(Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증, 크라우드펀딩 1억 이상 유치 등)을 충족해야 최종 대상이 됩니다. 또한 제품 양산 후 3년이 경과한 기술은 대상에서 제외됩니다.\n\n2. 특허 사업화를 위한 시설자금 및 운전자금 안내:\n- 시설자금: 생산설비 및 시험검사장비 도입 등에 소요되는 자금, 무형자산(지식재산권(특허, 상표권 등) 매입, 디자인 개발, 전산 개발 등 외부 연구용역, SW 구입 등) 확보를 위한 투자자금 등이 포함됩니다.\n- 운전자금: 창업소요 비용, 제품생산 비용 및 기업경영에 소요되는 자금, 약속어음 폐지·감축에 따른 현금결제 전환 비용, 개발기술 사업화에 소요되는 원부자재 구입비용, 시장개척비용 등이 포함됩니다.",
+              "choice": null,
+              "citations": [
+                "passage_fc31af4a77436fe1b40094d2",
+                "passage_d28718465f023cbad5136779",
+                "passage_2488d60f76c1309a43ae269c",
+                "passage_8a8658d75ced13507e0d6d34",
+                "passage_6e4cdda84e89cea02faa6be9",
+                "passage_b911aba6e3e7a6d50613c152",
+                "passage_b3e6c240d32a01320438f050",
+                "passage_e0d03e8a45abfc6f18316953",
+                "passage_54d1210723a0cbcf6b5bfb22",
+                "passage_32c06d4bfd7f4aac95d49cb3",
+                "passage_ba08f2eb375e9738686eb752",
+                "passage_ca2e5b9a1a1aa1b39f4abd6c"
+              ],
+              "limitations": [
+                "제공된 근거에는 ①과 ②가 'AND' 관계임을 명시하는 문장이 없으나, 구조상 ①(기술 요건)과 ②(기업 요건)이 나열되어 있어 모두 충족해야 하는 것으로 해석됩니다. 원문에 '또는' 또는 '1개 이상'이라는 표현이 없으므로, 1개만 충족해도 된다는 근거는 없습니다.",
+                "시설자금 및 운전자금의 구체적인 한도, 금리, 상환조건 등은 제공된 근거에 포함되어 있지 않습니다."
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_fc31af4a77436fe1b40094d2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03252247488101534,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2488d60f76c1309a43ae269c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03125763125763126,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_d28718465f023cbad5136779",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02919863597612958,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_b911aba6e3e7a6d50613c152",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02252925068459049,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_b3e6c240d32a01320438f050",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0226010101010101,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_32c06d4bfd7f4aac95d49cb3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.022209165687426556,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_ba08f2eb375e9738686eb752",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.019232547387887194,
+                "selection_reason": "novel_source_context",
+                "original_rank": 9,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02666666666666667,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02664576802507837,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03021353930031804,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_6e4cdda84e89cea02faa6be9",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.032266458495966696,
+                "selection_reason": "already_provided_source_context",
+                "original_rank": 4,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_8a8658d75ced13507e0d6d34",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.031009615384615385,
+                "selection_reason": "already_provided_source_context",
+                "original_rank": 5,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 88.62559420900288,
+          "service_elapsed_s": 87.41492845900211,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 6811,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "df543adf07b14653bfd546cd9436e66c",
+              "unit_id": "e073392ce350439fb2ee8e6bcbc4631f",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 3695,
+              "output_tokens": 551,
+              "request_elapsed_s": 48.194773,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7343000,
+              "raw_response_sha256": "70f89818ca727bb104b9f63dcad587bf3e6920427ef0bc05c318fac6f093ec10",
+              "messages_sha256": "97f938dc1d0e1b0a28e6db8c6f908b7d359594b7e66336212d83f6995ee95f56",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 11547,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [
+            {
+              "id": "202a15bae50a4e2ea794c24c7a6ba305",
+              "stage": "source_passage_selection",
+              "reused_from": {
+                "run_id": "f76f2b3247644e0bb2cfaade7e3a9a8b",
+                "unit_id": "fd498ee3336b4baca1c516d7343a4ce9",
+                "original_status": "succeeded"
+              }
+            }
+          ],
+          "retrieval_reuse": {
+            "baseline_run_id": "3f6d912a7ce4469ca8cb2b61ac62be57",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "5dc4b34cfb91d97178fb91db84e356176a3b1f65e300810b4b7622f13b0e58e2",
+          "source_selection": {
+            "contract": "whole-query-bounded-source-selection-v1",
+            "pool_ids": [
+              "passage_fc31af4a77436fe1b40094d2",
+              "passage_6e4cdda84e89cea02faa6be9",
+              "passage_2488d60f76c1309a43ae269c",
+              "passage_8a8658d75ced13507e0d6d34",
+              "passage_54d1210723a0cbcf6b5bfb22",
+              "passage_be5dc7fea39249ac67aa7eda",
+              "passage_bce55ddbd3db6ce26235eb3e",
+              "passage_d28718465f023cbad5136779",
+              "passage_d1ae9b4ab00768116a9b78fd",
+              "passage_eb367c12d17fc44a7bf24ead",
+              "passage_9d02715c57293654f580419e",
+              "passage_9c67849672198016effbf709",
+              "passage_3938459a5ab828d49b07b56b",
+              "passage_ca2e5b9a1a1aa1b39f4abd6c",
+              "passage_e0d03e8a45abfc6f18316953",
+              "passage_e95eff5ef09170d89e7f99ed",
+              "passage_b955d7821cab6a0bdd285a56",
+              "passage_5acfc96a9e916b4a30cc21b4",
+              "passage_2e311f4b234c53f77f330eca",
+              "passage_8017bb7203f87f5a733dba7d",
+              "passage_2725c54ad794d381e7223ac3",
+              "passage_61bf9dbc19c9b002eb6c4849",
+              "passage_6d563b2963940e90c2778286",
+              "passage_a99baa2dc2306d101cf9a282",
+              "passage_b3e6c240d32a01320438f050",
+              "passage_6065f18867c422e15e363adf",
+              "passage_19e510eb1cf2615627765036",
+              "passage_b911aba6e3e7a6d50613c152",
+              "passage_3f8a82ecf00b954758424124",
+              "passage_32c06d4bfd7f4aac95d49cb3",
+              "passage_ead4f9ad0f235301b5b51fa3",
+              "passage_ff882ae637fecbc6e706dea6",
+              "passage_a359eb5a2603c2160d2bb2f0",
+              "passage_ef9070c264d8f41c4c0cb496",
+              "passage_f52295df83036d97189f630f",
+              "passage_a59063ddda9adad0621734c3",
+              "passage_339f236e81a58e26ae973a55",
+              "passage_754ecdb7892c4f3277cd896e",
+              "passage_ca736079ecb356a510e0cc46",
+              "passage_12c4ca17d67725e858746230",
+              "passage_5c5f4a7b0a5098075dbaa1a1",
+              "passage_59d706cfc29fae986825d899",
+              "passage_65a94278e6b3e1a241874aae",
+              "passage_ba08f2eb375e9738686eb752",
+              "passage_52db78b637c2dd89b20a87ef",
+              "passage_1ff7357287f912eec8bb750a",
+              "passage_0d62d96f9fbded51608916a8",
+              "passage_d0ae7fff8f1234994fa2b41b",
+              "passage_2bc4febe18dee8203737caed",
+              "passage_855e000515a93bebd0b61c64",
+              "passage_e53b998bb7e62c3bced1dfe4",
+              "passage_2d04cc30d0c98ec1f73c44ae",
+              "passage_673fe82274c72169af40faa6",
+              "passage_480a422da098b9bb9b636c36",
+              "passage_bbd761a02f08c63d416e0d74",
+              "passage_d21666503c2e1e6c001177f2",
+              "passage_355334ac66175aa0b8b9dad1",
+              "passage_67fde967b6e374236f97ea36",
+              "passage_e9d3a650167d919f4787d0e5",
+              "passage_288105da8b809ae70db5152c"
+            ],
+            "pool_multiplier": 5,
+            "selection_limit": 12,
+            "ranking_is_semantic_validation": false,
+            "selections": [
+              {
+                "candidate_id": "passage_fc31af4a77436fe1b40094d2",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 1번(기술 해당) 요건을 명시하여 자격요건 구조를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_2488d60f76c1309a43ae269c",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다.",
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 2번(기업 유형) 요건을 명시하며, 질문자가 언급한 '기타 인증' 부재와 관련된 Inno-Biz, 벤처기업 등 조건을 포함."
+              },
+              {
+                "candidate_id": "passage_d28718465f023cbad5136779",
+                "request_quotes": [
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "신청대상 1번에 해당하는 '기술'의 구체적 정의(특허, 실용신안 등)를 제시하여 질문자의 특허 보유 상태가 요건에 부합하는지 판단하는 근거."
+              },
+              {
+                "candidate_id": "passage_6e4cdda84e89cea02faa6be9",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 업력 제한이 없음을 명시하여 자격요건 판단 시 참고할 조건."
+              },
+              {
+                "candidate_id": "passage_8a8658d75ced13507e0d6d34",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금 대상에서 제외되는 경우(제품 양산 후 3년 경과)를 명시하여 자격요건 판단 시 예외 조건 확인."
+              },
+              {
+                "candidate_id": "passage_b911aba6e3e7a6d50613c152",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금 내 '시설자금' 항목의 헤딩으로, 질문자가 요청한 시설자금 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_b3e6c240d32a01320438f050",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "시설자금 지원 용도 중 생산설비 도입 비용에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_32c06d4bfd7f4aac95d49cb3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금 내 '운전자금' 항목의 헤딩으로, 질문자가 요청한 운전자금 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_ba08f2eb375e9738686eb752",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "운전자금 지원 용도 중 창업소요 비용, 제품생산 비용 등에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "운전자금 지원 용도 중 개발기술 사업화에 소요되는 원부자재, 시장개척 비용 등에 대한 근거."
+              },
+              {
+                "candidate_id": "passage_e0d03e8a45abfc6f18316953",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "시설자금 내 '투자자금' 항목의 헤딩으로, 무형자산 확보 등 추가 지원 범위를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "투자자금 지원 용도 중 지식재산권(특허) 매입 비용 등에 대한 근거."
+              }
+            ],
+            "status": "selected",
+            "reasons_are_answer_evidence": false
+          }
+        },
+        {
+          "case": "ACT501070_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/ACT501070_C_qa.json",
+          "sha256": "9ea06ac43a9b08c0291c1a10aab134f73341cd48f1c990eb64f9bbe356cf35a1",
+          "run_id": "7b7292cd16d74e00999b36b44a51aa79",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "7b7292cd16d74e00999b36b44a51aa79",
+            "status": "answered",
+            "answer": {
+              "answer": "1. 개발기술사업화 자금의 신청대상은 ①과 ②를 모두 충족해야 합니다. ①은 사업화하고자 하는 기술의 요건(특허, 실용신안, 저작권 등 포함)이며, ②는 자체 기술을 사업화하고자 하는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업 등 기업 요건입니다. 질문자님은 특허를 보유하고 있으나, ②에 해당하는 기업 유형(Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증, 크라우드펀딩 투자 유치)에 해당하지 않는다면 대상이 아닙니다. 또한 제품 양산 후 3년이 경과한 기술은 제외됩니다.\n\n2. 특허 사업화를 위한 자금으로 개발기술사업화자금이 있으며, 용도는 다음과 같습니다:\n- 시설자금: 생산설비 및 시험검사장비 도입 등에 소요되는 자금 (건축 및 토지구입비, 임차보증금은 지원 불가)\n- 운전자금: 개발기술 사업화에 소요되는 원부자재 구입비용, 시장개척비용 등\n- 융자조건: 정책자금 기준금리(변동) 적용, 한도 20억원 이내, 중진공 직접대출",
+              "choice": null,
+              "citations": [
+                "passage_fc31af4a77436fe1b40094d2",
+                "passage_d28718465f023cbad5136779",
+                "passage_2488d60f76c1309a43ae269c",
+                "passage_8a8658d75ced13507e0d6d34",
+                "passage_b3e6c240d32a01320438f050",
+                "passage_ead4f9ad0f235301b5b51fa3",
+                "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "passage_2725c54ad794d381e7223ac3",
+                "passage_b955d7821cab6a0bdd285a56",
+                "passage_bce55ddbd3db6ce26235eb3e"
+              ],
+              "limitations": [
+                "②번 기업 요건(Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증, 크라우드펀딩)에 질문자님이 해당되는지 확인이 필요합니다.",
+                "제품 양산 후 3년 경과 여부에 따라 대상에서 제외될 수 있습니다."
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_fc31af4a77436fe1b40094d2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0012011727393912853,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2488d60f76c1309a43ae269c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0012008430031663839,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_d28718465f023cbad5136779",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000622451003071001,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_b3e6c240d32a01320438f050",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005554154964937635,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_ba08f2eb375e9738686eb752",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005056290126060309,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005819912390032461,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_ead4f9ad0f235301b5b51fa3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005685950343006936,
+                "selection_reason": "novel_source_context",
+                "original_rank": 9,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_b955d7821cab6a0bdd285a56",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005478015518524451,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_2725c54ad794d381e7223ac3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0005649269070735791,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006269467641755649,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_8a8658d75ced13507e0d6d34",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006830797653511124,
+                "selection_reason": "already_provided_source_context",
+                "original_rank": 4,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_6e4cdda84e89cea02faa6be9",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006985798643242533,
+                "selection_reason": "already_provided_source_context",
+                "original_rank": 5,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "graph",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 87.33012629199948,
+          "service_elapsed_s": 86.05090299999938,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 8228,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "7b7292cd16d74e00999b36b44a51aa79",
+              "unit_id": "e3072f64708c4a49ab1b24ef62ad2b81",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 4470,
+              "output_tokens": 443,
+              "request_elapsed_s": 46.536842,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 10877500,
+              "raw_response_sha256": "acd1961e97d1eb765b86d6037452998bf3b907f08e29f082cad3d38a785da9a5",
+              "messages_sha256": "a7ac012f4a00ef1d1b3c8ab2f20cb35ba942b9031a985a456cd3f7e451a4b345",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 12758,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [
+            {
+              "id": "75b97e62f1e143ed9c484e713bbd5225",
+              "stage": "source_passage_selection",
+              "reused_from": {
+                "run_id": "470d97f0496241948a605253ad955724",
+                "unit_id": "b82769bc1a754a1d9bef78933f9fed32",
+                "original_status": "succeeded"
+              }
+            }
+          ],
+          "retrieval_reuse": {
+            "baseline_run_id": "2e51759757424984be3416a3f47cae45",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "5dc4b34cfb91d97178fb91db84e356176a3b1f65e300810b4b7622f13b0e58e2",
+          "source_selection": {
+            "contract": "whole-query-bounded-source-selection-v1",
+            "pool_ids": [
+              "passage_fc31af4a77436fe1b40094d2",
+              "passage_2488d60f76c1309a43ae269c",
+              "passage_6e4cdda84e89cea02faa6be9",
+              "passage_be5dc7fea39249ac67aa7eda",
+              "passage_8a8658d75ced13507e0d6d34",
+              "passage_bce55ddbd3db6ce26235eb3e",
+              "passage_eb367c12d17fc44a7bf24ead",
+              "passage_d28718465f023cbad5136779",
+              "passage_9d02715c57293654f580419e",
+              "passage_d1ae9b4ab00768116a9b78fd",
+              "passage_54d1210723a0cbcf6b5bfb22",
+              "passage_5acfc96a9e916b4a30cc21b4",
+              "passage_2e311f4b234c53f77f330eca",
+              "passage_e95eff5ef09170d89e7f99ed",
+              "passage_ca2e5b9a1a1aa1b39f4abd6c",
+              "passage_ead4f9ad0f235301b5b51fa3",
+              "passage_a59063ddda9adad0621734c3",
+              "passage_2725c54ad794d381e7223ac3",
+              "passage_754ecdb7892c4f3277cd896e",
+              "passage_b3e6c240d32a01320438f050",
+              "passage_8017bb7203f87f5a733dba7d",
+              "passage_9c67849672198016effbf709",
+              "passage_3938459a5ab828d49b07b56b",
+              "passage_19e510eb1cf2615627765036",
+              "passage_b955d7821cab6a0bdd285a56",
+              "passage_ef9070c264d8f41c4c0cb496",
+              "passage_e0d03e8a45abfc6f18316953",
+              "passage_6065f18867c422e15e363adf",
+              "passage_339f236e81a58e26ae973a55",
+              "passage_61bf9dbc19c9b002eb6c4849",
+              "passage_12c4ca17d67725e858746230",
+              "passage_855e000515a93bebd0b61c64",
+              "passage_a99baa2dc2306d101cf9a282",
+              "passage_2d04cc30d0c98ec1f73c44ae",
+              "passage_a359eb5a2603c2160d2bb2f0",
+              "passage_65a94278e6b3e1a241874aae",
+              "passage_373269b57481cf77e014ac45",
+              "passage_3f8a82ecf00b954758424124",
+              "passage_ff882ae637fecbc6e706dea6",
+              "passage_6d563b2963940e90c2778286",
+              "passage_355334ac66175aa0b8b9dad1",
+              "passage_ca736079ecb356a510e0cc46",
+              "passage_b911aba6e3e7a6d50613c152",
+              "passage_6c89e6c38ecbba821dbd57f1",
+              "passage_ba08f2eb375e9738686eb752",
+              "passage_bc46cb1314b78160f4912123",
+              "passage_e18ebf61adc45267c30b26fb",
+              "passage_0d62d96f9fbded51608916a8",
+              "passage_10dd7f2078ef758e16a3f382",
+              "passage_59d706cfc29fae986825d899",
+              "passage_5c5f4a7b0a5098075dbaa1a1",
+              "passage_52db78b637c2dd89b20a87ef",
+              "passage_f52295df83036d97189f630f",
+              "passage_6c2abf8aa40d3b5f4db343b5",
+              "passage_32c06d4bfd7f4aac95d49cb3",
+              "passage_0f5ae70c7c510783fd2130a9",
+              "passage_547f60875382c5eb9bf7abc8",
+              "passage_9d055388cc330aa2539e7707",
+              "passage_d0ae7fff8f1234994fa2b41b",
+              "passage_7e9e516485ba2bd12f230ea2"
+            ],
+            "pool_multiplier": 5,
+            "selection_limit": 12,
+            "ranking_is_semantic_validation": false,
+            "selections": [
+              {
+                "candidate_id": "passage_fc31af4a77436fe1b40094d2",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 1번(기술 사업화) 요건을 명시하여, 질문의 자격요건 구조를 파악하는 근거."
+              },
+              {
+                "candidate_id": "passage_2488d60f76c1309a43ae269c",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다.",
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 신청대상 2번(기업 유형/인증) 요건을 명시하여, 질문의 자격요건 구조와 신청자의 상황(특허 보유, 인증 없음)을 대조하는 근거."
+              },
+              {
+                "candidate_id": "passage_d28718465f023cbad5136779",
+                "request_quotes": [
+                  "저희는 특허만 가지고 있고, 기타 인증은 없습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 '기술' 범위에 '특허, 실용신안 또는 저작권 등록 기술'이 포함됨을 명시하여, 신청자의 특허 보유가 기술 요건에 부합하는지 판단하는 근거."
+              },
+              {
+                "candidate_id": "passage_8a8658d75ced13507e0d6d34",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대상에서 제외되는 경우(제품 양산 후 3년 경과)를 명시하여, 자격요건 충족 시에도 제외될 수 있는 예외 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_6e4cdda84e89cea02faa6be9",
+                "request_quotes": [
+                  "개발기술화사업의 자격요건 중 1번과 2번으로 나뉘어 있는데 2개 다 충족해야 하는지 아니면 1개라도 충족 시 대상에 해당한지 궁금합니다."
+                ],
+                "relevance": "개발기술사업화 자금의 업력 제한이 없음을 명시하여, 신청자의 창업기업/중소기업 자격과 무관하게 기술 요건 충족 시 대상이 될 수 있음을 시사하는 근거."
+              },
+              {
+                "candidate_id": "passage_b3e6c240d32a01320438f050",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금의 시설자금 용도로 '생산설비 및 시험검사장비 도입'이 가능함을 명시하여, 특허 사업화 시설 자금 지원 가능성을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ba08f2eb375e9738686eb752",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "창업기업자금의 운전자금 용도로 '창업소요 비용, 제품생산 비용' 등이 가능함을 명시하여, 특허 사업화 운영 자금 지원 가능성을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 용도로 '원부자재 구입비용, 시장개척비용' 등이 가능함을 명시하여, 특허 사업화 관련 자금 지원 범위를 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_ead4f9ad0f235301b5b51fa3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 지원 불가 항목(건축, 토지구입, 임차보증금)을 명시하여, 시설 자금 지원 시 주의할 예외 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_b955d7821cab6a0bdd285a56",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대출 한도(20억원)를 명시하여, 자금 지원 규모를 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_2725c54ad794d381e7223ac3",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 대출 금리(정책자금 기준금리 변동)를 명시하여, 자금 지원 조건을 확인하는 근거."
+              },
+              {
+                "candidate_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "request_quotes": [
+                  "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다."
+                ],
+                "relevance": "개발기술사업화 자금의 융자 방식(중진공 직접대출)을 명시하여, 자금 신청 및 실행 방식을 확인하는 근거."
+              }
+            ],
+            "status": "selected",
+            "reasons_are_answer_evidence": false
+          }
+        }
+      ],
+      "native_calls": 2,
+      "input_tokens": 8165,
+      "output_tokens": 994,
+      "request_elapsed_s": 94.731615,
+      "outer_elapsed_s": 175.95572050100236,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 2
+    },
+    "P4_target": {
+      "rows": [
+        {
+          "case": "SUP02_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP02_B_qa.json",
+          "sha256": "4e5875d77be13f084eb9fe23edd6cee80801225b218e8c9d6239d5db59f13dd2",
+          "run_id": "497b4ebb90174211b2c5ed103347d7e5",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "497b4ebb90174211b2c5ed103347d7e5",
+            "status": "answered",
+            "answer": {
+              "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 하는 별도 자금은 **청년전용창업자금**입니다. 그러나 제공된 근거에 따르면, 무형자산(지식재산권 등) 확보를 위한 투자자금 지원 항목에서 **청년전용창업자금은 제외**되므로, 이 자금에서 특허권 매입 비용을 투자자금으로 지원하지 않습니다.",
+              "choice": null,
+              "citations": [
+                "passage_61bf9dbc19c9b002eb6c4849",
+                "passage_e0d03e8a45abfc6f18316953",
+                "passage_54d1210723a0cbcf6b5bfb22",
+                "passage_be5dc7fea39249ac67aa7eda",
+                "passage_2e311f4b234c53f77f330eca",
+                "passage_ff882ae637fecbc6e706dea6",
+                "passage_ba08f2eb375e9738686eb752",
+                "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "passage_1e88353f425654b0291ab8ae",
+                "passage_d0ae7fff8f1234994fa2b41b",
+                "passage_0d62d96f9fbded51608916a8",
+                "passage_e53b998bb7e62c3bced1dfe4"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_61bf9dbc19c9b002eb6c4849",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03252247488101534,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03200204813108039,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03177805800756621,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_ff882ae637fecbc6e706dea6",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.029273504273504274,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027417840375586856,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025774005972025775,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_e53b998bb7e62c3bced1dfe4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02552166934189406,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_d0ae7fff8f1234994fa2b41b",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02485334979932078,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_ca2e5b9a1a1aa1b39f4abd6c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02354606278950077,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_ba08f2eb375e9738686eb752",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0229242700729927,
+                "selection_reason": "novel_source_context",
+                "original_rank": 18,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_1e88353f425654b0291ab8ae",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02282051282051282,
+                "selection_reason": "novel_source_context",
+                "original_rank": 19,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_0d62d96f9fbded51608916a8",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.022592592592592595,
+                "selection_reason": "novel_source_context",
+                "original_rank": 20,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 67.04635520800002,
+          "service_elapsed_s": 65.09082583399868,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 14114,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "497b4ebb90174211b2c5ed103347d7e5",
+              "unit_id": "1c76924778ef43fa93a7d11a88a7093d",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 7742,
+              "output_tokens": 172,
+              "request_elapsed_s": 51.183893,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 11745083,
+              "raw_response_sha256": "054d7d10d8be459b83acddb9152e14e4029fab23bad0d9f0415f3e7adc5fac61",
+              "messages_sha256": "7517e2c60f6e616a29a8a5907a4e20ba0ea5a2a13366a3b5dd53f532ae670fb6",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 17963,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "eb9003a3efda4875af2213b64231b8ed",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        },
+        {
+          "case": "SUP02_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP02_C_qa.json",
+          "sha256": "b24a505529a2f59b927f756cc4074569c1a5d1733c2607af0f0bb42fc8acf682",
+          "run_id": "b8dec3d33c7c4c0ab644e9bb28672d96",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "b8dec3d33c7c4c0ab644e9bb28672d96",
+            "status": "answered",
+            "answer": {
+              "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 하는 별도 자금은 **청년전용창업자금**입니다. 그러나 이 자금에서 특허권 매입 비용을 투자자금으로 지원하는지는 **아닙니다**. 원문에 따르면, 무형자산 확보를 위한 투자자금(지식재산권 매입 등) 항목에 대해 명시적으로 “청년전용창업자금은 제외”라고 규정하고 있습니다.",
+              "choice": null,
+              "citations": [
+                "passage_61bf9dbc19c9b002eb6c4849",
+                "passage_e0d03e8a45abfc6f18316953",
+                "passage_54d1210723a0cbcf6b5bfb22",
+                "passage_b955d7821cab6a0bdd285a56"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_61bf9dbc19c9b002eb6c4849",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0014481415633057159,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009095724497021981,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008901453749376908,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008038975102317257,
+                "selection_reason": "novel_source_context",
+                "original_rank": 5,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007586328528731878,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_ff882ae637fecbc6e706dea6",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007299855579619018,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007228646091554115,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_b955d7821cab6a0bdd285a56",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007065677405010315,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_12c4ca17d67725e858746230",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007023137747727997,
+                "selection_reason": "novel_source_context",
+                "original_rank": 19,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_d0ae7fff8f1234994fa2b41b",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006909239499115013,
+                "selection_reason": "novel_source_context",
+                "original_rank": 22,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_e95eff5ef09170d89e7f99ed",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006891139972628376,
+                "selection_reason": "novel_source_context",
+                "original_rank": 23,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_288105da8b809ae70db5152c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006884796756274328,
+                "selection_reason": "novel_source_context",
+                "original_rank": 24,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "graph",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 63.998851707998256,
+          "service_elapsed_s": 62.00616425000044,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 13611,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "b8dec3d33c7c4c0ab644e9bb28672d96",
+              "unit_id": "6f843ce5d2e54fe98570357c8081570d",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 7384,
+              "output_tokens": 146,
+              "request_elapsed_s": 48.24798,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7769458,
+              "raw_response_sha256": "f29cd7c56a4413f1d18a0355e8d890a5a2a975c26ef8428cb0734d21d87477e4",
+              "messages_sha256": "c2b4ddf9bc126635338aafc96642f014b77743bdf4cb6ad820a07f033f457fda",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 17451,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "0d402d00135546a186533a2b01d95b21",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        }
+      ],
+      "native_calls": 2,
+      "input_tokens": 15126,
+      "output_tokens": 318,
+      "request_elapsed_s": 99.431873,
+      "outer_elapsed_s": 131.04520691599828,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    },
+    "P4_normal_controls": {
+      "rows": [
+        {
+          "case": "SUP01_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP01_B_qa.json",
+          "sha256": "3a255b54c26b148f94d20c9b2ab7d038f0a405ff49b3440ffd1579f0973dd38f",
+          "run_id": "cf4bb271cc9a43728f5e8257d7e2b2ea",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "cf4bb271cc9a43728f5e8257d7e2b2ea",
+            "status": "answered",
+            "answer": {
+              "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금은 시설자금으로 **지원 불가**합니다.",
+              "choice": null,
+              "citations": [
+                "passage_be5dc7fea39249ac67aa7eda",
+                "passage_2488d60f76c1309a43ae269c",
+                "passage_ead4f9ad0f235301b5b51fa3"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_ead4f9ad0f235301b5b51fa3",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03149801587301587,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_2488d60f76c1309a43ae269c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03021353930031804,
+                "selection_reason": "novel_source_context",
+                "original_rank": 4,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_9d02715c57293654f580419e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.028438886647841874,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.028021349599695006,
+                "selection_reason": "novel_source_context",
+                "original_rank": 9,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_ff882ae637fecbc6e706dea6",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027579737335834898,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_a359eb5a2603c2160d2bb2f0",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.026234567901234566,
+                "selection_reason": "novel_source_context",
+                "original_rank": 13,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_b3e6c240d32a01320438f050",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.026190476190476188,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025974025974025976,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_19e510eb1cf2615627765036",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02581612258494337,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02581612258494337,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.024016563146997932,
+                "selection_reason": "novel_source_context",
+                "original_rank": 23,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.023026315789473686,
+                "selection_reason": "novel_source_context",
+                "original_rank": 26,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 54.96991983300177,
+          "service_elapsed_s": 52.84568233399841,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11657,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "cf4bb271cc9a43728f5e8257d7e2b2ea",
+              "unit_id": "faae52c6b76848569323651c13bfb464",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 6311,
+              "output_tokens": 73,
+              "request_elapsed_s": 38.323409,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 8459000,
+              "raw_response_sha256": "bd4a2ee056c18cf28e0839cc6011aae2d97156aaa80f4196ee56141b89c7c4b0",
+              "messages_sha256": "64920faa3d5ec849bed90d20be328285b6f90b5e2fa84fba217ace373863ebbd",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 15777,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "c0ac63a20dce41a180241ee607c67e6b",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        },
+        {
+          "case": "SUP01_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP01_C_qa.json",
+          "sha256": "cd383e4fa5e1277f06f2c47e342eae50f95eaf4c156303b68b53beca0615790b",
+          "run_id": "ec5349b7732a4c05a822ac44f8780676",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "ec5349b7732a4c05a822ac44f8780676",
+            "status": "answered",
+            "answer": {
+              "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금은 시설자금으로 **지원 불가**합니다.",
+              "choice": null,
+              "citations": [
+                "passage_be5dc7fea39249ac67aa7eda",
+                "passage_fc31af4a77436fe1b40094d2",
+                "passage_12c4ca17d67725e858746230",
+                "passage_e0d03e8a45abfc6f18316953"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_fc31af4a77436fe1b40094d2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0012111315516376766,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_12c4ca17d67725e858746230",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0011190065829030972,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_2488d60f76c1309a43ae269c",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0010090484094772418,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009713131982344124,
+                "selection_reason": "novel_source_context",
+                "original_rank": 4,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_b3e6c240d32a01320438f050",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009613901614089335,
+                "selection_reason": "novel_source_context",
+                "original_rank": 5,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_19e510eb1cf2615627765036",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009298945582582036,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_a359eb5a2603c2160d2bb2f0",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000911830948362589,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_54d1210723a0cbcf6b5bfb22",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000821057713679746,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007960996694716524,
+                "selection_reason": "novel_source_context",
+                "original_rank": 9,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0007346535219412983,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006955660869763765,
+                "selection_reason": "novel_source_context",
+                "original_rank": 19,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_ff882ae637fecbc6e706dea6",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0006610031579641399,
+                "selection_reason": "novel_source_context",
+                "original_rank": 22,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "graph",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 54.85125850000259,
+          "service_elapsed_s": 52.98556020899923,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11657,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "ec5349b7732a4c05a822ac44f8780676",
+              "unit_id": "1368220ba0ab40f290664e0fb6fdd310",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 6311,
+              "output_tokens": 78,
+              "request_elapsed_s": 38.80426,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7720292,
+              "raw_response_sha256": "8a0a45b0f7f09197da8092fa8aaae66bcfd94d49c7b579fa04d09ceae9d7564f",
+              "messages_sha256": "3e177dba5b70abfbf2b6c8b0796738a1f3cd1c7682079e819dc864e7395fefe3",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 15777,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "42f3c586424d4086b2442af56cdd5259",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        },
+        {
+          "case": "SUP03_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP03_B_qa.json",
+          "sha256": "8b466a7365751a485edc0577d792845993e341fed20bc3399cc94c2f8257244c",
+          "run_id": "53e0518a4e6340d7ad65c67539c66edd",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "53e0518a4e6340d7ad65c67539c66edd",
+            "status": "answered",
+            "answer": {
+              "answer": "연 2.0% 고정금리",
+              "choice": null,
+              "citations": [
+                "passage_67fde967b6e374236f97ea36"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_67fde967b6e374236f97ea36",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03278688524590164,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_ca736079ecb356a510e0cc46",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03225806451612903,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_612416f17f5a1066c1fe61ca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.03149801587301587,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_b955d7821cab6a0bdd285a56",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027417840375586856,
+                "selection_reason": "novel_source_context",
+                "original_rank": 6,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_547f60875382c5eb9bf7abc8",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027313266443701224,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_6f97a3f51fa1903a481553db",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02719970792259949,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_61bf9dbc19c9b002eb6c4849",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025448143405889884,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_d5bc671607a7370052b906f7",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.024568668046928914,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_673fe82274c72169af40faa6",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02402745995423341,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02402745995423341,
+                "selection_reason": "novel_source_context",
+                "original_rank": 18,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_bf4ea1f10a3d66763f1e8306",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.024016282225237447,
+                "selection_reason": "novel_source_context",
+                "original_rank": 19,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_e0d03e8a45abfc6f18316953",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.02303921568627451,
+                "selection_reason": "novel_source_context",
+                "original_rank": 22,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 58.047222375000274,
+          "service_elapsed_s": 55.81576029200005,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 12702,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "53e0518a4e6340d7ad65c67539c66edd",
+              "unit_id": "09a0f8da622e467d92be70b03007a158",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 7130,
+              "output_tokens": 33,
+              "request_elapsed_s": 41.221083,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7428833,
+              "raw_response_sha256": "4c244b8c7013826e28e860ed6bc94334f45cb3741dbb19045586f4b4f4450b42",
+              "messages_sha256": "ac95eedaf4b8acb6ad652f283983ea778689396e2bb64ac43ac5ccb9c48a23b1",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 16610,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "9cbe3000907946339b9b7ed745de3e39",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        },
+        {
+          "case": "SUP03_C",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/SUP03_C_qa.json",
+          "sha256": "38bdda73cc0c712de7978c509373009acd07e0d759ee0b9e8003fead15988de8",
+          "run_id": "073445a4863340bf8b0a3f58cafe500f",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "073445a4863340bf8b0a3f58cafe500f",
+            "status": "answered",
+            "answer": {
+              "answer": "연 2.0% 고정금리",
+              "choice": null,
+              "citations": [
+                "passage_67fde967b6e374236f97ea36"
+              ],
+              "limitations": []
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_67fde967b6e374236f97ea36",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0010977275706277763,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_ca736079ecb356a510e0cc46",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0010653536162089545,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_54f7c1808d3842ad942ae4d1",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.000978739518293391,
+                "selection_reason": "novel_source_context",
+                "original_rank": 3,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_612416f17f5a1066c1fe61ca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009449470188681616,
+                "selection_reason": "novel_source_context",
+                "original_rank": 4,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_6f97a3f51fa1903a481553db",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009159994212640496,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_bf4ea1f10a3d66763f1e8306",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0009046905769039624,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_547f60875382c5eb9bf7abc8",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008902613090381784,
+                "selection_reason": "novel_source_context",
+                "original_rank": 10,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_61bf9dbc19c9b002eb6c4849",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008848836613634182,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_cf8522d44eb91a2da31776a7",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008745393984395153,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_82cb8cb2322f6a712f261b80",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008724713227768698,
+                "selection_reason": "novel_source_context",
+                "original_rank": 15,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_b955d7821cab6a0bdd285a56",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008723963732410841,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.0008703533284293867,
+                "selection_reason": "novel_source_context",
+                "original_rank": 17,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "graph",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 69.51178591699863,
+          "service_elapsed_s": 67.31403270800001,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 16016,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "073445a4863340bf8b0a3f58cafe500f",
+              "unit_id": "2cb1aff67b1943c7b3703ebab2bdd6fe",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 9160,
+              "output_tokens": 33,
+              "request_elapsed_s": 52.775563,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 10455500,
+              "raw_response_sha256": "ca7dd663625bf6722a01ced0159adb6fa4336d99390b4e9e1f1a5e3649d67b88",
+              "messages_sha256": "0fe3dfd323d35726fb7358c22672997bb75b9b1cf64c8c9b386a7e5cf632f95b",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 19459,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "ef97ea44c04a4068b5b37f60d7fa2565",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022"
+        }
+      ],
+      "native_calls": 4,
+      "input_tokens": 28912,
+      "output_tokens": 217,
+      "request_elapsed_s": 171.124315,
+      "outer_elapsed_s": 237.38018662500326,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    },
+    "P4_gap_current_baseline": {
+      "rows": [
+        {
+          "case": "ACT501108_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4_current_baseline/ACT501108_B_qa.json",
+          "sha256": "e1f7e7ba7926dfe06a90ea51274a38d4e74a7f3853b62444c9882f5bce8059a2",
+          "run_id": "244edc62e32747a0ba1b30290cc41539",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "244edc62e32747a0ba1b30290cc41539",
+            "status": "answered",
+            "answer": {
+              "answer": "제공된 근거만으로는 질문자의 구체적 상황(기존 공장 리모델링 후 운영, 전 사장님 이전, 사업자등록증 상이 등)이 중진공 창업기업자금의 '창업'에 해당하는지 여부를 확정할 수 없습니다. 다만, 창업기업자금은 『중소기업창업지원법』 제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업이 대상이며, 혁신창업지원의 경우 사업 개시일로부터 7년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자가 대상입니다. 질문자는 2018년 3월 20일 개시이므로 2019년 2월 11일 기준 7년 미만 조건은 충족하나, '창업' 인정 여부는 법적 정의와 개별 사안에 따라 달라지며, 제공된 문서에는 리모델링 후 운영이 창업으로 인정되는지 여부에 대한 명시적 기준이 없습니다. 따라서 중진공 직원의 판단이 정확한지 여부는 제공된 근거만으로 확인 불가합니다.",
+              "choice": null,
+              "citations": [
+                "passage_d1ae9b4ab00768116a9b78fd",
+                "passage_2e311f4b234c53f77f330eca"
+              ],
+              "limitations": [
+                "리모델링 후 운영이 창업으로 인정되는지 여부에 대한 명시적 기준 부재",
+                "개별 사안(전 사장님 이전, 사업자등록증 상이 등)에 대한 구체적 판단 기준 부재"
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_eb367c12d17fc44a7bf24ead",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.031544957774465976,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.031544957774465976,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.030798389007344232,
+                "selection_reason": "novel_source_context",
+                "original_rank": 5,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.029138513513513514,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_7e9e516485ba2bd12f230ea2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.028381642512077296,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027820121951219513,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_e95eff5ef09170d89e7f99ed",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027730294396961064,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_63fc4831699ec85d5a0e72a0",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025478740668614087,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_6f97a3f51fa1903a481553db",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.023518469306404464,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_ef9070c264d8f41c4c0cb496",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.019833087874324987,
+                "selection_reason": "novel_source_context",
+                "original_rank": 21,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_e32d55cbfe3e4a3716f1c052",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.019510879338248518,
+                "selection_reason": "novel_source_context",
+                "original_rank": 22,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.018634969325153374,
+                "selection_reason": "novel_source_context",
+                "original_rank": 26,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 78.23748304199762,
+          "service_elapsed_s": 76.86225987500075,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 15680,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "244edc62e32747a0ba1b30290cc41539",
+              "unit_id": "5a6410554c034d4795fbb9a173609402",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 8490,
+              "output_tokens": 302,
+              "request_elapsed_s": 63.115535,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7761000,
+              "raw_response_sha256": "9f78e28d4058757d720ee78e084f944b1793afec77e2d9af5aa691900c157816",
+              "messages_sha256": "7dc6d362b5250106a4efffb9d823bb4f217f1ebd429a6cf46359b906f349e8c5",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 19443,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "9fc2a876825b43bda7078e4162d10319",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "960cf7ac8822d84c85dffa4d7afa8d41ecefc83b584866830bdbfccc7493a1e1"
+        }
+      ],
+      "native_calls": 1,
+      "input_tokens": 8490,
+      "output_tokens": 302,
+      "request_elapsed_s": 63.115535,
+      "outer_elapsed_s": 78.23748304199762,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    },
+    "P4_gap_bundle": {
+      "rows": [
+        {
+          "case": "ACT501108_B",
+          "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4_gap_B/ACT501108_B_qa.json",
+          "sha256": "803b1e9d424cb9b2a296a9f5c06aa2a595d01c471fc658bab702d30e7d4ed3da",
+          "run_id": "66feee49cbf14f8f91789e60d126ec3e",
+          "run_status": "succeeded",
+          "result": {
+            "run_id": "66feee49cbf14f8f91789e60d126ec3e",
+            "status": "answered",
+            "answer": {
+              "answer": "제공된 근거에는 창업기업자금의 신청대상으로 『중소기업창업지원법』제2조에 의한 창업자임을 요구하고, 창업 제외 업종(숙박 및 음식점업 등)을 명시하고 있습니다. 그러나 질문자의 상황인 '기존 공장 리모델링 후 운영'이 창업으로 인정되는지, 또는 기존 사업자의 이전과 신규 사업자등록이 창업 요건을 충족하는지에 대한 구체적인 판단 기준이나 예외 규정은 제공된 원문에 포함되어 있지 않습니다. 따라서 해당 사례가 창업으로 인정되는지 여부는 확인 불가합니다.",
+              "choice": null,
+              "citations": [
+                "passage_d1ae9b4ab00768116a9b78fd",
+                "passage_2e311f4b234c53f77f330eca",
+                "passage_be5dc7fea39249ac67aa7eda"
+              ],
+              "limitations": [
+                "기존 시설 인수/리모델링 후 운영 시 창업 인정 여부",
+                "사업자등록 변경과 창업 요건 충족 관계",
+                "중진공 직원의 판단 근거 및 예외 규정"
+              ]
+            },
+            "retrieval": [
+              {
+                "block_id": "passage_eb367c12d17fc44a7bf24ead",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.031544957774465976,
+                "selection_reason": "novel_source_context",
+                "original_rank": 1,
+                "selected_rank": 1
+              },
+              {
+                "block_id": "passage_d1ae9b4ab00768116a9b78fd",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.031544957774465976,
+                "selection_reason": "novel_source_context",
+                "original_rank": 2,
+                "selected_rank": 2
+              },
+              {
+                "block_id": "passage_2e311f4b234c53f77f330eca",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.030798389007344232,
+                "selection_reason": "novel_source_context",
+                "original_rank": 5,
+                "selected_rank": 3
+              },
+              {
+                "block_id": "passage_bce55ddbd3db6ce26235eb3e",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.029138513513513514,
+                "selection_reason": "novel_source_context",
+                "original_rank": 7,
+                "selected_rank": 4
+              },
+              {
+                "block_id": "passage_7e9e516485ba2bd12f230ea2",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.028381642512077296,
+                "selection_reason": "novel_source_context",
+                "original_rank": 8,
+                "selected_rank": 5
+              },
+              {
+                "block_id": "passage_be5dc7fea39249ac67aa7eda",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027820121951219513,
+                "selection_reason": "novel_source_context",
+                "original_rank": 11,
+                "selected_rank": 6
+              },
+              {
+                "block_id": "passage_e95eff5ef09170d89e7f99ed",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.027730294396961064,
+                "selection_reason": "novel_source_context",
+                "original_rank": 12,
+                "selected_rank": 7
+              },
+              {
+                "block_id": "passage_63fc4831699ec85d5a0e72a0",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.025478740668614087,
+                "selection_reason": "novel_source_context",
+                "original_rank": 14,
+                "selected_rank": 8
+              },
+              {
+                "block_id": "passage_6f97a3f51fa1903a481553db",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.023518469306404464,
+                "selection_reason": "novel_source_context",
+                "original_rank": 16,
+                "selected_rank": 9
+              },
+              {
+                "block_id": "passage_ef9070c264d8f41c4c0cb496",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.019833087874324987,
+                "selection_reason": "novel_source_context",
+                "original_rank": 21,
+                "selected_rank": 10
+              },
+              {
+                "block_id": "passage_e32d55cbfe3e4a3716f1c052",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.019510879338248518,
+                "selection_reason": "novel_source_context",
+                "original_rank": 22,
+                "selected_rank": 11
+              },
+              {
+                "block_id": "passage_5acfc96a9e916b4a30cc21b4",
+                "file_id": "86a31d6b511a46f195963ef5ee52cd96",
+                "score": 0.018634969325153374,
+                "selection_reason": "novel_source_context",
+                "original_rank": 26,
+                "selected_rank": 12
+              }
+            ],
+            "context_mode": "document",
+            "snapshot_id": null,
+            "source_run_id": "185606e5f6604e9c9d969aa16b539170",
+            "answer_basis": "source_passages_not_ontology_approval",
+            "limitations": [],
+            "execution_boundary": {
+              "answer_mode": "synthesis",
+              "answer_contract": "source-unique-provided-citations-lossless-dedup-v3",
+              "unadopted_answer_mode": false,
+              "source_review_run_id": "185606e5f6604e9c9d969aa16b539170",
+              "source_run_review_contract": "requirement-local-review-v8-owned-errors",
+              "source_run_review_experimental": false,
+              "review_provenance_scope": "source_run_recipe_not_all_snapshot_assessments",
+              "status_semantics": "answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다."
+            }
+          },
+          "outer_elapsed_s": 73.45792579100089,
+          "service_elapsed_s": 72.09155583299798,
+          "source_context_budget": {
+            "limit": 16384,
+            "estimate_tokens": 15807,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          },
+          "native": [
+            {
+              "run_id": "66feee49cbf14f8f91789e60d126ec3e",
+              "unit_id": "907c3999c7d14dd6a5f03b48cb56587f",
+              "stage": "business_qa",
+              "status": "succeeded",
+              "failure_kind": null,
+              "done_reason": "stop",
+              "input_tokens": 8750,
+              "output_tokens": 186,
+              "request_elapsed_s": 58.320218,
+              "provider_cached_input_tokens": 0,
+              "provider_load_duration_ns": 7600625,
+              "raw_response_sha256": "da54e0551cc289f1a1fd49c08c6e2514f5d495ae9ae0676fcd4064b5f79ad64c",
+              "messages_sha256": "d9fb8b89f7bb15e73cd853a46ec986cb650266a0f23f288404847b7a9ff28363",
+              "schema_sha256": "745d36d1b1e5a5bca1be60c20cc742f8f0e98d2af9b65760a2e0151d0a8e0994",
+              "input_budget": {
+                "estimate_tokens": 19676,
+                "method": "utf8_bytes/2+output+1000",
+                "exact": false
+              },
+              "executed_limits": {
+                "max_tokens": 4096,
+                "context_tokens": 49152,
+                "think": false
+              }
+            }
+          ],
+          "exact_reused_units": [],
+          "retrieval_reuse": {
+            "baseline_run_id": "9fc2a876825b43bda7078e4162d10319",
+            "new_search_calls": 0,
+            "new_embedding_calls": 0,
+            "new_edge_filter_calls": 0
+          },
+          "contract_sha256": "ec6edd429285dfa2acd65150bad5e664656fad0722c8120d281f8447ef0f365f"
+        }
+      ],
+      "native_calls": 1,
+      "input_tokens": 8750,
+      "output_tokens": 186,
+      "request_elapsed_s": 58.320218,
+      "outer_elapsed_s": 73.45792579100089,
+      "provider_cached_input_tokens": 0,
+      "exact_reused_units": 0
+    }
+  },
+  "total": {
+    "native_calls": 14,
+    "input_tokens": 114758,
+    "output_tokens": 5596,
+    "request_elapsed_s": 944.860188,
+    "provider_cached_input_tokens": 0,
+    "exact_reused_selector_units": 2,
+    "model_failures": 0,
+    "model_retries": 0,
+    "new_search_calls": 0,
+    "new_embedding_calls": 0,
+    "new_edge_filter_calls": 0
+  },
+  "original_guard": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/source_passage_pool.json",
+      "sha256": "46bf09d8f30ad74cab9afae3d1f4d71fb27faca4171d3c97b86c4f7f703f60ea",
+      "bytes": 1529929,
+      "current_sha256": "46bf09d8f30ad74cab9afae3d1f4d71fb27faca4171d3c97b86c4f7f703f60ea"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/execution_manifest.json",
+      "sha256": "f818a40dc2e63efc24cd71dcdaf2cd606856f97163dc687132600a94cc4253ae",
+      "bytes": 1567,
+      "current_sha256": "f818a40dc2e63efc24cd71dcdaf2cd606856f97163dc687132600a94cc4253ae"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/service/knowledge.db",
+      "sha256": "3ef5af44cf2322488701e2f51cd16f9ce4491c37fa0699b85388167128be8f2a",
+      "bytes": 165629952,
+      "current_sha256": "3ef5af44cf2322488701e2f51cd16f9ce4491c37fa0699b85388167128be8f2a"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/source_build_manifest.json",
+      "sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240",
+      "bytes": 229118,
+      "current_sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/qa_v1/qa_settings_manifest.json",
+      "sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf",
+      "bytes": 2703,
+      "current_sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/questions_only.json",
+      "sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4",
+      "bytes": 6091,
+      "current_sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_B.json",
+      "sha256": "418cc1d8e02d0d1222c7a200162b1a34b99760f3e07bc5e26bc079bf4ea2cdd7",
+      "bytes": 31426571,
+      "current_sha256": "418cc1d8e02d0d1222c7a200162b1a34b99760f3e07bc5e26bc079bf4ea2cdd7"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_C.json",
+      "sha256": "d764e920b76a6cded336b98311c6ac1355f548c1abacdaa613128ee8f11e70cf",
+      "bytes": 29436892,
+      "current_sha256": "d764e920b76a6cded336b98311c6ac1355f548c1abacdaa613128ee8f11e70cf"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP02_B.json",
+      "sha256": "d7a390005da308530cfc4de3269a9e9d865307b78527fd9886c22f11dc44e2e3",
+      "bytes": 31259943,
+      "current_sha256": "d7a390005da308530cfc4de3269a9e9d865307b78527fd9886c22f11dc44e2e3"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP02_C.json",
+      "sha256": "60fc840db3556e0e4c61437acfa7b88054ead9740bf4867e770f1cfd78796be6",
+      "bytes": 29414463,
+      "current_sha256": "60fc840db3556e0e4c61437acfa7b88054ead9740bf4867e770f1cfd78796be6"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP01_B.json",
+      "sha256": "1bdcc2c6a403b9f6a8b2ea3f9376c84be630093c842f3a6d9206b76191d5fcb6",
+      "bytes": 30448013,
+      "current_sha256": "1bdcc2c6a403b9f6a8b2ea3f9376c84be630093c842f3a6d9206b76191d5fcb6"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP01_C.json",
+      "sha256": "9f1f3c8fed6de3fd180f07481fc77c5d3dc42ced889a9e875562ac5abc5bb2e6",
+      "bytes": 29402633,
+      "current_sha256": "9f1f3c8fed6de3fd180f07481fc77c5d3dc42ced889a9e875562ac5abc5bb2e6"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP03_B.json",
+      "sha256": "08d39f4489e9780ca44af9a860c44039b4c0f4be013240714c754a1289a36357",
+      "bytes": 30466780,
+      "current_sha256": "08d39f4489e9780ca44af9a860c44039b4c0f4be013240714c754a1289a36357"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/SUP03_C.json",
+      "sha256": "de20765cbe7828a26e12689413c426cb380e3e2eaa016561db48a9f1a36671e4",
+      "bytes": 29409771,
+      "current_sha256": "de20765cbe7828a26e12689413c426cb380e3e2eaa016561db48a9f1a36671e4"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/embedding_cache.json",
+      "sha256": "0178d8e5a8404bd0be2f9b859ffd41a2bcf86c81a0d337b0349d8b517f6bbb86",
+      "bytes": 3715,
+      "current_sha256": "0178d8e5a8404bd0be2f9b859ffd41a2bcf86c81a0d337b0349d8b517f6bbb86"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/embedding_cache.npz",
+      "sha256": "63725a8f9eb2e905751fcdd661b23868c82f82c8720b1fde9e72cd02bdb42cb0",
+      "bytes": 21319846,
+      "current_sha256": "63725a8f9eb2e905751fcdd661b23868c82f82c8720b1fde9e72cd02bdb42cb0"
+    }
+  ],
+  "contracts": {
+    "P3": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/input_contract.json",
+      "sha256": "eda46fc86296322dac59dfdd063a5880afddaeac71506953a5db4a8830be8cc3",
+      "cases": {
+        "ACT501070_B": {
+          "selection_request_sha256": "65e6949a9decb2858ce84debf8debf29ea92a6783bb18cef7da5b134afc5bc2a",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_B.json",
+          "baseline_sha256": "418cc1d8e02d0d1222c7a200162b1a34b99760f3e07bc5e26bc079bf4ea2cdd7",
+          "baseline_run_id": "3f6d912a7ce4469ca8cb2b61ac62be57",
+          "prepare_run_id": "e3d85901d5e74f4da428b81455655dbb",
+          "input_budget": {
+            "estimate_tokens": 30154,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "ACT501070_C": {
+          "selection_request_sha256": "7ec24bacf2456e1ae9dac4838e15b734115a5a8f8bfb13d26ef8321424635b1e",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_C.json",
+          "baseline_sha256": "d764e920b76a6cded336b98311c6ac1355f548c1abacdaa613128ee8f11e70cf",
+          "baseline_run_id": "2e51759757424984be3416a3f47cae45",
+          "prepare_run_id": "a38cad244c124451810ce94f78b5b876",
+          "input_budget": {
+            "estimate_tokens": 31332,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        }
+      },
+      "driver_sha256": "9106f00e9ae3073bc9c95bc577c1c901f5ad133dbcefadaaf44d60c274f1aeab",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P3_current_baseline": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3_current_baseline/input_contract.json",
+      "sha256": "4890a7962fbefcd164619e42ccdca616fa541f02f4bc2016a005e85da416c384",
+      "cases": {
+        "ACT501070_B": {
+          "qa_request_sha256": "9a0ea21741cbbee3e042e9e5124e5b3c5e23ed50f2b0cc76f3bc78196ba80028",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_B.json",
+          "baseline_sha256": "418cc1d8e02d0d1222c7a200162b1a34b99760f3e07bc5e26bc079bf4ea2cdd7",
+          "baseline_run_id": "3f6d912a7ce4469ca8cb2b61ac62be57",
+          "prepare_run_id": "5f9c6f360f724724acdf76f31d97aba8",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11966,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "ACT501070_C": {
+          "qa_request_sha256": "bceaa16f3e534c98d97402d15c57e9533d966d6accc2c805618bc51827ca672c",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501070_C.json",
+          "baseline_sha256": "d764e920b76a6cded336b98311c6ac1355f548c1abacdaa613128ee8f11e70cf",
+          "baseline_run_id": "2e51759757424984be3416a3f47cae45",
+          "prepare_run_id": "e95cb1a313a54e3a931c80d9f0c1e478",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 13408,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        }
+      },
+      "driver_sha256": "072ab51129b673705ce4fe0de141d2b70e8c701dbd10e0db02b4fe0b6f0af358",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P3_controls": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3_controls/input_contract.json",
+      "sha256": "922d473e432cc8fa8e78051f35007f6e6a6c42f2ec93326fe1bce3887eaa1afb",
+      "cases": {
+        "SUP01_B": {
+          "selection_request_sha256": "4b6bf3432c298d8991c8ec047fc4fff691c051b3865fb72cafa0edfd117fa0c0",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_B.json",
+          "baseline_sha256": "edebcf13ecc86157ea448eb5f2b4be5427f6d8ee3aa6e98cb4ac6a026556ede7",
+          "baseline_run_id": "c0ac63a20dce41a180241ee607c67e6b",
+          "prepare_run_id": "32b6a1f088d94d189fee098196e5e564",
+          "input_budget": {
+            "estimate_tokens": 31552,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "SUP01_C": {
+          "selection_request_sha256": "226045364f56fe276e9de05adc4f1e94d355d71b9aaaf88adb14143a58fbe4e7",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_C.json",
+          "baseline_sha256": "3fedeb4ada44e033f72bad04d6d0396dccb79330225920011e1eab79872fa06c",
+          "baseline_run_id": "42f3c586424d4086b2442af56cdd5259",
+          "prepare_run_id": "5f884f2d477c4342bda57f7f8899a43b",
+          "input_budget": {
+            "estimate_tokens": 33250,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "SUP02_B": {
+          "selection_request_sha256": "254fbcd3abd7bc040ae96df91b75edef8b0f206ffa29c7101cc76178fa61fac7",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_B.json",
+          "baseline_sha256": "03cd94be008340c8716ee3bd81c8b36324d6a8fcec956c771ed68a09807ca2f9",
+          "baseline_run_id": "eb9003a3efda4875af2213b64231b8ed",
+          "prepare_run_id": "c6df94579f254b4db9a8601292350fa4",
+          "input_budget": {
+            "estimate_tokens": 37439,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "SUP02_C": {
+          "selection_request_sha256": "4c08e2bf600f51a6c37a485ab47fe0104ad6a1a88624153fed5d563ad69fe524",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_C.json",
+          "baseline_sha256": "e6031db43134ddbf1e49793405de8ffd0477278298b4e5cfe2d2f1be3485bbef",
+          "baseline_run_id": "0d402d00135546a186533a2b01d95b21",
+          "prepare_run_id": "b4c00d556f074980bfae574bdb23143a",
+          "input_budget": {
+            "estimate_tokens": 35327,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "SUP03_B": {
+          "selection_request_sha256": "5c1fc278c5b639acaeeecc347202c1427106d79ae33d2c926094c775f1d48f3e",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_B.json",
+          "baseline_sha256": "74e644fc333b8c9358e862313714f96c4238b2071cba8b62144b699940f09676",
+          "baseline_run_id": "9cbe3000907946339b9b7ed745de3e39",
+          "prepare_run_id": "57148227fd14447aa37434c67bf4ac81",
+          "input_budget": {
+            "estimate_tokens": 32742,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        },
+        "SUP03_C": {
+          "selection_request_sha256": "eefebcc994aa525feabdb081fb87cbf1bc6de76fac60c89d9ea1de845d4ca816",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_C.json",
+          "baseline_sha256": "729998490e9dab2c334c3ff8e470dab477c270b7930deef8f68c639a843ac0af",
+          "baseline_run_id": "ef97ea44c04a4068b5b37f60d7fa2565",
+          "prepare_run_id": "65f180ed05f34b3c85e6fedf1b831ff9",
+          "input_budget": {
+            "estimate_tokens": 34362,
+            "method": "utf8_bytes/2+output+1000",
+            "exact": false
+          }
+        }
+      },
+      "driver_sha256": "3353149417de3df61d71691cbf33e83ba041168ef251c7d2316824e60ec4a981",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P4": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4/input_contract.json",
+      "sha256": "1c2b76e4002f628d59fab5f05eb6929f62751cf21527a8cc85004c5437675022",
+      "cases": {
+        "SUP02_C": {
+          "qa_request_sha256": "0025dd5ea22a3489962b1d251412071119ba1b0ba8b49933966669dd6227bf60",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_C.json",
+          "baseline_sha256": "e6031db43134ddbf1e49793405de8ffd0477278298b4e5cfe2d2f1be3485bbef",
+          "baseline_run_id": "0d402d00135546a186533a2b01d95b21",
+          "prepare_run_id": "2f20e96dfed14bbca549ee24b7af9946",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 13611,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "SUP02_B": {
+          "qa_request_sha256": "35431ff16b116033f34ed303f4586f4be42b468a7c098ff3f66574e0d731a7da",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_B.json",
+          "baseline_sha256": "03cd94be008340c8716ee3bd81c8b36324d6a8fcec956c771ed68a09807ca2f9",
+          "baseline_run_id": "eb9003a3efda4875af2213b64231b8ed",
+          "prepare_run_id": "539bab10216d4c91848303ebef93ac9f",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 14114,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "SUP01_C": {
+          "qa_request_sha256": "37e7217b8a3d612fb8c4dda079a634857fdca7e44cdfd993e92854339a35b27a",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_C.json",
+          "baseline_sha256": "3fedeb4ada44e033f72bad04d6d0396dccb79330225920011e1eab79872fa06c",
+          "baseline_run_id": "42f3c586424d4086b2442af56cdd5259",
+          "prepare_run_id": "e2aff08b144249b09f4592ff7acd179c",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11657,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "SUP01_B": {
+          "qa_request_sha256": "44e54bb7c00540bdea6b716691ffc864cbbb4ff946e39b4103a7f60150ab338c",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_B.json",
+          "baseline_sha256": "edebcf13ecc86157ea448eb5f2b4be5427f6d8ee3aa6e98cb4ac6a026556ede7",
+          "baseline_run_id": "c0ac63a20dce41a180241ee607c67e6b",
+          "prepare_run_id": "e7f6a34208fe45f09e9081a06ef89ad7",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 11657,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "SUP03_C": {
+          "qa_request_sha256": "06f0a1c655974db691b11bbf7103e383a08dcf43765cba7454e35e7a1136c62d",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_C.json",
+          "baseline_sha256": "729998490e9dab2c334c3ff8e470dab477c270b7930deef8f68c639a843ac0af",
+          "baseline_run_id": "ef97ea44c04a4068b5b37f60d7fa2565",
+          "prepare_run_id": "e3b99a53b2ea4e8c82f6422f4faa99b3",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 16016,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        },
+        "SUP03_B": {
+          "qa_request_sha256": "9c74daa9263091c89d8e6e2607f5939ae97b3d14867fbde3c7f522d1605c452f",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_B.json",
+          "baseline_sha256": "74e644fc333b8c9358e862313714f96c4238b2071cba8b62144b699940f09676",
+          "baseline_run_id": "9cbe3000907946339b9b7ed745de3e39",
+          "prepare_run_id": "c444f541ba624b49a22d19af9fc85c89",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 12702,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        }
+      },
+      "driver_sha256": "9106f00e9ae3073bc9c95bc577c1c901f5ad133dbcefadaaf44d60c274f1aeab",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P4_current_baseline": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4_current_baseline/input_contract.json",
+      "sha256": "960cf7ac8822d84c85dffa4d7afa8d41ecefc83b584866830bdbfccc7493a1e1",
+      "cases": {
+        "ACT501108_B": {
+          "qa_request_sha256": "043985661a7bd3b63b5d04d63b082dc92ad25864a3200c16de6936e0e4d8bdf5",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501108_B.json",
+          "baseline_sha256": "3b7d0b12f4ffafa71d85dca8b50d08dc9b845d8733322af93d02483b330fddcf",
+          "baseline_run_id": "9fc2a876825b43bda7078e4162d10319",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 15680,
+            "within_limit": true
+          }
+        }
+      },
+      "driver_sha256": "072ab51129b673705ce4fe0de141d2b70e8c701dbd10e0db02b4fe0b6f0af358",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P4_gap_B": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4_gap_B/input_contract.json",
+      "sha256": "ec6edd429285dfa2acd65150bad5e664656fad0722c8120d281f8447ef0f365f",
+      "cases": {
+        "ACT501108_B": {
+          "qa_request_sha256": "f43316f9d310df484f403e7bfeae56035f1e4e95685fa0e5fd33623dbfee431b",
+          "baseline_file": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/ACT501108_B.json",
+          "baseline_sha256": "3b7d0b12f4ffafa71d85dca8b50d08dc9b845d8733322af93d02483b330fddcf",
+          "baseline_run_id": "9fc2a876825b43bda7078e4162d10319",
+          "prepare_run_id": "b95cde94579c492484e9cfda9c23eace",
+          "source_budget": {
+            "limit": 16384,
+            "estimate_tokens": 15807,
+            "method": "utf8_bytes/2",
+            "exact": false,
+            "within_limit": true
+          }
+        }
+      },
+      "driver_sha256": "49ceecf980992574cc802d6d1de8af373a65869b17399f695f359d803fe1e2f3",
+      "model_digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "code": {
+        "app/knowledge/business_models.py": "1757cb61d7102a8ecd53f0c9012781d0d120eca869e548e70b70d1b8cc6c9c33",
+        "app/knowledge/graph_retrieval.py": "12734ff3c8f2803085c3fe203b4472fc1142e9bdfe8928cc4e34bc13d47434c7",
+        "app/knowledge/business_use.py": "6cff73a870fa47bc7d6ebda83d969da62f81761299e3ec053816fc3153e16c3c",
+        "app/knowledge/business_run.py": "63de1d1ddb28ab47e5b4f065e69fcb3d079c11847ca9af67913dec1f7114bcb7",
+        "app/generation/model_client.py": "9aad473ef47635d028cdb3c9842978a3fff887f0accd9b43230fc1f3dad37173"
+      }
+    },
+    "P3_QA_after_selection": {
+      "path": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P3/qa_contract_after_selection.json",
+      "sha256": "5dc4b34cfb91d97178fb91db84e356176a3b1f65e300810b4b7622f13b0e58e2"
+    }
+  },
+  "P3_decision": "rejected_by_coordinator",
+  "P4_decision": "default_and_product_opt_in_on_hold; frozen_research_only",
+  "control_C_not_executed": {
+    "run_id": "2e6d2c4dd97b4b9ab6c283e726cab501",
+    "status": "input_capacity",
+    "answer": null,
+    "error": "source_context_capacity",
+    "source_context_budget": {
+      "limit": 16384,
+      "estimate_tokens": 17705,
+      "method": "utf8_bytes/2",
+      "exact": false,
+      "within_limit": false
+    }
+  },
+  "limitations": [
+    "Development-exposed fixed cases; no generalization or graph superiority claim.",
+    "Provider-reported cache and durations are observations, not independent causal controls.",
+    "Capture termination and source-capacity preflight are not native model failures.",
+    "This audit computes receipts; semantic decisions require direct source/output comparison."
+  ],
+  "P4_case_decisions": {
+    "SUP02_C": "partial_to_fulfilled",
+    "SUP02_B": "fulfilled_unchanged",
+    "SUP01_B": "fulfilled_unchanged",
+    "SUP01_C": "fulfilled_unchanged",
+    "SUP03_B": "fulfilled_unchanged",
+    "SUP03_C": "fulfilled_unchanged",
+    "ACT501108_B": "fulfilled_to_partial_M2_seven_years_missing"
+  },
+  "decision_basis": "Direct source/output review by coordinator; one targeted improvement, five unchanged conditions, one coverage regression. No generalization or post-hoc question routing.",
+  "checks": {
+    "post_P3_removal_boundary_tests": "28 passed in 7.94s",
+    "original_files_unchanged": 16,
+    "resource_return_receipt": "data/knowledge/evaluations/document_graph_rag_continuation_v1/resource_return_receipt.json",
+    "post_P3_removal_boundary_tests_scope": "prototype only; P4 also removed after this check",
+    "final_product_files_identical_to_baseline": 5
+  },
+  "product_changes_adopted_in_this_continuation": 0,
+  "P4_option_value_review": "One fixed-case contradiction improvement is retained as evidence. One required-condition regression remains; users cannot predict which requests benefit, and dual input-format maintenance lacks demonstrated product value. No post-hoc routing and no method-wide impossibility claim.",
+  "post_P3_cleanup_replay": {
+    "file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/post_P3_cleanup_replay/receipt.json",
+    "cases_identical_to_frozen": 8,
+    "native_model_calls": 0,
+    "stage": "after P3 removal, before P4 removal",
+    "capture_failure_preserved": "data/knowledge/evaluations/document_graph_rag_continuation_v1/post_P3_cleanup_replay/capture_failure_v1",
+    "intentional_capture_attempts": 9,
+    "next_query_blocked_by_concurrency_guard": 1
+  },
+  "final_product_and_test_files": {
+    "app/knowledge/business_models.py": {
+      "sha256": "46bce94ba9cd55a97dc26487b0a94bc8feecaa05ed69aeb7395a8f06ec4f2217",
+      "identical_to_baseline": true
+    },
+    "app/knowledge/business_use.py": {
+      "sha256": "970d78279f445090909aabf94cb73e410228cd65333945f6f5b9bcd16b79a318",
+      "identical_to_baseline": true
+    },
+    "app/knowledge/graph_retrieval.py": {
+      "sha256": "0209d230c8d418c5e4b5f6d1e06a672bb61e15cf4f6d6bd37ac6297944de941e",
+      "identical_to_baseline": true
+    },
+    "app/tests/unit/test_knowledge_document_graph_comparison.py": {
+      "sha256": "4fffd0f9bec8671964183d1d9b05d381e1b3d9bcd0a39143599a280fb3d67761",
+      "identical_to_baseline": true
+    },
+    "app/tests/unit/test_knowledge_graph_retrieval.py": {
+      "sha256": "ae488a098a343d1e07c703988a4b1d7b4089d58d3f10e120b26273bbd3dfc3a5",
+      "identical_to_baseline": true
+    }
+  },
+  "reproducibility": {
+    "prototype_patch": "docs/70_research/company_knowledge/document_graph_rag_continuation_20261013/prototype_vs_ade.patch",
+    "prototype_patch_sha256": "b31155888371ac0d9ab89dc829a8a16868854b8ba53293ad50063789fc237d9d",
+    "patch_apply_check": true,
+    "five_frozen_files_reconstructed_exactly": true,
+    "final_product_restore": "all three product files and two test files byte-identical to ade0185c",
+    "semantic_or_unchanged_product_tests_after_restore": 0,
+    "patch_blank_context_normalized": true
+  },
+  "remaining_bottlenecks": [
+    "ACT501070: count-limited original selection omits facility/general working-capital evidence.",
+    "P3: recovering those passages also drops another fund eligibility condition; candidate selection is not answer-level coverage.",
+    "ACT501070: source-reader misreads alternative target types as simultaneous requirements; baseline also has rate/scope errors.",
+    "P4: same lossless information can produce consistent exclusion but omit a different required condition.",
+    "ACT501108 C: current native-locator baseline exceeds fixed source cap before QA."
+  ],
+  "next_candidates_not_implemented": [
+    "Evaluate source-backed natural evidence bundles that keep answer content with its limiting conditions; no gold-ID quota.",
+    "Assess source/claim-to-final-conclusion coverage before adding another prompt or verifier; no new judge layer approved.",
+    "Investigate a lossless context-budget representation separately from meaning-quality comparisons."
+  ],
+  "resource_return": {
+    "returned_at": "2026-10-12T15:51:58.535532+00:00",
+    "only_task_loaded_model_stopped": "qwen3.8:27b-q4_K_M",
+    "inference_lock_held": true,
+    "ollama_ps_before": "NAME                  ID              SIZE     PROCESSOR    CONTEXT    RUNNER      UNTIL              \nqwen3.8:27b-q4_K_M    25b843619e94    19 GB    100% GPU     49152      llamacpp    4 minutes from now    \n",
+    "ollama_ps_after": "NAME    ID    SIZE    PROCESSOR    CONTEXT    RUNNER    UNTIL \n",
+    "protected_processes_alive": [
+      "1117 /Applications/Ollama.app/Contents/Resources/ollama serve",
+      "2149 /Users/hyeongi/projects/Civil-Complaints-System/.venv/bin/python -m uvicorn app.api.main:app --host 127.0.0.1 --port 8012",
+      "2153 /Users/hyeongi/projects/Civil-Complaints-System/.venv/bin/python -m uvicorn app.api.main:app --host 127.0.0.1 --port 8013",
+      "12320 /Users/hyeongi/projects/Civil-Complaints-System/.venv/bin/python -m uvicorn app.api.main:app --host 127.0.0.1 --port 8014"
+    ],
+    "other_process_stop_actions": 0
+  },
+  "arm_definitions": {
+    "B": "문서 Hybrid 검색",
+    "C": "개념을 포함한 그래프 검색"
+  },
+  "P4_gap_input_audit": {
+    "case": "ACT501108_B",
+    "raw_file": "data/knowledge/evaluations/document_graph_rag_continuation_v1/P4_gap_B/ACT501108_B_qa.json",
+    "raw_sha256": "803b1e9d424cb9b2a296a9f5c06aa2a595d01c471fc658bab702d30e7d4ed3da",
+    "run_id": "66feee49cbf14f8f91789e60d126ec3e",
+    "unit_id": "907c3999c7d14dd6a5f03b48cb56587f",
+    "selected_alias": "q7",
+    "source_passage_id": "passage_2e311f4b234c53f77f330eca",
+    "model_input_row": {
+      "id": "q7",
+      "text": "- (혁신창업지원) 사업 개시일로부터 7년 미만(신청‧접수일 기준)인 중소기업 및 창업을 준비 중인 자",
+      "file_id": "v1",
+      "source_group": "v1",
+      "source_reference": {
+        "source_version_id": "v1",
+        "parse_run_id": "p1",
+        "block_id": "b44",
+        "start_char": 0,
+        "end_char": 57
+      },
+      "locator": {
+        "element_path": "#source > section:nth-of-type(26) > ul:nth-of-type(1) > li:nth-of-type(2) > ul:nth-of-type(1) > li:nth-of-type(1)::text(0)",
+        "block_order": 324
+      }
+    },
+    "selected_context": true,
+    "M2_seven_years_present_in_input": true,
+    "missing_in_generated_answer": true,
+    "failure_boundary": "answer_coverage_not_retrieval_absence"
+  }
+}

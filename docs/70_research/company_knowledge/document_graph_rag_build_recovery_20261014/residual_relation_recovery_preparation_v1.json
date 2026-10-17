@@ -1,0 +1,53 @@
+{
+  "contract": "third-residual-source-only-preparation-receipt-v1",
+  "original_failed_8k_unit": "6913e0595ff44bb38842950e1a4e1399",
+  "failed_16k_unit": "87892749b2344268aea75d8cb88f9109",
+  "prefix_complete_relations": 26,
+  "prefix_raw_duplicates": 0,
+  "prefix_adopted": false,
+  "target_blocks": 109,
+  "target_chars": 991,
+  "target_distribution_exact_once": true,
+  "prepared_new_product_views": 13,
+  "prepared_total_residual_requests": 30,
+  "required_views": 102,
+  "cumulative_attempts_including_failed_history": 105,
+  "maximal_input_plus_output_estimate": 23537,
+  "estimate_exact": false,
+  "output_tokens": 16384,
+  "context_tokens": 49152,
+  "canonical_table_title_added": "혁신성장 분야",
+  "same_name_cells_not_merged": true,
+  "original_chunk_context_preserved": true,
+  "model_calls": 0,
+  "embedding_calls": 0,
+  "live_code_changed": false,
+  "execute_only_after_current75_terminal": true,
+  "semantic_approval": false,
+  "files": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/repair_plan_candidate_v1.json",
+      "sha256": "da99c6c6e99f03c4666e333d2aab6033cf3b500849db8c4158dafaaf7607a057"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/source_views_candidate_v1.json",
+      "sha256": "6a4afeb29ccbabe22264125811c523a014ca151f03b814c99a4d558b33861668"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/source_parent_span_checks_v1.json",
+      "sha256": "79436d3be0d905ec42179522f2561fdeb713220aad41ba62b5976626ecbf0f8e"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/preflight_candidate_v1.json",
+      "sha256": "64446f6210f798f1e80caa0d8a1e61b556a7b4a6eaff987f4601f6c275cf1333"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/effective_repair_plan_candidate_v3.json",
+      "sha256": "96cf8cea66111f66b674ad14e9842184c39a3e8ff1585a180bbfd7c88fd3be1d"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/residual_capacity_recovery_v3/residual_capacity_driver_candidate_v4.py",
+      "sha256": "6943a6fd7a3213f48f5927ef16b53876ab255d13c0dc239c384fcfc2fce129b8"
+    }
+  ]
+}

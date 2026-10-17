@@ -1,0 +1,90 @@
+{
+  "questions": 6,
+  "planned_attempts": 12,
+  "items": [
+    {
+      "question_id": "SUP03",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP03_B.json"
+    },
+    {
+      "question_id": "SUP03",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP03_C.json"
+    },
+    {
+      "question_id": "SUP01",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP01_B.json"
+    },
+    {
+      "question_id": "SUP01",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP01_C.json"
+    },
+    {
+      "question_id": "ACT501070",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "ACT501070_B.json"
+    },
+    {
+      "question_id": "ACT501070",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "ACT501070_C.json"
+    },
+    {
+      "question_id": "SUP02",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP02_B.json"
+    },
+    {
+      "question_id": "SUP02",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP02_C.json"
+    },
+    {
+      "question_id": "SUP04",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP04_B.json"
+    },
+    {
+      "question_id": "SUP04",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "SUP04_C.json"
+    },
+    {
+      "question_id": "ACT501108",
+      "arm": "B",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "ACT501108_B.json"
+    },
+    {
+      "question_id": "ACT501108",
+      "arm": "C",
+      "status": "response_returned_not_semantically_validated",
+      "product_status": "answered",
+      "result_file": "ACT501108_C.json"
+    }
+  ]
+}
