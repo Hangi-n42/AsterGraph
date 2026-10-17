@@ -178,11 +178,16 @@ def start(service, request):
                     raise ValueError('저장 후보 재검토는 같은 원문 버전·파싱 범위에서만 가능합니다.')
                 chunks = deepcopy(parent['chunks'])
         options = request.model_dump()
+        options['extraction_contract'] = request.extraction_contract or (parent['recipe']['options'].get('extraction_contract') if parent else None)
+        if options['extraction_contract'] is None:
+            options.pop('extraction_contract')
         options['concept_source_context'] = request.concept_source_context or (parent['recipe']['options'].get('concept_source_context') if parent else None) or 'whole'
         run = dict(id=uuid4().hex, kind='business', status='queued', units=[], analysis_units=[],
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
                    requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
-                       parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
+                       parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'),
+                   version=autoschema.TARGET_CONTEXT_VERSION if options.get('extraction_contract') else autoschema.VERSION,
+                   scope_contract=autoschema.DESCRIPTIVE_SCOPE_CONTRACT if options.get('extraction_contract') else autoschema.SCOPE_CONTRACT,
                    review_contract=business_review.CONTRACT, generation=config,
                    models=models, options=options), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
@@ -554,11 +559,10 @@ def reuse_source(service, run, stage, chunk_index):
         old = units[run['parent_chunk_ids'].index(chunk_id)]
     if old is None or old.get('status') != 'succeeded' or old.get('error') or not old.get('response') or old['response'].get('failure_kind'):
         return None
-    if stage in autoschema.ROLES and run['recipe'].get('version') == autoschema.VERSION:
+    if stage in autoschema.ROLES and run['recipe'].get('version') in {autoschema.VERSION, autoschema.TARGET_CONTEXT_VERSION}:
         chunk = run['chunks'][chunk_index]
-        if (old.get('messages') != extraction_messages(run, chunk, stage) or
-                old.get('schema') != autoschema.extraction_schema(stage) or
-                old.get('reference_map') != chunk['source_reference_map']):
+        request = extraction_request(run, chunk, stage)
+        if any(old.get(k) != request[k] for k in ('messages', 'schema', 'reference_map')):
             return None
     unit = deepcopy(old)
     unit.update(id=uuid4().hex, status='succeeded', error=None,
@@ -574,7 +578,14 @@ def reuse_source(service, run, stage, chunk_index):
 def extraction_messages(run, chunk, role):
     propositions = [dict(raw=c['raw'], Scope=c.get('interpretation', {}).get('raw')) for c in run['claims']
                     if c['chunk_id'] == chunk['id'] and c['role'] == 'event_entity'] if role == 'event_relation' else None
-    return autoschema.extraction_messages(chunk['text'], role, propositions)
+    return autoschema.extraction_messages(chunk['text'], role, propositions,
+        contract=run['recipe'].get('version', autoschema.VERSION))
+
+
+def extraction_request(run, chunk, role):
+    return dict(messages=extraction_messages(run, chunk, role),
+        schema=autoschema.extraction_schema(role, contract=run['recipe'].get('version', autoschema.VERSION)),
+        reference_map=chunk['source_reference_map'])
 
 
 def contiguous_evidence_views(blocks, block_id):
@@ -1181,12 +1192,24 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
             source_reference_map={b['id']: dict(block_id=b['id'], span=b.get('span')) for b in corrected_blocks})
         if old and old.get('interpretation'):
             value.setdefault('interpretation_history', []).append(deepcopy(old['interpretation']))
-        value['interpretation'] = autoschema.scope_record(patch['scope'], chunk, value['raw'], role)
+        value['interpretation'] = autoschema.scope_record(patch['scope'], chunk, value['raw'], role,
+            contract=run['recipe'].get('scope_contract', autoschema.SCOPE_CONTRACT))
         value['interpretation'].update(claim_id=value['id'], corrected_by=repair_id)
         if value['interpretation']['errors'] or value['interpretation']['target_status'] != 'addressed':
             raise ValueError('교정 Scope의 원문 주소/참여자 오류: ' + '; '.join(value['interpretation']['errors']))
         value['qualifier_status'] = 'unverified_corrected_interpretation'
     return value
+
+
+def repair_schema(run):
+    if run['recipe'].get('scope_contract') != autoschema.DESCRIPTIVE_SCOPE_CONTRACT:
+        return Repairs
+    from .business_models import ClaimPatch, EventClaimPatch, DescriptiveExtractionScope
+    relation = create_model('DescriptiveClaimPatch', __base__=ClaimPatch,
+        scope=(DescriptiveExtractionScope | None, None))
+    event = create_model('DescriptiveEventClaimPatch', __base__=EventClaimPatch,
+        scope=(DescriptiveExtractionScope | None, None))
+    return create_model('DescriptiveRepairs', __base__=Repairs, patches=(list[relation | event], ...))
 
 
 def event_edit_supported(old, blocks):
@@ -1339,8 +1362,9 @@ def repair(service, run, requirement, assessment):
         if support == 'supported' and cid not in check.get('incorrect_claim_ids', [])
         and not check.get('error_fields', {}).get(cid))
     maintained -= protected_claims | target_ids
-    output_type = create_model('TargetRepairs', __base__=Repairs,
-        patches=(Repairs.model_fields['patches'].annotation, Field(max_length=len(tasks))))
+    schema = repair_schema(run)
+    output_type = create_model('TargetRepairs', __base__=schema,
+        patches=(schema.model_fields['patches'].annotation, Field(max_length=len(tasks))))
     instruction = REPAIR_PROMPT + '''
 recover의 contributing_claim_ids는 원문에 맞는 기존 부분 표현이며 교정/삭제 대상이 아니다.
 missing_content가 있으면 원문과 missing_evidence를 확인하여 그 나머지를 새 후보로 보완한다.
@@ -1478,7 +1502,8 @@ def store_definitions(run, chunk, definitions):
 def store_extraction(run, chunk, role, response, unit):
     valid, rejected = autoschema.partition(response['parsed'], role)
     created = [autoschema.graph_record(chunk, role, row['value'], row['index'], scope=row['scope'],
-        scope_required=run.get('recipe', {}).get('version') == autoschema.VERSION) for row in valid]
+        scope_required=run.get('recipe', {}).get('version') in {autoschema.VERSION, autoschema.TARGET_CONTEXT_VERSION},
+        scope_contract=run.get('recipe', {}).get('scope_contract', autoschema.SCOPE_CONTRACT)) for row in valid]
     append_claim_records(run, created)
     for claim in run['claims']:
         if claim.get('interpretation', {}).get('target_status') == 'reference_only':
@@ -1526,7 +1551,8 @@ def repair_extraction(service, run):
                         for key, value in item['raw'].items()):
                         raise ValueError('구조 교정에서 기존 명제·관계 문구 변경')
                     claims = [autoschema.graph_record(chunk, item['role'], value, f"{item['index']}:repair:{n}",
-                              scope_required=run['recipe'].get('version') == autoschema.VERSION)
+                              scope_required=run['recipe'].get('version') in {autoschema.VERSION, autoschema.TARGET_CONTEXT_VERSION},
+                              scope_contract=run['recipe'].get('scope_contract', autoschema.SCOPE_CONTRACT))
                               for n, value in enumerate(values)]
                     for claim in claims:
                         claim.update(evidence=refs, repaired_from=item['claim_id'], original_text_preserved=True)
@@ -1602,8 +1628,7 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
                     return
                 response = reuse_source(service, run, role, chunk_index)
                 if response is None:
-                    response = call(service, run, role, extraction_messages(run, chunk, role), autoschema.extraction_schema(role),
-                                    reference_map=chunk['source_reference_map'])
+                    response = call(service, run, role, **extraction_request(run, chunk, role))
                 run['units'][-1]['source_chunk_id'] = chunk['id']
                 if response is not None:
                     try:

@@ -29,8 +29,8 @@ def completed_prefix(parent):
     for unit in complete:
         chunk = chunks[unit['source_chunk_id']]
         if unit['stage'] in autoschema.ROLES:
-            messages = business_run.extraction_messages(parent, chunk, unit['stage'])
-            schema = autoschema.extraction_schema(unit['stage']); refs = chunk['source_reference_map']
+            request = business_run.extraction_request(parent, chunk, unit['stage'])
+            messages, schema, refs = request['messages'], request['schema'], request['reference_map']
         else:
             request = business_run.json_request(parent, 'direct_definitions',
                 '원문의 명시적인 정의만 한국어로 추출한다. 없는 정의/상위유형은 만들지 않는다. term/definition과 정확 인용. '

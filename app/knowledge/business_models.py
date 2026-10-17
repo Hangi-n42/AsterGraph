@@ -41,6 +41,7 @@ class BusinessRunRequest(BaseModel):
     concept_work_contract: Literal['legacy', 'exact-original-concept-work-v1'] | None = None
     concept_source_context: Literal['whole', 'verified_table_rows_v1'] | None = None
     source_unit_policy: Literal['whole', 'explicit_html_sections_v1'] = 'whole'
+    extraction_contract: Literal['target_context_v1'] | None = None
     model: str | None = None
     review_model: str | None = None
     context_tokens: int = Field(default=49152, ge=4096)
@@ -671,6 +672,14 @@ class ExtractionScope(BaseModel):
     model_config = {'extra': 'forbid'}
     evidence: list[EvidenceQuote]
     meanings: list[ExtractionMeaning] = Field(min_length=1)
+
+
+class DescriptiveExtractionMeaning(ExtractionMeaning):
+    modality: Literal['definition', 'obligation', 'permission', 'prohibition', 'occurrence', 'unresolved', 'description']
+
+
+class DescriptiveExtractionScope(ExtractionScope):
+    meanings: list[DescriptiveExtractionMeaning] = Field(min_length=1)
 
 
 ClaimPatch.model_rebuild()

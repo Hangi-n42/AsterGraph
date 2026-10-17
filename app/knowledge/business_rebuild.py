@@ -317,7 +317,8 @@ def prepare_run(service, db, run, request):
                     raise ValueError('보존 후보의 실제 추출 문맥이 달라 지역 재추출이 필요합니다.')
                 donor_id, unit = extraction_donor(service, db, parent, claim, donors)
                 verified = (all(unit.get(k) == before_request[k] for k in ('messages', 'schema', 'reference_map'))
-                    if stage == 'direct_definitions' else any(old_chunk['text'] in m.get('content', '')
+                    if stage == 'direct_definitions' or parent['recipe'].get('version') == autoschema.TARGET_CONTEXT_VERSION
+                    else any(old_chunk['text'] in m.get('content', '')
                         for m in unit['messages'] if isinstance(m.get('content'), str)))
                 if not verified:
                     raise ValueError('보존 후보의 과거 실제 입력 범위가 미확정입니다. 지역 재검토가 필요합니다.')
