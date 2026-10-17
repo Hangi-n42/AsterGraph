@@ -79,7 +79,7 @@ def test_changed_or_unbound_inputs_are_rejected(bound,fault):
         feedback.bind_gaps(*bound,['item/context1'])
 
 
-def test_multi_meaning_gap_is_kept_unmapped(bound):
+def test_multi_meaning_gap_keeps_one_observation_and_each_existing_version(bound):
     parent,qa,basis,snapshot=bound
     for source in [parent['assessments'][0]['source'],snapshot['assessments']['r']['source']]:
         source['meanings'].append(dict(deepcopy(source['meanings'][0]),key='second'))
@@ -87,7 +87,38 @@ def test_multi_meaning_gap_is_kept_unmapped(bound):
         source['public_scope']['items'][0]['meaning_keys'].append('second')
     qa['answer_work_records'][0]['meaning_keys'].append('second')
     receipt=feedback.bind_gaps(*bound,['item/context1'])
-    assert not receipt['findings'] and receipt['deferred'][0]['original_output']==qa['answer_meaning_selection']['output']['items'][0]
+    assert not receipt['deferred'] and len(receipt['findings'])==1
+    finding=receipt['findings'][0]
+    assert finding['meaning_keys']==['m','second'] and finding['claim_ids']==finding['fields']==[]
+    assert finding['meaning_versions']=={m['key']:autoschema.identifier('meaning',m)
+        for m in parent['assessments'][0]['source']['meanings']}
+    assert 'meaning_version' not in finding and 'action' not in finding
+
+
+@pytest.mark.parametrize('fault',['duplicate','missing','changed','unprovided'])
+def test_multi_meaning_observation_rejects_incomplete_or_changed_binding(bound,fault):
+    parent,qa,basis,snapshot=bound
+    for source in [parent['assessments'][0]['source'],snapshot['assessments']['r']['source']]:
+        source['meanings'].append(dict(deepcopy(source['meanings'][0]),key='second'))
+        source['public_scope']['review_meaning_keys'].append('second')
+        source['public_scope']['items'][0]['meaning_keys'].append('second')
+    qa['answer_work_records'][0]['meaning_keys'].append('second')
+    if fault=='duplicate':
+        qa['answer_work_records'][0]['meaning_keys'].append('second')
+        snapshot['assessments']['r']['source']['public_scope']['items'][0]['meaning_keys'].append('second')
+    elif fault=='missing':
+        for source in [parent['assessments'][0]['source'],snapshot['assessments']['r']['source']]:
+            source['meanings'].pop()
+    elif fault=='changed':parent['assessments'][0]['source']['meanings'][1]['statement']='다른 의미'
+    else:
+        for source in [parent['assessments'][0]['source'],snapshot['assessments']['r']['source']]:
+            source['meanings'][1]['evidence']=[]
+    if fault in {'duplicate','missing'}:
+        receipt=feedback.bind_gaps(*bound,['item/context1'])
+        assert not receipt['findings'] and len(receipt['deferred'])==1
+    else:
+        with pytest.raises((ValueError,KnowledgeConflict)):
+            feedback.bind_gaps(*bound,['item/context1'])
 
 
 def test_public_scope_records_identify_stale_versions_and_leave_history_intact(bound):

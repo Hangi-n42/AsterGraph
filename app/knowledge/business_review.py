@@ -2086,6 +2086,18 @@ def current_candidate_reviews(run):
         if recorded.get('candidate_challenges') == [] and 'candidate_challenges' not in context:
             context['candidate_challenges'] = []
         request = execution.json_request(run, 'candidate_source_review', instruction, context, schema)
+        if request['messages'] != unit.get('messages') and context.get('preservation_views'):
+            # Older preservation hashes included the unchanged address-restoration ledger.
+            legacy = deepcopy(context)
+            for view in legacy['preservation_views']:
+                for cid in view['after_versions']:
+                    claim = claims[cid]
+                    ledger = (claim.get('interpretation') or {}).get('address_restorations')
+                    if ledger:
+                        value = execution.compact_claim(claim)
+                        value['interpretation']['address_restorations'] = deepcopy(ledger)
+                        view['after_versions'][cid] = autoschema.identifier('claim', value)
+            request = execution.json_request(run, 'candidate_source_review', instruction, legacy, schema)
         options = run['recipe']['options']
         config = dict(model=run['recipe']['models']['review'], generation=run['recipe']['generation'],
                       identity=run['model_identity'], temperature=0, timeout=options['timeout'])
@@ -2622,13 +2634,21 @@ def qa_check_resolutions(findings, result, explicit_keys):
     checks = {r['meaning_key']: r for r in result['checks']}
     rows = []
     for finding in findings:
-        key = finding['meaning_keys'][0]
-        check = checks[key] if key in explicit_keys else None
-        confirmed = check is not None and check['status'] != 'unknown'
-        rows.append(dict(finding_id=finding['id'], status='resolved' if confirmed else 'unresolved',
-            meaning_keys=[key], claim_ids=deepcopy(check['claim_ids']) if check else [], fields=[],
-            evidence=deepcopy(check.get('evidence', [])) if check else [],
-            reason=check['reason'] if check else 'challenged_contribution_final_check_missing_or_invalid'))
+        keys = finding['meaning_keys']
+        pending = [k for k in keys if k not in explicit_keys or checks[k]['status'] == 'unknown']
+        addressed = pending or keys
+        selected = [checks[k] for k in addressed if k in explicit_keys]
+        evidence = []
+        for check in selected:
+            for ref in check.get('evidence', []):
+                if ref not in evidence:
+                    evidence.append(deepcopy(ref))
+        reasons = [checks[k]['reason'] if k in explicit_keys else
+            'challenged_contribution_final_check_missing_or_invalid' for k in addressed]
+        rows.append(dict(finding_id=finding['id'], status='unresolved' if pending else 'resolved',
+            meaning_keys=list(addressed), claim_ids=list(dict.fromkeys(cid for c in selected for cid in c['claim_ids'])),
+            fields=[], evidence=evidence, reason=reasons[0] if len(keys) == 1 else
+                '; '.join(k + ': ' + reason for k, reason in zip(addressed, reasons))))
     return rows
 
 
@@ -2847,11 +2867,14 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
     keys = {m['key'] for m in meanings}
     # Candidate changes require a fresh final check of the admitted observation;
     # they never make its historical missing assertion true in the new pool.
-    qa_findings = [f for f in findings if f['origin'] == 'qa' and len(f['meaning_keys']) == 1
+    qa_findings = [f for f in findings if f['origin'] == 'qa' and f['meaning_keys']
+        and len(set(f['meaning_keys'])) == len(f['meaning_keys'])
         and set(f['meaning_keys']) <= keys and f['requirement_version'] == preservation_requirement_version(requirement)
         and f['source_fingerprint'] == preservation_source_version(run, run['input_version_ids'])
-        and f['meaning_version'] == autoschema.identifier('meaning', next(m for m in source['meanings'] if m['key'] == f['meaning_keys'][0]))]
-    final_check_keys = {f['meaning_keys'][0] for f in qa_findings}
+        and (f.get('meaning_version') == autoschema.identifier('meaning', next(m for m in source['meanings'] if m['key'] == f['meaning_keys'][0]))
+             if len(f['meaning_keys']) == 1 else f.get('meaning_versions') ==
+             {m['key']: autoschema.identifier('meaning', m) for m in source['meanings'] if m['key'] in f['meaning_keys']})]
+    final_check_keys = {key for f in qa_findings for key in f['meaning_keys']}
     source_reuses = reusable_source_resolutions(run, requirement, source, findings, compact['meaning_challenges'])
     deferred_ids = {r['finding']['id'] for r in source_reuses} | {f['id'] for f in qa_findings}
     generated_findings = [f for f in findings if f['id'] not in deferred_ids]
