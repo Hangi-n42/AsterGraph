@@ -125,6 +125,10 @@ def publish(service, run):
     if any((a.get('source') or {}).get('public_scope') for a in latest.values()):
         change['public_scope_usage'] = 'current_own_source_candidates_only_not_requirement_or_connection_approval'
     with service.lock, service.repository.connect() as db:
+        if run.get('source_rebuild') or run.get('source_rebuild_guard'):
+            db.execute('BEGIN IMMEDIATE')
+            from .business_rebuild import validate_run
+            validate_run(service, db, run)
         db.execute('INSERT INTO changesets VALUES(?,?)', (change['id'], encode(change)))
     return change
 
@@ -173,10 +177,14 @@ def change_view(service, changeset_id):
 
 def decide(service, changeset_id, request):
     with service.lock, service.repository.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
         change = service.repository.get(db, 'changesets', changeset_id)
         if change['kind'] != 'source_graph' or change['revision'] != request.expected_revision:
             raise KnowledgeConflict('검토 변경안의 종류/버전이 다릅니다.')
         run = service.repository.get(db, 'runs', change['run_id'])
+        if run.get('source_rebuild') or run.get('source_rebuild_guard'):
+            from .business_rebuild import validate_run
+            validate_run(service, db, run)
         eligible, _ = review_eligibility(change, run)
         explicit = [o for o in explicit_correction_options(run) if o['correction_id'] in request.confirm_source_correction_ids
                     and not set(o['claim_ids']).intersection(change.get('invalidated_claim_ids', []))]

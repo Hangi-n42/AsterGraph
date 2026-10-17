@@ -1871,6 +1871,29 @@ def candidate_source_basis(claim, blocks):
         for e in claim.get('evidence', []))]
 
 
+def public_evidence_candidates(run, source, candidates):
+    from .business_run import exact_evidence
+    refs = []
+    for meaning in source.get('meanings', []):
+        try:
+            refs.extend(exact_evidence(meaning.get('evidence', []), run['blocks']))
+        except ValueError:
+            continue  # Invalid E evidence remains pending in the usual source validation.
+    result = []
+    for claim in candidates:
+        try:
+            own = [e for e in exact_evidence(claim.get('evidence', []), run['blocks'])
+                   if e['source_version_id'] in claim['source_version_ids']]
+        except ValueError:
+            continue
+        if any((a['source_version_id'], a['parse_run_id'], a['block_id']) ==
+               (b['source_version_id'], b['parse_run_id'], b['block_id'])
+               and max(a['start_char'], b['start_char']) < min(a['end_char'], b['end_char'])
+               for a in refs for b in own):
+            result.append(claim)
+    return result
+
+
 def own_source_errors(run, check, claims, blocks):
     """Keep raw allegations in receipts; only attributed source errors drive repair."""
     from .business_run import exact_direct_row, exact_evidence

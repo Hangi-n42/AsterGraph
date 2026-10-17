@@ -92,14 +92,29 @@ def test_split_targets_are_not_regenerated_by_refresh_and_match_only_their_edges
     business_concepts.refresh_changed(service, run, changed)
     assert sum(r.stage == 'concept_relation' for r in requests) == 2
     first_calls = len(requests)
+    first_concepts = [c['id'] for c in run['concepts']]
+    first_statuses = {c['id']: c['status'] for c in run['concepts']}
+    business_concepts.refresh_changed(service, run, {'unrelated-claim'})
+    assert [c['id'] for c in run['concepts']] == first_concepts
+    assert {c['id']:c['status'] for c in run['concepts']} == first_statuses
+    assert all(c['status'] == 'unreviewed' for c in run['concepts'] if c['target'].get('partition_of'))
     business_concepts.refresh_changed(service, run, changed)
     assert len(requests) == first_calls
+    assert [c['id'] for c in run['concepts'] if c['target'].get('partition_of')] == [
+        identifier for identifier in first_concepts if first_statuses[identifier] == 'unreviewed']
     graph, edges, _, _ = graph_retrieval.build(run, 'full')
     by_claim = {c['target']['claim_ids'][0]: c['concepts'] for c in run['concepts'] if c['target']['kind'] == 'relation'}
     for edge in edges:
         if edge['relation'] == '접수':
             assert graph.edges[edge['head'], edge['tail'], edge['id']]['concepts'] == by_claim[edge['claim_id']]
             assert not any(label in edge['text'] for labels in by_claim.values() for label in labels)
+    old_parts = [c for c in run['concepts'] if c['target'].get('partition_of')]
+    run['recipe']['options']['context_tokens'] = 49152
+    business_concepts.refresh_changed(service, run, set())
+    assert all(c['status'] == 'needs_review' for c in old_parts)
+    assert sum(r.stage == 'concept_relation' for r in requests) == 3
+    current = [c for c in run['concepts'] if c['target']['kind'] == 'relation' and c['status'] == 'unreviewed']
+    assert len(current) == 1 and current[0]['target'] == target
 
 
 def test_legacy_edges_without_source_owner_stay_with_their_own_claims():

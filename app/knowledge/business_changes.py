@@ -228,7 +228,8 @@ def snapshot_invalidations(service, db, snapshot, original):
         event['requirement_ids'] = [rid for rid in event['requirement_ids'] if rid != impact['requirement_id']]
         if impact['status'] != 'unaffected' and assessment_uses_version(snapshot, original, impact['requirement_id'], before):
             event['requirement_ids'].append(impact['requirement_id'])
-    return list(invalidations.values())
+    from .business_rebuild import snapshot_invalidations as rebuild_invalidations
+    return [*invalidations.values(), *rebuild_invalidations(db, snapshot)]
 
 
 def analyze(service, request):

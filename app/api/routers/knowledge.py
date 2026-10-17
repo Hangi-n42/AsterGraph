@@ -23,7 +23,7 @@ from app.knowledge import extraction_store
 from app.knowledge import snapshots
 from app.knowledge.schemas import SearchRequest, LocalEntityRequest
 from app.knowledge import business_store, business_use
-from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck
+from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, SourceRebuildPlanRequest
 
 
 class KnowledgeRoute(APIRoute):
@@ -191,6 +191,12 @@ def business_answer_recheck(run_id: str, request: BusinessAnswerRecheck, service
 def business_version_change(request: ChangeRequest, service=Depends(get_knowledge_service)):
     from app.knowledge.business_changes import analyze
     return result(analyze(service, request))
+
+
+@router.post('/business/source-rebuild-plans', response_model=KnowledgeResponse)
+def business_source_rebuild_plan(request: SourceRebuildPlanRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_rebuild import plan
+    return result(plan(service, request))
 
 
 @router.get('/runs/{run_id}', response_model=KnowledgeResponse)
