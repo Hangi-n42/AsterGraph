@@ -14,6 +14,8 @@ from .discovery_meanings import affected_keys
 CONTRACT = 'requirement-local-review-v8-owned-errors'
 SOURCE_APPLICATION_CONTRACT = 'requirement-local-review-v13-source-application'
 APPLICATION_CONTRACT = 'public-item-applicability-v2-bound-quotes'
+PUBLIC_SCOPE_INPUT_CONTRACT = 'public-selected-source-candidates-v1'
+PUBLIC_SOURCE_INPUT_CONTRACT = 'public-source-applicability-only-v2'
 ANSWER_SCOPE_EXPERIMENT = 'requirement-local-review-v9-answer-roots-experimental'
 MEANING_SELECTION_EXPERIMENT = 'requirement-local-review-v10-selection-experimental'
 SEPARATED_CONTRACTS = {'requirement-local-review-v5-separated', 'requirement-local-review-v6-separated',
@@ -196,6 +198,27 @@ def source_blocks(run, requirement):
     return [b for b in run['blocks'] if not requirement['source_ids'] or b['source_id'] in requirement['source_ids']]
 
 
+def candidate_pool(run, requirement):
+    """Select stored source ownership, independently of quote/address validity."""
+    claims = [c for c in run['claims'] if not c.get('superseded_by')]
+    source_ids = set(requirement.get('source_ids', []))
+    if not source_ids:
+        return claims
+    versions = {vid for vid, source in run.get('sources', {}).items() if source.get('source_id') in source_ids}
+    versions.update(b['source_version_id'] for b in run['blocks'] if b.get('source_id') in source_ids)
+    block_versions = {b['id']: b['source_version_id'] for b in run['blocks']}
+    chunks = {c['id']: c for c in run.get('chunks', [])}
+    chunks.update(run.get('capacity_repair_views', {}))
+    selected = []
+    for claim in claims:
+        own = set(claim.get('source_version_ids', []))
+        own.update(e.get('source_version_id') or block_versions.get(e.get('block_id')) for e in claim.get('evidence', []))
+        own.add(chunks.get(claim.get('chunk_id'), {}).get('source_version_id'))
+        if versions.intersection(own):
+            selected.append(claim)
+    return selected
+
+
 def freeze_target_plan(service, db, run, parse_ids):
     """Bind an explicitly chosen parse policy to unchanged stored evidence addresses."""
     if not set(parse_ids) <= {b['source_version_id'] for b in run['blocks']}:
@@ -351,7 +374,9 @@ def inherited_inspection_units(run):
         for r in (a.get('source') or {}).get(field, [])}
     selected = []
     for unit in [*run.get('units', []), *run.get('reusable_units', []), *run.get('inspection_units', [])]:
-        if unit.get('id') in ids and unit not in selected:
+        failed_review = (run.get('answer_items') and unit.get('stage') == 'candidate_source_review'
+                         and unit.get('status') == 'failed')
+        if (unit.get('id') in ids or failed_review) and unit not in selected:
             selected.append(deepcopy(unit))
     return selected
 
@@ -1018,8 +1043,9 @@ statement_affected=false는 해당 필드의 미확정과 본문 의미가 독�
     return result
 
 
-def pool_hash(run):
-    return autoschema.identifier('claim_pool', run['claims'])
+def pool_hash(run, requirement=None):
+    claims = candidate_pool(run, requirement) if requirement and requirement.get('source_ids') else run['claims']
+    return autoschema.identifier('claim_pool', claims)
 
 
 def response_unit_id(run):
@@ -1155,10 +1181,14 @@ def public_item_tasks(run, requirement):
             for item in items for n, case in enumerate(cases)]
 
 
-def public_scope_fingerprint(run, requirement, source):
-    return autoschema.identifier('public_scope', dict(tasks=public_item_tasks(run, requirement),
-        requirement={k:requirement.get(k, '') for k in ('id','revision','question','criterion','target','situation','period')},
-        claims=[c for c in run['claims'] if not c.get('superseded_by')], blocks=source_blocks(run, requirement),
+def public_scope_fingerprint(run, requirement, source, *, input_contract=None):
+    tasks = public_item_tasks(run, requirement)
+    return autoschema.identifier('public_scope', dict(tasks=tasks,
+        **(dict(input_contract=input_contract or source.get('public_scope', {}).get('input_contract')
+            or PUBLIC_SCOPE_INPUT_CONTRACT) if tasks else {}),
+        requirement={k:requirement.get(k, '') for k in ('id','revision','question','criterion','target','situation','period',
+            *(('source_ids',) if requirement.get('source_ids') else ()))},
+        claims=candidate_pool(run, requirement), blocks=source_blocks(run, requirement),
         source_facts=[application_fact(m, compact=False) for m in source['meanings']],
         recipe=run['recipe'], model_identity=run.get('model_identity')))
 
@@ -1166,7 +1196,8 @@ def public_scope_fingerprint(run, requirement, source):
 def public_scope_valid(run, requirement, source):
     scope = source.get('public_scope') or {}
     unit = next((u for u in run['units'] if u['id'] == scope.get('unit_id')), {})
-    return bool(scope.get('selection_input_fingerprint', scope.get('input_fingerprint')) == public_scope_fingerprint(run, requirement, source)
+    return bool(scope.get('input_contract') in {PUBLIC_SCOPE_INPUT_CONTRACT, PUBLIC_SOURCE_INPUT_CONTRACT}
+        and scope.get('selection_input_fingerprint', scope.get('input_fingerprint')) == public_scope_fingerprint(run, requirement, source)
         and unit.get('status') == 'succeeded' and not unit.get('error')
         and unit.get('restored_evidence_output') == scope.get('output'))
 
@@ -1176,17 +1207,174 @@ def public_work_records(run, requirement, source):
     scope = source['public_scope']
     tasks = {t['id']: t for t in public_item_tasks(run, requirement)}
     previous_tasks = {t['id']: t for t in scope['tasks']}
-    versions = {c['id']: autoschema.identifier('claim', c) for c in run['claims'] if not c.get('superseded_by')}
+    versions = {c['id']: autoschema.identifier('claim', c) for c in candidate_pool(run, requirement)}
     source_valid = scope.get('source_version_fingerprint') == autoschema.identifier(
         'public_scope_source', source_blocks(run, requirement))
     requirement_valid = bool(scope.get('public_requirement')) and all(
         requirement.get(k, '') == v for k, v in scope['public_requirement'].items())
+    if scope.get('input_contract') == PUBLIC_SOURCE_INPUT_CONTRACT:
+        items = {task['item']['id']: task['item'] for task in tasks.values()}
+        previous_items = {item['id']: item for item in scope['public_items']}
+        return [dict(deepcopy(row), source_binding_valid=source_valid,
+            candidate_binding_valid=scope.get('candidate_versions') == versions,
+            requirement_binding_valid=requirement_valid and previous_tasks == tasks
+                and previous_items.get(row['item_id']) == items.get(row['item_id']),
+            original_unit_id=scope['unit_id'], followup=next((deepcopy(f) for f in scope['followup']
+                if f['item_id'] == row['item_id']), None),
+            authority='source_applicability_only; expression_requires_actual_R_and_join')
+            for row in scope['items'] if row['item_id'] in items]
     return [dict(deepcopy(row), source_binding_valid=source_valid,
         candidate_binding_valid=scope.get('candidate_versions') == versions,
         requirement_binding_valid=requirement_valid and previous_tasks.get(row['task_id']) == tasks.get(row['task_id']),
         original_unit_id=scope['unit_id'], followup=next((deepcopy(f) for f in scope['followup']
             if f['task_id'] == row['task_id']), None), authority='previous_work_state_not_truth_or_approval')
         for row in scope['items'] if row['task_id'] in tasks]
+
+
+def resolve_public_read_scope(run, requirement, source):
+    """Link requested blocks to recorded E meanings without changing source verdicts."""
+    from .business_run import exact_evidence
+    result = deepcopy(source)
+    scope = result.get('public_scope', {})
+    if scope.get('input_contract') != PUBLIC_SOURCE_INPUT_CONTRACT:
+        return result
+    blocks = source_blocks(run, requirement)
+    address = ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char')
+    units = [*run.get('units', []), *run.get('reusable_units', []), *run.get('inspection_units', [])]
+    successful = {(u.get('response') or {}).get('request_id') or (u.get('reused_from') or {}).get('unit_id') or u['id']
+        for u in units if u.get('stage') == 'requirement_source' and u.get('status') == 'succeeded'
+        and not u.get('error') and u.get('response') and not u['response'].get('failure_kind')}
+    facts = {m['key']: m for m in result['meanings']
+        if sum(other['key'] == m['key'] for other in result['meanings']) == 1}
+    keys, receipts = set(scope['review_meaning_keys']), []
+    for row in scope['items']:
+        requested, matches = set(row['read_block_ids']), []
+        for key, meaning in facts.items():
+            evidence = meaning['evidence']
+            refs = [e for e in evidence if e['block_id'] in requested and not e.get('context_only')]
+            if not refs or any(e.get(k) is None for e in evidence for k in address):
+                continue
+            try:
+                exact_evidence(evidence, blocks)
+            except ValueError:
+                continue
+            for batch in result.get('source_batches', []):
+                output = batch.get('output') or {}
+                declared = set(output.get('examined_block_ids', []))
+                if (key not in batch['meaning_keys'] or batch['unit_id'] not in successful
+                        or output.get('inspection_status') != 'complete'
+                        or not declared <= set(batch['provided_block_ids'])
+                        or not {e['block_id'] for e in evidence} <= set(batch['provided_block_ids'])
+                        or not {e['block_id'] for e in refs} <= declared.intersection(batch['target_block_ids'])
+                        or INSPECTION_ERRORS.intersection(e for e in batch.get('errors', []) if isinstance(e, str))):
+                    continue
+                targets = batch.get('target_evidence', [])
+                if not targets or any(e.get(k) is None for e in targets for k in address):
+                    continue
+                try:
+                    exact_evidence(targets, blocks)
+                    views = [dict(id=e['block_id'], text=e['quote'], span=[e['start_char'], e['end_char']],
+                        source_version_id=e['source_version_id'], parse_run_id=e['parse_run_id']) for e in targets]
+                    exact_evidence(refs, views)
+                except ValueError:
+                    continue
+                matches.append(dict(meaning_key=key, unit_id=batch['unit_id'], evidence=deepcopy(refs)))
+                break
+        linked = {match['meaning_key'] for match in matches}
+        keys.update(linked)
+        receipts.append(dict(item_id=row['item_id'], requested_block_ids=sorted(requested),
+            linked_meaning_keys=sorted(linked), matches=matches,
+            unresolved_block_ids=sorted(requested - {e['block_id'] for match in matches for e in match['evidence']})))
+    while True:
+        expanded = keys | {p for key in keys if key in facts for p in facts[key].get('premise_keys') or [] if p in facts}
+        if expanded == keys:
+            break
+        keys = expanded
+    scope.update(review_meaning_keys=sorted(keys), stored_read_scope=receipts)
+    return result
+
+
+def public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory):
+    """An overflow selector chooses source applicability; it does not review candidates."""
+    from . import business_run as execution
+    from .business_models import PublicSourceItemSelection, PublicSourceScopeCheck
+    items = list({task['item']['id']: task['item'] for task in tasks}.values())
+    keys = {meaning['key'] for meaning in selected}
+    row = create_model('BoundPublicSourceItemSelection', __base__=PublicSourceItemSelection,
+        item_id=(Literal[tuple(item['id'] for item in items)], Field(...)),
+        meaning_keys=(list[Literal[tuple(sorted(keys))]] if keys else list[str], Field(max_length=len(keys))),
+        read_block_ids=(list[Literal[tuple(b['id'] for b in blocks)]] if blocks else list[str], Field(max_length=len(blocks))))
+    schema = create_model('BoundPublicSourceScopeCheck', __base__=PublicSourceScopeCheck,
+        items=(list[row], Field(min_length=len(items), max_length=len(items))))
+    provided = {b['id'] for b in provided_blocks}
+    model_locations = autoschema.source_packet(blocks)
+    output = execution.json_call(service, run, 'requirement_application', '''
+공개 question/criterion의 원문 적용범위·필수 의미·필요 읽기만 판단한다.
+public_tasks는 원래 공개 항목의 검색 문맥이며 새 의무가 아니다. item.id 기준 원래 공개 항목을 각각 한 번 처리한다.
+모든 context 분기와 전체 question/criterion을 함께 읽고 필요한 meaning_keys와 실제 원문 범위를 선택한다.
+source_facts의 주장·주체·양태·조건·예외·기간·필요 전제를 blocks와 대조한다. 이전 source_status는 정답이 아니다.
+후보 객체와 후보 자기원문 판정은 이번 입력에 없다. 후보 정확성·후보 표현 충족·전체 질문 완료를 판정하지 않는다.
+표현 검수는 이후 실제 후보를 받는 기존 own/R/join이 수행한다. 원문 정보가 있다는 이유로 후보 표현이 있다고 추정하지 않는다.
+blocks에 필요한 내용이 있지만 source_facts에서 미선택이면 unselected와 실제 read_block_ids를 기록한다.
+필요 읽기가 남으면 unread, 제공 범위 밖 자료가 필요하면 not_provided, 해석 연결이 불명확하면 unknown과 구체 gap을 남긴다.
+이번 미제공/미선택은 전체 자료 부재나 원문 반증이 아니다. 다른 context의 필요 사실도 임의로 제외하지 않는다.
+원문 의미의 구체 오독만 meaning_challenges에 실제 의미키·필드·근거를 쓴다. 질문 적용성이나 후보 표현 부족은 원문 오류가 아니다.
+''', dict(input_contract=PUBLIC_SOURCE_INPUT_CONTRACT, requirement=requirement, public_tasks=tasks,
+        source_facts=[application_fact(m) for m in selected], blocks=provided_blocks,
+        source_inventory=[dict(id=b['id'], source_version_id=b['source_version_id'], locator=view.get('locator', {}),
+            character_count=len(b['text']), provided=False,
+            **{k:view[k] for k in ('span','context_only','continuation_bundle') if k in view})
+            for b,view in zip(blocks, model_locations) if b['id'] not in provided]), schema)
+    result = deepcopy(source)
+    scope = dict(input_contract=PUBLIC_SOURCE_INPUT_CONTRACT, tasks=deepcopy(tasks), public_items=deepcopy(items),
+        queries=queries, output=deepcopy(output), unit_id=response_unit_id(run), items=[], errors=[],
+        review_meaning_keys=[], expression_review_pending=True,
+        public_requirement={k:requirement.get(k, '') for k in ('id','revision','question','criterion','target','situation','period',
+            *(('source_ids',) if requirement.get('source_ids') else ()))},
+        candidate_versions={c['id']:autoschema.identifier('claim', c) for c in inventory}, provided_candidate_versions={},
+        provided_meaning_keys=sorted(keys), provided_block_ids=[b['id'] for b in provided_blocks],
+        source_version_fingerprint=autoschema.identifier('public_scope_source', blocks), candidate_review_basis={},
+        input_fingerprint=public_scope_fingerprint(run, requirement, source, input_contract=PUBLIC_SOURCE_INPUT_CONTRACT),
+        selection_is_not_expression_verdict_or_approval=True)
+    selected_keys = set()
+    for item in items:
+        matches = [r for r in (output or {}).get('items', []) if r['item_id'] == item['id']]
+        row = deepcopy(matches[0]) if len(matches) == 1 else None
+        if (row is None or not set(row['meaning_keys']) <= keys
+                or not set(row['read_block_ids']) <= {b['id'] for b in blocks}
+                or row['source_state'] == 'available' and not row['meaning_keys']
+                or row['source_state'] != 'available' and not row['gap']):
+            scope['errors'].append(dict(item_id=item['id'], reason='public_source_item_missing_or_invalid'))
+            row = dict(item_id=item['id'], meaning_keys=[], source_state='unknown', read_block_ids=[],
+                gap='공개 항목의 원문 적용범위 판단이 미완료입니다.', reason='응답 누락/중복 또는 범위 불일치')
+        selected_keys.update(row['meaning_keys'])
+        scope['items'].append(row)
+    facts = {m['key']:m for m in source['meanings']}
+    while True:
+        expanded = selected_keys | {p for k in selected_keys for p in facts[k].get('premise_keys') or [] if p in facts}
+        if expanded == selected_keys:
+            break
+        selected_keys = expanded
+    scope['review_meaning_keys'] = sorted(selected_keys)
+    scope['followup'] = [dict(item_id=row['item_id'], action=(
+        'lookup_stored_meanings' if row['source_state'] == 'unselected' else 'read_source' if row['source_state'] == 'unread'
+        else 'review_expression' if row['source_state'] == 'available' else 'specific_gap'),
+        read_block_ids=row['read_block_ids'], meaning_keys=row['meaning_keys'], gap=row['gap']) for row in scope['items']]
+    if source.get('public_scope'):
+        result.setdefault('public_scope_history', []).append(deepcopy(source['public_scope']))
+    result['public_scope'] = scope
+    result['application_challenges'] = []
+    for challenge in (output or {}).get('meaning_challenges', []):
+        try:
+            if challenge['meaning_key'] not in keys or not execution.exact_evidence(challenge['evidence'], provided_blocks):
+                raise ValueError('public_source_challenge_without_source')
+            result['application_challenges'].append(deepcopy(challenge))
+        except ValueError as exc:
+            scope['errors'].append(dict(meaning_key=challenge['meaning_key'], reason=str(exc)))
+    for meaning in result['meanings']:
+        if meaning['key'] in selected_keys:
+            meaning['required_for_requirement'] = True
+    return resolve_public_read_scope(run, requirement, result)
 
 
 def public_requirement_scope(service, run, requirement, source):
@@ -1198,10 +1386,10 @@ def public_requirement_scope(service, run, requirement, source):
     if not tasks:
         return deepcopy(source)
     if public_scope_valid(run, requirement, source):
-        return deepcopy(source)
+        return resolve_public_read_scope(run, requirement, source)
     facts = {m['key']: m for m in source['meanings']}
     blocks = source_blocks(run, requirement)
-    claims = [c for c in run['claims'] if not c.get('superseded_by')]
+    inventory = candidate_pool(run, requirement)
     documents = [dict(id=k, text=json.dumps({f:m.get(f) for f in ('statement','conditions','exceptions','period','references')}, ensure_ascii=False),
                       file_id='stored_source', source_group='stored_source') for k,m in facts.items()]
     index = FrozenIndex(documents, preserve_numbers=True)
@@ -1225,6 +1413,8 @@ def public_requirement_scope(service, run, requirement, source):
         keys = expanded
     block_ids.update(e['block_id'] for k in keys for e in facts[k]['evidence'])
     selected = [m for k,m in facts.items() if k in keys]
+    claims = public_evidence_candidates(run, dict(meanings=selected), inventory)
+    claim_ids = {c['id'] for c in claims}
     block_ids.update(b['id'] for b in related_blocks(run, selected, claims))
     provided_blocks = [b for b in blocks if b['id'] in block_ids]
     row = create_model('BoundPublicItemCoverage', __base__=PublicItemCoverage,
@@ -1234,8 +1424,17 @@ def public_requirement_scope(service, run, requirement, source):
         read_block_ids=(list[Literal[tuple(b['id'] for b in blocks)]] if blocks else list[str], Field(max_length=len(blocks))))
     schema = create_model('BoundPublicScopeCheck', __base__=PublicScopeCheck,
         items=(list[row], Field(min_length=len(tasks), max_length=len(tasks))))
-    direct = current_candidate_reviews(run)
-    output = execution.json_call(service, run, 'requirement_application', '''
+    def packet(direct):
+        return dict(input_contract=PUBLIC_SCOPE_INPUT_CONTRACT, requirement=requirement, public_tasks=tasks,
+        source_facts=[application_fact(m) for m in selected], blocks=provided_blocks,
+        candidates=[execution.compact_claim(c) for c in claims],
+        candidate_source_reviews=[dict(claim_id=cid, **v) for cid,v in direct.items()],
+        candidate_inventory=[dict(id=c['id'], version=autoschema.identifier('claim', c), provided=c['id'] in claim_ids)
+            for c in inventory],
+        source_inventory=[dict(id=b['id'], source_version_id=b['source_version_id'],
+            locator=b.get('locator', {}), character_count=len(b['text']), provided=False)
+            for b in blocks if b['id'] not in block_ids])
+    instruction = '''
 public_tasks는 후보를 보기 전에 공개 question/criterion과 target/situation에서 고정한 처리 과제다.
 각 task_id를 한 번씩 처리한다. context.quote는 공개 병렬 구절의 검색 분기이며 전체 공개 문맥을 대체하지 않는다.
 후보가 개인/가족 일부만 표현해도 다른 공개 대상의 과제를 범위 밖으로 삭제하거나 완료하지 않는다.
@@ -1249,18 +1448,30 @@ source_facts와 candidate_source_reviews는 이전 판정이며 정답이 아니
 질문 적용성/표현 부족은 원문 오류가 아니다. 조건부 규칙에서 반대 상황의 면제·금지·허용을 만들지 않는다.
 meaning_keys는 조건·예외·기간·참조·실제 연결 전제를 포함한 유용한 근거만 선택한다. 근거 없는 요청 내용을 생성하지 않는다.
 원문 지지가 없는 후보나 자기 원문 검수 미완료 후보를 represented의 확정 근거로 사용하지 않는다.
-''', dict(requirement=requirement, public_tasks=tasks,
-        source_facts=[application_fact(m) for m in selected], blocks=provided_blocks,
-        candidates=[execution.compact_claim(c) for c in claims],
-        candidate_source_reviews=[dict(claim_id=cid, **v) for cid,v in direct.items()],
-        source_inventory=[dict(id=b['id'], source_version_id=b['source_version_id'],
-            locator=b.get('locator', {}), character_count=len(b['text']), provided=False)
-            for b in blocks if b['id'] not in block_ids]), schema)
+candidate_inventory와 source_inventory는 전체 탐색 목록이다. 미제공·주소 미일치 후보는 부재·오류·승인이 아니며 후속 전체 후보 대조 대상으로 남는다.
+'''
+    def oversized(direct):
+        request = execution.json_request(run, 'requirement_application', instruction, packet(direct), schema)
+        return execution.request_tokens(request['messages'], request['schema'],
+            request['max_tokens'] or run['recipe']['options']['review_tokens']) > run['recipe']['options']['context_tokens']
+    direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
+    if oversized(direct):
+        return public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory)
+    review_candidate_pool(service, run, claims, requirement=requirement)
+    direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
+    if oversized(direct):
+        return public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory)
+    output = execution.json_call(service, run, 'requirement_application', instruction, packet(direct), schema)
     result = deepcopy(source)
     scope = dict(tasks=tasks, queries=queries, output=deepcopy(output), unit_id=response_unit_id(run),
                  items=[], errors=[], review_meaning_keys=[], public_requirement={k:requirement.get(k, '') for k in
-                     ('id', 'revision', 'question', 'criterion', 'target', 'situation', 'period')})
-    scope['candidate_versions'] = {c['id']: autoschema.identifier('claim', c) for c in claims}
+                     ('id', 'revision', 'question', 'criterion', 'target', 'situation', 'period',
+                      *(('source_ids',) if requirement.get('source_ids') else ()))})
+    scope['input_contract'] = PUBLIC_SCOPE_INPUT_CONTRACT
+    scope['candidate_versions'] = {c['id']: autoschema.identifier('claim', c) for c in inventory}
+    scope['provided_candidate_versions'] = {c['id']: scope['candidate_versions'][c['id']] for c in claims}
+    scope['provided_meaning_keys'] = sorted(keys)
+    scope['provided_block_ids'] = [b['id'] for b in provided_blocks]
     scope['source_version_fingerprint'] = autoschema.identifier('public_scope_source', blocks)
     scope['candidate_review_basis'] = {cid:dict(receipt_id=v['receipt_id'],unit_id=v['unit_id']) for cid,v in direct.items()}
     scope['input_fingerprint'] = public_scope_fingerprint(run, requirement, source)
@@ -2125,7 +2336,20 @@ def current_candidate_reviews(run):
     return verified
 
 
-def review_candidate_pool(service, run, claims):
+def failed_candidate_request(run, request):
+    """A failed exact request remains pending until its input or settings change."""
+    options = run['recipe']['options']
+    config = dict(model=run['recipe']['models']['review'], generation=run['recipe']['generation'],
+                  identity=run['model_identity'], temperature=0, timeout=options['timeout'])
+    limits = dict(max_tokens=options['review_tokens'], context_tokens=options['context_tokens'], think=options['think'])
+    return next((unit for unit in [*run['units'], *run.get('reusable_units', []), *run.get('inspection_units', [])]
+        if unit.get('stage') == 'candidate_source_review' and unit.get('status') == 'failed'
+        and all(unit.get(k) == request[k] for k in ('messages', 'schema', 'reference_map', 'evidence_reference_map'))
+        and unit.get('request_configuration') == config and unit.get('requested_limits') == limits
+        and (unit.get('executed_limits') is None or unit['executed_limits'] == limits)), None)
+
+
+def review_candidate_pool(service, run, claims, *, requirement=None):
     """Review source-local candidate groups once; unchanged exact requests remain reusable."""
     from . import business_run as execution
     verified = current_candidate_reviews(run)
@@ -2145,6 +2369,14 @@ def review_candidate_pool(service, run, claims):
         if len(batch) > 1 and execution.request_tokens(request['messages'], request['schema'], options['review_tokens']) > options['context_tokens']:
             middle = len(batch) // 2
             pending[0:0] = [batch[:middle], batch[middle:]]
+            continue
+        failed = failed_candidate_request(run, request) if requirement and public_item_tasks(run, requirement) else None
+        if failed:
+            deferred = dict(requirement_id=requirement['id'], claim_ids=[c['id'] for c in batch],
+                failed_unit_id=failed['id'], status='pending', reason='unchanged_failed_candidate_source_request')
+            if deferred not in run.setdefault('candidate_review_deferrals', []):
+                run['candidate_review_deferrals'].append(deferred)
+                execution.save(service, run)
             continue
         review_candidates(service, run, batch, repair_context=context)
 
@@ -2196,6 +2428,47 @@ def attach_candidate_support(run, output, claims, blocks):
                 row['incorrect_claim_ids'].append(cid)
             row['error_fields'].update(deepcopy(direct.get('error_fields', {})))
             row['error_evidence'].extend(deepcopy(direct.get('error_evidence', [])))
+
+
+def reused_candidate_judgment(service, run, receipt):
+    """Keep model input references stable only for an exactly reused, revalidated judgment."""
+    unit = run['units'][-1]
+    reused = unit.get('reused_from')
+    if service is None or not reused or receipt['errors']:
+        return None
+    def content(value):
+        return {k: v for k, v in value.items() if k not in {'id', 'unit_id', 'reused_judgment'}}
+    with service.repository.connect() as db:
+        donor = service.repository.get(db, 'runs', reused['run_id'])
+        matches = [r for r in donor.get('candidate_reviews', []) if r['unit_id'] == reused['unit_id']
+                   and content(r) == content(receipt)]
+        if len(matches) != 1:
+            return None
+        previous = matches[0]
+        origin = previous.get('reused_judgment') or dict(run_id=donor['id'],
+            receipt_id=previous['id'], unit_id=previous['unit_id'])
+        original = donor if origin['run_id'] == donor['id'] else service.repository.get(db, 'runs', origin['run_id'])
+    records = [r for r in original.get('candidate_reviews', []) if r['id'] == origin['receipt_id']
+               and r['unit_id'] == origin['unit_id'] and content(r) == content(receipt)]
+    units = [u for u in original['units'] if u['id'] == origin['unit_id']]
+    fields = ('messages', 'schema', 'reference_map', 'evidence_reference_map', 'request_configuration',
+              'requested_limits', 'executed_limits', 'response', 'restored_evidence_output')
+    if (len(records) != 1 or len(units) != 1 or units[0]['status'] != 'succeeded' or units[0].get('error')
+            or not units[0].get('response') or units[0]['response'].get('failure_kind')
+            or any(unit.get(k) != units[0].get(k) for k in fields)):
+        return None
+    return deepcopy(origin)
+
+
+def candidate_review_inputs(run, direct, claim_ids):
+    origins = {r['id']: r['reused_judgment'] for r in run.get('candidate_reviews', []) if r.get('reused_judgment')}
+    rows = []
+    for cid in sorted(set(claim_ids) & direct.keys()):
+        row = dict(claim_id=cid, **direct[cid])
+        if origin := origins.get(row['receipt_id']):
+            row.update({k: origin[k] for k in ('receipt_id', 'unit_id')})
+        rows.append(row)
+    return rows
 
 
 def review_candidates(service, run, claims, *, repair_context=()):
@@ -2255,6 +2528,8 @@ def review_candidates(service, run, claims, *, repair_context=()):
                 receipt['errors'].append(dict(claim_id=cid, reason=str(exc)))
     receipt['preservation_checks'] = [grounded_preservation(check, repair_context, blocks)
         for check in (output or {}).get('preservation_checks', [])] if repair_context else []
+    if origin := reused_candidate_judgment(service, run, receipt):
+        receipt['reused_judgment'] = origin
     run.setdefault('candidate_reviews', []).append(receipt)
     execution.save(service, run)
     return receipt
@@ -2332,7 +2607,7 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
                 errors.append(dict(field=field, meaning_key=key, reason=str(exc)))
                 if key in known:
                     result['meaning_challenges'].append(dict(meaning_key=key, claim_ids=[], fields=[],
-                        evidence=[], **(dict(source_reassessment_needed=False) if key in required_check_keys else {}),
+                        evidence=[], source_reassessment_needed=False,
                         reason=str(exc) + ': 기존 판정 보존; 변경 근거 미확인'))
     for key in required_check_keys - valid['checks']:
         errors.append(dict(field='checks', meaning_key=key, reason='challenged_contribution_final_check_missing_or_invalid'))
@@ -2661,6 +2936,85 @@ def qa_check_resolutions(findings, result, explicit_keys):
     return rows
 
 
+def retain_public_item_checks(run, source, result, output, blocks):
+    """Keep the join's item verdicts, but require actual source and R witnesses."""
+    from .business_run import exact_evidence
+    scope = source['public_scope']
+    expected = {item['id'] for item in scope['public_items']}
+    selected = {row['item_id']:row for row in scope['items']}
+    meanings = {m['key']:m for m in review_meanings(source)}
+    checks = {row['meaning_key']:row for row in result['checks']}
+    direct = current_candidate_reviews(run)
+    errors, valid = [], set()
+    for item_id in expected:
+        rows = [row for row in output if row['item_id'] == item_id]
+        error = None
+        if len(rows) != 1:
+            error = 'public_item_check_missing_or_duplicate'
+        else:
+            row = rows[0]
+            keys = set(row['meaning_keys'])
+            known_claims = {cid for key in keys if key in checks for cid in checks[key]['claim_ids']}
+            if not keys <= meanings.keys() or not set(row['claim_ids']) <= known_claims:
+                error = 'public_item_check_outside_R_scope'
+            elif row['status'] == 'represented':
+                required = set(selected[item_id]['meaning_keys'])
+                while True:
+                    expanded = required | {p for k in required if k in meanings
+                        for p in meanings[k].get('premise_keys') or []}
+                    if expanded == required:
+                        break
+                    required = expanded
+                witnesses = {cid for key in keys for cid in checks.get(key, {}).get('claim_ids', [])}
+                if (not keys or not witnesses or not required <= keys
+                        or set(row['claim_ids']) != witnesses
+                        or any(m['source_status'] != 'supported' or m['availability'] != 'provided'
+                            or unresolved_source_fields(m) or m.get('premise_keys') is None
+                            for key,m in meanings.items() if key in keys)
+                        or any(checks.get(key, {}).get('status') != 'represented' for key in keys)
+                        or any(direct.get(cid, {}).get('check', {}).get('claim_support', {}).get(cid) != 'supported'
+                            or direct[cid]['check'].get('incorrect_claim_ids')
+                            or direct[cid]['check'].get('error_fields') for cid in witnesses)):
+                    error = 'public_item_without_complete_source_and_R_witness'
+                else:
+                    try:
+                        evidence = exact_evidence(row['evidence'], blocks)
+                        needed = exact_evidence([ref for key in keys for ref in meanings[key]['evidence']], blocks)
+                        pending_reads = set(selected[item_id].get('read_block_ids', []))
+                        if (not evidence or not pending_reads <= {e['block_id'] for e in evidence}
+                                or selected[item_id].get('source_state') in {'unselected','unread'} and not pending_reads):
+                            raise ValueError('public_item_pending_source_read')
+                        if pending_reads:
+                            grounded = set()
+                            claims = {claim['id']:claim for claim in run['claims']}
+                            for key in keys:
+                                meaning_refs = exact_evidence(meanings[key]['evidence'], run['blocks'])
+                                claim_refs = exact_evidence([ref for cid in checks[key]['claim_ids']
+                                    for ref in claims[cid].get('evidence', [])], run['blocks'])
+                                grounded.update(a['block_id'] for a in meaning_refs for b in claim_refs
+                                    if all(a[k] == b[k] for k in ('source_version_id','parse_run_id','block_id'))
+                                    and max(a['start_char'],b['start_char']) < min(a['end_char'],b['end_char']))
+                            if not pending_reads <= grounded:
+                                raise ValueError('public_item_pending_read_without_R_witness')
+                        if any(not any(all(ref[k] == e[k] for k in ('source_version_id','parse_run_id','block_id'))
+                                and e['start_char'] <= ref['start_char'] < ref['end_char'] <= e['end_char']
+                                for e in evidence) for ref in needed):
+                            raise ValueError('public_item_without_relevant_source_evidence')
+                    except (ValueError, KeyError):
+                        error = 'public_item_without_relevant_source_evidence'
+        if error:
+            errors.append(dict(item_id=item_id, reason=error))
+        else:
+            valid.add(item_id)
+    errors.extend(dict(item_id=row['item_id'], reason='public_item_check_outside_request')
+        for row in output if row['item_id'] not in expected)
+    result.update(public_item_checks=deepcopy(output), public_item_check_errors=errors,
+                  valid_public_item_ids=sorted(valid))
+    scope['expression_review_pending'] = not (valid == expected and not errors and bool(expected)
+        and all(row['status'] == 'represented' for row in output)
+        and result.get('satisfied') and result.get('conjunctions_satisfied') and source.get('completeness') == 'complete')
+
+
 def _represent(service, run, requirement, source, context, *, previous_scope=None, recheck_meaning_keys=None, previous_meanings=None):
     """Bounded R batches, real missing-pool checks and a compact source-based join."""
     from . import business_run as execution
@@ -2669,14 +3023,15 @@ def _represent(service, run, requirement, source, context, *, previous_scope=Non
                                   ConjunctionReview, ChallengedContributionRevision)
     from .discovery_profile import FrozenIndex
     meanings = review_meanings(source)
+    public_source_only = source.get('public_scope', {}).get('input_contract') == PUBLIC_SOURCE_INPUT_CONTRACT
     for finding in source.get('findings', []):
         if finding['origin'] == 'qa':
-            finding['candidate_binding_valid'] = finding['candidate_pool_hash'] == pool_hash(run)
+            finding['candidate_binding_valid'] = finding['candidate_pool_hash'] == pool_hash(run, requirement)
     split_roles = separated(run)
     split_candidates = separate_application(run) or bool(source.get('public_scope'))
     conjunctions = conjunction_candidates(service, run, requirement, source)
     local_type = ContributionReviewCheck if split_candidates else ExpressionReviewCheck if split_roles else LocalRepresentationCheck
-    claims = [c for c in run['claims'] if not c.get('superseded_by')]
+    claims = candidate_pool(run, requirement)
     direct_rows = {c['id']: ref for c in claims if (ref := execution.exact_direct_row(c, run['blocks']))}
     all_ids = {c['id'] for c in claims}
     documents = [dict(id=c['id'], text=json.dumps(execution.compact_claim(c), ensure_ascii=False),
@@ -2740,7 +3095,7 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
             **(dict(expression_challenges=[deepcopy(f) for f in source.get('findings', [])
                 if f['origin'] == 'qa' and set(f['meaning_keys']).intersection(m['key'] for m in active_meanings)])
                if any(f['origin'] == 'qa' for f in source.get('findings', [])) else {}),
-            **(dict(whole_candidate_judgments=[dict(claim_id=cid, **direct[cid]) for cid in sorted(batch_ids & direct.keys())])
+            **(dict(whole_candidate_judgments=candidate_review_inputs(run, direct, batch_ids))
                if split_candidates else {}),
             blocks=blocks,
             claims=[execution.compact_claim(c) for c in batch], repair_context=[r for r in histories if r['changes']],
@@ -2799,6 +3154,16 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
             keys = {m['key'] for m in active_meanings}
             if execution.cancelled(service, run):
                 return summarize_local(meanings, outputs + local_outputs), dict(cancelled=True, batches=receipts)
+            if any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
+                review_candidate_pool(service, run, batch, requirement=requirement)
+                if execution.cancelled(service, run):
+                    return summarize_local(meanings, outputs + local_outputs), dict(cancelled=True, batches=receipts)
+                # Fresh own-source judgments are part of packet(). Recompute
+                # its actual capacity before dispatch; exact reviews are reused.
+                split = packs(batch, active_meanings)
+                if len(split) > 1:
+                    groups[position:position] = split
+                    continue
             batch_ids = {c['id'] for c in batch}
             view = packet(batch, active_meanings)
             provided_blocks = view['blocks']
@@ -2921,7 +3286,8 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
     finding_blocks = finding_block_ids(run, requirement, findings)
     # Keep each selected parser unit's mandatory context, without unrelated packed targets.
     join_chunks = autoschema.chunks(run['blocks'], options['context_tokens'], options['review_tokens'], 1)
-    join_blocks = related_blocks(run, [*join_meanings, dict(evidence=[dict(block_id=bid) for bid in finding_blocks])], join_claims, chunks=join_chunks)
+    join_blocks = related_blocks(run, [*join_meanings, *(meanings if public_source_only else []),
+        dict(evidence=[dict(block_id=bid) for bid in finding_blocks])], join_claims, chunks=join_chunks)
     join_blocks = [block for bid in dict.fromkeys(b['id'] for b in join_blocks)
                    for block in execution.contiguous_evidence_views(join_blocks, bid)]
     preservation_ids = sorted({v['before']['id'] for r in context for v in r['changes'] if v['before'] and v['after']})
@@ -2942,6 +3308,20 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
         if not generated_findings:
             join_type = create_model('NoIndependentFindingResolution', __base__=join_type,
                 finding_resolutions=(join_type.model_fields['finding_resolutions'].annotation, Field(max_length=0)))
+    if not join_keys and not final_check_keys:
+        join_type = create_model('EmptyScopeRequirementJoinCheck', __base__=join_type,
+            checks=(join_type.model_fields['checks'].annotation, Field(max_length=0)),
+            dependencies=(join_type.model_fields['dependencies'].annotation, Field(max_length=0)))
+    if public_source_only:
+        from .business_models import PublicItemExpressionCheck
+        public_items = source['public_scope']['public_items']
+        contribution_ids = sorted({cid for row in compact['checks'] for cid in row['claim_ids']})
+        item_type = create_model('BoundPublicItemExpressionCheck', __base__=PublicItemExpressionCheck,
+            item_id=(Literal[tuple(item['id'] for item in public_items)], Field(...)),
+            meaning_keys=(list[Literal[tuple(m['key'] for m in meanings)]] if meanings else list[str], Field(max_length=len(meanings))),
+            claim_ids=(list[Literal[tuple(contribution_ids)]] if contribution_ids else list[str], Field(max_length=len(contribution_ids))))
+        join_type = create_model('PublicItemContributionSynthesis', __base__=join_type,
+            public_item_checks=(list[item_type], Field(min_length=len(public_items), max_length=len(public_items))))
     # No repeated local output transcripts or source batch history in the join.
     # The source statements and their claim locations remain complete.
     preservation_instruction = ('\nrepair_context의 실제 수정 대상마다 원래 정상 의미 전체와 현재 after/replacements/claims의 위치를 대조해 preservation_checks에 명시한다. '
@@ -3001,6 +3381,17 @@ public_scope_work는 과거 처리 이력이며 현재 표현 판정이나 새 �
 source/candidate/requirement_binding_valid=false인 상태·gap·followup을 현재 판정으로 사용하지 않는다.
 현재 제공 후보와 local_judgments로 판단하고, 처리 범위 밖의 과거 not_found를 현재 누락으로 확정하지 않는다.
 '''
+    if public_source_only:
+        join_instruction += '''
+public_scope_work는 원문 적용범위·필수 의미 선택만 수행했으며 후보 표현은 아직 판정하지 않았다.
+원래 public_answer_items 각각을 public_item_checks에서 실제 원문과 local_judgments의 기여 위치로 대조한다.
+검색 context 분기는 새 필수 항목이 아니다. 원래 item_id마다 정확히 한 행을 반환한다.
+represented는 필요한 의미·조건·예외·문서 간 전제가 실제 R의 represented 기여와 자기 원문 지지 후보에 모두 있는 경우다.
+meaning_keys/claim_ids에는 그 실제 R 위치를, evidence에는 해당 원문 근거를 선택한다. 정상 부분만 있으면 partial이며 미확정은 unknown이다.
+원문 available, 일부 의미의 성공 개수, 다른 항목의 성공만으로 해당 항목이나 전체 질문을 완료하지 않는다.
+미선택/미읽기 요청이 현재 실제 R 근거로 해소되지 않았으면 그 항목을 완료하지 않는다.
+모든 원래 항목과 연결 전제를 확인하지 못하면 satisfied/conjunctions_satisfied는 false다.
+'''
     if any(f['origin'] == 'qa' for f in findings):
         join_instruction += '''
 origin=qa인 finding은 미검증 표현 공백 지적이며 candidate/source 오류나 정답이 아니다.
@@ -3059,6 +3450,7 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
             **(dict(repair_context=[dict(r, targets=[{k: v for k, v in target.items() if k != 'review_records'}
                 for target in r['targets']]) for r in context],
                 local_preservation_checks=compact['preservation_checks']) if preservation_ids else {})), join_type)
+    public_item_output = deepcopy((result or {}).get('public_item_checks', []))
     conjunction_output = deepcopy((result or {}).get('conjunction_reviews', []))
     remainder_keys = {c['meaning_key'] for c in (result or {}).get('checks', []) if c['status'] == 'partial'}
     if result is not None and split_candidates:
@@ -3121,11 +3513,13 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
                      resolution_keys={m['key'] for m in source['meanings']} if split_roles else valid_rows['source_checks'],
                      expression_keys=(valid_rows['checks'] | valid_rows['retained_missing']) - failed_keys,
                      source_joined=source_joined, retained_source_resolutions=[r['resolution'] for r in retained])
+    if public_source_only:
+        retain_public_item_checks(run, source, result, public_item_output, join_blocks)
     conjunction_errors = resolve_conjunctions(run, requirement, source, result, conjunction_output,
         join_blocks, join_claims, response_unit_id(run)) if conjunctions else []
     missing = any(c['status'] in {'missing', 'partial', 'unknown'} for c in result['checks'])
     return result, dict(batches=receipts, claim_ids=sorted(checked_ids), failures=failures,
-                        pool_hash=pool_hash(run) if missing else None,
+                        pool_hash=pool_hash(run, requirement) if missing else None,
                         candidate_inventory_ids=sorted(all_ids), inventory_count=len(claims),
                         exact_row_exclusions=row_exclusions, exact_row_bindings=bindings,
                         findings=findings, finding_resolutions=deepcopy(result.get('finding_resolutions', [])),

@@ -104,9 +104,13 @@ def execute(service, run_id):
         requirement = next(r for r in run['requirements'] if r['id'] == receipt['requirement_id'])
         assessment = next(a for a in run['assessments'] if a['id'] == receipt['assessment_id'])
         if not business_run.cancelled(service, run) and business_run.repair(service, run, requirement, assessment, proposals=receipt['proposals']):
-            business_review.review_candidate_pool(service, run, run['claims'])
-            direct = business_review.current_candidate_reviews(run)
             added = {c['id'] for c in run['claims']} - {c['id'] for c in parent['claims']}
+            public_request = any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', []))
+            candidates = business_review.candidate_pool(run, requirement)
+            business_review.review_candidate_pool(service, run,
+                [c for c in candidates if c['id'] in added] if public_request else candidates,
+                **(dict(requirement=requirement) if public_request else {}))
+            direct = business_review.current_candidate_reviews(run)
             supported = {cid for cid in added if cid in direct and direct[cid]['check']['claim_support'].get(cid) == 'supported'
                 and not direct[cid]['check']['incorrect_claim_ids'] and not direct[cid]['check']['error_fields']}
             if supported and not business_run.cancelled(service, run):

@@ -42,6 +42,46 @@ def catalog(service):
                     count_policy='선택한 저장 결과의 고유 ID 기준. 반복 실행을 합산하지 않음.')
 
 
+def _edge_claim_ids(edge):
+    return edge.get('claim_ids', []) or ([edge['claim_id']] if edge.get('claim_id') else [])
+
+
+def _search_concept_graph(value, graph):
+    """Project the existing retrieval links; keep stored source identities unchanged."""
+    if not value.get('concepts') or not graph['nodes']:
+        return graph
+    from .graph_retrieval import build
+    full, projected, _, _ = build(value, 'full')
+    nodes = {n['id']: dict(n) for n in graph['nodes']}
+    edges = {e['id']: dict(e) for e in graph['edges']}
+    claims = {c['id'] for c in value.get('claims', [])}
+    records = [c for c in value['concepts'] if c['status'] in {'unreviewed', 'accepted'}]
+    for edge in projected:
+        if edge['relation'] != 'has_concept' or edge['head'] not in nodes:
+            continue
+        label = full.nodes[edge['tail']]['label']
+        bound = [c for c in records if c['target']['kind'] in {'entity', 'event'}
+                 and c['target']['id'] == edge['head'] and label in c['concepts']
+                 and set(c['target']['claim_ids']).intersection(claims)]
+        claim_ids = list(dict.fromkeys(cid for c in bound for cid in c['target']['claim_ids'] if cid in claims))
+        if not claim_ids:
+            continue
+        provenance = dict(claim_ids=claim_ids, concept_record_ids=[c['id'] for c in bound],
+            request_ids=list(dict.fromkeys(c['request_id'] for c in bound if c.get('request_id'))),
+            work_ids=list(dict.fromkeys(c['work_id'] for c in bound if c.get('work_id'))))
+        edges[edge['id']] = dict(edge, **provenance)
+        node = nodes.setdefault(edge['tail'], dict(id=edge['tail'], kind='search_concept', label=label,
+            state='unapproved_search_concept', approved_is_a=False))
+        for key, values in provenance.items():
+            node[key] = list(dict.fromkeys([*node.get(key, []), *values]))
+    for edge in edges.values():
+        if edge['relation'] != 'has_concept' and full.has_edge(edge['head'], edge['tail'], edge['id']):
+            concepts = full.edges[edge['head'], edge['tail'], edge['id']].get('concepts')
+            if concepts is not None:
+                edge['concepts'] = list(concepts)
+    return dict(graph, nodes=list(nodes.values()), edges=list(edges.values()))
+
+
 def _scope(service, kind, scope_id):
     if kind not in {'run', 'source_graph'}:
         raise ValueError('지원하지 않는 저장 범위입니다.')
@@ -56,7 +96,8 @@ def _scope(service, kind, scope_id):
     else:
         # Source-graph snapshots store accepted claims, not an approved ontology.
         from .autoschema import graph as stored_claim_graph
-        graph = stored_claim_graph(value.get('claims', []))
+        graph = stored_claim_graph(value.get('claims', []), value.get('blocks', []))
+    graph = _search_concept_graph(value, graph)
     return value, graph, sources, versions
 
 
@@ -66,12 +107,14 @@ def _claim_view(claim, blocks, sources, versions):
         block = blocks.get(ref.get('block_id'), {})
         version_id = ref.get('source_version_id') or block.get('source_version_id')
         source = sources.get(versions.get(version_id, {}).get('source_id'), {})
-        evidence.append(dict(**ref, source_title=source.get('title'), locator=block.get('locator'),
+        evidence.append(dict(**ref, source_title=source.get('title'), source_url=source.get('source_url'),
+                             rights=source.get('rights'), locator=block.get('locator'),
                              block_text=block.get('text'), source_id=source.get('id'),
                              version_file={k: versions.get(version_id, {}).get(k) for k in ['id', 'filename', 'dates']}))
     return dict(**{k: claim.get(k) for k in ['id', 'role', 'statement', 'conditions', 'exceptions', 'period',
                 'references', 'review_status', 'qualifier_status', 'semantic_status', 'extraction_error', 'superseded_by']},
                 evidence=evidence, meanings=(claim.get('interpretation') or {}).get('meanings', []),
+                interpretation_errors=(claim.get('interpretation') or {}).get('errors', []),
                 editable=claim.get('role') == 'event_entity' and not claim.get('extraction_error') and not claim.get('superseded_by'))
 
 
@@ -256,7 +299,7 @@ def answers(service, kind, scope_id, answer_id=None):
 
 def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all', offset=0, limit=40,
             relation_type='', direction='both', source_id='', review_state='', depth=1, graph_root=''):
-    if item_kind not in {'all', 'node', 'entity', 'event', 'relation', 'claim', 'concept'} or offset < 0 or not 1 <= limit <= 100:
+    if item_kind not in {'all', 'node', 'entity', 'event', 'relation', 'claim', 'concept', 'search_concept'} or offset < 0 or not 1 <= limit <= 100:
         raise ValueError('목록 조건이 올바르지 않습니다.')
     if direction not in {'both', 'out', 'in'} or not 1 <= depth <= 3:
         raise ValueError('그래프 탐색 조건이 올바르지 않습니다.')
@@ -266,34 +309,73 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
     edges = {e['id']: e for e in graph['edges']}
     claims = {c['id']: c for c in value.get('claims', [])}
     blocks = {b['id']: b for b in value.get('blocks', [])}
-    rows = [dict(id=n['id'], kind=n['kind'], label=n['label'], claim_ids=n.get('claim_ids', [])) for n in nodes.values()]
-    rows += [dict(id=e['id'], kind='relation', label=e['relation'], claim_ids=[e['claim_id']],
+    stored_concepts = value.get('concepts', [])
+    known_claims = set(claims)
+    if kind == 'source_graph' and value.get('run_id'):
+        with service.repository.connect() as db:
+            known_claims.update(row[0] for row in db.execute("""SELECT json_extract(claim.value,'$.id')
+                FROM runs, json_each(runs.payload,'$.claims') claim WHERE runs.id=?""", (value['run_id'],)))
+    concept_records, concept_issues = [], {}
+    for record in stored_concepts:
+        target = record['target']
+        ids = set(target.get('claim_ids', []))
+        if kind == 'source_graph' and ids and ids <= known_claims and not ids.intersection(claims):
+            continue  # Known unselected claims remain in the stored snapshot and original run.
+        concept_records.append(record)
+        if kind == 'source_graph':
+            linked = (any(e['relation'] == target['label'] and ids.intersection(_edge_claim_ids(e)) for e in edges.values())
+                      if target['kind'] == 'relation' else target['id'] in nodes)
+            if not ids or not ids <= known_claims or not linked:
+                concept_issues[record['id']] = '현재 주장·그래프의 대상 연결 확인 필요'
+    rows = [dict(id=n['id'], kind=n['kind'], label=n['label'], claim_ids=n.get('claim_ids', []),
+                 **{k:n[k] for k in ('concept_record_ids', 'request_ids', 'work_ids', 'state') if k in n}) for n in nodes.values()]
+    rows += [dict(id=e['id'], kind='relation', label=e['relation'], claim_ids=_edge_claim_ids(e),
+                  **{k:e[k] for k in ('concept_record_ids', 'request_ids', 'work_ids', 'concepts', 'approved_is_a') if k in e},
                   head=e['head'], tail=e['tail'], head_label=nodes.get(e['head'], {}).get('label'),
                   tail_label=nodes.get(e['tail'], {}).get('label')) for e in edges.values()]
     graph_rows = rows[:]
     names = Counter(n['label'] for n in nodes.values())
     for row in rows:
-        if row['kind'] != 'relation' and names[row['label']] > 1:
+        if row['kind'] in {'entity', 'event'} and names[row['label']] > 1:
             own = next((claims[c] for c in row['claim_ids'] if c in claims), {})
-            row['disambiguation'] = own.get('statement', '')
+            titles = list(dict.fromkeys(sources.get(versions.get(v, {}).get('source_id'), {}).get('title')
+                or versions.get(v, {}).get('filename') or v for c in row['claim_ids'] if c in claims
+                for v in claims[c].get('source_version_ids', [])))
+            row['disambiguation'] = ' · '.join([*titles, own.get('statement', '')]).strip(' ·')
     rows += [dict(id=c['id'], kind='claim', label=c.get('statement') or '문장 미기록', claim_ids=[c['id']],
                   state=c.get('review_status', 'unrecorded'), issue=c.get('extraction_error')) for c in claims.values()]
-    rows += [dict(id=c['id'], kind='concept', label=c['target']['label'], claim_ids=c['target'].get('claim_ids', []),
-                  state=c['status'], concepts=c.get('concepts', [])) for c in value.get('concepts', [])]
+    rows += [dict(id=c['id'], kind='concept', label=c['target']['label'],
+                  claim_ids=([cid for cid in c['target'].get('claim_ids', []) if cid in claims]
+                             if kind == 'source_graph' else c['target'].get('claim_ids', [])),
+                  state=c['status'], concepts=c.get('concepts', []), issue=concept_issues.get(c['id']),
+                  request_ids=[c['request_id']] if c.get('request_id') else [],
+                  work_ids=[c['work_id']] if c.get('work_id') else []) for c in concept_records]
     query = q.strip().casefold()
     def claim_matches(claim_id):
         claim = claims.get(claim_id, {})
         ids = claim.get('source_version_ids') or [e.get('source_version_id') for e in claim.get('evidence', [])]
         return (not source_id or any(versions.get(v, {}).get('source_id') == source_id for v in ids)) and (
             not review_state or claim.get('review_status', 'unrecorded') == review_state)
-    eligible_edges = [e for e in edges.values() if (not relation_type or e['relation'] == relation_type) and claim_matches(e['claim_id'])]
+    if source_id or review_state:
+        records = {c['id']: c for c in concept_records}
+        for row in rows:
+            if row['kind'] != 'search_concept':
+                continue
+            row['claim_ids'] = [cid for cid in row['claim_ids'] if claim_matches(cid)]
+            bound = [records[rid] for rid in row['concept_record_ids']
+                     if set(records[rid]['target']['claim_ids']).intersection(row['claim_ids'])]
+            row['concept_record_ids'] = [c['id'] for c in bound]
+            row['request_ids'] = list(dict.fromkeys(c['request_id'] for c in bound if c.get('request_id')))
+            row['work_ids'] = list(dict.fromkeys(c['work_id'] for c in bound if c.get('work_id')))
+    eligible_edges = [e for e in edges.values() if (not relation_type or e['relation'] == relation_type)
+                      and any(claim_matches(cid) for cid in _edge_claim_ids(e))]
     linked_ids = {n for e in eligible_edges for n in [e['head'], e['tail']]}
     eligible_nodes = {n['id'] for n in nodes.values() if (not relation_type or n['id'] in linked_ids)
                       and any(claim_matches(c) for c in n.get('claim_ids', []))}
     eligible_ids = eligible_nodes | {e['id'] for e in eligible_edges}
     eligible_ids.update(r['id'] for r in rows if r['kind'] in {'claim', 'concept'} and
                         (not source_id and not review_state or any(claim_matches(c) for c in r['claim_ids'])))
-    filtered = [r for r in rows if r['id'] in eligible_ids and ((item_kind == 'all' and r['kind'] in {'entity', 'event', 'relation'}) or r['kind'] == item_kind or (item_kind == 'node' and r['kind'] in {'entity', 'event'}))
+    filtered = [r for r in rows if r['id'] in eligible_ids and ((item_kind == 'all' and r['kind'] in {'entity', 'event', 'relation', 'search_concept'}) or r['kind'] == item_kind or (item_kind == 'node' and r['kind'] in {'entity', 'event', 'search_concept'}))
                 and (not query or query in ' '.join(str(r.get(k) or '') for k in ['label', 'head_label', 'tail_label', 'id']).casefold())]
     selected = next((r for r in rows if r['id'] == selected_id), None)
     if selected_id and selected is None:
@@ -307,7 +389,8 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
             visible_nodes.update(n['id'] for n in nodes.values() if set(root['claim_ids']).intersection(n.get('claim_ids', [])))
         else:
             visible_nodes.update([root['head'], root['tail']] if root['kind'] == 'relation' else [root['id']])
-    visible_nodes = set(sorted(visible_nodes)[:node_limit])
+    source_root = any(root['kind'] in {'claim', 'concept'} for root in roots)
+    visible_nodes = set(sorted(visible_nodes, key=lambda n: (source_root and nodes[n]['kind'] == 'search_concept', n))[:node_limit])
     frontier = set(visible_nodes)
     traversed = set()
     for _ in range(depth):
@@ -333,9 +416,14 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
         reason=f'선택 또는 검색 결과에서 방향에 맞는 이웃만 표시 · 이번 범위 최대 {node_limit}개 대상 / 80개 관계. 미표시 항목은 필터·이웃 범위·표시 한도에 따라 제외됩니다.')
     detail = None
     if selected:
-        connected = [e for e in edges.values() if selected_id in (e['head'], e['tail'])]
+        connected = [e for e in eligible_edges if selected_id in (e['head'], e['tail'])]
         detail = dict(item=selected, claims=[_claim_view(claims[c], blocks, sources, versions)
-                      for c in selected['claim_ids'] if c in claims],
+                      for c in selected['claim_ids'] if c in claims and claim_matches(c)],
+                      concept_records=[dict({k:c.get(k) for k in ('id', 'concepts', 'status', 'request_id', 'work_id')},
+                          target=dict(c['target'], claim_ids=[cid for cid in c['target'].get('claim_ids', [])
+                              if cid in claims and claim_matches(cid)]) if kind == 'source_graph' else c['target'])
+                          for c in concept_records if c['id'] in selected.get('concept_record_ids', [])
+                          and any(claim_matches(cid) for cid in c['target'].get('claim_ids', []))],
                       relations=[dict(**e, head_label=nodes.get(e['head'], {}).get('label'),
                                       tail_label=nodes.get(e['tail'], {}).get('label')) for e in connected],
                       changeset_id=value.get('changeset_id'), run_id=value['id'] if kind == 'run' else value.get('run_id'),
@@ -347,7 +435,6 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
     if not version_ids:
         version_ids = list(dict.fromkeys(b.get('source_version_id') for b in blocks.values() if b.get('source_version_id')))
     source_ids = set(versions.get(v, {}).get('source_id') for v in version_ids) - {None}
-    concept_records = value.get('concepts', [])
     return dict(scope=dict(kind=kind, id=scope_id, status=value.get('status') if kind == 'run' else 'selection_recorded', created_at=value.get('started_at') or value.get('created_at'),
                     data_label='자동 추출 결과 · 미승인' if kind == 'run' else '출처 지식 선택 기록 · 온톨로지와 별도',
                     title=' · '.join(sources[s]['title'] for s in sources if s in source_ids) or '출처 정보 미기록',
@@ -356,6 +443,9 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
                 counts=dict(nodes=len(nodes) if graph_available else None, relations=len(edges) if graph_available else None,
                     claims=len(claims), blocks=len(blocks),
                     sources=len(source_ids), versions=len(version_ids), concepts=len(concept_records),
+                    stored_concepts=len(stored_concepts), historical_concepts=len(stored_concepts) - len(concept_records),
+                    unresolved_concept_links=len(concept_issues),
+                    search_concepts=sum(n['kind'] == 'search_concept' for n in nodes.values()),
                     failed_concepts=sum(c.get('status') == 'failed' for c in concept_records),
                     excluded_claims=sum(bool(c.get('extraction_error') or c.get('superseded_by')) for c in claims.values()),
                     claim_review=dict(Counter(c.get('review_status', 'unrecorded') for c in claims.values()))),

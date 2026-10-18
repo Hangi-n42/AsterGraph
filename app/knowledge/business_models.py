@@ -43,6 +43,7 @@ class BusinessRunRequest(BaseModel):
     source_unit_policy: Literal['whole', 'explicit_html_sections_v1'] = 'whole'
     model: str | None = None
     review_model: str | None = None
+    review_contract: Literal['requirement-local-review-v8-owned-errors', 'requirement-local-review-v13-source-application'] | None = None
     context_tokens: int = Field(default=49152, ge=4096)
     extraction_target_chars: int = Field(default=1000, ge=1)
     representation_context_tokens: int | None = Field(default=None, ge=4096)
@@ -372,6 +373,30 @@ class PublicItemCoverage(BaseModel):
 class PublicScopeCheck(BaseModel):
     items: list[PublicItemCoverage]
     meaning_challenges: list[GroundedMeaningChallenge]
+
+
+class PublicSourceItemSelection(BaseModel):
+    model_config = {'extra': 'forbid'}
+    item_id: str
+    meaning_keys: list[str]
+    source_state: Literal['available', 'unselected', 'unread', 'not_provided', 'unknown']
+    read_block_ids: list[str]
+    gap: str
+    reason: str
+
+
+class PublicSourceScopeCheck(PublicScopeCheck):
+    items: list[PublicSourceItemSelection]
+
+
+class PublicItemExpressionCheck(BaseModel):
+    model_config = {'extra': 'forbid'}
+    item_id: str
+    status: Literal['represented', 'partial', 'missing', 'unknown']
+    meaning_keys: list[str]
+    claim_ids: list[str]
+    evidence: list[EvidenceQuote]
+    reason: str
 
 
 def expression_evidence_before_verdict(schema):

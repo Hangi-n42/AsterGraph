@@ -102,7 +102,7 @@ def test_existing_representation_path_uses_expression_only_and_delta_join(monkey
         calls.append(deepcopy(context))
         assert 'source_checks' not in schema.model_fields
         if context['mode'] == 'requirement_join':
-            assert schema is RequirementSynthesisCheck
+            assert issubclass(schema, RequirementSynthesisCheck)
             assert context['requirement']['criterion'] == '전체 요구 기준'
             assert context['review_meaning_keys'] == []
             return synthesis()

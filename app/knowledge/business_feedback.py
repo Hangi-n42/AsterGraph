@@ -78,7 +78,7 @@ def bind_gaps(parent, qa, basis, snapshot, task_ids):
                 **(dict(meaning_version=autoschema.identifier('meaning', meanings[0])) if len(meanings) == 1 else
                    dict(meaning_versions={m['key']: autoschema.identifier('meaning', m) for m in meanings})),
                 source_fingerprint=business_review.preservation_source_version(parent, parent['input_version_ids']),
-                candidate_pool_hash=business_review.pool_hash(parent),
+                candidate_pool_hash=business_review.pool_hash(parent, requirement),
                 authority='unverified_QA_observation_not_source_truth_candidate_error_or_recovery_action'))
     return dict(qa_run_id=qa['id'], source_run_id=basis['id'], snapshot_id=snapshot['id'],
                 task_ids=list(task_ids), findings=findings, deferred=deferred)
@@ -167,7 +167,8 @@ def execute(service, run_id):
             if assessment['id'] != receipt['assessment_ids'][-1]:
                 receipt['assessment_ids'].append(assessment['id'])
             if options['repair'] and not business_run.cancelled(service, run) and business_run.repair(service, run, requirement, assessment):
-                business_review.review_candidate_pool(service, run, run['claims'])
+                if not any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
+                    business_review.review_candidate_pool(service, run, business_review.candidate_pool(run, requirement))
                 if business_run.cancelled(service, run):
                     break
                 assessment = business_run.assess(service, run, requirement, source=assessment['source'],

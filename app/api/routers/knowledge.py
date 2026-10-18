@@ -160,6 +160,11 @@ def business_change(changeset_id: str, service=Depends(get_knowledge_service)):
     return result(business_use.change_view(service, changeset_id))
 
 
+@router.post('/business/runs/{run_id}/publish-candidates', response_model=KnowledgeResponse)
+def publish_business_candidates(run_id: str, service=Depends(get_knowledge_service)):
+    return result(business_use.publish_terminal_candidates(service, run_id))
+
+
 @router.post('/business/changes/{changeset_id}/decisions', response_model=KnowledgeResponse)
 def business_decision(changeset_id: str, request: BusinessDecision, service=Depends(get_knowledge_service)):
     return result(business_use.decide(service, changeset_id, request))
