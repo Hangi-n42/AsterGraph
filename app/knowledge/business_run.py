@@ -349,8 +349,8 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
         save(service, run)
         return unit['response']
     save(service, run)
-    estimate = request_tokens(messages, schema, budget)
-    unit['input_budget'] = dict(estimate_tokens=estimate, method='utf8_bytes/2+output+1000', exact=False)
+    unit['input_budget'] = request_budget(run, messages, schema, budget, review=review)
+    estimate = unit['input_budget']['estimate_tokens']
     if estimate > request.context_tokens:
         unit.update(status='failed', error='input_capacity', finished_at=utcnow())
         save(service, run)
@@ -367,6 +367,20 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
 
 def request_tokens(messages, schema, max_tokens):
     return (len(encode(messages).encode()) + len(encode(schema).encode())) // 2 + max_tokens + 1000
+
+
+def request_budget(run, messages, schema, max_tokens, *, review=True):
+    from app.generation.model_input_budget import count
+    role = 'review' if review else 'draft'
+    model = run['recipe'].get('models', {}).get(role)
+    measured, reason = count(run['recipe'].get('generation', {}), model,
+        run.get('model_identity', {}).get(role), messages, schema, run['recipe']['options'].get('think'))
+    if measured is None:
+        return dict(estimate_tokens=request_tokens(messages, schema, max_tokens),
+            method='utf8_bytes/2+output+1000', exact=False, fallback_reason=reason)
+    return dict(estimate_tokens=measured['prompt_tokens'] + measured['schema_reserve_tokens'] + max_tokens + 1000,
+        method='verified-local-rendered-tokens+separate-schema-reserve+output+1000', exact=False,
+        output_reserve_tokens=max_tokens, safety_reserve_tokens=1000, **measured)
 
 
 def evidence_fields(output_type):

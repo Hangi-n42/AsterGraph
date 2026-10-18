@@ -1452,8 +1452,8 @@ candidate_inventory와 source_inventory는 전체 탐색 목록이다. 미제공
 '''
     def oversized(direct):
         request = execution.json_request(run, 'requirement_application', instruction, packet(direct), schema)
-        return execution.request_tokens(request['messages'], request['schema'],
-            request['max_tokens'] or run['recipe']['options']['review_tokens']) > run['recipe']['options']['context_tokens']
+        return execution.request_budget(run, request['messages'], request['schema'],
+            request['max_tokens'] or run['recipe']['options']['review_tokens'])['estimate_tokens'] > run['recipe']['options']['context_tokens']
     direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
     if oversized(direct):
         return public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory)
@@ -2366,7 +2366,7 @@ def review_candidate_pool(service, run, claims, *, requirement=None):
         instruction, payload, schema = candidate_request(run, batch, context)
         request = execution.json_request(run, 'candidate_source_review', instruction, payload, schema)
         options = run['recipe']['options']
-        if len(batch) > 1 and execution.request_tokens(request['messages'], request['schema'], options['review_tokens']) > options['context_tokens']:
+        if len(batch) > 1 and execution.request_budget(run, request['messages'], request['schema'], options['review_tokens'])['estimate_tokens'] > options['context_tokens']:
             middle = len(batch) // 2
             pending[0:0] = [batch[:middle], batch[middle:]]
             continue
@@ -3104,7 +3104,7 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
         request = execution.json_request(run, 'requirement_representation', instruction,
                                         packet(batch, active_meanings), local_type)
         budget = request['max_tokens'] or options['review_tokens']
-        if execution.request_tokens(request['messages'], request['schema'], budget) <= (
+        if execution.request_budget(run, request['messages'], request['schema'], budget)['estimate_tokens'] <= (
                 options.get('representation_context_tokens') or options['context_tokens']):
             return [(batch, active_meanings)]
         if len(batch) > 1:

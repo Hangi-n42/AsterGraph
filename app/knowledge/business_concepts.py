@@ -40,7 +40,7 @@ def prepare(parent, targets, mode, *, service=None, source_context=None):
     options = parent['recipe']['options']
     for target in targets:
         messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode, source_context=context)
-        estimate = business_run.request_tokens(messages, None, options['concept_tokens'])
+        estimate = business_run.request_budget(parent, messages, None, options['concept_tokens'], review=False)['estimate_tokens']
         if target['kind'] != 'relation' or len(target['claim_ids']) < 2 or estimate <= options['context_tokens']:
             planned.append(dict(target=target, messages=messages, selection=selection))
             continue
@@ -49,7 +49,7 @@ def prepare(parent, targets, mode, *, service=None, source_context=None):
         for claim_id in target['claim_ids']:
             trial = dict(target, claim_ids=pending + [claim_id])
             trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode, source_context=context)
-            if pending and business_run.request_tokens(trial_messages, None, options['concept_tokens']) > options['context_tokens']:
+            if pending and business_run.request_budget(parent, trial_messages, None, options['concept_tokens'], review=False)['estimate_tokens'] > options['context_tokens']:
                 groups.append(pending)
                 pending = []
             pending.append(claim_id)
