@@ -359,7 +359,32 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
-def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
+def source_edge_candidates(edges, edge_scores, passages, source_ranking):
+    dense = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))
+    sources = {}
+    for rank, hit in enumerate(source_ranking, 1):
+        if hit['score'] > 0:
+            for cid in dict.fromkeys(passages[hit['block_id']]['claim_ids']):
+                sources.setdefault(cid, []).append(dict(rank=rank, passage_id=hit['block_id']))
+    rows = {}
+    for rank, i in enumerate(dense, 1):
+        edge = edges[i]
+        linked = sources.get(edge.get('claim_id'), []) if edge['relation'] != 'has_concept' else []
+        source_rank = min((hit['rank'] for hit in linked), default=None)
+        dense_value = 1 / (60 + rank)
+        source_value = 1 / (60 + source_rank) if source_rank is not None else 0
+        rows[edge['id']] = dict(dense_rank=rank, dense_contribution=dense_value,
+            source_rank=source_rank, source_contribution=source_value,
+            source_passages=linked, score=dense_value + source_value)
+    ordered = sorted(dense, key=lambda i: (-rows[edges[i]['id']]['score'],
+        rows[edges[i]['id']]['dense_rank'], edges[i]['id']))
+    return ordered[:30], dict(contract='source-passage-claim-edge-max-rank-v1', rrf_k=60,
+        source_ranking=source_ranking, edge_scores=rows, ranked_edge_ids=[edges[i]['id'] for i in ordered])
+
+
+def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None, source_passage_candidates=False):
+    if source_passage_candidates and request.retrieval != 'hipporag2':
+        raise ValueError('원문 관계 후보 수집은 명시한 hipporag2 실험에서만 지원합니다.')
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
     if not passages:
@@ -405,6 +430,12 @@ def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     selected = []
     if request.retrieval in {'hipporag2', 'hybrid_graph'} and edges:
         indices = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))[:30]
+        if source_passage_candidates:
+            from .discovery_profile import FrozenIndex
+            index = FrozenIndex([dict(id=pid, file_id=p['evidence']['source_version_id'],
+                text=search_texts[pid]) for pid, p in passages.items()], preserve_numbers=True)
+            indices, trace['candidate_collection'] = source_edge_candidates(
+                edges, edge_scores, passages, index.rank(query, set(passages)))
         candidates = [dict(id=edges[i]['id'], triple=edges[i]['text'], status=edges[i]['status']) for i in indices]
         aliases = {c['id']: f'e{i+1}' for i, c in enumerate(candidates)}
         schema = create_model('RelevantEdges', selected_ids=(list[Literal[tuple(aliases)]],
