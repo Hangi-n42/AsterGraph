@@ -1,5 +1,6 @@
 """Review source claims without turning search concepts into approved ontology types."""
 from copy import deepcopy
+from contextlib import nullcontext
 import json
 import re
 from time import monotonic
@@ -113,7 +114,7 @@ def review_eligibility(change, run):
     return eligible & unchanged, blocked
 
 
-def publish(service, run):
+def publish(service, run, *, connection=None):
     eligible, blocked = eligibility(run)
     latest = {a['requirement_id']: a for a in run['assessments']}
     change = dict(id=uuid4().hex, kind='source_graph', revision=0, run_id=run['id'], created_at=utcnow(),
@@ -124,12 +125,59 @@ def publish(service, run):
                   promotion_status='source_claim_review; has_concept_is_not_approved_is_a')
     if any((a.get('source') or {}).get('public_scope') for a in latest.values()):
         change['public_scope_usage'] = 'current_own_source_candidates_only_not_requirement_or_connection_approval'
-    with service.lock, service.repository.connect() as db:
+    with service.lock, (nullcontext(connection) if connection is not None else service.repository.connect()) as db:
         if run.get('source_rebuild') or run.get('source_rebuild_guard'):
-            db.execute('BEGIN IMMEDIATE')
+            if not db.in_transaction:
+                db.execute('BEGIN IMMEDIATE')
             from .business_rebuild import validate_run
             validate_run(service, db, run)
         db.execute('INSERT INTO changesets VALUES(?,?)', (change['id'], encode(change)))
+    return change
+
+
+def publish_terminal_candidates(service, run_id):
+    """Explicitly expose current reviewable candidates without completing failed work."""
+    with service.lock, service.repository.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        if service.closed or service.repository.has_active_runs(db):
+            raise KnowledgeConflict('실행 중이거나 종료 중에는 후보를 게시할 수 없습니다.')
+        run = service.repository.get(db, 'runs', run_id)
+        if run.get('kind') != 'business' or run['status'] not in {'failed', 'cancelled', 'partial', 'review_ready', 'succeeded'}:
+            raise KnowledgeConflict('종료된 업무 지식 실행만 명시적으로 게시할 수 있습니다.')
+        latest = {a['requirement_id']: a for a in run['assessments']}
+        if not latest:
+            raise KnowledgeConflict('현재 검토 가능한 실제 평가 기록이 없습니다.')
+        for requirement in run['requirements']:
+            current = service.repository.get(db, 'requirements', requirement['id'])
+            if current['revision'] != requirement['revision'] or current['status'] == 'needs_review':
+                raise KnowledgeConflict('요구 또는 관련 원문 변경 이후 재검수가 필요합니다.')
+            assessment = latest.get(requirement['id'])
+            if assessment and assessment.get('input_fingerprint') != business_run.assessment_fingerprint(
+                    run, requirement, assessment['source'], assessment.get('review_scope')):
+                raise KnowledgeConflict('현재 원문·후보·요구와 평가 기록이 다릅니다.')
+        context = dict(mode='explicit_terminal_candidates_only', run_status=run['status'], run_error=run.get('error'),
+            recorded_assessments=[dict(id=a['id'], requirement_id=a['requirement_id'], status=a['status'],
+                errors=deepcopy(a['errors']), issues=deepcopy(a.get('issues', []))) for a in latest.values()],
+            unassessed_requirement_ids=[r['id'] for r in run['requirements'] if r['id'] not in latest],
+            authority='candidate_review_permission_not_requirement_completion_or_Scope_correction')
+        existing = [c for row in db.execute('SELECT payload FROM changesets')
+                    if (c := json.loads(row['payload'])).get('run_id') == run_id]
+        if existing:
+            change = existing[0]
+            eligible, _ = review_eligibility(change, run)
+            if (len(existing) != 1 or change.get('publication_context') != context
+                    or change['candidates'] != run['claims'] or change['eligible_ids'] != sorted(eligible)
+                    or change['requirement_assessment_ids'] != {rid: a['id'] for rid, a in latest.items()}
+                    or run.get('changeset_id') not in {None, change['id']}):
+                raise KnowledgeConflict('이미 게시된 변경안과 현재 검토 기록이 다릅니다. 기존 변경안을 확인하세요.')
+        else:
+            change = publish(service, run, connection=db)
+            if not change['eligible_ids']:
+                raise KnowledgeConflict('현재 검토 가능한 후보가 없습니다.')
+            change['publication_context'] = context
+            service.repository.save(db, 'changesets', change)
+        run['changeset_id'] = change['id']
+        service.repository.save(db, 'runs', run)
     return change
 
 
@@ -207,6 +255,8 @@ def decide(service, changeset_id, request):
         decision['explicit_meaning_reviews'] = deepcopy(explicit)
         if change.get('public_scope_usage'):
             decision['public_scope_usage'] = change['public_scope_usage']
+        if change.get('publication_context'):
+            decision['publication_context'] = deepcopy(change['publication_context'])
         change['decisions'].append(decision['id'])
         change['revision'] += 1
         service.repository.save(db, 'changesets', change)
@@ -228,6 +278,8 @@ def decide(service, changeset_id, request):
         snapshot['explicit_meaning_reviews'] = deepcopy(explicit)
         if change.get('public_scope_usage'):
             snapshot['public_scope_usage'] = change['public_scope_usage']
+        if change.get('publication_context'):
+            snapshot['publication_context'] = deepcopy(change['publication_context'])
         direct = business_review.current_candidate_reviews(run)
         snapshot['reviewed_claim_evidence'] = {
             c['id']: dict(claim_version=business_run.autoschema.identifier('claim', c),
@@ -285,7 +337,7 @@ def concept_read_view(service, db, parent, child_id):
     from . import autoschema, concept_work, business_html_debt_rows
     child = service.repository.get(db, 'runs', child_id)
     fingerprint = autoschema.identifier('graph', parent['graph'])
-    rebuilt = autoschema.graph(parent['claims'])
+    rebuilt = autoschema.graph(parent['claims'], parent['blocks'])
     business_html_debt_rows.annotate_graph(rebuilt, parent['claims'])
     if (child.get('kind') != 'business_concept' or child.get('status') != 'succeeded'
             or child.get('parent_run_id') != parent['id'] or child.get('input_version_ids') != parent['input_version_ids']

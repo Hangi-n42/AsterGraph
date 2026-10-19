@@ -89,6 +89,9 @@ def setup(monkeypatch, *, support='supported'):
 
 
 def mock_scope(monkeypatch, run, cid, change=None, captured=None):
+    # These scope-output cases supply review results in setup(); execution of
+    # the new own-source boundary is tested in test_knowledge_public_bounded_flow.
+    monkeypatch.setattr(review, 'review_candidate_pool', lambda *a, **kw: None)
     def answer(_service, current, stage, instruction, packet, schema):
         assert stage == 'requirement_application'
         if captured is not None:
@@ -228,6 +231,9 @@ def test_fieldless_scope_allegation_cannot_rejudge_normal_source(monkeypatch):
 def test_public_r_batches_independent_facts_and_reuses_own_source_verdicts(monkeypatch):
     from app.knowledge.business_models import ContributionReviewCheck, ContributionSynthesisCheck
     run, requirement, source, cid=setup(monkeypatch)
+    # This case supplies direct verdicts; execution/repacking is covered by
+    # test_knowledge_public_bounded_flow with its own review boundary.
+    monkeypatch.setattr(review, 'review_candidate_pool', lambda *a, **kw: None)
     run['recipe']['review_contract']=review.CONTRACT
     source.update(public_scope=dict(review_meaning_keys=['normal','background'], tasks=[],items=[],errors=[],followup=[]),
         completeness='unknown', gaps=[], conjunctions=[], meaning_conjunctions=[], findings=[],source_batches=[],review_contract=review.CONTRACT)
@@ -243,7 +249,7 @@ def test_public_r_batches_independent_facts_and_reuses_own_source_verdicts(monke
                 for m in packet['source']['meanings']], dependencies=[dict(meaning_key=m['key'],premise_keys=[])
                 for m in packet['source']['meanings']])
         else:
-            assert schema is ContributionSynthesisCheck
+            assert issubclass(schema, ContributionSynthesisCheck)
             output.update(satisfied=True,conjunctions_satisfied=True,reason='연결',source_completeness='complete',
                 unselected_source_required=False,finding_resolutions=[])
         return output

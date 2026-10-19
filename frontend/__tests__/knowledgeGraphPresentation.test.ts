@@ -9,6 +9,25 @@ vi.mock("@/lib/knowledgeWorkbench", () => import("../lib/knowledgeWorkbench"));
 vi.mock("@/lib/api", () => ({ API_BASE_URL: 'http://localhost' }));
 vi.mock("@/lib/knowledgeReview", () => import("../lib/knowledgeReview"));
 
+it("shows stored interpretation record errors separately while preserving the accepted statement", () => {
+  const detail: KnowledgeDetail = { item: { id: 'edge', kind: 'relation', label: '관계', claim_ids: ['claim'] }, relations: [], history: [],
+    claims: [{ id: 'claim', role: 'relation', statement: '저장된 정상 문장', review_status: 'accepted', editable: false,
+      meanings: [], evidence: [], interpretation_errors: ['invalid premise state'] }] };
+  const before = JSON.stringify(detail);
+  const render = (value: KnowledgeDetail) => renderToStaticMarkup(createElement(KnowledgeSelection, { detail: value, onSelect: () => {} }));
+  const html = render(detail);
+  for (const text of ['대상·조건 기록에 확인할 오류가 있음', '자동 해석에 저장된 오류 사유 · 의미 판정과 별도', 'invalid premise state', '수락', '저장된 정상 문장']) expect(html).toContain(text);
+  expect(JSON.stringify(detail)).toBe(before);
+  expect(render({ ...detail, claims: [{ ...detail.claims[0], interpretation_errors: [] }] })).not.toContain('대상·조건 기록에 확인할 오류가 있음');
+});
+
+it("keeps an unresolved concept link visible without treating it as an approval or a false claim", () => {
+  const detail: KnowledgeDetail = { item: { id: 'unlinked', kind: 'concept', label: '보존된 대상', claim_ids: [],
+    issue: '현재 주장·그래프의 대상 연결 확인 필요', state: 'failed' }, relations: [], history: [], claims: [] };
+  const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
+  for (const text of ['현재 주장·그래프의 대상 연결 확인 필요', '실패·미연결 기록도 현재 목록에 보존', '승인된 온톨로지가 아닙니다']) expect(html).toContain(text);
+});
+
 it("keeps distinct homonyms, parallel edge IDs and directions while abbreviating only visual labels", () => {
   const graph: KnowledgeGraphView = { depth: 1, nodes: 2, relations: 3, eligible_nodes: 2, eligible_relations: 3,
     omitted_nodes: 0, omitted_relations: 0, filter_excluded_relations: 0, selected_excluded: false, reason: 'contract fixture',
@@ -51,4 +70,46 @@ it("keeps an unknown condition distinct from explicitly absent qualifiers and pr
   expect(html).toContain('예외·기간 / 시점·참조 없음으로 자동 기록');
   expect(html).not.toContain('조건·예외·기간 / 시점·참조 없음');
   expect(html).not.toContain('의미 미승인');
+});
+
+it("keeps search concept nodes distinct and links their actual concept records", () => {
+  const graph: KnowledgeGraphView = { depth: 1, nodes: 2, relations: 1, eligible_nodes: 2, eligible_relations: 1,
+    omitted_nodes: 0, omitted_relations: 0, filter_excluded_relations: 0, selected_excluded: false, reason: 'contract fixture',
+    items: [{ id: 'source-node', kind: 'entity', label: '같은 이름', claim_ids: ['c1'], disambiguation: '검사 자료 A' },
+      { id: 'search-node', kind: 'search_concept', label: '같은 이름', claim_ids: ['c1', 'c2'], concept_record_ids: ['record1', 'record2'] },
+      { id: 'actual-link', kind: 'relation', label: 'has_concept', head: 'source-node', tail: 'search-node', claim_ids: ['c1'], approved_is_a: false }] };
+  const before = JSON.stringify(graph);
+  const elements = graphElements(graph);
+  expect(elements.map(e => e.data.id)).toEqual(['source-node', 'search-node', 'actual-link']);
+  expect(elements[1].data.kind).toBe('search_concept');
+  expect(elements[0].data.fullLabel).toBe('같은 이름 · 검사 자료 A');
+  expect(elements[2].data).toMatchObject({ source: 'source-node', target: 'search-node', fullLabel: '검색용 개념 연결' });
+  expect(JSON.stringify(graph)).toBe(before);
+  const detail: KnowledgeDetail = { item: graph.items[1], claims: [], relations: [], history: [], concept_records:
+    [1, 2].map(n => ({ id: `record${n}`, target: { id: `target${n}`, label: `출처 대상 ${n}`, kind: 'entity', claim_ids: [`c${n}`] },
+      concepts: ['같은 이름'], status: 'unreviewed', request_id: `request${n}`, work_id: `work${n}` })) };
+  const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
+  for (const text of ['검색용 개념', '대상 동일성·유형 승인과 별도', '연결된 개념화 기록', '출처 대상 1', '출처 대상 2']) expect(html).toContain(text);
+});
+
+it("shows stored public source links and unknown rights without inventing permission", () => {
+  const detail: KnowledgeDetail = { item: { id: 'claim', kind: 'claim', label: '저장 내용', claim_ids: ['claim'] }, relations: [], history: [],
+    claims: [{ id: 'claim', role: 'event_entity', statement: '저장 내용', editable: false, meanings: [],
+      evidence: [{ block_id: 'b1', quote: '저장 발췌', source_url: 'https://example.invalid/source', rights: { status: 'unknown', note: 'unit fixture' } }] }] };
+  const render = (value: KnowledgeDetail) => renderToStaticMarkup(createElement(KnowledgeSelection, { detail: value, onSelect: () => {} }));
+  const html = render(detail);
+  expect(html).toContain('href="https://example.invalid/source"');
+  expect(html).toContain('출처 페이지 열기');
+  expect(html).toContain('등록된 이용 상태 · 미확인');
+  expect(html).not.toContain('이용 허용 기록');
+  detail.claims[0].evidence[0].source_url = 'javascript:invalid()';
+  expect(render(detail)).not.toContain('href="javascript:');
+});
+
+it("renders relation concepts as annotations without adding graph nodes", () => {
+  const detail: KnowledgeDetail = { item: { id: 'relation', kind: 'relation', label: '이름', claim_ids: ['claim'],
+    head_label: '대상', tail_label: '값', concepts: ['명칭 속성'] }, claims: [], relations: [], history: [] };
+  const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
+  expect(html).toContain('관계의 검색용 개념 · 명칭 속성');
+  expect(html).not.toContain('출처별 대상을 연결하는 검색용 개념');
 });

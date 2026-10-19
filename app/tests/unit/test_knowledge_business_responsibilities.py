@@ -324,7 +324,7 @@ def test_new_contract_r_calls_only_contribution_and_reuses_direct_verdicts(monke
             output.update(checks=[dict(meaning_key='m', status='represented', claim_ids=[run['claims'][0]['id']], reason='표현 위치')],
                           dependencies=[dict(meaning_key='m', premise_keys=[])])
         else:
-            assert schema is ContributionSynthesisCheck
+            assert issubclass(schema, ContributionSynthesisCheck)
             output.update(satisfied=True, conjunctions_satisfied=True, reason='모의 결합', source_completeness='complete',
                           unselected_source_required=False, finding_resolutions=[])
         return output

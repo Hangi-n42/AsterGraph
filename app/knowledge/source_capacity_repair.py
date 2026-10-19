@@ -41,10 +41,96 @@ def views(chunk, groups=None, required_context_views=None, additional_context_vi
     return result
 
 
+def empty_event_dependency(run, row):
+    """Only an original successful-empty dependent response can be refreshed here."""
+    if row['role'] != 'event_entity':
+        return None
+    previous = [u for u in run['units'] if u['stage'] == 'event_relation'
+                and u.get('source_chunk_id') == row['chunk_id']]
+    if not previous:
+        return None
+    if (len(previous) != 1 or previous[0]['status'] != 'succeeded'
+            or (previous[0].get('response') or {}).get('parsed') != []):
+        raise ValueError('nonempty_or_unfinished_event_relation_dependency_not_supported')
+    if row.get('groups'):
+        raise ValueError('split_event_entity_dependency_not_supported')
+    previous = previous[0]
+    materialized = {cid for u in run['units']
+        if (u.get('dependency_refresh_origin') or {}).get('unit_id') == previous['id']
+        for cid in u.get('materialized_claim_ids', [])}
+    if any(c['role'] == 'event_relation' and c['chunk_id'] == row['chunk_id']
+           and c['id'] not in materialized for c in run['claims']):
+        raise ValueError('existing_event_relation_claims_not_supported')
+    return previous
+
+
+def refresh_empty_event_relation(service, run, row, original):
+    chunk = next(c for c in run['chunks'] if c['id'] == row['chunk_id'])
+    upstream = [u for u in run['units'] if u['stage'] == 'capacity_repair_event_entity'
+        and (u.get('capacity_repair_origin') or {}).get('unit_id') == row['failed_unit_id']
+        and u.get('repair_view_id') == chunk['id']
+        and (u.get('requested_limits') or {}).get('max_tokens') == row['output_tokens']
+        and (u.get('request_configuration') or {}).get('timeout') == row['timeout']]
+    if not upstream or any(u['status'] != 'succeeded' or 'materialized_claim_ids' not in u for u in upstream):
+        return  # A failed/incomplete upstream repair does not complete its dependency.
+    messages = business_run.extraction_messages(run, chunk, 'event_relation')
+    schema = autoschema.extraction_schema('event_relation')
+    assert original['schema'] == schema and original['reference_map'] == chunk['source_reference_map']
+    if messages == original['messages']:
+        return
+    options = run['recipe']['options']
+    cfg = dict(model=run['recipe']['models']['draft'], generation=run['recipe']['generation'],
+        identity=run['model_identity'], temperature=0, timeout=original['request_configuration']['timeout'])
+    limits = dict(max_tokens=original['executed_limits']['max_tokens'],
+                  context_tokens=options['context_tokens'], think=options['think'])
+    assert original['request_configuration'] == cfg and original['requested_limits'] == original['executed_limits'] == limits
+    metadata = dict(source_chunk_id=chunk['id'], dependency_refresh_origin=dict(
+        run_id=row['origin_run_id'], unit_id=original['id'], failed_upstream_unit_id=row['failed_unit_id'],
+        repaired_upstream_unit_ids=[u['id'] for u in upstream], input_changed=True))
+    prior = [u for u in run['units'] if u['stage'] == 'capacity_dependency_event_relation'
+             and (u.get('dependency_refresh_origin') or {}).get('unit_id') == original['id']]
+    matching = [u for u in prior if all(u.get(k) == v for k,v in metadata.items())
+        and u.get('messages') == messages and u.get('schema') == schema
+        and u.get('reference_map') == chunk['source_reference_map'] and u.get('request_configuration') == cfg
+        and u.get('requested_limits') == limits
+        and (u.get('executed_limits') == limits or u.get('error') == 'input_capacity')]
+    if len(matching) != len(prior):
+        raise ValueError('changed_prior_dependency_refresh_not_supported')
+    finished = [u for u in matching if 'materialized_claim_ids' in u]
+    if finished:
+        for unit in finished:
+            ids = unit['materialized_claim_ids']
+            assert len(ids) == len(set(ids)) and set(ids) <= {c['id'] for c in run['claims']}
+        return
+    unit = next((u for u in matching if u['status'] == 'succeeded' and u.get('response')
+                 and not u['response'].get('failure_kind')), None)
+    if unit:
+        response = unit['response']
+    elif any(u['status'] in {'failed', 'partial'} for u in matching):
+        return  # Do not retry the same failed request without a new cause/fix.
+    else:
+        response = business_run.call(service, run, 'capacity_dependency_event_relation', messages, schema,
+            reference_map=chunk['source_reference_map'], max_tokens=limits['max_tokens'],
+            timeout=cfg['timeout'], capacity_repair=metadata)
+        unit = run['units'][-1]
+    before = len(run['claims'])
+    if response is not None:
+        try:
+            business_run.store_extraction(run, chunk, 'event_relation', response, unit)
+        except ValueError as exc:
+            unit.update(status='failed', error=str(exc))
+    unit['materialized_claim_ids'] = [c['id'] for c in run['claims'][before:]]
+    business_run.save(service, run)
+
+
 def repair(service, run, plan):
     """Keep failed attempts intact; only full new responses enter normal validation."""
     by_id = {u['id']:u for u in run['units']}
     chunks = {c['id']:c for c in run['chunks']}
+    # Existing upstream-only plans keep their behavior; refreshing a dependent
+    # response is a separate, explicitly selected operation with narrower bounds.
+    dependencies = [(row, empty_event_dependency(run, row)) for row in plan
+                    if row.get('refresh_empty_event_relation')]
     for row in plan:
         if business_run.cancelled(service, run):
             return
@@ -129,3 +215,8 @@ def repair(service, run, plan):
                 claim_ids_excluded_from_graph=sorted({c['id'] for c in added}-graph_claims),
                 semantic_quality_approved=False)
             business_run.save(service, run)
+    for row, original in dependencies:
+        if business_run.cancelled(service, run):
+            return
+        if original is not None:
+            refresh_empty_event_relation(service, run, row, original)

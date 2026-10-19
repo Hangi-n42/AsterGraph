@@ -126,3 +126,64 @@ def test_verified_source_resolution_keeps_its_original_candidate_address(source_
     assert resolve(changed)['status']=='unresolved'
     changed=dict(deepcopy(row),claim_ids=['new-unprovided'])
     assert resolve(changed)['status']=='unresolved'
+
+
+@pytest.mark.parametrize('fault',['none','unknown','missing_final'])
+def test_multi_observation_uses_each_final_row_and_blocks_only_pending_keys(bound,fault):
+    parent,*_=bound;source=parent['assessments'][0]['source'];cid=parent['claims'][0]['id']
+    source['meanings']=[dict(deepcopy(source['meanings'][0]),key=k) for k in ['normal','gap','pending']]
+    source['public_scope']['review_meaning_keys']=['normal','gap','pending']
+    finding=dict(id='qa',origin='qa',meaning_keys=['normal','gap','pending'],claim_ids=[],fields=[],text='미검증 묶음')
+    result=judgments(['normal','gap','pending'],ids=[cid])
+    result.update(source_completeness='partial',unselected_source_required=False,finding_resolutions=[])
+    evidence=source['meanings'][0]['evidence']
+    for c in result['checks']:c['evidence']=evidence
+    result['checks'][1].update(status='missing',claim_ids=[])
+    explicit={'normal','gap','pending'}
+    if fault=='unknown':result['checks'][2]['status']='unknown'
+    elif fault=='missing_final':explicit.remove('pending')
+    row=review.qa_check_resolutions([finding],result,explicit)[0]
+    assert row['meaning_keys']==(['normal','gap','pending'] if fault=='none' else ['pending'])
+    assert row['status']==('resolved' if fault=='none' else 'unresolved')
+    result['finding_resolutions']=[row]
+    review.resolve_findings(source,result,[finding],parent['blocks'],parent['claims'],joined=True,
+        resolution_keys={'normal','gap','pending'},expression_keys=explicit)
+    assert {c['meaning_key'] for c in result['meaning_challenges']}==(set() if fault=='none' else {'pending'})
+    assert result['checks'][0]['status']=='represented' and result['checks'][1]['status']=='missing'
+
+
+def test_multi_observation_reaches_final_actions_without_blocking_independent_facts(monkeypatch):
+    from app.knowledge import autoschema
+    from app.tests.unit.test_knowledge_business_missing_recovery import fixture
+    run,req,source=fixture(monkeypatch);run['input_version_ids']=['v']
+    source['meanings'].append(dict(deepcopy(source['meanings'][0]),key='pending'))
+    keys=['part','other','pending'];source['public_scope']['review_meaning_keys']=keys
+    source['findings']=[dict(id='qa',origin='qa',kind='unverified_expression_gap',meaning_keys=keys,
+        scope_meaning_keys=keys,claim_ids=[],fields=[],text='미검증 관찰',unit_id='qa',provided_block_ids=['body'],
+        requirement_version=review.preservation_requirement_version(req),
+        source_fingerprint=review.preservation_source_version(run,['v']),
+        candidate_pool_hash=review.pool_hash(run),meaning_versions={m['key']:autoschema.identifier('meaning',m) for m in source['meanings']})]
+    before=deepcopy(run['claims']);packets=[]
+    def response(s,current,stage,instruction,packet,schema):
+        packets.append(deepcopy(packet));current['units'].append(dict(id='unit'+str(len(packets))))
+        refs=[dict(block_id='body',quote=run['blocks'][0]['text'])]
+        rows=[dict(meaning_key=k,status=status,claim_ids=[before[0]['id']] if status=='represented' else [],
+            reason='현재 대조',represented_content='기존 정상' if status=='represented' else '',
+            missing_content='원문 누락' if status=='missing' else '',missing_evidence=refs if status=='missing' else [])
+            for k,status in zip(keys,['represented','missing','unknown'])]
+        out=dict(checks=rows,dependencies=[dict(meaning_key=k,premise_keys=[]) for k in keys],
+            source_challenges=[],meaning_challenges=[],candidate_challenges=[],preservation_checks=[])
+        if packet['mode']=='requirement_join':
+            assert packet['required_final_check_keys']==sorted(keys)
+            assert len(packet['qa_expression_observations'])==1
+            for row in rows:row.update(revision_basis='rechecked_unchanged',evidence=refs)
+            out.update(satisfied=False,conjunctions_satisfied=True,reason='부분 처리',
+                source_completeness='complete',unselected_source_required=False,finding_resolutions=[])
+        return schema.model_validate(out).model_dump()
+    monkeypatch.setattr(business_run,'json_call',response)
+    assessment=business_run.assess(None,run,req,source=source,focus_meaning_keys=keys)
+    actions={a['meaning_key']:a['action'] for a in assessment['actions']}
+    assert {k:actions[k] for k in keys}==dict(part='maintain',other='recover',pending='hold')
+    assert assessment['blocked_meaning_keys']==['pending'] and not assessment['global_blocks']
+    assert assessment['review_scope']['required_final_check_keys']==sorted(keys)
+    assert run['claims']==before and assessment['source']['meanings']==source['meanings']

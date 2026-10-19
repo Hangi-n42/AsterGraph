@@ -21,7 +21,7 @@ def test_public_evidence_selection_uses_verified_version_and_intersecting_span()
 
 
 @pytest.mark.parametrize('public', [False, True])
-def test_assess_connects_own_source_review_only_for_explicit_public_request(monkeypatch, public):
+def test_assess_defers_public_own_source_review_until_scope_selection(monkeypatch, public):
     run = local_run(); run['recipe']['review_contract'] = business_review.CONTRACT
     requirement = dict(id='r', revision=1, question='신청 접수는?', criterion='원문 조건',
         target='기관', situation='안내', period='', source_ids=[])
@@ -45,8 +45,7 @@ def test_assess_connects_own_source_review_only_for_explicit_public_request(monk
         monkeypatch.setattr(business_review, 'represent', stopped)
     with pytest.raises(RuntimeError, match='observing the bridge'):
         business_run.assess(None, run, requirement, source=source)
-    expected = [[c['id'] for c in run['claims']]] if public else []
-    assert calls == expected
+    assert calls == []
 
 
 def test_partial_requirement_does_not_imply_own_source_failure_or_approval(monkeypatch):

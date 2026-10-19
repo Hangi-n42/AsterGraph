@@ -13,7 +13,7 @@ export function graphElements(graph: KnowledgeGraphView): ElementDefinition[] {
     const name = itemLabel(item);
     const maximum = item.kind === 'event' ? 48 : 26;
     return { data: { id: item.id, label: name.length > maximum ? name.slice(0, maximum) + '…' : name,
-      fullLabel: name, kind: item.kind,
+      fullLabel: [name, item.disambiguation].filter(Boolean).join(' · '), kind: item.kind,
       ...(item.kind === 'relation' ? { source: item.head, target: item.tail } : {}) } };
   });
 }
@@ -42,6 +42,7 @@ export default function KnowledgeGraph({ graph, selectedId, rootId, dataLabel, o
           'text-wrap': 'wrap', 'text-max-width': '162px', 'text-valign': 'center', 'line-height': 1.35,
           width: 190, height: 84, shape: 'round-rectangle', 'overlay-opacity': 0 } },
         { selector: 'node[kind="event"]', style: { 'background-color': '#edf6f2', 'border-color': '#6c9c8b', 'text-max-width': '224px', width: 250, height: 118 } },
+        { selector: 'node[kind="search_concept"]', style: { 'background-color': '#f2eef8', 'border-color': '#9986b2', shape: 'ellipse' } },
         { selector: 'edge', style: { label: '', 'curve-style': 'bezier', 'control-point-step-size': 64,
           'target-arrow-shape': 'triangle', 'arrow-scale': 1.15, 'line-color': '#a9b8c3', 'target-arrow-color': '#8a9eac', width: 1.8,
           color: '#344f62', 'font-size': 14, 'font-family': '"Apple SD Gothic Neo", sans-serif',
@@ -123,15 +124,15 @@ export default function KnowledgeGraph({ graph, selectedId, rootId, dataLabel, o
   }, [selectedId, rootId, graph.items]);
   return <div className={styles.graphPanel}>
     <div className={styles.graphStage}>
-      <div className={styles.graphLegend}><span><i />대상</span><span><i data-kind="event" />업무 내용</span><span className={styles.graphUnreviewed}>{dataLabel}</span></div>
+      <div className={styles.graphLegend}><span><i />대상</span><span><i data-kind="event" />업무 내용</span><span><i data-kind="search_concept" />검색용 개념</span><span className={styles.graphUnreviewed}>{dataLabel}</span></div>
       <div ref={container} className={styles.graphCanvas} aria-hidden="true" />
       {!graph.items.length && <div className={styles.graphEmpty}><strong>표시할 연결이 없습니다</strong><p>필터를 풀거나 다른 대상을 선택하세요.</p></div>}
       <div className={styles.graphZoom} role="group" aria-label="그래프 화면 조작"><button onClick={() => { const cy = instance.current; if (cy) cy.zoom({ level: cy.zoom() * 1.2, renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }); }} aria-label="그래프 확대">＋</button><button onClick={() => { const cy = instance.current; if (cy) cy.zoom({ level: cy.zoom() / 1.2, renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }); }} aria-label="그래프 축소">−</button><button onClick={() => instance.current?.fit(undefined, 42)}>화면 맞춤</button></div>
-      <div className={styles.graphHover}>{hovered || (selected ? `${selected.kind === 'relation' ? '선택 관계' : '선택 대상'} · ${itemLabel(selected)}` : '대상이나 연결선을 선택해 원문과 조건을 확인하세요')}</div>
+      <div className={styles.graphHover}>{hovered || (selected ? `${selected.kind === 'relation' ? '선택 관계' : '선택 대상'} · ${[itemLabel(selected), selected.disambiguation].filter(Boolean).join(' · ')}` : '대상이나 연결선을 선택해 원문과 조건을 확인하세요')}</div>
     </div>
-    <div className={styles.graphToolbar} role="group" aria-label="그래프 조작"><div><strong>대상 {graph.nodes}</strong><span>관계 {graph.relations} · {graph.depth}단계</span></div><button onClick={onFocus} disabled={!selectedId || busy}>선택 주변 보기</button><button onClick={onExpand} disabled={busy || graph.depth >= 3 || !selectedId}>이웃 한 단계 더</button><button onClick={onReset}>처음 범위</button></div>
+    <div className={styles.graphToolbar} role="group" aria-label="그래프 조작"><div><strong>대상·개념 {graph.nodes}</strong><span>관계 {graph.relations} · {graph.depth}단계</span></div><button onClick={onFocus} disabled={!selectedId || busy}>선택 주변 보기</button><button onClick={onExpand} disabled={busy || graph.depth >= 3 || !selectedId}>이웃 한 단계 더</button><button onClick={onReset}>처음 범위</button></div>
     {graph.selected_excluded && <p className={styles.warning}>선택 항목이 현재 필터에서 제외되었습니다. 상세 선택은 유지됩니다.</p>}
-    <div className={styles.graphExtras}><details className={styles.graphList}><summary>동일 그래프 목록 · {graph.items.length}개 항목 <span>키보드로 탐색</span></summary><ul>{graph.items.map(item => <li key={item.id}><button aria-pressed={selectedId === item.id} onClick={() => onSelect(item.id, true)}><span>{item.kind === 'event' ? '업무 내용' : item.kind === 'relation' ? '관계' : '대상'}</span>{item.kind === 'relation' ? `${item.head_label} → ${itemLabel(item)} → ${item.tail_label}` : itemLabel(item)}<small>{item.id}</small></button></li>)}</ul></details>
+    <div className={styles.graphExtras}><details className={styles.graphList}><summary>동일 그래프 목록 · {graph.items.length}개 항목 <span>키보드로 탐색</span></summary><ul>{graph.items.map(item => <li key={item.id}><button aria-pressed={selectedId === item.id} onClick={() => onSelect(item.id, true)}><span>{item.kind === 'event' ? '업무 내용' : item.kind === 'relation' ? '관계' : item.kind === 'search_concept' ? '검색용 개념' : '대상'}</span>{item.kind === 'relation' ? `${item.head_label} → ${itemLabel(item)} → ${item.tail_label}` : itemLabel(item)}<small>{item.disambiguation || item.id}</small></button></li>)}</ul></details>
     <details className={styles.graphList}><summary>표시 범위와 진단</summary><p>필터 통과 대상 {graph.eligible_nodes} · 관계 {graph.eligible_relations} / 미표시 대상 {graph.omitted_nodes} · 관계 {graph.omitted_relations} (필터 제외 {graph.filter_excluded_relations})</p><p>{graph.reason}</p><p>이번 배치·첫 화면 대기 {renderMs == null ? '측정 중' : `${renderMs}ms`} · 브라우저 실측, 통신 제외</p><p>노드 글자 화면 환산 {(18 * renderZoom).toFixed(1)}px · 확대 {Math.round(renderZoom * 100)}%</p><p>확장 시 기존 화면 위치를 유지합니다. 새 이웃이 화면 밖에 있으면 화면 맞춤을 누르세요. 축약한 이름은 상세에서 전체 내용을 확인하세요. 저장된 연결은 인과 검증을 뜻하지 않습니다.</p></details></div>
   </div>;
 }

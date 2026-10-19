@@ -54,13 +54,16 @@ def bind_gaps(parent, qa, basis, snapshot, task_ids):
         if (meanings != old_meanings or not set(keys) <= set(source['public_scope']['review_meaning_keys'])
                 or not set(work[0]['read_block_ids']) <= {b['id'] for b in parent['blocks']}):
             raise KnowledgeConflict('QA 작업의 원문 의미·주소 연결이 바뀌었습니다.')
-        if len(set(keys)) != 1 or len(meanings) != 1 or not rows[0]['unconfirmed']:
-            deferred.append(dict(task_id=tid, reason='gap_not_uniquely_bound_to_one_existing_meaning',
+        if not keys or len(set(keys)) != len(keys) or len(meanings) != len(keys) or not rows[0]['unconfirmed']:
+            deferred.append(dict(task_id=tid, reason='gap_not_bound_to_existing_meaning_set',
                                  original_output=deepcopy(rows[0]), original_work_record=deepcopy(work[0])))
             continue
-        refs = business_run.exact_evidence(meanings[0]['evidence'], business_review.source_blocks(parent, requirement))
-        if not refs or not {e['block_id'] for e in refs} <= set(work[0]['read_block_ids']):
-            raise ValueError('기존 의미의 실제 원문 주소가 QA 작업 범위에 없습니다.')
+        refs = []
+        for meaning in meanings:
+            evidence = business_run.exact_evidence(meaning['evidence'], business_review.source_blocks(parent, requirement))
+            if not evidence or not {e['block_id'] for e in evidence} <= set(work[0]['read_block_ids']):
+                raise ValueError('기존 의미의 실제 원문 주소가 QA 작업 범위에 없습니다.')
+            refs.extend(e for e in evidence if e not in refs)
         related = sorted({cid for selected in rows[0]['selected']
             for cid in selection['available'][selected['meaning_ref']]['claim_ids']})
         if not set(related) <= set(qa['provided_ids']) & {c['id'] for c in parent['claims']}:
@@ -72,9 +75,10 @@ def bind_gaps(parent, qa, basis, snapshot, task_ids):
                 provided_block_ids=sorted({e['block_id'] for e in refs}), evidence=refs,
                 qa_run_id=qa['id'], snapshot_id=snapshot['id'], task=deepcopy(task), requirement_id=rid,
                 requirement_version=business_review.preservation_requirement_version(requirement),
-                meaning_version=autoschema.identifier('meaning', meanings[0]),
+                **(dict(meaning_version=autoschema.identifier('meaning', meanings[0])) if len(meanings) == 1 else
+                   dict(meaning_versions={m['key']: autoschema.identifier('meaning', m) for m in meanings})),
                 source_fingerprint=business_review.preservation_source_version(parent, parent['input_version_ids']),
-                candidate_pool_hash=business_review.pool_hash(parent),
+                candidate_pool_hash=business_review.pool_hash(parent, requirement),
                 authority='unverified_QA_observation_not_source_truth_candidate_error_or_recovery_action'))
     return dict(qa_run_id=qa['id'], source_run_id=basis['id'], snapshot_id=snapshot['id'],
                 task_ids=list(task_ids), findings=findings, deferred=deferred)
@@ -163,7 +167,8 @@ def execute(service, run_id):
             if assessment['id'] != receipt['assessment_ids'][-1]:
                 receipt['assessment_ids'].append(assessment['id'])
             if options['repair'] and not business_run.cancelled(service, run) and business_run.repair(service, run, requirement, assessment):
-                business_review.review_candidate_pool(service, run, run['claims'])
+                if not any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
+                    business_review.review_candidate_pool(service, run, business_review.candidate_pool(run, requirement))
                 if business_run.cancelled(service, run):
                     break
                 assessment = business_run.assess(service, run, requirement, source=assessment['source'],

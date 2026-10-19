@@ -133,6 +133,7 @@
 .graphLegend > span { display: flex; align-items: center; gap: 6px; }
 .graphLegend i { display: inline-block; width: 12px; height: 12px; border: 1px solid #8b9dab; background: #fff; border-radius: 3px; }
 .graphLegend i[data-kind=event] { background: #edf6f2; border-color: #6c9c8b; }
+.graphLegend i[data-kind=search_concept] { background: #f2eef8; border-color: #9986b2; border-radius: 50%; }
 .graphLegend .graphUnreviewed { margin-left: auto; color: #806a3b; background: #fffaf0; padding: 2px 8px; border-radius: 4px; }
 .graphZoom { position: absolute; left: 20px; bottom: 18px; z-index: 1; display: flex; border: 1px solid #d8e2e8; border-radius: 6px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px #203a4b0a; }
 .graphZoom button { min-width: 36px; height: 36px; padding: 5px 10px; font-size: 14px; }

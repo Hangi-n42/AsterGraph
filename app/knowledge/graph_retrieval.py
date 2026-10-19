@@ -101,7 +101,7 @@ def reviewed_evidence(snapshot, claim):
 def build(snapshot, variant):
     """Keep source-specific identities and parallel edges; concepts are search only."""
     claims = {c['id']: dict(c, evidence=reviewed_evidence(snapshot, c)) for c in snapshot['claims']}
-    extracted = autoschema.graph(snapshot['claims'])
+    extracted = autoschema.graph(snapshot['claims'], snapshot['blocks'])
     business_html_debt_rows.annotate_graph(extracted,snapshot['claims'])
     graph = nx.MultiDiGraph()
     for node in extracted['nodes']:

@@ -7,6 +7,61 @@ from app.knowledge.service import KnowledgeService
 from app.knowledge import workbench
 
 
+def test_claim_view_exposes_stored_interpretation_errors_without_changing_the_claim():
+    from copy import deepcopy
+    claim = dict(id='c', role='event_entity', statement='저장된 정상 문장', review_status='accepted',
+        interpretation=dict(meanings=[dict(conditions=dict(state='present', text='싱거우면'))],
+                            errors=['invalid premise state', 'quote not uniquely located in provided view']), evidence=[])
+    before = deepcopy(claim)
+    view = workbench._claim_view(claim, {}, {}, {})
+    assert view['interpretation_errors'] == claim['interpretation']['errors']
+    assert view['meanings'] == claim['interpretation']['meanings'] and view['review_status'] == 'accepted'
+    assert claim == before
+    normal = dict(claim, interpretation=dict(meanings=[], errors=[]))
+    assert workbench._claim_view(normal, {}, {}, {})['interpretation_errors'] == []
+    assert workbench._claim_view(dict(id='legacy'), {}, {}, {})['interpretation_errors'] == []
+
+
+def test_snapshot_concepts_separate_known_history_but_keep_failed_and_unresolved_links(service, monkeypatch):
+    from copy import deepcopy
+    from app.knowledge import autoschema
+    with service.repository.connect() as db:
+        parent = service.repository.get(db, 'runs', 'run1')
+        graph = dict(nodes=parent['graph']['nodes'][:2], edges=parent['graph']['edges'][:1])
+        def record(rid, target, ids, status='unreviewed', kind='entity', label='같은 이름'):
+            return dict(id=rid, target=dict(id=target, kind=kind, label=label, claim_ids=ids),
+                        concepts=['검색 표현'], status=status)
+        records = [record('current', 'n1', ['c0', 'c1']), record('history', 'n1', ['c1']),
+            record('failed', 'n2', ['c0'], status='failed'), record('unlinked', 'missing', ['c0']),
+            record('unknown_claim', 'n1', ['unknown']), record('no_claim_link', 'n2', []),
+            record('relation', 'relation-target', ['c0', 'c1'], kind='relation', label='r')]
+        snapshot = dict(id='selected', kind='source_graph', run_id='run1', source_versions={'v1': {}}, blocks=[],
+            claims=[dict(parent['claims'][0], review_status='accepted')], concepts=records)
+        db.execute('INSERT INTO snapshots VALUES(?,?)', ('selected', json.dumps(snapshot)))
+    before = deepcopy(snapshot)
+    monkeypatch.setattr(autoschema, 'graph', lambda *a: deepcopy(graph))
+    view = workbench.explore(service, 'source_graph', 'selected', item_kind='concept', selected_id='current')
+    assert view['counts']['concepts'] == 6 and view['counts']['stored_concepts'] == 7
+    assert view['counts']['historical_concepts'] == 1 and view['counts']['failed_concepts'] == 1
+    assert view['counts']['unresolved_concept_links'] == 3
+    assert {r['id'] for r in view['items']} == {r['id'] for r in records} - {'history'}
+    assert next(r for r in view['items'] if r['id'] == 'current')['claim_ids'] == ['c0']
+    assert next(r for r in view['items'] if r['id'] == 'unlinked')['issue']
+    assert all('history' not in r.get('concept_record_ids', []) for r in view['graph']['items'])
+    assert view['detail']['claims'][0]['id'] == 'c0'
+    with pytest.raises(KeyError):
+        workbench.explore(service, 'source_graph', 'selected', selected_id='history')
+    filtered = workbench.explore(service, 'source_graph', 'selected', item_kind='concept', source_id='s1', review_state='accepted')
+    assert {r['id'] for r in filtered['items']} == {'current', 'failed', 'unlinked', 'relation'}
+    assert all(set(r['claim_ids']) <= {'c0'} for r in filtered['items'] + filtered['graph']['items'])
+    search_id = workbench.explore(service, 'source_graph', 'selected', item_kind='search_concept')['items'][0]['id']
+    detail = workbench.explore(service, 'source_graph', 'selected', selected_id=search_id, source_id='s1')['detail']
+    assert detail['concept_records'] and all(set(r['target']['claim_ids']) <= {'c0'} for r in detail['concept_records'])
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'snapshots', 'selected') == before
+        assert service.repository.get(db, 'runs', 'run1') == parent
+
+
 @pytest.fixture
 def service(tmp_path, monkeypatch):
     value = KnowledgeService(tmp_path / 'knowledge.db')
@@ -100,6 +155,25 @@ def test_dense_graph_is_bounded_without_merging_edges(service):
     expanded = workbench.explore(service, 'run', 'run1', selected_id='n0', graph_root='n0', depth=3)
     assert expanded['graph']['nodes'] == 40
     assert expanded['graph']['relations'] == 39
+
+
+@pytest.mark.parametrize('root_id', ['c0', 'record'])
+def test_claim_and_record_roots_keep_source_nodes_before_search_concepts(service, monkeypatch, root_id):
+    monkeypatch.setattr(workbench, '_search_concept_graph', lambda value, graph: graph)
+    with service.repository.connect() as db:
+        run = service.repository.get(db, 'runs', 'run1')
+        run['concepts'] = [dict(id='record', target=dict(id='n1', kind='entity', label='같은 이름', claim_ids=['c0']),
+                                concepts=['검색'], status='unreviewed')]
+        for i in range(10):
+            run['graph']['nodes'].append(dict(id=f'concept_{i}', kind='search_concept', label=f'검색 {i}', claim_ids=['c0']))
+            run['graph']['edges'].append(dict(id=f'link{i}', head='n1', tail=f'concept_{i}', relation='has_concept', claim_id='c0'))
+        service.repository.save(db, 'runs', run)
+    view = workbench.explore(service, 'run', 'run1', selected_id=root_id, graph_root=root_id)['graph']
+    assert {'n1', 'n2', 'e1'} <= {r['id'] for r in view['items']}
+    assert view['nodes'] == 8 and view['relations'] <= 80 and view['omitted_nodes'] == 5
+    for direct in ['n1', 'concept_0']:
+        result = workbench.explore(service, 'run', 'run1', selected_id=direct, graph_root=direct)['graph']
+        assert direct in {r['id'] for r in result['items']} and result['nodes'] <= 8
 
 
 def test_saved_answers_separate_provided_citations_and_scope(service, monkeypatch):

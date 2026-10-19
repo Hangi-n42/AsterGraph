@@ -177,13 +177,21 @@ def start(service, request):
                 if parent['input_version_ids'] != list(sources) or parent['blocks'] != blocks:
                     raise ValueError('저장 후보 재검토는 같은 원문 버전·파싱 범위에서만 가능합니다.')
                 chunks = deepcopy(parent['chunks'])
+        review_contract = request.review_contract or business_review.CONTRACT
+        if request.resume_run_id:
+            previous_contract = parent['recipe'].get('review_contract')
+            if request.review_contract is not None and request.review_contract != previous_contract:
+                raise ValueError('같은 실행 재개는 부모 검수 계약을 변경할 수 없습니다. 새 재검토 실행을 사용하세요.')
+            review_contract = previous_contract
         options = request.model_dump()
+        if review_contract in {business_review.CONTRACT, business_review.SOURCE_APPLICATION_CONTRACT}:
+            options['review_contract'] = review_contract
         options['concept_source_context'] = request.concept_source_context or (parent['recipe']['options'].get('concept_source_context') if parent else None) or 'whole'
         run = dict(id=uuid4().hex, kind='business', status='queued', units=[], analysis_units=[],
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
                    requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
                        parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
-                   review_contract=business_review.CONTRACT, generation=config,
+                   review_contract=review_contract, generation=config,
                    models=models, options=options), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
                    parent_run_id=parent['id'] if parent else None,
@@ -196,6 +204,10 @@ def start(service, request):
                    parent_model_identity=deepcopy(parent['model_identity']) if parent else None,
                    metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0), started_at=None, finished_at=None)
         if request.reassess_run_id:
+            if parent['recipe'].get('review_contract') != review_contract:
+                run['review_contract_change'] = dict(parent_run_id=parent['id'],
+                    previous=parent['recipe'].get('review_contract'), selected=review_contract,
+                    explicitly_requested=request.review_contract is not None)
             for key in ('claims', 'graph', 'concepts', 'extraction_rejections', 'source_corrections', 'answer_items'):
                 run[key] = deepcopy(parent.get(key, []))
             run['prior_repairs'] = deepcopy([*parent.get('prior_repairs', []), *parent['repairs']])
@@ -320,7 +332,9 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
             u.get('status') == 'succeeded' and not u.get('error') and
             u.get('messages') == messages and u.get('schema') == schema and u.get('response') and
             u.get('reference_map') == reference_map and
-            (not run.get('source_checkpoint') or u.get('request_configuration') == unit['request_configuration']
+            (not (run.get('source_checkpoint') or run.get('answer_items') and stage in
+                  {'candidate_source_review', 'requirement_representation'})
+             or u.get('request_configuration') == unit['request_configuration']
              and u.get('requested_limits') == u.get('executed_limits') == unit['requested_limits']) and
             not u['response'].get('failure_kind') and concept_reusable(u, cached_run_id)), None)
     if cached:
@@ -335,8 +349,8 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
         save(service, run)
         return unit['response']
     save(service, run)
-    estimate = request_tokens(messages, schema, budget)
-    unit['input_budget'] = dict(estimate_tokens=estimate, method='utf8_bytes/2+output+1000', exact=False)
+    unit['input_budget'] = request_budget(run, messages, schema, budget, review=review)
+    estimate = unit['input_budget']['estimate_tokens']
     if estimate > request.context_tokens:
         unit.update(status='failed', error='input_capacity', finished_at=utcnow())
         save(service, run)
@@ -353,6 +367,20 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
 
 def request_tokens(messages, schema, max_tokens):
     return (len(encode(messages).encode()) + len(encode(schema).encode())) // 2 + max_tokens + 1000
+
+
+def request_budget(run, messages, schema, max_tokens, *, review=True):
+    from app.generation.model_input_budget import count
+    role = 'review' if review else 'draft'
+    model = run['recipe'].get('models', {}).get(role)
+    measured, reason = count(run['recipe'].get('generation', {}), model,
+        run.get('model_identity', {}).get(role), messages, schema, run['recipe']['options'].get('think'))
+    if measured is None:
+        return dict(estimate_tokens=request_tokens(messages, schema, max_tokens),
+            method='utf8_bytes/2+output+1000', exact=False, fallback_reason=reason)
+    return dict(estimate_tokens=measured['prompt_tokens'] + measured['schema_reserve_tokens'] + max_tokens + 1000,
+        method='verified-local-rendered-tokens+separate-schema-reserve+output+1000', exact=False,
+        output_reserve_tokens=max_tokens, safety_reserve_tokens=1000, **measured)
 
 
 def evidence_fields(output_type):
@@ -373,6 +401,8 @@ def evidence_fields(output_type):
                 names.append('candidate_challenges')
         if 'conjunction_reviews' in output_type.model_fields:
             names.append('conjunction_reviews')
+    if 'public_item_checks' in output_type.model_fields:
+        names.append('public_item_checks')
     return {name: get_args(output_type.model_fields[name].annotation)[0] for name in names}
 
 
@@ -408,6 +438,42 @@ def remap_expression_keys(value, mapping):
     return value
 
 
+def reference_source_facts(context, views):
+    """Share only exact, already delivered E evidence; retain unmatched originals."""
+    bindings = {}
+    for fact in context.get('source_facts', []):
+        original = deepcopy(fact.get('evidence', []))
+        references = []
+        for ref in original:
+            selected = None
+            if all(k in ref for k in ('block_id', 'source_version_id', 'parse_run_id',
+                                      'start_char', 'end_char', 'quote')) and all(
+                    ref[k] for k in ('block_id', 'source_version_id', 'parse_run_id')):
+                try:
+                    exact_evidence([ref], list(views.values()))
+                    candidates = []
+                    for key, view in views.items():
+                        base, end = view.get('span', [0, len(view['text'])])
+                        if ((ref['block_id'], ref['source_version_id'], ref['parse_run_id']) ==
+                                (view['id'], view['source_version_id'], view.get('parse_run_id') or view.get('run_id'))
+                                and base <= ref['start_char'] < ref['end_char'] <= end
+                                and view['text'][ref['start_char'] - base:ref['end_char'] - base] == ref['quote']
+                                and bool(ref.get('context_only')) == bool(view.get('context_only'))):
+                            candidates.append((key, view))
+                    if candidates:
+                        key, _ = min(candidates, key=lambda pair: len(pair[1]['text']))
+                        selected = dict(evidence_ref=key, span=[ref['start_char'], ref['end_char']],
+                            **({k: ref[k] for k in ('context_only',) if k in ref}))
+                except (ValueError, KeyError, TypeError):
+                    pass  # A reference view cannot repair an invalid or undelivered address.
+            references.append(selected if selected is not None else deepcopy(ref))
+        bindings[fact['key']] = original
+        fact.pop('evidence', None)
+        fact['source_evidence_refs'] = references
+    context['source_evidence_binding'] = autoschema.identifier('source_evidence', [bindings, views])
+    return bindings
+
+
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .discovery_analysis import remap
     context = deepcopy(context)
@@ -428,9 +494,16 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         if field in context:
             context[field] = {k: v for k, v in context[field].items() if k in public_keys}
     evidence_views = None
-    from .business_models import PublicScopeCheck
+    from .business_models import PublicScopeCheck, PublicSourceScopeCheck
+    source_only_public = issubclass(output_type, PublicSourceScopeCheck)
+    source_fact_bindings = None
     if issubclass(output_type, (LocalSourceCheck, RequirementJoinCheck, RequirementSynthesisCheck, ExpressionReviewCheck, CandidateSourceReview, RequirementApplicationCheck, PublicScopeCheck, SelectedRequirementSourceCheck)) or (stage == 'source_reassessment' and issubclass(output_type, GroundingCheck)):
         evidence_views = {f'e{n + 1}': deepcopy(b) for n, b in enumerate(context.get('blocks', []))}
+        if source_only_public:
+            source_fact_bindings = reference_source_facts(context, evidence_views)
+            instruction += ('\nsource_evidence_refs는 제공 blocks의 evidence_ref와 절대 문자 span이다. '
+                '구간의 원문은 그 block에서 읽는다. block_id/quote가 남은 근거는 참조로 바꾸지 않은 원형이다. '
+                'context_only와 미확정 상태를 유지한다. source_evidence_binding은 주소 결속 식별자이며 의미 판정이 아니다.\n')
         has_missing_evidence = any('missing_evidence' in row.model_fields for row in evidence_fields(output_type).values())
         output_type = selected_evidence_type(output_type, evidence_views)
         fields = 'evidence와 error_evidence' if issubclass(output_type, (ExpressionReviewCheck, RequirementSynthesisCheck, CandidateSourceReview)) else 'evidence'
@@ -484,13 +557,14 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         serialized = encode(context) + encode(output_type.model_json_schema())
         mapping = {key: value for key, value in mapping.items() if key in serialized}
     payload = remap_expression_keys(remap(context, mapping), mapping)
-    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage == 'requirement_representation' else encode(payload)
+    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage == 'requirement_representation' or source_only_public else encode(payload)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=remap(output_type.model_json_schema(), mapping), reference_map=mapping or None,
         evidence_reference_map=evidence_views,
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
-            'requirement_representation': 'representation_tokens'}.get(stage, '')))
+            'requirement_representation': 'representation_tokens'}.get(stage, '')),
+        **(dict(source_fact_evidence_bindings=source_fact_bindings) if source_only_public else {}))
 
 
 def json_call(service, run, stage, instruction, context, output_type, *, reference_map=None):
@@ -502,6 +576,8 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
     views = request['evidence_reference_map']
     if views is not None:
         run['units'][-1]['evidence_reference_map'] = deepcopy(views)
+        if 'source_fact_evidence_bindings' in request:
+            run['units'][-1]['source_fact_evidence_bindings'] = deepcopy(request['source_fact_evidence_bindings'])
         save(service, run)
     if result is None:
         return None
@@ -629,7 +705,7 @@ def exact_evidence(refs, blocks):
 
 def compact_claim(claim):
     value = {k: claim[k] for k in ('id', 'role', 'source_version_ids', 'statement', 'raw', 'conditions',
-             'exceptions', 'period', 'references', 'semantic_status', 'extraction_error', 'interpretation', 'evidence_context') if claim.get(k) not in (None, '', [])}
+             'exceptions', 'period', 'references', 'semantic_status', 'extraction_error', 'interpretation', 'evidence_context', 'literal_grounding') if claim.get(k) not in (None, '', [])}
     if claim.get('superseded_by'):
         value['superseded_by'] = claim['superseded_by']
     raw = claim.get('raw') or {}
@@ -645,9 +721,10 @@ def compact_claim(claim):
 
 
 def assessment_fingerprint(run, requirement, source, scope=None):
-    selected = run['claims'] if scope is None else [c for c in run['claims'] if c['id'] in scope.get('claim_ids', [])]
+    pool = business_review.candidate_pool(run, requirement) if requirement.get('source_ids') else run['claims']
+    selected = pool if scope is None else [c for c in pool if c['id'] in scope.get('claim_ids', [])]
     # Missing judgments depend on the entire candidate pool, including new claims.
-    inventory = business_review.pool_hash(run) if scope and scope.get('pool_hash') else None
+    inventory = business_review.pool_hash(run, requirement) if scope and scope.get('pool_hash') else None
     value = [requirement, source, [compact_claim(c) for c in selected]]
     items = [i for i in run.get('answer_items', []) if i['requirement_id'] == requirement['id']]
     if items:
@@ -685,6 +762,12 @@ def requirement_completion(assessment, accepted_ids=None, *, claims=None):
             any(c.get('claim_support', {}).get(cid) == 'supported' for c in checks)
             and not any(c.get('claim_support', {}).get(cid) in {'unknown', 'incorrect'} for c in checks)
             for cid in required_ids)
+    public = source.get('public_scope') or {}
+    if public.get('input_contract') == business_review.PUBLIC_SOURCE_INPUT_CONTRACT:
+        expected = {item['id'] for item in public.get('public_items', [])}
+        complete = complete and bool(expected) and not public.get('errors') and not representation.get('public_item_check_errors') and (
+            set(representation.get('valid_public_item_ids', [])) == expected) and all(
+                row['status'] == 'represented' for row in representation.get('public_item_checks', []))
     return dict(status='satisfied' if complete else 'partial' if representation else 'unknown',
                 required_claim_ids=sorted(required_ids), completion_contract=COMPLETION_CONTRACT)
 
@@ -766,10 +849,9 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
             previous_meanings = {m['key']: m for m in previous['source']['meanings']}
     source = deepcopy(source) if source is not None else None
     blocks = [b for b in run['blocks'] if not requirement['source_ids'] or b['source_id'] in requirement['source_ids']]
-    selected_candidates = [c for c in run['claims'] if not c.get('superseded_by') and
-        (not requirement['source_ids'] or any(b['source_id'] in requirement['source_ids']
-            for b in business_review.candidate_source_basis(c, blocks)))]
-    if business_review.separate_application(run):
+    selected_candidates = business_review.candidate_pool(run, requirement)
+    public_request = any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', []))
+    if business_review.separate_application(run) and not public_request:
         business_review.review_candidate_pool(service, run, selected_candidates)
     if source is None:
         source = business_review.source(service, run, requirement) if business_review.current(run) else json_call(
@@ -794,9 +876,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
             source['processing_scope'].update(review_meaning_keys=sorted(active),
                 pending_meaning_keys=sorted(all_keys - active), public_scope_unit_id=public.get('unit_id'),
                 scope_selection_is_historical=True, whole_requirement_complete=False)
-        elif any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
-            candidates = business_review.public_evidence_candidates(run, source, selected_candidates)
-            business_review.review_candidate_pool(service, run, candidates)
+        elif public_request:
             source = business_review.public_requirement_scope(service, run, requirement, source)
     assessment = dict(id=uuid4().hex, requirement_id=requirement['id'], revision=requirement['revision'],
                       phase=phase, source=source, representation=None, status='unknown', claim_ids=[], actions=[], errors=[],
@@ -881,7 +961,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                         reason='invalid_preservation_location: ' + check.get('reason', ''))
             if business_review.separate_application(run):
                 challenged_ids = {cid for c in run.get('candidate_challenges', []) for cid in c['claim_ids']}
-                business_review.review_candidate_pool(service, run, [c for c in run['claims'] if c['id'] in challenged_ids])
+                business_review.review_candidate_pool(service, run, [c for c in run['claims'] if c['id'] in challenged_ids],
+                    **(dict(requirement=requirement) if public_request else {}))
                 business_review.attach_candidate_support(run, representation, run['claims'], blocks)
             claim_ids = {c['id'] for c in run['claims']}
             checks = representation['checks']
@@ -1027,6 +1108,7 @@ def missing_tabular_rows(run, requirement, assessment, targets):
     if business_review.source_selection(run, requirement)[1]['row_lookup'] != lookup:
         return [], []
     representation = assessment['representation']
+    pool = business_review.candidate_pool(run, requirement) if requirement.get('source_ids') else run['claims']
     required = {c['meaning_key'] for c in representation.get('source_checks', []) if c['required_for_requirement']}
     missing = {c['meaning_key'] for c in representation.get('checks', [])
                if c['status'] == 'missing' and not c['claim_ids'] and not c.get('incorrect_claim_ids')}
@@ -1038,9 +1120,9 @@ def missing_tabular_rows(run, requirement, assessment, targets):
         if (target['action'] != 'recover' or key not in required & missing or meaning.get('record_error')
                 or meaning['source_status'] != 'supported' or meaning['availability'] != 'provided'
                 or not meaning['evidence'] or not check.get('all_candidates_accounted_for')
-                or check.get('failed_unit_ids') or check.get('pool_hash') != business_review.pool_hash(run)
-                or check.get('inventory_count') != len(run['claims'])
-                or set(assessment['review_scope'].get('candidate_inventory_ids', [])) != {c['id'] for c in run['claims']}):
+                or check.get('failed_unit_ids') or check.get('pool_hash') != business_review.pool_hash(run, requirement)
+                or check.get('inventory_count') != len(pool)
+                or set(assessment['review_scope'].get('candidate_inventory_ids', [])) != {c['id'] for c in pool}):
             continue
         candidates = {}
         for ref in meaning['evidence']:
@@ -1133,6 +1215,9 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
         raw = dict(Head=patch['head'], Relation=patch['relation'], Tail=patch['tail'])
         statement = patch['statement']
     value = deepcopy(old) if old else dict(id=uuid4().hex, chunk_id=autoschema.identifier('repair_chunk', refs))
+    if value.get('literal_grounding'):
+        value.setdefault('literal_grounding_history', []).append(dict(value.pop('literal_grounding'),
+            invalidated_by=repair_id, reason='claim_edited; previous_participant_selection_not_reapproved'))
     if old:
         value.setdefault('source_extraction_raw', deepcopy(old['raw']))
         if value.get('interpretation'):
@@ -1166,6 +1251,10 @@ def materialize_patch(run, patch, old, repair_id, repair_blocks, *, origin='mode
             value['edit_participants'] = deepcopy(participants)
             value['edit_sentences'] = deepcopy(patch['sentences'])
             value['evidence_context'] = exact_evidence(patch['evidence_context'], patch_blocks)
+            if patch.get('literal_grounding'):
+                from .business_participants import validate
+                value['literal_grounding'] = deepcopy(patch['literal_grounding'])
+                validate(value, run['blocks'])
     elif business_review.current(run):
         if not patch.get('scope'):
             raise ValueError('교정된 표현의 Scope 누락')
@@ -1245,7 +1334,7 @@ def event_meaning_edit(service, run, task, old, blocks):
         evidence_context=context, sentences=output['sentences'], server_participants=refs, origin='model_event_edit')
 
 
-def repair(service, run, requirement, assessment):
+def repair(service, run, requirement, assessment, *, replay_unit=None, proposals=None):
     targets = [a for a in assessment['actions'] if a['action'] in {'recover', 'correct'}]
     protected_claims = set()
     direct = business_review.current_candidate_reviews(run) if (business_review.separate_application(run)
@@ -1288,7 +1377,7 @@ def repair(service, run, requirement, assessment):
     if (assessment.get('source') or {}).get('public_scope'):
         targets = [t for t in targets if t['action'] != 'recover' or (
             t['missing_pool_check']['all_candidates_accounted_for'] and not t['missing_pool_check']['failed_unit_ids']
-            and t['missing_pool_check']['pool_hash'] == business_review.pool_hash(run))]
+            and t['missing_pool_check']['pool_hash'] == business_review.pool_hash(run, requirement))]
     if not targets:
         return False
     before = deepcopy(run['claims'])
@@ -1327,6 +1416,8 @@ def repair(service, run, requirement, assessment):
                 for m in t['meanings'])]
     for task in semantic_tasks:
         tasks.pop((task['target_id'], None))
+    if replay_unit is not None and semantic_tasks:
+        raise ValueError('Event 의미 교정이 혼합된 과거 복구 재개는 지원하지 않습니다.')
     semantic_patches = [patch for task in semantic_tasks
         if (patch := event_meaning_edit(service, run, task, by_id[task['target_id']], repair_blocks))]
     # One meaning may contain both a healthy candidate and an erroneous edge.
@@ -1350,17 +1441,27 @@ candidate_review_id가 있는 correct는 후보 자체의 원문 오류 판정�
 그 review_records의 실제 오류 필드·근거를 원문과 대조하여 고친다. source 의미의 누락/실패는 이 판정의 대체 정답이 아니다.
 before의 다른 정상 내용은 모두 보존한다. 요구에 무관한 정상 내용을 없애거나 질문 사용 시점을 원문 기간으로 넣지 않는다.
 ''' if direct_targets else '')
-    output = json_call(service, run, 'requirement_repair', instruction, dict(
+    context = dict(
         requirement=requirement, tasks=list(tasks.values()), source=source, blocks=repair_blocks,
         before=[compact_claim(by_id[c]) for c in target_ids], preserve_meanings=preserve,
         reuse_candidates=[compact_claim(by_id[cid]) for cid in sorted(maintained)
-            if cid in by_id and not by_id[cid].get('superseded_by')]), output_type) if tasks else None
+            if cid in by_id and not by_id[cid].get('superseded_by')])
+    if replay_unit is not None:
+        from .business_participants import verified_proposals
+        return verified_proposals(run, instruction, context, output_type, replay_unit)
+    output = deepcopy(proposals) if proposals is not None else json_call(service, run, 'requirement_repair',
+        instruction, context, output_type) if tasks else None
     if semantic_tasks:
         output = dict(patches=[*(output or {}).get('patches', []), *semantic_patches],
                       unresolved=(output or {}).get('unresolved', []))
     receipt = dict(id=uuid4().hex, origin='model', requirement_id=requirement['id'], assessment_id=assessment['id'],
                    before=before, patches=output, targets=targets, preserve_meanings=preserve,
                    status='unresolved', changes=[], errors=[], tabular_recovery=tabular_mappings)
+    if output and (assessment.get('source') or {}).get('public_scope'):
+        from .business_participants import select
+        output = select(service, run, output, repair_blocks,
+            {t['meaning_key'] for t in targets if t['action'] == 'recover' and not t['claim_ids']})
+        receipt['participant_selection'] = deepcopy(output.get('participant_selection'))
     if protected_rows:
         receipt['protected_source_rows'] = [dict(claim_id=cid, evidence=ref,
             meaning_keys=[t['meaning_key'] for t in targets if cid in t['claim_ids']],
@@ -1540,7 +1641,7 @@ def repair_extraction(service, run):
 
 def refresh_repaired_graph(service, run):
     options = run['recipe']['options']
-    run['graph'] = autoschema.graph(run['claims'])
+    run['graph'] = autoschema.graph(run['claims'], run['blocks'])
     changed_ids = {v['after']['id'] for r in run['repairs'] for v in r['changes']}
     for concept in run['concepts']:
         if changed_ids.intersection(concept['target'].get('claim_ids', [])):
@@ -1638,7 +1739,7 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             repair_extraction(service, run)
         # Rebuild the deterministic view of stored claims as well; this does not
         # extract, reassess, approve, or conceptualize them.
-        run['graph'] = autoschema.graph(run['claims'])
+        run['graph'] = autoschema.graph(run['claims'], run['blocks'])
         save(service, run)
         from . import business_concepts
         projected = run.get('source_projection')
