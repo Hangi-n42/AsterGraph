@@ -475,7 +475,7 @@ def reference_source_facts(context, views):
 
 
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
-    from .discovery_analysis import remap
+    from .source_meanings import remap
     context = deepcopy(context)
     if context.get('repair_context') and 'preservation_checks' in output_type.model_fields:
         ids = tuple(c['id'] for c in context.get('claims', []) if not c.get('superseded_by'))
@@ -568,7 +568,7 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
 
 
 def json_call(service, run, stage, instruction, context, output_type, *, reference_map=None):
-    from .discovery_analysis import remap
+    from .source_meanings import remap
     request = json_request(run, stage, instruction, context, output_type, reference_map=reference_map)
     mapping = request['reference_map'] or {}
     result = call(service, run, stage, request['messages'], request['schema'], review=True,

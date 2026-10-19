@@ -293,7 +293,7 @@ def test_common_selection_defers_covered_row_but_preserves_other_scope_and_sourc
 
 
 def test_raw_bm25_ranking_is_available_without_legacy_document_quota():
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     index = FrozenIndex.__new__(FrozenIndex)
     index.blocks = [dict(id='a', text='반복', file_id='v1', source_group='v1'),
                     dict(id='b', text='새 근거', file_id='v1', source_group='v1'),

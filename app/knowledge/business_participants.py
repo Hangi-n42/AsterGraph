@@ -142,7 +142,7 @@ Scope 등 이전 제안 해석은 승인되지 않았다. 새 명제·정답·�
 def verified_proposals(run, instruction, context, output_type, unit):
     """Rebuild the original generation request; never reinterpret cached text as a new call."""
     from . import business_run as execution
-    from .discovery_analysis import remap
+    from .source_meanings import remap
     request = execution.json_request(run, 'requirement_repair', instruction, context, output_type)
     options = run['recipe']['options']
     limits = dict(max_tokens=request['max_tokens'] or options['review_tokens'],

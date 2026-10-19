@@ -155,7 +155,7 @@ class KnowledgeService:
             block = self.repository.get(db, 'blocks', evidence['block_id'] if evidence else evidence_id)
             version = self.repository.get(db, 'versions', block['source_version_id'])
             source = self.repository.get(db, 'sources', version['source_id'])
-            from .snapshots import current_restrictions
+            from .availability import current_restrictions
             restrictions = current_restrictions(self.repository, db, {'evidence_ids': [evidence_id]})
             return dict(evidence=evidence or dict(id=evidence_id, block_id=block['id'], quote=block['text'],
                                       start_char=0, end_char=len(block['text']), alignment_status='matched'),
@@ -173,8 +173,8 @@ class KnowledgeService:
             run['processed_block_ids'] = list(dict.fromkeys(b for u in run['units']
                 if u['status'] == 'succeeded' for b in u['block_ids']))
             if run.get('changeset_id'):
-                from .extraction_store import candidates
-                items = candidates(self, run['changeset_id'])['items']
+                from .legacy_records import extraction_candidates
+                items = extraction_candidates(self, run['changeset_id'])
                 invalid = sum(bool(v.get('validation_errors')) for v in items)
                 run['candidate_counts'] = dict(valid=len(items)-invalid, invalid=invalid,
                     manual=sum(v.get('origin')=='manual' for v in items), automatic=sum(v.get('origin')!='manual' for v in items),
@@ -182,17 +182,8 @@ class KnowledgeService:
         return run
 
     def start(self, request: RunRequest):
-        if request.kind == 'discovery':
-            from .discovery_run import start
-            return start(self, request)
-        if request.kind == 'ontology':
-            from .ontology_run import start
-            return start(self, request)
-        if request.kind == 'extract':
-            from .extraction import start
-            return start(self, request)
         if request.kind != 'parse':
-            raise ValueError('현재 parse, ontology, extract, discovery 작업만 지원합니다.')
+            raise ValueError('이전 스키마 기반 실행은 종료되었습니다. parse 또는 business 경로를 사용하세요.')
         with self.lock, self.repository.connect() as db:
             if self.closed:
                 raise KnowledgeConflict('서비스가 종료 중입니다.')

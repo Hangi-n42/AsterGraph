@@ -7,9 +7,9 @@ import styles from "./KnowledgeWorkbench.module.css";
 
 type AnswerRow = { id: string; question: string; retrieval: string; status: string; finished_at?: string };
 type AnswerDetail = { id: string; question: string; note: string; status: string; source_run_id?: string; snapshot_id?: string; used_version_ids: string[]; used_versions: KnowledgeVersion[]; requirement_ids: string[]; answer_mode?: string; current_usage: KnowledgeUsage; answer: { answer?: string; citations?: string[]; limitations?: string[] }; evidence: { id: string; cited: boolean; provided: boolean; retrieved: boolean; claim_ids: string[]; statement?: string; evidence: KnowledgeClaim['evidence']; fallback_text?: string }[]; graph_links: { id: string; relation: string }[]; recorded_links: { id: string; text?: string; status?: string; concept_hint: boolean }[]; recorded_edge_count: number; fallback?: string; metrics?: Record<string, unknown> };
-export default function KnowledgeStoredAnswers({ scope, onExplore }: { scope: KnowledgeScope; onExplore: (id: string) => void }) {
+export default function KnowledgeStoredAnswers({ scope, onExplore, initialAnswerId = "" }: { scope: KnowledgeScope; onExplore: (id: string) => void; initialAnswerId?: string }) {
   const [items, setItems] = useState<AnswerRow[] | null>(null);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(initialAnswerId);
   const [detail, setDetail] = useState<AnswerDetail | null>(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");

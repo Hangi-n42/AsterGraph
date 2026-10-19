@@ -1,9 +1,8 @@
-"""K2 source registration and parsing endpoints."""
+"""Current source, business knowledge and workbench endpoints."""
 from functools import lru_cache
 from typing import Any
-from datetime import date
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, Query
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
@@ -12,16 +11,10 @@ from pydantic import BaseModel, ValidationError
 from app.api.error_utils import error_response, make_request_id, now_iso
 from app.core.config import settings
 from app.core.exceptions import GenerationError
-from app.knowledge.schemas import DecisionRequest, ManualAssertionRequest, RunRequest, SourceRegistration
-from app.knowledge.schemas import SnapshotRequest, ActivateSnapshotRequest, AvailabilityRequest
 from app.knowledge.service import KnowledgeConflict, KnowledgeService
-from app.knowledge import ontology_schema
-from app.knowledge import ontology_changes
-from app.knowledge.ontology_changes_models import AddOntologyChanges
-from app.knowledge import ontology_consumer
-from app.knowledge import extraction_store
-from app.knowledge import snapshots
-from app.knowledge.schemas import SearchRequest, LocalEntityRequest
+from app.knowledge.repository import VersionConflict
+from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRequest
+from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
 
@@ -39,7 +32,7 @@ class KnowledgeRoute(APIRoute):
                 return error_response(request_id=make_request_id(), error_code=exc.code, message=str(exc))
             except KeyError:
                 return error_response(request_id=make_request_id(), error_code='NOT_FOUND', message='등록 항목을 찾을 수 없습니다.', status_code=404)
-            except ontology_schema.VersionConflict as exc:
+            except VersionConflict as exc:
                 return error_response(request_id=make_request_id(), error_code='VERSION_CONFLICT', message=str(exc), status_code=409)
             except KnowledgeConflict as exc:
                 return error_response(request_id=make_request_id(), error_code='RUN_BUSY', message=str(exc), status_code=409)
@@ -106,8 +99,7 @@ def blocks(source_id: str, version_id: str, service=Depends(get_knowledge_servic
 @router.get('/evidence/{evidence_id}', response_model=KnowledgeResponse)
 def evidence(evidence_id: str, run_id: str | None = None, service=Depends(get_knowledge_service)):
     if run_id:
-        from app.knowledge.discovery_run import evidence_context
-        return result(evidence_context(service, run_id, evidence_id))
+        raise ValueError('이전 온톨로지 발견 실행의 문맥 조회는 보존 브랜치에서 지원합니다.')
     return result(service.evidence(evidence_id))
 
 
@@ -215,168 +207,19 @@ def run(run_id: str, service=Depends(get_knowledge_service)):
     return result(service.run(run_id))
 
 
-@router.get('/runs', response_model=KnowledgeResponse)
-def discovery_runs(limit: int = 30, before: int | None = None, service=Depends(get_knowledge_service)):
-    from app.knowledge.discovery_run import list_analysis_runs
-    return result(list_analysis_runs(service, limit, before))
-
-
 @router.post('/runs/{run_id}/cancel', response_model=KnowledgeResponse)
 def cancel(run_id: str, service=Depends(get_knowledge_service)):
     return result(service.cancel(run_id))
 
 
-@router.get('/ontology-cqs', response_model=KnowledgeResponse)
-def ontology_cqs(service=Depends(get_knowledge_service)):
-    return result(ontology_schema.default_cqs())
-
-
-@router.get('/ontologies', response_model=KnowledgeResponse)
-def ontologies(service=Depends(get_knowledge_service)):
-    return result(ontology_schema.list_ontologies(service))
-
-
-@router.get('/ontologies/{ontology_id}', response_model=KnowledgeResponse)
-def ontology(ontology_id: str, service=Depends(get_knowledge_service)):
-    return result(ontology_schema.get_ontology(service, ontology_id))
-
-
-@router.get('/ontologies/{ontology_id}/consumer', response_model=KnowledgeResponse)
-def ontology_consumer_contract(ontology_id: str, service=Depends(get_knowledge_service)):
-    return result(ontology_consumer.inspect(service, ontology_id))
-
-
-@router.post('/ontologies/{ontology_id}/consumer', response_model=KnowledgeResponse)
-def review_consumer_contract(ontology_id: str, request: ontology_consumer.MappingReview, service=Depends(get_knowledge_service)):
-    return result(ontology_consumer.review(service, ontology_id, request))
-
-
-@router.get('/candidates', response_model=KnowledgeResponse)
-def ontology_candidates(changeset_id: str | None = None, kind: str | None = None,
-                        review_status: str | None = None, service=Depends(get_knowledge_service)):
-    return result(ontology_schema.candidates(service, changeset_id, kind, review_status))
-
-
-@router.post('/changes/{changeset_id}/decisions', response_model=KnowledgeResponse)
-def decisions(changeset_id: str, request: DecisionRequest, service=Depends(get_knowledge_service)):
-    return result(ontology_schema.decide(service, changeset_id, request))
-
-
-@router.post('/runs/{run_id}/ontology-changes', response_model=KnowledgeResponse)
-def discovery_changes(run_id: str, service=Depends(get_knowledge_service)):
-    return result(ontology_changes.publish(service, run_id))
-
-
-@router.post('/changes/{changeset_id}/ontology-candidates', response_model=KnowledgeResponse)
-def add_ontology_candidates(changeset_id: str, request: AddOntologyChanges, service=Depends(get_knowledge_service)):
-    return result(ontology_changes.add(service, changeset_id, request))
-
-
-@router.get('/changes/{changeset_id}/schema-preview', response_model=KnowledgeResponse)
-def ontology_preview(changeset_id: str, candidate_ids: list[str] | None = Query(default=None), service=Depends(get_knowledge_service)):
-    return result(ontology_changes.preview(service, changeset_id, candidate_ids))
-
-
-@router.get('/entities', response_model=KnowledgeResponse)
-def entities(concept_id: str | None = None, namespace: str | None = None, official_id: str | None = None,
-             q: str | None = None, service=Depends(get_knowledge_service)):
-    return result(extraction_store.list_entities(service, concept_id, namespace, official_id, q))
-
-
-@router.get('/entities/{entity_id}', response_model=KnowledgeResponse)
-def entity(entity_id: str, service=Depends(get_knowledge_service)):
-    return result(extraction_store.get_entity(service, entity_id))
-
-
-@router.post('/changes/{changeset_id}/assertions', response_model=KnowledgeResponse)
-def add_assertion(changeset_id: str, request: ManualAssertionRequest, service=Depends(get_knowledge_service)):
-    return result(extraction_store.add_manual(service, changeset_id, request))
-
-
-@router.post('/snapshots', response_model=KnowledgeResponse)
-def create_snapshot(request: SnapshotRequest, service=Depends(get_knowledge_service)):
-    return result(snapshots.create(service, request))
-
-
-@router.get('/snapshots', response_model=KnowledgeResponse)
-def snapshot_list(service=Depends(get_knowledge_service)):
-    return result(snapshots.list_snapshots(service))
-
-
-@router.get('/snapshots/{snapshot_id}', response_model=KnowledgeResponse)
-def snapshot_detail(snapshot_id: str, entity_id: str | None = None, as_of: date | None = None,
-                    service=Depends(get_knowledge_service)):
-    return result(snapshots.get_snapshot(service, None if snapshot_id == 'active' else snapshot_id, entity_id, as_of))
-
-
-@router.post('/snapshots/{snapshot_id}/activate', response_model=KnowledgeResponse)
-def activate_snapshot(snapshot_id: str, request: ActivateSnapshotRequest, service=Depends(get_knowledge_service)):
-    return result(snapshots.activate(service, snapshot_id, request))
-
-
 @router.get('/availability', response_model=KnowledgeResponse)
 def availability(type: str, id: str, service=Depends(get_knowledge_service)):
-    return result(snapshots.availability(service, type, id))
+    return result(usage_status.availability(service, type, id))
 
 
 @router.post('/availability', response_model=KnowledgeResponse)
 def set_availability(request: AvailabilityRequest, service=Depends(get_knowledge_service)):
-    return result(snapshots.set_availability(service, request))
-
-
-@router.get('/export', response_model=KnowledgeResponse)
-def export_snapshot(snapshot_id: str | None = None, format: str = 'json', entity_id: str | None = None,
-                    as_of: date | None = None, service=Depends(get_knowledge_service)):
-    return result(snapshots.export(service, snapshot_id, format, entity_id, as_of))
-
-
-@router.post('/search', response_model=KnowledgeResponse)
-def local_search(request: SearchRequest, service=Depends(get_knowledge_service)):
-    from app.knowledge.search import search
-    return result(search(service, request))
-
-
-@router.post('/entities', response_model=KnowledgeResponse)
-def register_entity(request: LocalEntityRequest, service=Depends(get_knowledge_service)):
-    return result(extraction_store.register_local_entity(service, request))
-
-
-@router.get('/discovery/sources', response_model=KnowledgeResponse)
-def discovery_sources(scope: str | None = None, step: int | None = None,
-                      run_id: str | None = None, service=Depends(get_knowledge_service)):
-    if run_id is not None:
-        from app.knowledge.discovery_run import catalog
-        return result(catalog(service, run_id, scope, step))
-    from app.knowledge.discovery_inputs import catalog
-    return result(catalog('current_discovery' if scope is None else scope, 0 if step is None else step))
-
-
-@router.get('/discovery/read', response_model=KnowledgeResponse)
-def discovery_read(file_id: str, scope: str | None = None, step: int | None = None,
-                   offset: int = 0, limit: int = 20, run_id: str | None = None,
-                   service=Depends(get_knowledge_service)):
-    if run_id is not None:
-        from app.knowledge.discovery_run import read
-        return result(read(service, run_id, file_id, scope, step, offset, limit))
-    from app.knowledge.discovery_inputs import read
-    return result(read(file_id, 'current_discovery' if scope is None else scope,
-                       0 if step is None else step, offset, limit))
-
-
-@router.get('/discovery/search', response_model=KnowledgeResponse)
-def discovery_search(q: str, scope: str | None = None, step: int | None = None, limit: int = 20,
-                     run_id: str | None = None, service=Depends(get_knowledge_service)):
-    if run_id is not None:
-        from app.knowledge.discovery_run import search
-        return result(search(service, run_id, q, scope, step, limit))
-    from app.knowledge.discovery_inputs import search
-    return result(search(q, 'current_discovery' if scope is None else scope, 0 if step is None else step, limit))
-
-
-@router.get('/discovery/terms', response_model=KnowledgeResponse)
-def discovery_terms(run_id: str, label: str, term_type: str = 'any', service=Depends(get_knowledge_service)):
-    from app.knowledge.discovery_analysis import terms
-    return result(terms(service, run_id, label, term_type))
+    return result(usage_status.set_availability(service, request))
 
 
 @router.get('/workbench/scopes', response_model=KnowledgeResponse)

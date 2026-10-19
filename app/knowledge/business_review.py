@@ -9,7 +9,7 @@ from uuid import uuid4
 from pydantic import Field, create_model
 
 from . import autoschema
-from .discovery_meanings import affected_keys
+from .source_meanings import affected_keys
 
 CONTRACT = 'requirement-local-review-v8-owned-errors'
 SOURCE_APPLICATION_CONTRACT = 'requirement-local-review-v13-source-application'
@@ -262,7 +262,7 @@ def non_target_blocks(run, requirement):
 
 def source_selection(run, requirement):
     """Rank existing source units and perform explicit field/value row lookups."""
-    from .discovery_profile import FrozenIndex
+    from .source_index import FrozenIndex
     inventory = source_blocks(run, requirement)
     non_targets = non_target_blocks(run, requirement)
     blocks = [b for b in inventory if b['id'] not in {e['block_id'] for e in non_targets}]
@@ -384,7 +384,7 @@ def inherited_inspection_units(run):
 def historical_inspection_scope(run, record):
     """Recover request scope only; a saved request does not prove model inspection."""
     from .business_run import exact_evidence
-    from .discovery_analysis import remap
+    from .source_meanings import remap
     units = [u for u in [*run.get('units', []), *run.get('reusable_units', []), *run.get('inspection_units', [])]
              if record.get('unit_id') and u.get('id') == record['unit_id']]
     if not units or any(u != units[0] for u in units):
@@ -594,7 +594,7 @@ def related_blocks(run, meanings, claims=(), *, chunks=None):
 
 
 def finding_block_ids(run, requirement, findings):
-    from .discovery_profile import FrozenIndex
+    from .source_index import FrozenIndex
     if not findings:
         return set()
     documents = [dict(id=b['id'], text=b['text'], file_id=b['source_version_id'], source_group=b['source_version_id'])
@@ -1381,7 +1381,7 @@ def public_requirement_scope(service, run, requirement, source):
     """Keep public work pending independently of the candidates that happen to exist."""
     from . import business_run as execution
     from .business_models import PublicItemCoverage, PublicScopeCheck
-    from .discovery_profile import FrozenIndex
+    from .source_index import FrozenIndex
     tasks = public_item_tasks(run, requirement)
     if not tasks:
         return deepcopy(source)
@@ -1545,7 +1545,7 @@ def apply_requirement(service, run, requirement, facts, blocks, *, resume=None):
     tasks = [dict(key=m['key'], item_id=i['id']) for m in content for i in items]
     reused_links = []
     if resume:
-        from .discovery_analysis import remap
+        from .source_meanings import remap
         unit = resume['unit']
         saved = remap(json.loads(unit['messages'][1]['content']), {v: k for k, v in (unit.get('reference_map') or {}).items()})
         if (saved['answer_request'] != {k: requirement.get(k, '') for k in ('question', 'criterion')}
@@ -3021,7 +3021,7 @@ def _represent(service, run, requirement, source, context, *, previous_scope=Non
     from .business_models import (LocalRepresentationCheck, RequirementJoinCheck, PreservationCheck,
                                   ExpressionReviewCheck, RequirementSynthesisCheck, ContributionReviewCheck, ContributionSynthesisCheck,
                                   ConjunctionReview, ChallengedContributionRevision)
-    from .discovery_profile import FrozenIndex
+    from .source_index import FrozenIndex
     meanings = review_meanings(source)
     public_source_only = source.get('public_scope', {}).get('input_contract') == PUBLIC_SOURCE_INPUT_CONTRACT
     for finding in source.get('findings', []):

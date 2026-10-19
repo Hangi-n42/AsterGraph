@@ -119,7 +119,7 @@ def test_public_scope_candidates_reviews_and_versions_share_source_scope(monkeyp
 
 
 def test_representation_missing_pool_checks_every_scoped_candidate_only(monkeypatch):
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     run = local_run(); background = add_background(run)
     requirement = dict(id='r', revision=1, source_ids=['s'])
     source = dict(meanings=[meaning('m')], examined_block_ids=['body'], completeness='complete', gaps=[], conjunctions=[])

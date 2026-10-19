@@ -646,7 +646,7 @@ def test_requirement_revision_and_service_review_path(tmp_path, monkeypatch):
         assert continued['metrics']['reused_responses'] == len(reassessed['units'])
         assert all(u['stage'] not in autoschema.ROLES and u['reused_from']['run_id'] == reassessed['id']
                    for u in continued['units'])
-        from app.knowledge import snapshots
+        from app.knowledge import availability as snapshots
         from app.knowledge.business_models import BusinessQuery
         query = BusinessQuery(question='접수 기관은?', snapshot_id=result['snapshot_id'], retrieval='bm25')
         answer = business_use.query(service, query)
@@ -675,7 +675,7 @@ def test_requirement_revision_and_service_review_path(tmp_path, monkeypatch):
         unit = next(u for u in reversed(run['units']) if u['stage'] == 'requirement_representation'
                     and json.loads(u['messages'][-1]['content'])['mode'] == 'meaning_batch')
         packet = json.loads(unit['messages'][-1]['content'])
-        from app.knowledge.discovery_analysis import remap
+        from app.knowledge.source_meanings import remap
         mapping = unit['reference_map']
         assert remap(packet['repair_context'][0]['changes'][0]['before'], {v: k for k, v in mapping.items()}) == business_run.compact_claim(original)
         assert packet['blocks'][0]['text'] == '기관은 본인 신청을 접수한다.'
@@ -685,29 +685,21 @@ def test_requirement_revision_and_service_review_path(tmp_path, monkeypatch):
         service.shutdown()
 
 
-def test_mixed_snapshots_keep_ontology_activation_separate(tmp_path):
-    from app.knowledge import snapshots
-    from app.tests.unit.test_knowledge_snapshots import reviewed, create, activate
-    service, selection = reviewed(tmp_path)
-    ontology_id = create(service, selection)
-    activate(service, ontology_id)
+def test_mixed_snapshots_keep_historical_activation_separate(tmp_path):
+    service = KnowledgeService(tmp_path/'knowledge.db')
     source_graph = dict(id='source-graph', kind='source_graph', claims=[], activation='explicit_query_only')
-    with service.repository.connect() as db:
-        db.execute('INSERT INTO snapshots VALUES(?,?)', (source_graph['id'], json.dumps(source_graph)))
-        db.execute('INSERT INTO snapshot_events VALUES(?,?)', ('graph-event', json.dumps(
-            dict(id='graph-event', kind='source_graph', event='reviewed_source_graph_snapshot'))))
-    listing = snapshots.list_snapshots(service)
-    assert [s['id'] for s in listing['items']] == [ontology_id]
-    assert len(listing['events']) == 1 and listing['active_snapshot_id'] == ontology_id
-    assert business_use.snapshots(service)['items'] == [source_graph]
-    for operation in (lambda: snapshots.get_snapshot(service, source_graph['id']),
-                      lambda: snapshots.export(service, source_graph['id']),
-                      lambda: activate(service, source_graph['id'])):
-        with pytest.raises(ValueError, match='출처 그래프'):
-            operation()
-    assert snapshots.get_snapshot(service)['snapshot_id'] == ontology_id
-    with service.repository.connect() as db:
-        assert service.repository.get(db, 'snapshots', source_graph['id']) == source_graph
+    historical = dict(id='ontology', kind='ontology', retained='historical record')
+    try:
+        with service.repository.connect() as db:
+            for value in (source_graph, historical):
+                db.execute('INSERT INTO snapshots VALUES(?,?)', (value['id'], json.dumps(value)))
+            db.execute('UPDATE knowledge_state SET active_snapshot_id=? WHERE id=1', (historical['id'],))
+        assert business_use.snapshots(service)['items'] == [source_graph]
+        with service.repository.connect() as db:
+            assert service.repository.get(db, 'snapshots', historical['id']) == historical
+            assert db.execute('SELECT active_snapshot_id FROM knowledge_state').fetchone()[0] == historical['id']
+    finally:
+        service.shutdown()
 
 
 def test_one_empty_participant_keeps_valid_siblings_and_failed_statement():
@@ -939,7 +931,7 @@ def test_query_citations_are_bounded_aliased_and_empty_answers_fail(tmp_path, mo
         result = business_use.query(service, request)
         assert result['status'] == 'unverified' and result['answer']['choice'] is None
         assert result['answer']['limitations'] == ['근거 부족']
-        from app.knowledge.discovery_profile import FrozenIndex
+        from app.knowledge.source_index import FrozenIndex
         monkeypatch.setattr(FrozenIndex, 'search', lambda *args, **kwargs: [])
         count = len(seen)
         result = business_use.query(service, request)
@@ -1169,7 +1161,7 @@ def test_representation_requires_explicit_incorrect_ids_without_inference():
 def test_requirement_query_keeps_approved_coverage_and_rejects_unknown_or_too_small_scope(tmp_path, monkeypatch):
     from copy import deepcopy
     from app.knowledge.business_models import BusinessQuery
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     service = KnowledgeService(tmp_path/'knowledge.db')
     requirements = [dict(id=rid, revision=1, status='ready') for rid in ['r', 'other']]
     claims = [dict(id=cid, statement=cid, source_version_ids=['v'], raw={})
@@ -1274,7 +1266,7 @@ def test_answer_meanings_keep_review_scope_and_uncertainty_without_promoting_sou
 @pytest.mark.parametrize('support', ['supported', 'unknown', 'not_assessed'])
 def test_qa_source_compaction_keeps_mandatory_context_and_never_uses_partial_review(tmp_path, monkeypatch, support):
     from app.knowledge.business_models import BusinessQuery
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     from app.tests.unit.test_knowledge_business_scope import block
     from app.tests.unit.test_knowledge_business_local_review import meaning
     blocks = [dict(block('title', '접수 안내', path='h1:1'), source_id='s'),

@@ -5,6 +5,10 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
+class VersionConflict(ValueError):
+    pass
+
+
 class KnowledgeRepository:
     def __init__(self, path: Path):
         self.path = Path(path)

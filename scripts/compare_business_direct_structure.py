@@ -74,7 +74,7 @@ def prepare():
           ar_projection='Research text version and null parse_run_id are not product parser identities.',
           pair_invariant='Full case, selected spans and instruction identical; only physical_structure property added. First two context lines kept without invented DOM.'))
     code={**read(selection.OUT/'prepared.json')['code'],**{str(p.relative_to(ROOT)):sha(p) for p in
-         [Path(__file__),ROOT/'scripts/business_direct_source_inputs.py',ROOT/'app/knowledge/discovery_segments.py']}}
+         [Path(__file__),ROOT/'scripts/business_direct_source_inputs.py',ROOT/'app/knowledge/source_segments.py']}}
     write(OUT/'prepared.json',dict(at=time.time(),code=code,files={p.name:sha(p) for p in OUT.iterdir() if p.is_file()},
           max_calls=17,order='seven direct selectors, seven plain judges, three AR structured judges; no retries'))
     print(OUT,flush=True)

@@ -253,7 +253,7 @@ def test_change_history_uses_exact_versions_and_current_source_requirements(serv
 
 
 def test_usage_keeps_activation_source_restrictions_and_requirement_causes_separate(service):
-    from app.knowledge import snapshots
+    from app.knowledge import availability as snapshots
     recorded = [dict(id='stable', question='비영향 요구', revision=1), dict(id='changed', question='영향 요구', revision=1)]
     snapshot = dict(id='selected', kind='source_graph', activation='explicit_query_only', run_id='run1',
                     source_versions={'v1': {}}, claims=[], blocks=[], requirements=recorded,

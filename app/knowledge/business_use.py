@@ -17,7 +17,7 @@ ANSWER_CONTRACT = 'provided-unique-citations-nonempty-answer-v2'
 
 
 def restricted_sources(db, version_ids):
-    from .snapshots import _statuses
+    from .availability import _statuses
     statuses = _statuses(db)
     return [dict(source_version_id=v, state=statuses['source_version', v]['state']) for v in version_ids
             if statuses.get(('source_version', v), {}).get('state', 'allowed') != 'allowed']
@@ -964,7 +964,7 @@ def source_quote_answer(service, run, request, source_evidence, source_versions,
 
 def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
-    from .discovery_profile import FrozenIndex
+    from .source_index import FrozenIndex
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()

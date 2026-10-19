@@ -1,4 +1,4 @@
-from app.knowledge import discovery_segments as segments
+from app.knowledge import source_segments as segments
 import pytest
 
 
