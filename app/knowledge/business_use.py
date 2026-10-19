@@ -1063,6 +1063,11 @@ def query(service, request, *, context_mode='graph'):
                 business_review.ANSWER_SCOPE_EXPERIMENT, business_review.MEANING_SELECTION_EXPERIMENT},
             review_provenance_scope='source_run_recipe_not_all_snapshot_assessments',
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
+        if request.evidence_union:
+            run['execution_boundary']['evidence_union'] = dict(contract=request.evidence_union,
+                experimental=True, baseline_limit=request.limit,
+                limit_semantics='baseline_selection_before_complete_union',
+                capacity_policy='unchanged_QA_guard_complete_union_or_stop')
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     built = None
     get_bundles = None

@@ -591,6 +591,8 @@ class BusinessQuery(BaseModel):
     concept_run_id: str | None = Field(default=None, min_length=1)
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
+    evidence_union: Literal['selected_factual_claims_v1'] | None = Field(default=None,
+        description='Experimental reviewed-snapshot union: limit bounds baseline claims; all selected factual additions are returned together under the unchanged QA input guard.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
@@ -615,6 +617,9 @@ class BusinessQuery(BaseModel):
             raise ValueError('answer_items는 요구에 묶인 항목별 답변에서만 사용합니다.')
         if len({i.id for i in self.answer_items}) != len(self.answer_items):
             raise ValueError('공개 답변 항목 ID가 중복됩니다.')
+        if self.evidence_union and (not self.snapshot_id or self.retrieval != 'hipporag2'
+                or self.answer_mode != 'synthesis' or self.requirement_ids):
+            raise ValueError('근거 합집합 실험은 요구 강제 선택 없는 snapshot hipporag2 종합 답변에서만 지원합니다.')
         return self
 
 

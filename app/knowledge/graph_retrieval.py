@@ -359,6 +359,27 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
+def selected_claim_union(snapshot, edges, passages, ranked, selected_ids, baseline, limit, retrieval):
+    """Preserve the baseline; the QA guard admits all additions together or none."""
+    accepted = {c['id'] for c in snapshot['claims'] if c.get('review_status') == 'accepted'}
+    selected = set(selected_ids)
+    eligible = {e['claim_id'] for e in edges if e['id'] in selected
+                and e['relation'] != 'has_concept' and e.get('claim_id') in accepted}
+    seen = {h['block_id'] for h in baseline}
+    additional = []
+    for pid, score in ranked:
+        for cid in passages[pid]['claim_ids']:
+            if cid in eligible and cid not in seen:
+                additional.append(dict(block_id=cid, file_id=passages[pid]['evidence']['source_version_id'],
+                    score=score, passage_id=pid, selection_reason=retrieval))
+                seen.add(cid)
+    return baseline + additional, dict(contract='selected_factual_claims_v1', baseline_limit=limit,
+        baseline_claim_ids=[h['block_id'] for h in baseline],
+        additional_claim_ids=[h['block_id'] for h in additional],
+        returned_claim_count=len(baseline) + len(additional),
+        capacity_policy='unchanged_QA_guard_complete_union_or_stop', selection_is_semantic_validation=False)
+
+
 def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
@@ -466,6 +487,9 @@ def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
                     break
         if len(hits) == request.limit:
             break
+    if request.evidence_union:
+        hits, trace['claim_union'] = selected_claim_union(snapshot, edges, passages, ranked,
+            selected, hits, request.limit, request.retrieval)
     trace['elapsed_s'] = monotonic() - started
     trace['ranking_is_semantic_validation'] = False
     business_run.save(service, run)
