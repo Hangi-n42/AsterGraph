@@ -1,0 +1,155 @@
+{
+  "version": "presentation-document-preservation-v1",
+  "created_at": "2026-10-11T23:56:40.071024+00:00",
+  "execution_code_head": "da9f53abf3cb141b904f0133d8557e5b7dfcb4be",
+  "branch": "feature/document-graph-rag-comparison",
+  "documentation_commit": "First addition commit of the presentation report; exact commit and remote verification recorded separately after push.",
+  "scope": "Documentation preservation only; no model calls or semantic regrading",
+  "records": [
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/scoring_ledger.json",
+      "source_sha256": "6eaeea7b08855eff47148068684418e3ede163446dc55bf1588158525fdf662f",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/scoring_ledger.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "6eaeea7b08855eff47148068684418e3ede163446dc55bf1588158525fdf662f"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/result_summary.json",
+      "source_sha256": "51d8b74b47300c3a6b37a9c5dc0335ffefa59ecf198b1e31989d4be5b83b4fa8",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/result_summary.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "51d8b74b47300c3a6b37a9c5dc0335ffefa59ecf198b1e31989d4be5b83b4fa8"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/question_results.csv",
+      "source_sha256": "42a8e503e3929277be2fd8aafbbc9cc28b3c93362a170a015dd431a2de4fb7a1",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/question_results.csv",
+      "transformation": "CRLF_to_LF_only_for_Git_storage",
+      "preserved_sha256": "171c15b759f1cad72eb92380b02d4842f86ce7185a995ff9399f38a2b2839724"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/execution_cost_audit.md",
+      "source_sha256": "b651c32f11fe3387ef05a37480201679ca71f9da2913c4ca8f53959aa01f5a7d",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/execution_cost_audit.md",
+      "transformation": "links_only",
+      "preserved_sha256": "4a1377c83bc38c27f192b14b18774310758f3a83ee8d5e5bbf00f6aae22b1f9b"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/execution_cost_audit.json",
+      "source_sha256": "33dd30b4a3215d86651b3872695777989cf23f7efbd0e683b39021fc60ec2256",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/execution_cost_audit.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "33dd30b4a3215d86651b3872695777989cf23f7efbd0e683b39021fc60ec2256"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/audit_execution_costs.py",
+      "source_sha256": "e3dd082f2885f9bc702caa9c73e76d5d84fe4f63106eb4ddf523c160dadebac1",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/audit_execution_costs.py",
+      "transformation": "byte_identical",
+      "preserved_sha256": "e3dd082f2885f9bc702caa9c73e76d5d84fe4f63106eb4ddf523c160dadebac1"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/priority_scope_freeze.json",
+      "source_sha256": "6ac1b8b0068d4fe20c983503bd8600961a3510efc64677b54c5dc4a6d4ed8914",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/priority_scope_freeze.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "6ac1b8b0068d4fe20c983503bd8600961a3510efc64677b54c5dc4a6d4ed8914"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/questions_only.json",
+      "source_sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/questions_only.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/evaluation_reference_only.json",
+      "source_sha256": "a7e8304d351970c74ec31f2a6d3289d34af109fa1984504e79278492fa40e8d7",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/evaluation_reference_only.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "a7e8304d351970c74ec31f2a6d3289d34af109fa1984504e79278492fa40e8d7"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/build_receipt_summary.json",
+      "source_sha256": "ca9ea43b79c0fda584d8defa006e396c3fdfd7d36899cc8c3f96ffb0890e09b7",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/build_receipt_summary.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "ca9ea43b79c0fda584d8defa006e396c3fdfd7d36899cc8c3f96ffb0890e09b7"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/historical_extraction_costs.json",
+      "source_sha256": "1192413f8795b4fb464ef94814c06bc8b7101901461b8a4b0c2ff8f4dd83b0ec",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/historical_extraction_costs.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "1192413f8795b4fb464ef94814c06bc8b7101901461b8a4b0c2ff8f4dd83b0ec"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/presentation_methods_and_limits.md",
+      "source_sha256": "31d274bf8781a50b87339efbfeaa06175df542bbfa24bd5554f16c0176ee41eb",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/presentation_methods_and_limits.md",
+      "transformation": "byte_identical",
+      "preserved_sha256": "31d274bf8781a50b87339efbfeaa06175df542bbfa24bd5554f16c0176ee41eb"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/snapshot_connection.json",
+      "source_sha256": "08915de7c1cf3dd72f2e9f07e29298f49e5436f0e79bae61f4c7464ad400fe0f",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/snapshot_connection.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "08915de7c1cf3dd72f2e9f07e29298f49e5436f0e79bae61f4c7464ad400fe0f"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/execution_manifest.json",
+      "source_sha256": "f818a40dc2e63efc24cd71dcdaf2cd606856f97163dc687132600a94cc4253ae",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_execution_manifest.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "f818a40dc2e63efc24cd71dcdaf2cd606856f97163dc687132600a94cc4253ae"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa/presentation_exploratory/execution_ledger.json",
+      "source_sha256": "ba16dfe0650fdabbc21f97c6ffabcf30c2dcc61123d3e3039fe7d7e53e57b95f",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_execution_ledger.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "ba16dfe0650fdabbc21f97c6ffabcf30c2dcc61123d3e3039fe7d7e53e57b95f"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/qa_v1/qa_settings_manifest.json",
+      "source_sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_settings_manifest.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa_continuation_manifest.json",
+      "source_sha256": "8503139a620a0dc0e808e0dc24734553ce86533a38e3e757612cbaa5e49dac3a",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/qa_continuation_manifest.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "8503139a620a0dc0e808e0dc24734553ce86533a38e3e757612cbaa5e49dac3a"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/source_build_manifest.json",
+      "source_sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/source_build_manifest.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/source_closure_receipt.json",
+      "source_sha256": "af789209ec503f2569505cc4f914a1c9f91fc11e161c45c607660d1a904bf638",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/source_closure_receipt.json",
+      "transformation": "byte_identical",
+      "preserved_sha256": "af789209ec503f2569505cc4f914a1c9f91fc11e161c45c607660d1a904bf638"
+    },
+    {
+      "source": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/presentation_brief.md",
+      "source_sha256": "dd265a3ad7ff2070404ae2407921c25700549ad5f65c5a4cff20fa8bb2f470c3",
+      "repository_path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012.md",
+      "transformation": "relative_links_and_preservation_navigation_only",
+      "preserved_sha256": "d58b3b4ff7a7c3bc702c843fe799a5753531bcc64699a4c3a49729290a512e8a"
+    }
+  ],
+  "generated_navigation": {
+    "path": "docs/70_research/company_knowledge/document_graph_rag_presentation_20261012/README.md",
+    "sha256": "2cb75bb17d0a1981ee183d9cf044fc6bd30142cbc8a42009e088917873f08b9b"
+  },
+  "large_artifact_policy": "Keep original local DB, raw QA responses, embeddings and full build records; do not add to Git."
+}

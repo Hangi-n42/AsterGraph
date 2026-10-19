@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "archive": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/output_contract_efficiency_preparation_v2",
+  "manifest_sha256": "c491ccefff7609624746b174e3989061ee5a56144461d55301a9b48bdce1481b",
+  "new_native_calls": 0,
+  "live_code_unchanged": true,
+  "unit_test_temporary_path_dependencies_removed": true,
+  "small_portable_unit_contract_tests_passed": 6,
+  "actual244_request_replay_passed": true,
+  "actual_replay_cli_snapshot_path_explicit": true,
+  "old_archives_unchanged": true,
+  "product_wire_conversion_unchanged": true,
+  "total_relevant_tests_passed": 28,
+  "roundtrip35_retained": true,
+  "case42_single_role_vs_whole_pool_clarified": true,
+  "residual105_held": true,
+  "native3_not_started": true
+}

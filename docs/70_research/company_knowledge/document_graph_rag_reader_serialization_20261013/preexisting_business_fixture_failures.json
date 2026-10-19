@@ -1,0 +1,21 @@
+{
+  "version": "baseline-existing-seven-failure-proof-v1",
+  "current_test_run": {
+    "passed": 75,
+    "failed": 7
+  },
+  "same_seven_failed_with_original_HEAD_business_use": true,
+  "failed_nodes": [
+    "app/tests/unit/test_knowledge_business.py::test_nonessential_real_responses_keep_scope_and_error_gates",
+    "app/tests/unit/test_knowledge_business.py::test_server_quote_error_reaches_source_reassessment_without_model_challenge",
+    "app/tests/unit/test_knowledge_business.py::test_source_delivery_and_model_examination_do_not_replace_meaning_coverage",
+    "app/tests/unit/test_knowledge_business.py::test_requirement_query_keeps_approved_coverage_and_rejects_unknown_or_too_small_scope",
+    "app/tests/unit/test_knowledge_business.py::test_qa_source_compaction_keeps_mandatory_context_and_never_uses_partial_review[supported]",
+    "app/tests/unit/test_knowledge_business.py::test_qa_source_compaction_keeps_mandatory_context_and_never_uses_partial_review[unknown]",
+    "app/tests/unit/test_knowledge_business.py::test_qa_source_compaction_keeps_mandatory_context_and_never_uses_partial_review[not_assessed]"
+  ],
+  "product_files_reverted_or_modified": false,
+  "original_business_run_and_business_review_unchanged": true,
+  "actual_native_calls": 0,
+  "scope": "older incomplete test fixtures/current review contracts; kept outside this source-reader change"
+}

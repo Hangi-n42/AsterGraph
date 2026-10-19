@@ -1,0 +1,60 @@
+{
+  "B": {
+    "question_status": {
+      "fulfilled": 4,
+      "unfulfilled": 1,
+      "partial": 1
+    },
+    "retrieval_meanings": {
+      "full": 11,
+      "partial": 1
+    },
+    "answer_meanings": {
+      "full": 8,
+      "missing": 3,
+      "partial": 1
+    },
+    "cost": {
+      "wall_s": 598.5786674591945,
+      "native_calls": 6,
+      "input_tokens": 29931,
+      "output_tokens": 1632,
+      "native_elapsed_s": 251.631509
+    }
+  },
+  "C": {
+    "question_status": {
+      "fulfilled": 4,
+      "unfulfilled": 2
+    },
+    "retrieval_meanings": {
+      "full": 11,
+      "partial": 1
+    },
+    "answer_meanings": {
+      "full": 8,
+      "missing": 3,
+      "partial": 1
+    },
+    "cost": {
+      "wall_s": 623.2725716258865,
+      "native_calls": 12,
+      "input_tokens": 46103,
+      "output_tokens": 1863,
+      "native_elapsed_s": 354.357068
+    },
+    "graph_execution": {
+      "propagation": 5,
+      "dense_fallback": 1,
+      "fallback_question": "SUP04"
+    }
+  },
+  "paired": {
+    "same": 4,
+    "uncertain": 1,
+    "worse": 1
+  },
+  "planned_questions": 6,
+  "planned_responses": 12,
+  "classification_note": "paired uncertain = 서로 다른 의미의 개선과 회귀 혼재; 개별 채점 미확정은 0"
+}

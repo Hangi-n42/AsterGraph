@@ -1,0 +1,20 @@
+{
+  "version": 4,
+  "archive": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_hybrid_v2_20261013/output_contract_efficiency_preparation_v4",
+  "manifest_sha256": "9d08c4892a3dc177a66e94c391395e5e01ac0eb82e76e28c4fdba0d065cef6b1",
+  "native_driver_sha256": "bab34445ec8d57dc8f1f4960aa7ab00899034f7bb46fc49361fd11a985f7139f",
+  "lifecycle_receipt_sha256": "98874f4770da275f624290e634171dbc5447f6b1fe74dcb5b8dd9798161fa66d",
+  "missing_untracked_test_fixtures_now_archived": [
+    "app/tests/unit/test_knowledge_business_checkpoint.py",
+    "app/tests/unit/test_knowledge_source_capacity_repair.py",
+    "app/tests/unit/test_knowledge_business_projection.py",
+    "app/tests/unit/test_knowledge_business.py"
+  ],
+  "live_frozen12_unchanged": true,
+  "native_calls": 0,
+  "product_and_model_settings_unchanged": true,
+  "tests_not_repeated": true,
+  "previous_archives_unchanged": true,
+  "serial_next_phase_only_fixed3": true,
+  "residual105_auto_start": false
+}

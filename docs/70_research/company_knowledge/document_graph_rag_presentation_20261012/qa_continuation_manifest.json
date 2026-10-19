@@ -1,0 +1,52 @@
+{
+  "version": "presentation-qa-continuation-v1",
+  "created_at": "2026-10-11T20:18:58.398774+00:00",
+  "questions_only": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/questions_only.json",
+  "questions_sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4",
+  "question_order": [
+    "SUP03",
+    "SUP01",
+    "ACT501070",
+    "SUP02",
+    "SUP04",
+    "ACT501108"
+  ],
+  "settings_manifest": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/qa_v1/qa_settings_manifest.json",
+  "settings_sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf",
+  "native_request_deadline": "2026-10-12T13:00:00+09:00",
+  "policy": "Each edge-filter and answer request admitted before cutoff finishes normally; next request is skipped. V3 response-first failure recording retained.",
+  "files": [
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/run_presentation_qa.py",
+      "sha256": "136624bed46d8913731219b36ff5a6778a2ca5f882e45c60dad7672c01ca52a5"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/deadline_model_client.py",
+      "sha256": "e03136c38501e12e6b359b59e47d544c91742e41a3b201fb8f711b8509fcd616"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/continue_to_qa.py",
+      "sha256": "7a97b7574fe589b703f3c007b67b55a2d76d9aa3177518dbf8c4841cc1143eda"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/qa_deadline_check.json",
+      "sha256": "32a4c517b053e65e2be00e8ea2debef56d93862de27fbf509172f59d4d6d7b3f"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/scope_freeze_input.json",
+      "sha256": "6ac1b8b0068d4fe20c983503bd8600961a3510efc64677b54c5dc4a6d4ed8914"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/presentation_20261012/source_build_manifest.json",
+      "sha256": "5eb66a2c91687164ef034851510b6093550d683d543b60e2c04117fb1260a240"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/artifacts/document-graph-rag-20261012/presentation_20261012/questions_only.json",
+      "sha256": "a5b1ea71bab60268ceb380642307360375087161f0fbc61557710b4fe64dcbb4"
+    },
+    {
+      "path": "/Users/hyeongi/.codex/worktrees/document-graph-rag-comparison/Civil-Complaints-System/data/knowledge/evaluations/document_graph_rag_20261012/qa_v1/qa_settings_manifest.json",
+      "sha256": "efef6c46c56b5dc2fce295296dd7f91139c26c6bad095c07dfc4dd4a65cacfdf"
+    }
+  ]
+}

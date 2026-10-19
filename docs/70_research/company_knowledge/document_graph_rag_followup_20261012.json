@@ -1,0 +1,606 @@
+{
+  "date": "2026-10-12",
+  "issue": {
+    "number": 660,
+    "url": "https://github.com/Hangi-n42/AsterGraph/issues/660",
+    "state_last_checked": "OPEN",
+    "whole_issue_completed": false
+  },
+  "base_git_head": "be543a89abaff64e277029c63bd080d8a4eb437c",
+  "historical_execution_code": "da9f53abf3cb141b904f0133d8557e5b7dfcb4be",
+  "P1": {
+    "decision": "rejected_before_QA",
+    "reason": "Both missing source meanings still absent from actual reader input; fixed rule not tuned after result",
+    "P2_changes": false,
+    "new_model_calls": 0,
+    "new_QA_calls": 0,
+    "arms": {
+      "B": {
+        "selected_count": 12,
+        "source_budget": 9692,
+        "source_budget_limit": 16384,
+        "production_equipment_present": false,
+        "startup_production_operation_costs_present": false,
+        "original_selection_exact_replay": true,
+        "selected_12": [
+          {
+            "passage_id": "passage_fc31af4a77436fe1b40094d2",
+            "text": "- (개발기술사업화) ①다음 해당 기술을 사업화하고자 하는 기업",
+            "query_group": 0,
+            "query_group_rank": 1,
+            "selected_rank": 1
+          },
+          {
+            "passage_id": "passage_2488d60f76c1309a43ae269c",
+            "text": "② 자체 기술을 사업화하고자 하는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업",
+            "query_group": 1,
+            "query_group_rank": 1,
+            "selected_rank": 2
+          },
+          {
+            "passage_id": "passage_54d1210723a0cbcf6b5bfb22",
+            "text": "[투자자금]\n▪ 지식재산권(특허, 상표권 등) 매입에 소요되는 비용\n▪ 디자인 개발, 전산 개발 등 외부 연구용역에 소요되는 비용\n▪ SW 구입 등 정보화 촉진 및 서비스 제공 등에 소요되는 자금",
+            "query_group": 2,
+            "query_group_rank": 1,
+            "selected_rank": 3
+          },
+          {
+            "passage_id": "passage_9c67849672198016effbf709",
+            "text": "※ 청년전용창업자금은 제외",
+            "query_group": 2,
+            "query_group_rank": 2,
+            "selected_rank": 4
+          },
+          {
+            "passage_id": "passage_590651a6c63efe93e2bf1236",
+            "text": "* 자금용도 및 융자범위 등 세부사항은 사업별 정책자금 융자계획에서 규정",
+            "query_group": 2,
+            "query_group_rank": 4,
+            "selected_rank": 5
+          },
+          {
+            "passage_id": "passage_d28718465f023cbad5136779",
+            "text": "▪산업통상자원부, 중소벤처기업부 등 정부 또는 지자체 출연 연구개발사업에 참여하여 기술개발에 성공(완료)한 기술\n▪특허, 실용신안 또는 저작권 등록 기술\n▪정부 및 정부 공인기관이 인증한 기술\n* 신기술(NET), 전력신기술, 건설신기술, 보건신기술(HT) 등\n▪국내외의 대학, 연구기관, 기업, 기술거래기관 등으로부터 이전 받은 기술\n▪『기술의 이전 및 사업화 촉진에 관한 법률』상 기술평가기관으로부터 기술평가인증을 받은 기술\n▪기업부설연구소 및 연구개발전담부서(한국산업기술진흥협회 인정) 보유 기업이 개발한 기술\n▪중소벤처기업부가 인가한 기관과 기술자료 임치계약을 체결한 기술\n▪특허청의 IP-R&D 전략지원사업에 참여하여 개발을 완료한 기술",
+            "query_group": 1,
+            "query_group_rank": 5,
+            "selected_rank": 6
+          },
+          {
+            "passage_id": "passage_be5dc7fea39249ac67aa7eda",
+            "text": "ㅇ 혁신창업지원, 일자리창출촉진, 개발기술사업화자금으로 구분",
+            "query_group": 0,
+            "query_group_rank": 6,
+            "selected_rank": 7
+          },
+          {
+            "passage_id": "passage_bce55ddbd3db6ce26235eb3e",
+            "text": "* 개발기술사업화자금은 중진공 직접대출",
+            "query_group": 1,
+            "query_group_rank": 6,
+            "selected_rank": 8
+          },
+          {
+            "passage_id": "passage_bbd761a02f08c63d416e0d74",
+            "text": "※ 청년전용창업자금 : 시설‧운전 6년 이내(거치기간 3년 이내 포함)",
+            "query_group": 2,
+            "query_group_rank": 6,
+            "selected_rank": 9
+          },
+          {
+            "passage_id": "passage_32c06d4bfd7f4aac95d49cb3",
+            "text": "□ 운전자금",
+            "query_group": 2,
+            "query_group_rank": 8,
+            "selected_rank": 10
+          },
+          {
+            "passage_id": "passage_d1ae9b4ab00768116a9b78fd",
+            "text": "ㅇ『중소기업창업지원법』제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업",
+            "query_group": 0,
+            "query_group_rank": 9,
+            "selected_rank": 11
+          },
+          {
+            "passage_id": "passage_e9d3a650167d919f4787d0e5",
+            "text": "ㅇ 대출기간",
+            "query_group": 2,
+            "query_group_rank": 9,
+            "selected_rank": 12
+          }
+        ],
+        "missing_ranks": {
+          "P397": {
+            "original_arm_rank": 25,
+            "merged_rank": 32,
+            "selection_reason": "novel_source_context",
+            "selected_rank": null
+          },
+          "P412": {
+            "original_arm_rank": 44,
+            "merged_rank": 44,
+            "selection_reason": "novel_source_context",
+            "selected_rank": null
+          }
+        }
+      },
+      "C": {
+        "selected_count": 12,
+        "source_budget": 9945,
+        "source_budget_limit": 16384,
+        "production_equipment_present": false,
+        "startup_production_operation_costs_present": false,
+        "original_selection_exact_replay": true,
+        "selected_12": [
+          {
+            "passage_id": "passage_fc31af4a77436fe1b40094d2",
+            "text": "- (개발기술사업화) ①다음 해당 기술을 사업화하고자 하는 기업",
+            "query_group": 0,
+            "query_group_rank": 1,
+            "selected_rank": 1
+          },
+          {
+            "passage_id": "passage_2488d60f76c1309a43ae269c",
+            "text": "② 자체 기술을 사업화하고자 하는 Inno-Biz, Main-Biz, 벤처기업, 지식재산경영인증 기업(특허청 인증), 크라우드펀딩을 통한 1억원 이상 투자 유치 기업",
+            "query_group": 1,
+            "query_group_rank": 1,
+            "selected_rank": 2
+          },
+          {
+            "passage_id": "passage_54d1210723a0cbcf6b5bfb22",
+            "text": "[투자자금]\n▪ 지식재산권(특허, 상표권 등) 매입에 소요되는 비용\n▪ 디자인 개발, 전산 개발 등 외부 연구용역에 소요되는 비용\n▪ SW 구입 등 정보화 촉진 및 서비스 제공 등에 소요되는 자금",
+            "query_group": 2,
+            "query_group_rank": 1,
+            "selected_rank": 3
+          },
+          {
+            "passage_id": "passage_9c67849672198016effbf709",
+            "text": "※ 청년전용창업자금은 제외",
+            "query_group": 2,
+            "query_group_rank": 2,
+            "selected_rank": 4
+          },
+          {
+            "passage_id": "passage_be5dc7fea39249ac67aa7eda",
+            "text": "ㅇ 혁신창업지원, 일자리창출촉진, 개발기술사업화자금으로 구분",
+            "query_group": 0,
+            "query_group_rank": 4,
+            "selected_rank": 5
+          },
+          {
+            "passage_id": "passage_590651a6c63efe93e2bf1236",
+            "text": "* 자금용도 및 융자범위 등 세부사항은 사업별 정책자금 융자계획에서 규정",
+            "query_group": 2,
+            "query_group_rank": 4,
+            "selected_rank": 6
+          },
+          {
+            "passage_id": "passage_bce55ddbd3db6ce26235eb3e",
+            "text": "* 개발기술사업화자금은 중진공 직접대출",
+            "query_group": 0,
+            "query_group_rank": 6,
+            "selected_rank": 7
+          },
+          {
+            "passage_id": "passage_bbd761a02f08c63d416e0d74",
+            "text": "※ 청년전용창업자금 : 시설‧운전 6년 이내(거치기간 3년 이내 포함)",
+            "query_group": 2,
+            "query_group_rank": 6,
+            "selected_rank": 8
+          },
+          {
+            "passage_id": "passage_32c06d4bfd7f4aac95d49cb3",
+            "text": "□ 운전자금",
+            "query_group": 2,
+            "query_group_rank": 8,
+            "selected_rank": 9
+          },
+          {
+            "passage_id": "passage_d1ae9b4ab00768116a9b78fd",
+            "text": "ㅇ『중소기업창업지원법』제2조에 의한 창업자로서 같은 법 제3조에 따라 창업에서 제외되는 업종을 영위하지 않는 중소기업",
+            "query_group": 1,
+            "query_group_rank": 9,
+            "selected_rank": 10
+          },
+          {
+            "passage_id": "passage_e9d3a650167d919f4787d0e5",
+            "text": "ㅇ 대출기간",
+            "query_group": 2,
+            "query_group_rank": 9,
+            "selected_rank": 11
+          },
+          {
+            "passage_id": "passage_b955d7821cab6a0bdd285a56",
+            "text": "* 개발기술사업화자금은 20억원, 청년전용창업자금은 기업당 1억원 이내",
+            "query_group": 1,
+            "query_group_rank": 10,
+            "selected_rank": 12
+          }
+        ],
+        "missing_ranks": {
+          "P397": {
+            "original_arm_rank": 20,
+            "merged_rank": 35,
+            "selection_reason": "novel_source_context",
+            "selected_rank": null
+          },
+          "P412": {
+            "original_arm_rank": 45,
+            "merged_rank": 47,
+            "selection_reason": "novel_source_context",
+            "selected_rank": null
+          }
+        }
+      }
+    },
+    "files": [
+      {
+        "path": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P1_numbered_requests_v1/P1_offline.py",
+        "sha256": "ce5e6e62db68d3182e893753dd739501a6a889d544ee2fec51b9117943eec489"
+      },
+      {
+        "path": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P1_numbered_requests_v1/P1_offline_selection.json",
+        "sha256": "32d78df60248f51f3835b6634200f76d1d833b4d0cb16139ad727b76be9f8222"
+      },
+      {
+        "path": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P1_numbered_requests_v1/P1_literal_item_lexical_diagnostic.json",
+        "sha256": "afd2c4a9e0e392aece66cd99e25d934344e5cc5679d148cb5268a338d80cb9b8"
+      },
+      {
+        "path": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P1_numbered_requests_v1/P1_selection_policy.py",
+        "sha256": "3c610d473277aa5ef3d68aef60a9ff104b3ff20a35f9ed82a302951c60695130"
+      },
+      {
+        "path": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P1_numbered_requests_v1/P1_policy_frozen_before_selection.json",
+        "sha256": "403b6181f77f4f5c708d2922505046447d8f25b4e4948c1559f75bdd12d8985b"
+      }
+    ],
+    "verbatim_request2": "위 자금외에 특허 사업화를 위한 시설 또는 운전자금을 안내받고 싶습니다.",
+    "deictic_context": {
+      "auxiliary_BM25_input": "verbatim request2 only; its antecedent fund name and common applicant description are absent",
+      "original_query_and_ranking_preserved": true,
+      "whole_QA_query_lost": false,
+      "causal_contribution_of_antecedent_loss": "not isolated or measured",
+      "next_unexecuted_direction": "Evaluate retrieval preserving the original shared description and reference antecedent alongside each literal request; no automatic retry or new method adopted"
+    }
+  },
+  "P2": {
+    "rows": [
+      {
+        "case": "SUP02_C",
+        "run_id": "0d402d00135546a186533a2b01d95b21",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_C.json",
+        "result_file_sha256": "e6031db43134ddbf1e49793405de8ffd0477278298b4e5cfe2d2f1be3485bbef",
+        "baseline_run_id": "b812390392844d858fc2ffc085dbb7e6",
+        "answer": {
+          "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 하는 별도 자금은 **청년전용창업자금**입니다. \n\n이 자금에서 특허권 매입 비용을 투자자금으로 지원하는지에 대해서는 **확인 불가**합니다. 근거 문서에는 '무형자산 확보를 위한 투자자금'으로 '지식재산권(특허, 상표권 등) 매입에 소요되는 비용'이 포함됨을 명시하고 있으나, 해당 조항 바로 아래에 **'※ 청년전용창업자금은 제외'**라는 예외 조항이 명시되어 있습니다. 따라서 청년전용창업자금은 이 투자자금 항목(특허권 매입 포함)의 지원 대상에서 제외됩니다.",
+          "choice": null,
+          "citations": [
+            "passage_61bf9dbc19c9b002eb6c4849",
+            "passage_54d1210723a0cbcf6b5bfb22",
+            "passage_e0d03e8a45abfc6f18316953"
+          ],
+          "limitations": [
+            "청년전용창업자금이 무형자산(특허권 등) 매입 비용에 대한 투자자금 지원에서 제외됨을 명시한 예외 조항(q8, b25)을 확인했습니다.",
+            "다른 자금(예: 개발기술사업화자금 등)의 지원 범위는 본 질문의 범위(청년전용창업자금)와 무관하므로 답변에서 제외했습니다."
+          ]
+        },
+        "new_cost": {
+          "prompt_eval_count": 7163,
+          "eval_count": 310,
+          "elapsed_s": 64.283918,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 5034,
+          "eval_count": 329,
+          "elapsed_s": 44.251912
+        },
+        "wall_s": 78.79367845800152,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 13503,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "ae22270aee67504cd310f2ac372ad9e23a1a0cdc120639c8309c2d47b0c20ca7",
+        "semantic_comparison": {
+          "before": "unfulfilled",
+          "after": "partial",
+          "change": "wrong self-owned-business-property attribution removed; patent-purchase investment-use exception recognized",
+          "remaining_errors": [
+            "Answer begins with 확인 불가 then concludes excluded in the same response; inconsistent conclusion retained"
+          ],
+          "new_major_errors": []
+        }
+      },
+      {
+        "case": "SUP02_B",
+        "run_id": "eb9003a3efda4875af2213b64231b8ed",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP02_B.json",
+        "result_file_sha256": "03cd94be008340c8716ee3bd81c8b36324d6a8fcec956c771ed68a09807ca2f9",
+        "baseline_run_id": "af83fcf447f44530a2f1dd48d660d93c",
+        "answer": {
+          "answer": "대표자가 만 39세 이하이고 사업 개시일로부터 3년 미만(신청·접수일 기준)인 중소기업 및 창업을 준비 중인 자를 대상으로 하는 별도 자금은 **청년전용창업자금**입니다. \n\n다만, 제공된 근거에 따르면 **청년전용창업자금은 무형자산(특허권 등) 확보를 위한 투자자금 지원 대상에서 제외**됩니다. 따라서 해당 자금에서 특허권 매입 비용을 투자자금으로 지원하지 않습니다.",
+          "choice": null,
+          "citations": [
+            "passage_61bf9dbc19c9b002eb6c4849",
+            "passage_e0d03e8a45abfc6f18316953",
+            "passage_54d1210723a0cbcf6b5bfb22",
+            "passage_be5dc7fea39249ac67aa7eda"
+          ],
+          "limitations": [
+            "제공된 원문에는 '청년전용창업자금은 제외'라는 명시적 예외 조항이 무형자산 확보를 위한 투자자금 항목에 붙어 있으므로, 이 자금으로 특허권 매입 비용이 지원되지 않는다고 판단했습니다.",
+            "다른 창업자금(예: 창업사업연계자금 등)의 세부 지원 범위는 이 질문의 범위 밖이므로 확인하지 않았습니다."
+          ]
+        },
+        "new_cost": {
+          "prompt_eval_count": 7513,
+          "eval_count": 255,
+          "elapsed_s": 55.926979,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 5369,
+          "eval_count": 384,
+          "elapsed_s": 48.632992
+        },
+        "wall_s": 70.98207720800201,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 14003,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "23d13a7bc85ddcd38ecfcc345164f3947b0f5550f74e9676d60cf736f3188441",
+        "semantic_comparison": {
+          "before": "partial",
+          "after": "fulfilled",
+          "change": "correct investment-use exception consistently; applicant condition and fund name preserved",
+          "new_major_errors": []
+        }
+      },
+      {
+        "case": "SUP01_C",
+        "run_id": "42f3c586424d4086b2442af56cdd5259",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_C.json",
+        "result_file_sha256": "3fedeb4ada44e033f72bad04d6d0396dccb79330225920011e1eab79872fa06c",
+        "baseline_run_id": "8beb240f9f28444cb137d1e7d36259d4",
+        "answer": {
+          "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금을 시설자금으로 **지원하지 않습니다**.",
+          "choice": null,
+          "citations": [
+            "passage_be5dc7fea39249ac67aa7eda",
+            "passage_fc31af4a77436fe1b40094d2",
+            "passage_12c4ca17d67725e858746230",
+            "passage_54d1210723a0cbcf6b5bfb22"
+          ],
+          "limitations": [
+            "원문은 '개발기술사업화자금은 건축 및 토지구입비, 임차보증금은 지원 불가'라고 명시하고 있습니다.",
+            "임차보증금이 시설자금 항목에 포함되어 있으나, 개발기술사업화자금에 한해 지원이 제외된다는 조건이 확인됩니다."
+          ]
+        },
+        "new_cost": {
+          "prompt_eval_count": 6122,
+          "eval_count": 167,
+          "elapsed_s": 43.665327,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 4411,
+          "eval_count": 188,
+          "elapsed_s": 33.419547
+        },
+        "wall_s": 58.1064913750015,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 11566,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "01da55b1d424ee07004483d339f30f67ffc7de148f42464ee89fc950d4fee3c0",
+        "semantic_comparison": {
+          "before": "fulfilled",
+          "after": "fulfilled",
+          "change": "same",
+          "new_major_errors": []
+        }
+      },
+      {
+        "case": "SUP01_B",
+        "run_id": "c0ac63a20dce41a180241ee607c67e6b",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP01_B.json",
+        "result_file_sha256": "edebcf13ecc86157ea448eb5f2b4be5427f6d8ee3aa6e98cb4ac6a026556ede7",
+        "baseline_run_id": "cc34494ee3514ae69effefc020286dbe",
+        "answer": {
+          "answer": "창업기업자금 중 등록된 특허 기술의 사업화를 대상으로 명시한 자금은 **개발기술사업화자금**입니다. 해당 자금에서 사업장 임차보증금은 **시설자금으로 지원되지 않습니다** (지원 불가).",
+          "choice": null,
+          "citations": [
+            "passage_be5dc7fea39249ac67aa7eda",
+            "passage_2488d60f76c1309a43ae269c",
+            "passage_ead4f9ad0f235301b5b51fa3"
+          ],
+          "limitations": [
+            "원문은 '개발기술사업화자금은 건축 및 토지구입비, 임차보증금은 지원 불가'라고 명시하고 있으나, 이는 시설자금 항목 하의 예외 조항으로 해석됩니다. 다른 자금(혁신창업지원, 일자리창출촉진)의 임차보증금 지원 여부는 제공된 근거에 포함되어 있지 않아 확인이 불가합니다."
+          ]
+        },
+        "new_cost": {
+          "prompt_eval_count": 6122,
+          "eval_count": 180,
+          "elapsed_s": 43.340831,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 4411,
+          "eval_count": 154,
+          "elapsed_s": 31.411472
+        },
+        "wall_s": 57.782194208000874,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 11566,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "480ab162c3563dd4a994b8b8d911a1a60f2c00d37820860c5e3a6893bb14f326",
+        "semantic_comparison": {
+          "before": "fulfilled",
+          "after": "fulfilled",
+          "change": "same",
+          "new_major_errors": []
+        }
+      },
+      {
+        "case": "SUP03_C",
+        "run_id": "ef97ea44c04a4068b5b37f60d7fa2565",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_C.json",
+        "result_file_sha256": "729998490e9dab2c334c3ff8e470dab477c270b7930deef8f68c639a843ac0af",
+        "baseline_run_id": "cedf7a6095d6427f985a071c8668b77d",
+        "answer": {
+          "answer": "연 2.0% 고정금리",
+          "choice": null,
+          "citations": [
+            "passage_67fde967b6e374236f97ea36"
+          ],
+          "limitations": []
+        },
+        "new_cost": {
+          "prompt_eval_count": 8891,
+          "eval_count": 33,
+          "elapsed_s": 51.29832,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 6185,
+          "eval_count": 33,
+          "elapsed_s": 34.640822
+        },
+        "wall_s": 65.95991525000136,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 15885,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "2106e6a9983d14d19624fcb4d9ae210fc87382ff611c5fced960e95714b81efc",
+        "semantic_comparison": {
+          "before": "fulfilled",
+          "after": "fulfilled",
+          "change": "same",
+          "new_major_errors": []
+        }
+      },
+      {
+        "case": "SUP03_B",
+        "run_id": "9cbe3000907946339b9b7ed745de3e39",
+        "result_file": "data/knowledge/evaluations/document_graph_rag_followup_20261012/P2_native_locations_v1/SUP03_B.json",
+        "result_file_sha256": "74e644fc333b8c9358e862313714f96c4238b2071cba8b62144b699940f09676",
+        "baseline_run_id": "a58b20374a8b4381958aa0d0517c5a2d",
+        "answer": {
+          "answer": "연 2.0% 고정금리",
+          "choice": null,
+          "citations": [
+            "passage_67fde967b6e374236f97ea36"
+          ],
+          "limitations": []
+        },
+        "new_cost": {
+          "prompt_eval_count": 6901,
+          "eval_count": 33,
+          "elapsed_s": 40.893188,
+          "done_reason": "stop",
+          "failure_kind": null
+        },
+        "baseline_answer_cost": {
+          "prompt_eval_count": 4952,
+          "eval_count": 33,
+          "elapsed_s": 33.064073
+        },
+        "wall_s": 55.52805533300125,
+        "source_context_budget": {
+          "limit": 16384,
+          "estimate_tokens": 12591,
+          "method": "utf8_bytes/2",
+          "exact": false,
+          "within_limit": true
+        },
+        "input_sha256": "a0d0ed37a5465b2e9bfbe95027113d318eba2ebfffb79863f9c2608bcb486543",
+        "semantic_comparison": {
+          "before": "fulfilled",
+          "after": "fulfilled",
+          "change": "same",
+          "new_major_errors": []
+        }
+      }
+    ],
+    "new_cost": {
+      "calls": 6,
+      "input_tokens": 42712,
+      "output_tokens": 978,
+      "model_request_elapsed_s": 299.408563
+    },
+    "baseline_answer_cost_not_added_to_new": {
+      "calls": 6,
+      "input_tokens": 30362,
+      "output_tokens": 1121,
+      "model_request_elapsed_s": 225.420818
+    },
+    "new_full_wall_s_sum": 387.1524118320085,
+    "new_search_calls": 0,
+    "new_edge_filter_calls": 0,
+    "new_embedding_calls": 0,
+    "original_files_sha256_unchanged": 16,
+    "provider_prompt_cache_measurement": "not available; no saved QA response reuse",
+    "actual_response_count": 6,
+    "model_retry_count": 0,
+    "input_contract_sha256": "d194778b5b5fda0248678b293d3f99ebb5376ed88740483ede7b772dc4e2e596"
+  },
+  "decision": {
+    "P1": "fixed lexical split/interleave variant rejected before QA; no default-path change",
+    "P2": "limited adoption of reader-native-locator restoration: B exception improvement, C partial improvement, four normal controls retained",
+    "unresolved": [
+      "P1 alternative funding evidence still not reached",
+      "P2 C conclusion consistency",
+      "Unseen/general quality and complete issue660/26/A/full graph not verified"
+    ]
+  },
+  "validation": {
+    "tests": "25 passed in 7.55s",
+    "new_model_calls": 6,
+    "new_search_edgefilter_embedding_calls": 0,
+    "retries": 0,
+    "original_guarded_files_unchanged": 16,
+    "original_DB_modified": false,
+    "preflight_capture_cases": 6,
+    "preflight_capture_is_not_product_execution_failure": true,
+    "local_driver_POSIX_only": true
+  },
+  "runtime": {
+    "model": "qwen3.8:27b-q4_K_M",
+    "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+    "context_tokens": 49152,
+    "answer_max_tokens": 4096,
+    "temperature": 0,
+    "think": false,
+    "timeout_s": 1800,
+    "retrieval_limit": 12,
+    "source_budget_estimate_limit": 16384,
+    "model_release": "ollama stop target model completed; ollama ps empty",
+    "release_no_server_or_other_service_termination": true
+  },
+  "product_entrypoint": {
+    "function": "app.knowledge.business_use.query",
+    "actual_call": true,
+    "API_caller": "app/api/routers/knowledge.py:176",
+    "new_API_or_mode": false
+  }
+}
