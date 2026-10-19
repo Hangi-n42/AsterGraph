@@ -14,7 +14,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from app.knowledge import graph_retrieval as gr
-from app.knowledge.discovery_profile import FrozenIndex
+from app.knowledge.source_index import FrozenIndex
 
 
 def digest(value):
@@ -59,7 +59,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     frozen = {}
     for path in [ROOT/'app/knowledge'/name for name in
-                 ('autoschema.py', 'graph_retrieval.py', 'business_use.py', 'discovery_profile.py')] + [Path(__file__)]:
+                 ('autoschema.py', 'graph_retrieval.py', 'business_use.py', 'source_index.py')] + [Path(__file__)]:
         target = args.output/'executed_code'/path.relative_to(ROOT)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(path.read_bytes())

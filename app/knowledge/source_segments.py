@@ -2,7 +2,8 @@
 from copy import deepcopy
 import re
 
-from . import discovery_profile as profile
+from hashlib import sha256
+import json
 
 VERSION = 'source-spans-v3'
 
@@ -24,7 +25,7 @@ def clause_views(views):
 
 def split(block):
     text = block['text']
-    numbered = profile.numbered_items([block])
+    numbered = numbered_items([block])
     markers = sorted({m['start'] for m in numbered} | {m.start() for m in re.finditer('[①-⑳]', text)})
     if len(markers) < 3:
         markers = [m.start() for m in re.finditer(r'(?m)^\s*[-*•]\s+\S', text)]
@@ -57,7 +58,7 @@ def expand(frontier, by_id):
         headers = [v['block_id'] for v in views if v['span']==[0,len(by_id[v['block_id']]['text'])] and len(by_id[v['block_id']]['text'])<256]
         for view in views:
             if view['block_id'] in headers: continue
-            expanded.append(dict(group, id='sg_'+profile.digest([group['id'],view])[:20],
+            expanded.append(dict(group, id='sg_'+digest([group['id'],view])[:20],
                 parent_group_id=group['id'], block_ids=[view['block_id']], context_block_ids=headers, segments=[view],
                 input_chars=view['span'][1]-view['span'][0], reason=group['reason']+'; 원문 구간별 분석',
                 status='unvisited'))
@@ -146,7 +147,7 @@ def bind(context, run_id, unit_id, *, stable=False):
     """New references address immutable content; legacy calls retain their saved namespace."""
     context = deepcopy(context)
     for view in originals(context):
-        view['source_ref'] = 's' + profile.digest([* ([] if stable else [run_id, unit_id]), view['ref'],
+        view['source_ref'] = 's' + digest([* ([] if stable else [run_id, unit_id]), view['ref'],
             view.get('span', [0, len(view['text'])]), view['text']])[:16]
     return context
 
@@ -218,3 +219,20 @@ def references(candidate, by_id, provided):
     if any(q['evidence_id'] not in candidate['evidence_ids'] for q in quotes):
         errors.append('인용과 근거 ID 목록 불일치')
     return result, errors
+
+
+def digest(value):
+    return sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+
+def numbered_items(blocks):
+    """A bounded structural signal, not semantic segmentation or a completeness oracle."""
+    items = []
+    for block in blocks:
+        dates = [m.span() for m in re.finditer(r'\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.', block['text'])]
+        matches = [m for m in re.finditer(r'(?<!\S)([1-9]\d?)(?:의\d+)?[.)]\s+(?=[^\d\s])', block['text'])
+                   if not any(start <= m.start() < end for start, end in dates)]
+        # Require the beginning of a numbered sequence; isolated numeric prose is not a list.
+        if not {'1', '2'} <= {m[1] for m in matches}: continue
+        items.extend(dict(block_id=block['id'], marker=m[0], start=m.start(), end=m.end()) for m in matches)
+    return items

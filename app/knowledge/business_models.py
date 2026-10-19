@@ -1,7 +1,7 @@
 """Persistent public requirements and the selectable source-graph workflow."""
 from typing import Literal
 from pydantic import BaseModel, Field, model_validator
-from .discovery_meanings import SourceMeaning
+from .source_meanings import SourceMeaning
 from .vendor.autoschemakg.validate_json_schema import ATLAS_SCHEMA
 
 

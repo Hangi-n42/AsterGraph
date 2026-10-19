@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from app.generation.model_client import ModelClient, ModelRequest
 from app.knowledge import autoschema, business_run
-from app.knowledge.discovery_analysis import remap
+from app.knowledge.source_meanings import remap
 from app.knowledge.service import utcnow
 
 

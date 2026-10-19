@@ -205,6 +205,12 @@
 .savedAnswers { padding: 24px 28px; }
 .answerFilter { display: block; margin: 20px 0; font-size: 14px; }
 .answerFilter input { display: block; margin-top: 6px; padding: 10px 12px; border: 1px solid #cbd1d7; width: 100%; border-radius: 4px; }
+.searchFields { display: grid; gap: 16px; min-width: 0; border: 0; padding: 0; margin: 20px 0 0; }
+.searchFields label { display: grid; gap: 6px; min-width: 0; }
+.searchFields select, .searchFields textarea { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #cbd1d7; border-radius: 4px; background: white; color: #24303e; }
+.searchFields select { text-overflow: ellipsis; }
+.searchFields textarea { resize: vertical; }
+.searchFields button { justify-self: start; }
 .answerList { max-height: 340px; overflow: auto; border-block: 1px solid #dce1e5; }
 .answerList button { padding: 16px 8px; border-bottom: 1px solid #edf0f2; text-align: left; width: 100%; }
 .answerList strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 550; }

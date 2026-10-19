@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.knowledge import business_changes, business_run, business_store, business_use, discovery_profile, graph_retrieval
+from app.knowledge import business_changes, business_run, business_store, business_use, source_index, graph_retrieval
 from app.knowledge.business_models import BusinessQuery
 from app.knowledge.service import KnowledgeService, encode, utcnow
 
@@ -51,7 +51,7 @@ def test_reassessment_does_not_reactivate_old_changed_source(tmp_path, monkeypat
         observed.append({c['id'] for c in view['claims']})
         raise BoundaryReached()
 
-    monkeypatch.setattr(discovery_profile, 'FrozenIndex', Index)
+    monkeypatch.setattr(source_index, 'FrozenIndex', Index)
     monkeypatch.setattr(graph_retrieval, 'retrieve', retrieve)
     try:
         with service.repository.connect() as db:

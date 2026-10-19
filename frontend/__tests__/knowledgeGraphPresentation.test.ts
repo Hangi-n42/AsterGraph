@@ -7,7 +7,6 @@ import type { KnowledgeDetail, KnowledgeGraphView } from "../lib/knowledgeWorkbe
 
 vi.mock("@/lib/knowledgeWorkbench", () => import("../lib/knowledgeWorkbench"));
 vi.mock("@/lib/api", () => ({ API_BASE_URL: 'http://localhost' }));
-vi.mock("@/lib/knowledgeReview", () => import("../lib/knowledgeReview"));
 
 it("shows stored interpretation record errors separately while preserving the accepted statement", () => {
   const detail: KnowledgeDetail = { item: { id: 'edge', kind: 'relation', label: '관계', claim_ids: ['claim'] }, relations: [], history: [],

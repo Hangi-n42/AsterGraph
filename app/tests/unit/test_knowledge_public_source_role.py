@@ -5,7 +5,7 @@ import json
 import pytest
 
 from app.knowledge import business_models, business_review as review, business_run
-from app.knowledge.discovery_profile import FrozenIndex
+from app.knowledge.source_index import FrozenIndex
 from app.tests.unit.test_knowledge_public_bounded_flow import public_run, boundary_only
 from app.tests.unit.test_knowledge_business_local_review import meaning, judgments
 from app.tests.unit.test_knowledge_business_scope import block

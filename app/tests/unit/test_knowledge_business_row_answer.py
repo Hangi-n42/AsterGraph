@@ -186,7 +186,7 @@ def test_query_exposes_answer_boundary_separately_from_source_review_history(sna
         assert failed['status'] == 'retrieval_failed' and calls == [mode]
         assert failed['execution_boundary'] == dict(boundary, answer_contract=None)
         assert service.run(failed['run_id'])['execution_boundary'] == failed['execution_boundary']
-        from app.knowledge.discovery_profile import FrozenIndex
+        from app.knowledge.source_index import FrozenIndex
         monkeypatch.setattr(FrozenIndex, 'search', lambda *args, **kwargs: [])
         empty = use.query(service, request)
         assert empty['status'] == 'unverified' and empty['qa_model_called'] is False and calls == [mode]

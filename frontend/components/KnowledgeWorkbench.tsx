@@ -8,11 +8,8 @@ import KnowledgeUsageState from "./KnowledgeUsage";
 import KnowledgeStoredAnswers from "./KnowledgeStoredAnswers";
 import KnowledgeItemReview from "./KnowledgeItemReview";
 import KnowledgeGraph from "./KnowledgeGraph";
-import KnowledgeExtraction from "./KnowledgeExtraction";
 import KnowledgeSources from "./KnowledgeSources";
 import KnowledgeBusiness from "./KnowledgeBusiness";
-import KnowledgeOntology from "./KnowledgeOntology";
-import KnowledgeSnapshots from "./KnowledgeSnapshots";
 import KnowledgeSearch from "./KnowledgeSearch";
 import { knowledgeRequest as request, knowledgeLabels as labels, knowledgeDate, knowledgeVersionName, qualifier, relationLabel, itemLabel, type KnowledgeCatalog, type KnowledgeView, type KnowledgeDetail, type KnowledgeClaim } from "@/lib/knowledgeWorkbench";
 import styles from "./KnowledgeWorkbench.module.css";
@@ -184,12 +181,12 @@ export default function KnowledgeWorkbench() {
         </div><aside ref={detailPanel} className={styles.detailPane} aria-label="선택 항목 상세">{graphMode && <div className={styles.inspectorHeader}><span>선택 항목</span><button aria-label="선택 상세 닫기" onClick={() => { setInspectorOpen(false); setMobileDetail(false); }}>×</button></div>}{loading && selectedId ? <p className={styles.empty}>선택한 항목을 읽고 있습니다…</p> : <KnowledgeSelection key={selectedId} detail={view?.detail || null} onSelect={select} onReview={() => navigate('review')} />}</aside></div>
       </section>}
       {area === "review" && <section className={styles.panel}>
-        <div className={styles.panelHeader}><h2>검토와 변경</h2></div><div className={styles.tools} role="group" aria-label="검토 작업">{[['selection','선택 항목'],['changes','원문 변경·영향'],['business','업무 검토 도구'],['extraction','개체·사실 검토'],['ontology','온톨로지 검토'],['snapshots','사용 버전 관리']].map(([id,label]) => <button key={id} aria-pressed={tool===id} onClick={() => setTool(id)}>{label}</button>)}</div>
+        <div className={styles.panelHeader}><h2>검토와 변경</h2></div><div className={styles.tools} role="group" aria-label="검토 작업">{[['selection','선택 항목'],['changes','원문 변경·영향'],['business','업무 검토 도구']].map(([id,label]) => <button key={id} aria-pressed={tool===id} onClick={() => setTool(id)}>{label}</button>)}</div>
         {tool === 'selection' && <div className={styles.reviewDetail}><p className={styles.muted}>저장, 재검수, 승인, 사용 버전 반영은 각각 별도의 단계입니다.</p>{view?.detail && <KnowledgeItemReview key={`${scopeKey}:${view.detail.item.id}`} detail={view.detail} onOpenSaved={(runId, id) => { setScopeKey(`run:${runId}`); setSelectedId(id || ""); setGraphRoot(""); setView(null); setQuery(""); setSubmitted(""); setLoading(true); setReload(r => r + 1); navigate('explore'); }} />}<KnowledgeSelection detail={view?.detail || null} onSelect={id => { select(id); navigate('explore'); }} /></div>}
         {tool === 'changes' && scope && <KnowledgeChanges key={scopeKey} scope={scope} onOpenScope={key => { changeScope(key); navigate('overview'); }} />}
-        {tool !== 'selection' && tool !== 'changes' && <div className={styles.legacy}><p className={styles.warning}>기존 검토 도구의 별도 범위입니다. 아래에서 실행 또는 버전을 확인하세요.</p>{tool==='business' && <KnowledgeBusiness key={scopeKey} request={request} sources={sources} visible initialRunId={scope?.kind === "run" ? scope.id : view?.detail?.run_id} />}{tool==='extraction' && <KnowledgeExtraction request={request} sources={sources} />}{tool==='ontology' && <KnowledgeOntology request={request} sources={sources} />}{tool==='snapshots' && <KnowledgeSnapshots request={request} visible />}</div>}
+        {tool !== 'selection' && tool !== 'changes' && <div className={styles.legacy}><p className={styles.warning}>기존 검토 도구의 별도 범위입니다. 아래에서 실행 또는 버전을 확인하세요.</p>{tool==='business' && <KnowledgeBusiness key={scopeKey} request={request} sources={sources} visible initialRunId={scope?.kind === "run" ? scope.id : view?.detail?.run_id} />}</div>}
       </section>}
-      {area === "search" && <section className={styles.panel}><div className={styles.tools}><button aria-pressed={answerTool === 'stored'} onClick={() => setAnswerTool('stored')}>선택 범위의 저장 답변</button><button aria-pressed={answerTool === 'new'} onClick={() => setAnswerTool('new')}>사용 버전에서 새 검색</button></div>{answerTool === 'stored' ? scope ? <KnowledgeStoredAnswers key={scopeKey} scope={scope} onExplore={id => { select(id); navigate('explore'); }} /> : <p className={styles.empty}>저장 범위를 선택하세요.</p> : <div className={styles.legacy}><p className={styles.warning}>아래에서 별도로 선택한 사용 버전으로 새 검색을 실행합니다. 상단의 자동 추출 실행과 다른 범위입니다.</p><KnowledgeSearch key={scopeKey} request={request} visible /></div>}</section>}
+      {area === "search" && <section className={styles.panel}><div className={styles.tools}><button aria-pressed={answerTool === 'stored'} onClick={() => setAnswerTool('stored')}>선택 범위의 저장 답변</button><button aria-pressed={answerTool === 'new'} onClick={() => setAnswerTool('new')}>사용 버전에서 새 검색</button></div>{answerTool === 'stored' ? scope ? <KnowledgeStoredAnswers key={scopeKey} scope={scope} onExplore={id => { select(id); navigate('explore'); }} /> : <p className={styles.empty}>저장 범위를 선택하세요.</p> : <div className={styles.legacy}><p className={styles.warning}>새 검색에서 고른 출처 지식 버전은 상단의 탐색 범위에도 반영됩니다.</p><KnowledgeSearch key={scopeKey} request={request} scope={scope || null} onOpenScope={key => { changeScope(key); setAnswerTool("new"); }} onExplore={id => { select(id); navigate('explore'); }} /></div>}</section>}
     </main>
   </div>;
 }

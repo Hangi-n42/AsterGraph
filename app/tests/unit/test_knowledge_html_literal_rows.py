@@ -123,15 +123,15 @@ def test_existing_review_status_graph_annotations_and_concept_connections_surviv
 
 
 def test_full_source_segments_overlap_only_their_own_field_cells(source,monkeypatch):
-    from app.knowledge import discovery_segments
+    from app.knowledge import source_segments
     service,parent,ids=source
     result=service.store_business_html_rows(HtmlLiteralRowsRequest(parent_run_id='parent',block_ids=ids))
     run=service.run(result['run_id']);run['include_unlinked_blocks']=True
-    real_split=discovery_segments.split
+    real_split=source_segments.split
     def split(block):
         if block['id']==ids[1]:return [dict(span=[0,2],shared_spans=[]),dict(span=[2,5],shared_spans=[])]
         return real_split(block)
-    monkeypatch.setattr(discovery_segments,'split',split)
+    monkeypatch.setattr(source_segments,'split',split)
     graph,_,passages,_=graph_retrieval.build(dict(run,source_versions={}), 'full')
     code=next(n for n,d in graph.nodes(data=True) if d.get('field')=='분류코드' and d['value']=='58222')
     own=[passages[n]['evidence'] for n in graph.successors(code) if passages[n]['evidence']['block_id']==ids[1]]

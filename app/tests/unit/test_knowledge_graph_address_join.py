@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from app.knowledge import business_html_debt_rows, discovery_segments, graph_retrieval as gr
+from app.knowledge import business_html_debt_rows, source_segments, graph_retrieval as gr
 
 
 def address_snapshot(monkeypatch, unlinked):
@@ -38,7 +38,7 @@ def address_snapshot(monkeypatch, unlinked):
              for eid, label in [('r1', '허용'), ('r2', '금지')]]
     monkeypatch.setattr(gr.autoschema, 'graph', lambda rows:
         deepcopy(dict(nodes=nodes, edges=edges) if rows else dict(nodes=[], edges=[])))
-    monkeypatch.setattr(discovery_segments, 'split', lambda block: [
+    monkeypatch.setattr(source_segments, 'split', lambda block: [
         dict(span=[0, 4], shared_spans=[[4, 8], [0, 4]]), dict(span=[8, 10], shared_spans=[])])
     concepts = [dict(target=dict(nodes[0]), concepts=['검색용', '검색용'], status='unreviewed'),
                 dict(target=dict(kind='relation', label='허용', claim_ids=['wild']),

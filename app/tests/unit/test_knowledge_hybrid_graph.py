@@ -6,7 +6,7 @@ import pytest
 
 from app.knowledge import business_run, graph_retrieval as gr
 from app.knowledge.business_models import BusinessQuery
-from app.knowledge.discovery_profile import FrozenIndex
+from app.knowledge.source_index import FrozenIndex
 from app.tests.unit.test_knowledge_graph_retrieval import snapshot
 
 

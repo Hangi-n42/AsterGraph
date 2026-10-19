@@ -120,13 +120,13 @@ def _claim_view(claim, blocks, sources, versions):
 
 def usage(service, kind, scope_id):
     """Current read annotations; query guards still decide each requested scope."""
-    from . import business_use, business_changes, snapshots
+    from . import business_use, business_changes, availability
     from .service import utcnow
     value, _, _, versions = _scope(service, kind, scope_id)
     run_id = scope_id if kind == 'run' else value.get('run_id')
     with service.repository.connect() as db:
         original = value if kind == 'run' else service.repository.get(db, 'runs', run_id)
-        state = snapshots._state(db)
+        state = availability._state(db)
         version_ids = value.get('input_version_ids') or list(value.get('source_versions') or [])
         restrictions = business_use.restricted_sources(db, version_ids)
         invalidations = []

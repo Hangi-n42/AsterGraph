@@ -4,7 +4,6 @@ from app.structuring.structured_extractor import StructuredExtractor, SYSTEM_PRO
 from app.structuring.schemas import StructuredLLMOutput
 from app.structuring.service import StructuringService
 from app.core.config import settings
-from app.knowledge import ontology_run, extraction
 
 
 def test_civil_override_leaves_knowledge_and_legacy_models_unchanged(monkeypatch):
@@ -15,7 +14,7 @@ def test_civil_override_leaves_knowledge_and_legacy_models_unchanged(monkeypatch
     service = StructuringService()
     assert service._structured_model == service._structured_extractor.model == 'new-civil-model'
     assert service._llm_extractor.model == 'retained-knowledge-model'
-    assert ontology_run.recipe()['models']['draft'] == extraction.recipe()['model'] == 'retained-knowledge-model'
+    assert settings.STRUCTURING_MODEL == 'retained-knowledge-model'
 
 
 def _ext():

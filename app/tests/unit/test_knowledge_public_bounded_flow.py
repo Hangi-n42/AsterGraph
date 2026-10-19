@@ -4,7 +4,7 @@ from copy import deepcopy
 import pytest
 
 from app.knowledge import autoschema, business_review as review, business_run
-from app.knowledge.discovery_profile import FrozenIndex
+from app.knowledge.source_index import FrozenIndex
 from app.tests.unit.test_knowledge_business_local_review import local_run, meaning, judgments
 
 

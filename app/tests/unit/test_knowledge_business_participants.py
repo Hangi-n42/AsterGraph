@@ -141,7 +141,7 @@ def stored_failure(monkeypatch):
             return dict(choices=[],unresolved=[0])
         request = business_run.json_request(current,stage,instruction,context,schema)
         output = schema.model_validate(dict(patches=[patch],unresolved=[])).model_dump()
-        from app.knowledge.discovery_analysis import remap
+        from app.knowledge.source_meanings import remap
         limits = dict(max_tokens=run['recipe']['options']['review_tokens'],context_tokens=run['recipe']['options']['context_tokens'],think=False)
         current['units'].append(dict(id='original',stage=stage,status='succeeded',error=None,**{k:request[k] for k in ('messages','schema','reference_map')},
             request_configuration=dict(model='review',generation={},identity={},temperature=0,timeout=run['recipe']['options']['timeout']),

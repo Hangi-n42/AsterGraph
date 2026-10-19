@@ -117,7 +117,7 @@ def build(snapshot, variant):
     passages = {}
     if snapshot.get('include_unlinked_blocks'):
         # Freeze the source pool independently of extraction success or quote size.
-        from .discovery_segments import split
+        from .source_segments import split
         for block in snapshot['blocks']:
             spans = {tuple(span) for view in split(block) for span in [view['span'], *view['shared_spans']]}
             for start, end in sorted(spans):
@@ -421,7 +421,7 @@ def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     ranked, seeds = rank(graph, edges, passages, edge_scores, passage_scores, set(selected), len(passages))
     trace['seed_node_scores'] = seeds
     if request.retrieval in {'hybrid', 'hybrid_graph'}:
-        from .discovery_profile import FrozenIndex
+        from .source_index import FrozenIndex
         index = FrozenIndex([dict(id=pid, file_id=p['evidence']['source_version_id'],
             text=search_texts[pid]) for pid, p in passages.items()], preserve_numbers=True)
         lexical = index.rank(query, set(passages))

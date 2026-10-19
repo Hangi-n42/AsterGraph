@@ -92,12 +92,11 @@ class GuardLock:
 
 
 @pytest.mark.parametrize('entry', ['parse', 'query', 'business', 'edit', 'checkpoint', 'changes',
-    'concepts', 'projection', 'html_rows', 'feedback', 'extract', 'search', 'discovery', 'analysis', 'ontology'])
+    'concepts', 'projection', 'html_rows', 'feedback'])
 @pytest.mark.parametrize('state', ['queued', 'running', 'cancel_requested', 'closed'])
 def test_all_start_guards_keep_lock_closed_and_active_blocking(tmp_path, monkeypatch, entry, state):
     from app.knowledge import (business_use, business_run, business_edit, business_checkpoint,
-        business_changes, business_concepts, business_projection, business_html_rows, business_feedback,
-        extraction, search, discovery_run, discovery_analysis, ontology_run)
+        business_changes, business_concepts, business_projection, business_html_rows, business_feedback)
     from app.knowledge.business_models import BusinessQuery
     repository = KnowledgeRepository(tmp_path/'knowledge.db')
     service = SimpleNamespace(repository=repository, lock=GuardLock(), closed=state == 'closed')
@@ -130,11 +129,6 @@ def test_all_start_guards_keep_lock_closed_and_active_blocking(tmp_path, monkeyp
             reason='고정 검사', stop_new_requests_at='2026-10-16T00:00:00+09:00'),
         'html_rows': lambda: business_html_rows.store(service, request),
         'feedback': lambda: business_feedback.start(service, 'absent', request),
-        'extract': lambda: extraction.start(service, request),
-        'search': lambda: search.search(service, dict(mode='local', query='근거')),
-        'discovery': lambda: discovery_run.start(service, request),
-        'analysis': lambda: discovery_analysis.start(service, request),
-        'ontology': lambda: ontology_run.start(service, request),
     }
     with pytest.raises(KnowledgeConflict):
         entries[entry]()

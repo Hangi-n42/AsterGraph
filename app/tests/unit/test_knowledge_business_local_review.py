@@ -107,7 +107,7 @@ def test_real_unmatched_pool_is_checked_before_missing_and_join_is_compact(monke
     run = local_run()
     source = dict(meanings=[meaning('m')], examined_block_ids=['body'], completeness='complete', gaps=[], conjunctions=[])
     normal, other = [c['id'] for c in run['claims']]
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     monkeypatch.setattr(FrozenIndex, 'search', lambda *a: [dict(block_id=normal)])
     monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
     contexts = []
@@ -256,7 +256,7 @@ def test_repair_keeps_scoped_meanings_and_error_records_and_corrects_shared_targ
 
 
 def test_numeric_identifier_ranking_is_opt_in():
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     docs = [dict(id=str(n), text=f'1127 순번 {n} NODE ID ARS ID', file_id='v', source_group='v') for n in (13, 47)]
     ordinary = FrozenIndex(docs)
     numeric = FrozenIndex(docs, preserve_numbers=True)
@@ -520,7 +520,7 @@ def test_exact_row_selection_preserves_version_headings_and_does_not_hardcode_va
 def test_nonessential_local_missing_does_not_scan_the_unmatched_pool(monkeypatch):
     run = local_run(); normal, other = [c['id'] for c in run['claims']]
     source = dict(meanings=[meaning('m')], examined_block_ids=['body'], completeness='complete', gaps=[], conjunctions=[])
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     monkeypatch.setattr(FrozenIndex, 'search', lambda *a: [dict(block_id=normal)])
     monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
     seen = []
@@ -555,7 +555,7 @@ def test_exact_nonmatching_rows_are_recorded_without_hiding_unstructured_candida
 
 
 def test_partial_contributions_reach_join_as_actual_candidates_without_automatic_success(monkeypatch):
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     run = local_run(); first, second = [c['id'] for c in run['claims']]
     source = dict(meanings=[meaning('m')], examined_block_ids=['body'], completeness='complete', gaps=[], conjunctions=[])
     monkeypatch.setattr(FrozenIndex, 'search', lambda *a: [dict(block_id=first)])
@@ -807,7 +807,7 @@ def test_local_batch_uses_actual_capacity_after_grouping_and_accounts_for_every_
     source = dict(meanings=[meaning(str(i)) for i in range(6)], examined_block_ids=['body'],
                   completeness='complete', gaps=[], conjunctions=[],
                   meaning_conjunctions=[dict(meaning_keys=[str(i) for i in range(6)], text='실제 함께 판단할 연결')])
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     monkeypatch.setattr(FrozenIndex, 'search', lambda *a: [dict(block_id=c['id']) for c in run['claims']])
     monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
     local_contexts = []
@@ -991,7 +991,7 @@ def test_unresolved_finding_keys_are_not_expression_checks_and_keep_context(monk
     source = dict(meanings=[meaning('m')], examined_block_ids=['body'], review_contract=review.CONTRACT,
         completeness='partial', gaps=[], conjunctions=[], findings=[deepcopy(finding)], source_batches=[])
     source['meanings'][0]['premise_keys'] = None
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     searches = []
     original_search = FrozenIndex.search
     def search(index, query, *args, **kwargs):
@@ -1267,7 +1267,7 @@ def test_literal_relation_selection_requires_whole_value_and_actual_own_span(mis
 
 
 def test_representation_adds_literal_candidate_missed_by_search(monkeypatch):
-    from app.knowledge.discovery_profile import FrozenIndex
+    from app.knowledge.source_index import FrozenIndex
     run = local_run(); source_meaning = meaning('m')
     source_meaning['evidence'] = business_run.exact_evidence(source_meaning['evidence'], run['blocks'])
     source = dict(meanings=[source_meaning], completeness='complete', gaps=[], conjunctions=[], findings=[])

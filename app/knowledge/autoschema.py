@@ -160,7 +160,7 @@ def chunks(blocks, context_tokens, output_tokens, target_chars=1000):
         if not groups or groups[-1][0]['source_version_id'] != vid:
             groups.append([])
         groups[-1].append(block)
-    from .discovery_segments import split
+    from .source_segments import split
     output = []
     for group in groups:
         source_order = {b['id']: n for n, b in enumerate(group)}
