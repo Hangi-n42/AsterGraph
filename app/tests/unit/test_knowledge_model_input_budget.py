@@ -45,8 +45,10 @@ def local(tmp_path):
     return state,measure,messages,config,path
 
 
-def test_native_prefix_unicode_and_separate_schema_reserve(local):
+@pytest.mark.parametrize('version', ['0.40.3', '0.40.6'])
+def test_native_prefix_unicode_and_separate_schema_reserve(local, version):
     state,measure,messages,_,_=local
+    state['version']=version
     messages[0]['content']='\u2000 규칙 \x85';messages[1]['content']='\u3000e\u0301 한글 123\u00a0'
     result,error=measure();assert error is None
     prompt='<|im_start|>system\n규칙<|im_end|>\n<|im_start|>user\ne\u0301 한글 123<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
@@ -55,6 +57,7 @@ def test_native_prefix_unicode_and_separate_schema_reserve(local):
     assert result['schema_serialized_tokens']==len('{"type":"object"}')
     assert result['prompt_exact'] and result['content_addresses_verified']
     assert result['schema_reserve_is_separate_grammar_not_observed_prompt']
+    assert result['renderer_contract']=='ollama-qwen38-text-system-user-think-false-v'+version
     assert state['verbose_reads']==1
 
 
@@ -125,8 +128,10 @@ def test_missing_manifest_or_unknown_tokenizer_falls_back(local):
     assert measure()[0] is None
 
 
-def test_preflight_and_final_product_call_share_budget_and_enforce_overflow(local,monkeypatch):
+@pytest.mark.parametrize('version', ['0.40.3', '0.40.6'])
+def test_preflight_and_final_product_call_share_budget_and_enforce_overflow(local,monkeypatch,version):
     state,measure,messages,config,_=local
+    state['version']=version
     def measured(config,model,identity,messages,schema,think):
         return measure(config=config,model=model,identity=identity,messages=messages,schema=schema,think=think)
     monkeypatch.setattr(counter,'count',measured)
@@ -155,3 +160,10 @@ def test_unverified_contract_keeps_original_conservative_estimate(monkeypatch):
     result=business_run.request_budget(run,messages,None,8192)
     assert result['estimate_tokens']==business_run.request_tokens(messages,None,8192)
     assert result['method']=='utf8_bytes/2+output+1000' and result['fallback_reason']=='unsupported'
+
+
+@pytest.mark.parametrize('version', ['0.40.4', '0.40.5', '0.40.7'])
+def test_unverified_engine_versions_still_fall_back(local,version):
+    state,measure,_,_,_=local;state['version']=version
+    result,error=measure()
+    assert result is None and error=='unsupported_engine_version'
