@@ -83,16 +83,21 @@ def _search_concept_graph(value, graph):
 
 
 def _scope(service, kind, scope_id):
-    if kind not in {'run', 'source_graph'}:
+    if kind not in {'run', 'source_graph', 'stored_conditions'}:
         raise ValueError('지원하지 않는 저장 범위입니다.')
     with service.repository.connect() as db:
         value = service.repository.get(db, 'runs' if kind == 'run' else 'snapshots', scope_id)
-        if value.get('kind') != ('business' if kind == 'run' else 'source_graph'):
+        if kind == 'stored_conditions':
+            from .source_after_conditions import read_view
+            value = read_view(value)
+        elif value.get('kind') != ('business' if kind == 'run' else 'source_graph'):
             raise ValueError('선택한 범위 종류와 저장 결과가 다릅니다.')
         sources = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT id,payload FROM sources')}
         versions = {row['id']: json.loads(row['payload']) for row in db.execute('SELECT id,payload FROM versions')}
     if kind == 'run':
         graph = value.get('graph') or dict(nodes=[], edges=[])
+    elif kind == 'stored_conditions':
+        graph = dict(nodes=[], edges=[])
     else:
         # Source-graph snapshots store accepted claims, not an approved ontology.
         from .autoschema import graph as stored_claim_graph
@@ -125,12 +130,12 @@ def usage(service, kind, scope_id):
     value, _, _, versions = _scope(service, kind, scope_id)
     run_id = scope_id if kind == 'run' else value.get('run_id')
     with service.repository.connect() as db:
-        original = value if kind == 'run' else service.repository.get(db, 'runs', run_id)
+        original = value if kind == 'run' else service.repository.get(db, 'runs', run_id) if run_id else {}
         state = availability._state(db)
         version_ids = value.get('input_version_ids') or list(value.get('source_versions') or [])
         restrictions = business_use.restricted_sources(db, version_ids)
         invalidations = []
-        if kind == 'source_graph':
+        if kind in {'source_graph', 'stored_conditions'}:
             invalidations = [event for row in db.execute('SELECT payload FROM snapshot_events')
                 if (event := json.loads(row['payload'])).get('event') == 'business_correction'
                 and event['snapshot_id'] == scope_id]
@@ -162,7 +167,7 @@ def usage(service, kind, scope_id):
     return dict(scope=dict(kind=kind, id=scope_id), run_id=run_id, version_ids=version_ids,
         version_files=[{k: versions.get(v, {}).get(k) for k in ['id', 'filename', 'dates', 'sha256']} for v in version_ids],
         missing_version_ids=[v for v in version_ids if v not in versions],
-        snapshot_id=scope_id if kind == 'source_graph' else None,
+        snapshot_id=scope_id if kind in {'source_graph', 'stored_conditions'} else None,
         activation=value.get('activation') if kind == 'source_graph' else None,
         actor=value.get('actor') if kind == 'source_graph' else None,
         reason=value.get('reason') if kind == 'source_graph' else None,
@@ -229,7 +234,9 @@ def answers(service, kind, scope_id, answer_id=None):
             json_extract(payload,'$.query.retrieval') retrieval, json_extract(payload,'$.answer_status') status,
             json_extract(payload,'$.finished_at') finished_at FROM runs
             WHERE json_extract(payload,'$.kind')='business_query'
-            AND json_extract(payload,'$.query.{field}')=? ORDER BY rowid DESC""", (scope_id,)).fetchall()
+            AND json_extract(payload,'$.query.{field}')=?
+            AND (? != 'stored_conditions' OR json_extract(payload,'$.query.answer_mode')='stored_after_conditions')
+            ORDER BY rowid DESC""", (scope_id, kind)).fetchall()
         items = [dict(r) for r in rows]
         if not answer_id:
             return dict(items=items, detail=None)

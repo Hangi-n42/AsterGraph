@@ -965,7 +965,8 @@ def source_quote_answer(service, run, request, source_evidence, source_versions,
 def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
     from .source_index import FrozenIndex
-    if request.answer_mode == 'source_list_comparison' and context_mode != 'graph':
+    stored_after = request.answer_mode == 'stored_after_conditions'
+    if request.answer_mode in {'source_list_comparison', 'stored_after_conditions'} and context_mode != 'graph':
         raise ValueError('목록 대조는 snapshot 경로에서만 지원합니다.')
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
@@ -994,7 +995,10 @@ def query(service, request, *, context_mode='graph'):
                 concepts=concepts, requirements=[], assessments={}, include_unlinked_blocks=True)
         else:
             snapshot = service.repository.get(db, 'snapshots', request.snapshot_id)
-        if snapshot.get('kind') != 'source_graph':
+        if stored_after:
+            from . import source_after_conditions
+            snapshot = source_after_conditions.read_view(snapshot, request.stored_after_conditions.run_id)
+        if snapshot.get('kind') != 'source_graph' and not stored_after:
             raise ValueError('출처 그래프 snapshot이 필요합니다.')
         requirement_ids = request.requirement_ids or ([r['id'] for r in snapshot['requirements']]
             if request.answer_mode == 'reviewed_items' else [])
@@ -1006,6 +1010,8 @@ def query(service, request, *, context_mode='graph'):
             from .business_changes import snapshot_invalidations
             invalidations.extend(snapshot_invalidations(service, db, snapshot, original))
         if invalidations:
+            if stored_after:
+                return dict(status='needs_review', answer=None, snapshot_id=snapshot['id'], invalidations=invalidations)
             affected = {rid for i in invalidations for rid in i['requirement_ids']}
             if affected.intersection(requirement_ids):
                 return dict(status='needs_review', answer=None, snapshot_id=snapshot['id'], invalidations=invalidations)
@@ -1026,7 +1032,7 @@ def query(service, request, *, context_mode='graph'):
         if stale:
             return dict(status='needs_review', requirement_ids=stale, answer=None, snapshot_id=snapshot['id'])
         answer_items = bind_answer_items(request, requirements)
-        if context_mode == 'graph' and not snapshot['claims'] and not source_reader:
+        if context_mode == 'graph' and not snapshot['claims'] and not source_reader and not stored_after:
             return dict(status='no_reviewed_claims', answer=None, snapshot_id=snapshot['id'], model_called=False)
         if source_reader and not any(c.get('evidence') for c in snapshot['claims']) and not snapshot['blocks']:
             return dict(status='no_source_passages', answer=None, source_run_id=request.source_run_id, model_called=False)
@@ -1065,8 +1071,11 @@ def query(service, request, *, context_mode='graph'):
                 business_review.ANSWER_SCOPE_EXPERIMENT, business_review.MEANING_SELECTION_EXPERIMENT},
             review_provenance_scope='source_run_recipe_not_all_snapshot_assessments',
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
+        if stored_after:
+            run['stored_after_input_digest'] = source_after_conditions.input_digest(
+                service, db, snapshot['id'], request.stored_after_conditions.run_id)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
-    if request.answer_mode == 'source_list_comparison':
+    if request.answer_mode in {'source_list_comparison', 'stored_after_conditions'}:
         from . import source_list_service
         return source_list_service.execute(service, run, request, snapshot, requirements)
     built = None

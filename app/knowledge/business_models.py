@@ -618,6 +618,12 @@ class SourceListComparison(BaseModel):
         return self
 
 
+class StoredAfterConditions(BaseModel):
+    model_config = {'extra': 'forbid'}
+    run_id: str = Field(min_length=1)
+    unit_id: str = Field(min_length=1)
+
+
 class BusinessQuery(BaseModel):
     question: str = Field(min_length=1)
     choices: list[str] = Field(default_factory=list)
@@ -630,13 +636,22 @@ class BusinessQuery(BaseModel):
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
     graph_variant: Literal['entity', 'entity_event', 'full'] = 'full'
-    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items', 'source_list_comparison'] = 'synthesis'
+    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items', 'source_list_comparison', 'stored_after_conditions'] = 'synthesis'
     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
     list_comparison: SourceListComparison | None = None
+    stored_after_conditions: StoredAfterConditions | None = None
 
     @model_validator(mode='after')
     def one_source(self):
-        if self.answer_mode == 'source_list_comparison':
+        if self.answer_mode == 'stored_after_conditions':
+            if (not self.snapshot_id or self.source_run_id or self.concept_run_id or self.requirement_ids
+                    or self.answer_items or self.choices or self.source_context_tokens is not None
+                    or self.retrieval != 'explicit_sources' or self.list_comparison is not None
+                    or self.stored_after_conditions is None):
+                raise ValueError('저장 후 조건 조회는 같은 snapshot과 저장 B 실행·unit만 사용합니다.')
+        elif self.stored_after_conditions is not None:
+            raise ValueError('저장 후 조건 입력은 stored_after_conditions에서만 사용합니다.')
+        elif self.answer_mode == 'source_list_comparison':
             if (not self.snapshot_id or self.source_run_id or self.concept_run_id or self.requirement_ids
                     or self.answer_items or self.choices or self.source_context_tokens is not None
                     or self.retrieval != 'explicit_sources' or self.list_comparison is None):

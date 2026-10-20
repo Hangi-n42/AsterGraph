@@ -327,10 +327,13 @@ def assemble(service, db, request, snapshot):
 def execute(service, run, request, snapshot, requirements):
     from .business_use import restricted_sources
     from .business_changes import snapshot_invalidations
+    from . import source_after_conditions
+    stored_after = request.answer_mode == 'stored_after_conditions'
+    contract = source_after_conditions.CONTRACT if stored_after else CONTRACT
     started = monotonic()
     try:
         with service.repository.connect() as db:
-            result = assemble(service, db, request, snapshot)
+            result = (source_after_conditions.assemble if stored_after else assemble)(service, db, request, snapshot)
         with service.lock, service.repository.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             live = service.repository.get(db, 'runs', run['id'])
@@ -342,18 +345,20 @@ def execute(service, run, request, snapshot, requirements):
             invalidations = snapshot_invalidations(service, db, snapshot, original)
             events = [json.loads(r['payload']) for r in db.execute('SELECT payload FROM snapshot_events')]
             corrections = [e for e in events if e.get('event') == 'business_correction' and e['snapshot_id'] == snapshot['id']]
+            changed = stored_after and not source_after_conditions.unchanged(service, db, run)
             if live['status'] == 'cancel_requested' or service.closed:
                 run.update(status='cancelled', answer=None, answer_status='cancelled')
-            elif restrictions or stale or any(i not in run['snapshot_invalidations'] for i in [*corrections, *invalidations]):
+            elif restrictions or stale or changed or any(i not in run['snapshot_invalidations'] for i in [*corrections, *invalidations]):
                 run.update(status='partial', answer=None, answer_status='needs_review', restrictions=restrictions,
-                           stale_requirement_ids=stale)
+                           stale_requirement_ids=stale, **(dict(stored_input_changed=changed) if stored_after else {}))
             else:
                 run.update(result, status='succeeded', answer_status='partial',
                     provided_ids=list(result['source_reference_map']), retrieval=[],
-                    answer_basis='explicit_source_lists_and_stored_condition_records', answer_contract=CONTRACT)
-                run['execution_boundary'].update(answer_contract=CONTRACT,
+                    answer_basis='stored_model_fields_semantic_unverified' if stored_after else 'explicit_source_lists_and_stored_condition_records',
+                    answer_contract=contract)
+                run['execution_boundary'].update(answer_contract=contract,
                     new_model_calls=0, new_retrieval_calls=0, semantic_approval=False,
-                    condition_support='complete_conditional_binary_seasoning_sentence_only_v1')
+                    condition_support=contract if stored_after else 'complete_conditional_binary_seasoning_sentence_only_v1')
                 if 'timing_consumer' in run:
                     run['execution_boundary'].update(timing_support=run['timing_consumer']['contract'],
                                                     timing_status=run['timing_consumer']['status'])
@@ -370,4 +375,5 @@ def execute(service, run, request, snapshot, requirements):
                 answer=run.get('answer'), source_reference_map=run.get('source_reference_map', {}),
                 condition_consumer=run.get('condition_consumer'), list_comparison=run.get('list_comparison'),
                 product_facts=run.get('product_facts', []), execution_boundary=run['execution_boundary'], qa_model_called=False,
+                **(dict(after_condition_consumer=run['after_condition_consumer']) if 'after_condition_consumer' in run else {}),
                 **(dict(timing_consumer=run['timing_consumer']) if 'timing_consumer' in run else {}))
