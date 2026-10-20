@@ -263,6 +263,8 @@ def answers(service, kind, scope_id, answer_id=None):
                        for k, v in row['source_reference'].items()}
                 ref['quote'] = row.get('text', '')
                 passages[reverse.get(row.get('id'), row.get('id'))] = dict(evidence=ref, claim_ids=[])
+    for identifier, ref in run.get('source_reference_map', {}).items():
+        passages[identifier] = dict(evidence=ref, claim_ids=[])
     blocks = {b['id']: b for b in value.get('blocks', [])}
     claims = {c['id']: c for c in value.get('claims', [])}
     answer = run.get('answer') or {}

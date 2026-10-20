@@ -583,6 +583,33 @@ class BusinessEventEdit(BaseModel):
         return self
 
 
+class SourceListField(BaseModel):
+    model_config = {'extra': 'forbid'}
+    source_version_id: str = Field(min_length=1)
+    parse_run_id: str = Field(min_length=1)
+    block_id: str = Field(min_length=1)
+    start_char: int = Field(ge=0)
+    end_char: int = Field(gt=0)
+    quote: str = Field(min_length=1)
+    field_label: str = Field(min_length=1)
+
+
+class SourceListProduct(BaseModel):
+    model_config = {'extra': 'forbid'}
+    type_claim_id: str
+    manufacturer_claim_id: str
+    storage_claim_id: str
+
+
+class SourceListComparison(BaseModel):
+    model_config = {'extra': 'forbid'}
+    contract: Literal['quantity-line-fields-v1']
+    fields: list[SourceListField] = Field(min_length=2, max_length=2)
+    condition_run_id: str = Field(min_length=1)
+    condition_unit_id: str = Field(min_length=1)
+    products: list[SourceListProduct] = Field(default_factory=list, max_length=20)
+
+
 class BusinessQuery(BaseModel):
     question: str = Field(min_length=1)
     choices: list[str] = Field(default_factory=list)
@@ -591,15 +618,23 @@ class BusinessQuery(BaseModel):
     concept_run_id: str | None = Field(default=None, min_length=1)
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
-    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
+    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph', 'explicit_sources'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
     graph_variant: Literal['entity', 'entity_event', 'full'] = 'full'
-    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items'] = 'synthesis'
+    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items', 'source_list_comparison'] = 'synthesis'
     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
+    list_comparison: SourceListComparison | None = None
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.answer_mode == 'source_list_comparison':
+            if (not self.snapshot_id or self.source_run_id or self.concept_run_id or self.requirement_ids
+                    or self.answer_items or self.choices or self.source_context_tokens is not None
+                    or self.retrieval != 'explicit_sources' or self.list_comparison is None):
+                raise ValueError('목록 대조는 snapshot과 명시적 출처·저장 조건 기록만 사용합니다.')
+        elif self.list_comparison is not None or self.retrieval == 'explicit_sources':
+            raise ValueError('명시적 목록 입력은 source_list_comparison에서만 사용합니다.')
         if self.concept_run_id and not self.source_run_id:
             raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):
