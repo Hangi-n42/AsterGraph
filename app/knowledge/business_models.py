@@ -607,7 +607,15 @@ class SourceListComparison(BaseModel):
     fields: list[SourceListField] = Field(min_length=2, max_length=2)
     condition_run_id: str = Field(min_length=1)
     condition_unit_id: str = Field(min_length=1)
+    timing_run_id: str | None = Field(default=None, min_length=1)
+    timing_unit_id: str | None = Field(default=None, min_length=1)
     products: list[SourceListProduct] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode='after')
+    def timing_pair(self):
+        if bool(self.timing_run_id) != bool(self.timing_unit_id):
+            raise ValueError('저장 시점 실행과 unit을 함께 지정하세요.')
+        return self
 
 
 class BusinessQuery(BaseModel):

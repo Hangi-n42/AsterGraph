@@ -257,6 +257,8 @@ def assemble(service, db, request, snapshot):
         raise ValueError('목록 경계가 모호하여 대조할 수 없습니다.')
     conditions = stored_conditions(service, db, sources, snapshot, spec, fields)
     products = product_facts(sources, snapshot, spec.products, {r['name'] for r in comparison['common']})
+    from .source_timing_consumer import consume
+    timing = consume(service, db, sources, snapshot, spec)
     references = {}
     def cite(ref):
         ref = {k: ref[k] for k in ADDRESS}
@@ -293,6 +295,17 @@ def assemble(service, db, request, snapshot):
                         + q['evidence']['condition']['quote'] + ' → ' + q['evidence']['action']['quote'],
                         list(q['evidence'].values()), source_version_id=version,
                         item_refs=[q['subject_item_ref'], *q['related_item_refs']], semantic_status='unverified')
+    for record in (timing or {}).get('records', []):
+        if record['status'] != 'source_linked_stored_timing_record':
+            continue
+        evidence = record['evidence']
+        section('stored_timing', labels[record['source_version_id']] + '의 원문에서 연결된 행위 시점: “'
+                + evidence['quote']['quote'] + '”. 원문 참조 “' + evidence['reference_context']['quote']
+                + '”. 같은 조리방법의 앞 번호 문맥: “' + evidence['prior_number_context']['quote'].strip() + '”.',
+                [*evidence.values(), *[t['evidence'] for t in record['targets']]],
+                source_version_id=record['source_version_id'], item_refs=[t['item_ref'] for t in record['targets']],
+                original_run_id=timing['original_run_id'], original_unit_id=timing['original_unit_id'],
+                step_ref=record['step_ref'], group_index=record['group_index'], semantic_status='unverified')
     for product in products:
         for ref in product['evidence']: cite(ref)
         section('product', f"{product['name']} — 식품 유형: {product['type']}; 제조원: {product['manufacturer']}; 보관·취급방법 원문: {product['storage']}",
@@ -301,11 +314,14 @@ def assemble(service, db, request, snapshot):
               '조건은 원문 문구의 연결을 확인한 결과입니다. 전체 조건 해석의 정확성이나 사람의 승인을 뜻하지 않습니다.',
               '조건을 확인하지 못한 항목이 조건 없음을 뜻하지는 않습니다. 나머지 조건·예외는 확인이 필요합니다.',
               '동의어 관계, 특정 상품의 지정·대체 가능성·공급 계약은 확인하지 않았습니다.']
+    if timing is not None:
+        limits.append('추가 시점 기록의 미확인 연결과 나머지 선후 관계·행위 대상은 확인이 필요합니다. 번호 문맥은 원문 참조이며 그 의미를 새로 해소한 결과가 아닙니다.')
     return dict(answer=dict(answer='\n\n'.join(s['text'] for s in sections), choice=None,
                            citations=list(dict.fromkeys(c for s in sections for c in s['citations'])),
                            sections=sections, limitations=limits),
                 source_reference_map=references, list_comparison=dict(fields=fields, comparison=comparison),
-                condition_consumer=conditions, product_facts=products)
+                condition_consumer=conditions, product_facts=products,
+                **(dict(timing_consumer=timing) if timing is not None else {}))
 
 
 def execute(service, run, request, snapshot, requirements):
@@ -338,6 +354,9 @@ def execute(service, run, request, snapshot, requirements):
                 run['execution_boundary'].update(answer_contract=CONTRACT,
                     new_model_calls=0, new_retrieval_calls=0, semantic_approval=False,
                     condition_support='complete_conditional_binary_seasoning_sentence_only_v1')
+                if 'timing_consumer' in run:
+                    run['execution_boundary'].update(timing_support=run['timing_consumer']['contract'],
+                                                    timing_status=run['timing_consumer']['status'])
             run['finished_at'] = utcnow(); run['metrics']['elapsed_s'] = monotonic() - started
             service.repository.save(db, 'runs', run)
     except Exception as exc:
@@ -350,4 +369,5 @@ def execute(service, run, request, snapshot, requirements):
     return dict(run_id=run['id'], snapshot_id=snapshot['id'], status=run['answer_status'],
                 answer=run.get('answer'), source_reference_map=run.get('source_reference_map', {}),
                 condition_consumer=run.get('condition_consumer'), list_comparison=run.get('list_comparison'),
-                product_facts=run.get('product_facts', []), execution_boundary=run['execution_boundary'], qa_model_called=False)
+                product_facts=run.get('product_facts', []), execution_boundary=run['execution_boundary'], qa_model_called=False,
+                **(dict(timing_consumer=run['timing_consumer']) if 'timing_consumer' in run else {}))

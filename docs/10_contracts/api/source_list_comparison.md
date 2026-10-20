@@ -64,3 +64,22 @@ POST → 저장 → GET run → workbench에서 답변·전체 map 85개·실제
 신규 파서/소비 테스트 47개가 통과했다. 이를 포함한 관련 경로 검사 158개도 통과했다. 최초 확장 관련 검사는 178개 통과·기존 business 검사 7개 실패였으며, 동일 기준 main에서 같은 7개와 전체 오류를 재현했다. 기대값이나 기존 실패를 수정하지 않았다. 사용자용 문구 수정 후 신규 47개를 재검사했다.
 
 실행 증거와 전체 보고는 로컬 artifact `M02_source_list_service_v1_20261020`에 보존한다. 원래 raw/invalid, semantic 6/6 closed, no_reset 및 누적 호출 lineage를 유지한다. 주 범위는 [#668](https://github.com/Hangi-n42/AsterGraph/issues/668), 답변 인계 관련 범위는 [#620](https://github.com/Hangi-n42/AsterGraph/issues/620)이며 이 문서는 이슈 완료·PR·배포를 선언하지 않는다.
+
+## 선택적 저장 시점 소비
+
+`list_comparison.timing_run_id`와 `timing_unit_id`를 함께 지정하면 기존 A 조건 기록을 유지하면서 저장된 시점 기록만 별도로 읽는다. 두 필드가 없으면 기존 답변·섹션·인용·제한 문구가 유지된다. B의 미반환 선택 연결을 생성하거나 A를 B로 덮어쓰지 않는다. 새 모델·검색·계수기·producer 의존성은 없다.
+
+지원 생산 계약은 `source-numbered-steps-conditions-B-v1`이다. `business_query`의 동일 snapshot 및 종료 상태, 성공한 `source_step_conditions` unit, 고정된 지시문 계약, 요청/실행 한도와 recipe 일치, 정상 종료, 원시 공급자 텍스트/저장 text/parsed 일치를 검사한다. 표시용 질문 문자열은 비교·분기하지 않는다. 실제 A/B 입력은 B의 기계적 `method_steps`/`method_prefixes`를 제외하면 같은 원문 버전·목록 필드·항목값·문자 위치여야 한다. 항목 ID 문자열만 같은 것으로 충분하지 않다. 단계 번호·부모·주소·전수 순서·prefix를 포함한 전체 문자 복원과 출력 단계 계약도 확인한다.
+
+새 소비 계약은 `stored-leading-step-timing-v1`이다. 제한된 표면 구문만 소비한다.
+
+- 실제 반환 `kind=action_timing`만 읽는다. 원문 번호 단계의 선두에서 번호+주격조사로 시작하고 `면`으로 끝나는 조건, 목록과 문자 그대로 같은 대상 이름 및 목적격조사, 한 단어의 행위 술어가 직접 이어져야 한다.
+- 특정 번호·질문·재료명·상태/행위 문구를 분기하지 않는다. 여러 절·동의어·대체 관계·새 조건은 추론하지 않는다. 뒤집힌 순서, 중복 대상/인용, 서로 다른 출처, 없는/모호한 인용, 단계 전체로의 확대, 부정·인용·전언의 후행 범위는 미확정으로 남긴다.
+- 반환 quote·조건·행위·대상·원래 번호 참조를 각각 유일한 정확 주소로 보존한다. 번호에 인접한 원래 주격조사를 포함한 문맥과 같은 조리방법의 앞 번호 본문도 제시한다. 이는 원문의 숫자/문맥 연결이며 참조의 상태·인과 의미를 새로 해소한 결과가 아니다.
+- 나머지 `use_condition`, `unqualified_action`, 불완전 그룹은 `not_consumed_not_absence`로 기록한다. 전체 조건 없음·무조건 사용·의미 승인으로 바꾸지 않는다. A의 기존 OR는 A에서만 소비한다.
+
+타이밍 옵션이 유효하지 않으면 타이밍만 `unresolved`로 남기고 정상 A의 목록·OR·상품 사실을 유지한다. 개별 시점의 모호함은 해당 기록만 미확정으로 남긴다. 입력 타입도 경계에서 검사하므로 손상된 response/raw/message가 정상 A 결과를 없애지 않는다. 시점을 소비해도 `semantic_status=unverified`, `human_approval=false`, 전체 `answer_status=partial`을 유지한다.
+
+새 `answer.sections.kind=stored_timing`은 출처 제목, 반환된 실제 연속 구절, 원문 참조와 앞 번호 문맥을 보여준다. 해당 섹션에 원래 run/unit·step/group provenance와 실제 인용을 저장한다. 기존 조건·상품 섹션의 내용·인용은 바꾸지 않는다. `timing_consumer`는 별도 계약·오류·미소비 기록을 보존하며 `execution_boundary`에 기존 `condition_support`와 새 `timing_support`/`timing_status`를 함께 기록한다. 옵션이 없는 실행에는 새 경계 필드를 추가하지 않는다.
+
+고정 자료의 무모델 실제 HTTP 전후 비교에서 목록12/11·공통5·기존 OR·두 상품 제조원/전체 보관조건을 동일하게 보존하고, 저장된 시점 하나를 추가했다. POST → 저장 → GET run → workbench의 답변/인용/상태와 모든 source/version/parse/block/span을 대조했다. 원래 A의 invalid와 B의 raw/평가기준은 수정하지 않았다. 이는 저장 기록의 제한 소비·보존 검사이며 새 모델 성능·일반 의미 해석·자율검색 성과가 아니다. 후속 시점, 일반 기름의 특정 종류 귀속, 복합 행위의 전체 대상 등 기존 미완료도 해결한 것으로 계산하지 않는다.
