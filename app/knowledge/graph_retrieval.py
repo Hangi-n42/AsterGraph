@@ -359,6 +359,31 @@ def fuse_rankings(rankings, run_id, query, limit):
     return [(d.docid, d.score) for d in fused.candidates]
 
 
+def query_scores(service, snapshot, edges, passages, search_texts, query, trace, started):
+    from app.core.config import settings
+    # Cached only on this service and immutable snapshot content; model/settings are in key.
+    cache = getattr(service, '_graph_embedding_cache', {})
+    key = autoschema.identifier('index', [snapshot['id'],
+        settings.EMBEDDING_MODEL, settings.EMBEDDING_DEVICE, passages, search_texts])
+    if key not in cache:
+        vectors = embed([search_texts[pid] for pid in passages])
+        cache.clear()  # B/C share one unchanged source index, independent of graph edges.
+        cache[key] = vectors
+        service._graph_embedding_cache = cache
+        trace['index_cache_hit'] = False
+    else:
+        trace['index_cache_hit'] = True
+    passage_vectors = cache[key]
+    edge_vectors = embed([e['text'] for e in edges], service=service) if edges else np.array([])
+    trace['edge_embedding'] = dict(getattr(service, '_graph_edge_embedding_stats', {})) if edges else {}
+    trace['edge_index_cache_hit'] = bool(edges and trace['edge_embedding'].get('encoded_texts') == 0)
+    trace['index_elapsed_s'] = monotonic() - started
+    q = embed([query])[0]
+    passage_scores = normalize(passage_vectors @ q)
+    edge_scores = normalize(edge_vectors @ q) if edges else np.array([])
+    return edge_scores, passage_scores
+
+
 def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     started = monotonic()
     graph, edges, passages, ignored = build(snapshot, request.graph_variant) if built is None else built
@@ -382,38 +407,37 @@ def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
     search_texts = passage_search_texts(passage_candidates(passages), snapshot['blocks'], run['recipe']['options'],
                                       get_bundles=get_bundles)
     run['passage_index'] = dict(contract=INDEX_CONTRACT, texts=search_texts)
-    # Cached only on this service and immutable snapshot content; model/settings are in key.
-    cache = getattr(service, '_graph_embedding_cache', {})
-    key = autoschema.identifier('index', [snapshot['id'],
-        settings.EMBEDDING_MODEL, settings.EMBEDDING_DEVICE, passages, search_texts])
-    if key not in cache:
-        vectors = embed([search_texts[pid] for pid in passages])
-        cache.clear()  # B/C share one unchanged source index, independent of graph edges.
-        cache[key] = vectors
-        service._graph_embedding_cache = cache
-        trace['index_cache_hit'] = False
-    else:
-        trace['index_cache_hit'] = True
-    passage_vectors = cache[key]
-    edge_vectors = embed([e['text'] for e in edges], service=service) if edges else np.array([])
-    trace['edge_embedding'] = dict(getattr(service, '_graph_edge_embedding_stats', {})) if edges else {}
-    trace['edge_index_cache_hit'] = bool(edges and trace['edge_embedding'].get('encoded_texts') == 0)
-    trace['index_elapsed_s'] = monotonic() - started
-    q = embed([query])[0]
-    passage_scores = normalize(passage_vectors @ q)
-    edge_scores = normalize(edge_vectors @ q) if edges else np.array([])
+    edge_scores, passage_scores = query_scores(service, snapshot, edges, passages, search_texts, query, trace, started)
     selected = []
     if request.retrieval in {'hipporag2', 'hybrid_graph'} and edges:
-        indices = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))[:30]
-        candidates = [dict(id=edges[i]['id'], triple=edges[i]['text'], status=edges[i]['status']) for i in indices]
-        aliases = {c['id']: f'e{i+1}' for i, c in enumerate(candidates)}
+        instruction = (filter_triple_messages[0]['content'] + '\n프로젝트 출력 계약: fact 대신 selected_ids에 제공 id만 반환한다. '
+            '여러 단계의 연결에 필요한 관계도 선택한다. has_concept는 검색 연결이며 승인된 사실이나 is-a가 아니다.')
+        if request.candidate_contract:
+            from . import review_work_candidates as work
+            from .source_index import FrozenIndex
+            index = FrozenIndex([dict(id=pid, file_id=p['evidence']['source_version_id'], text=search_texts[pid])
+                                 for pid, p in passages.items()], preserve_numbers=True)
+            collection = work.rank_edges(snapshot, graph.nodes, edges, passages, edge_scores, index.rank(query, set(passages)))
+            with service.repository.connect() as db:
+                construction = service.repository.get(db, 'runs', snapshot['run_id'])['graph']
+            packet = work.packet(snapshot, graph, edges, collection, construction)
+            aliases = packet['aliases']
+            context = dict(question=query, candidate_fact_groups=packet['candidate_fact_groups'],
+                           review_work_units=packet['review_work_units'])
+            instruction += work.GROUP_INSTRUCTION + work.WORK_INSTRUCTION
+            trace.update(candidate_contract=work.CONTRACT, candidate_collection=collection,
+                candidate_groups=packet['all_groups'], review_work_units=packet['all_review_units'],
+                work_eligibility=packet['eligibility'], candidate_bindings=packet['bindings'])
+        else:
+            indices = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))[:30]
+            candidates = [dict(id=edges[i]['id'], triple=edges[i]['text'], status=edges[i]['status']) for i in indices]
+            aliases = {c['id']: f'e{i+1}' for i, c in enumerate(candidates)}
+            context = dict(question=query, candidate_facts=candidates)
         schema = create_model('RelevantEdges', selected_ids=(list[Literal[tuple(aliases)]],
-            Field(max_length=len(candidates), json_schema_extra={'uniqueItems': True})))
-        output = business_run.json_call(service, run, 'graph_retrieval_filter',
-            filter_triple_messages[0]['content'] + '\n프로젝트 출력 계약: fact 대신 selected_ids에 제공 id만 반환한다. '
-            '여러 단계의 연결에 필요한 관계도 선택한다. has_concept는 검색 연결이며 승인된 사실이나 is-a가 아니다.',
-            dict(question=query, candidate_facts=candidates), schema, reference_map=aliases)
-        trace['candidate_edge_ids'] = [c['id'] for c in candidates]
+            Field(max_length=min(30, len(aliases)), json_schema_extra={'uniqueItems': True})))
+        trace['candidate_edge_ids'] = list(aliases)
+        output = business_run.json_call(service, run, 'graph_retrieval_filter', instruction,
+            context, schema, reference_map=aliases)
         if output is None:
             raise ValueError('관계 선택 모델 호출 실패: 검색 성공으로 처리하지 않습니다.')
         selected = list(dict.fromkeys(output['selected_ids']))

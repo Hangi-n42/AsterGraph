@@ -593,6 +593,8 @@ class BusinessQuery(BaseModel):
     limit: int = Field(default=12, ge=1, le=50)
     evidence_union: Literal['ranked_preserved_claims_v2'] | None = Field(default=None,
         description='Experimental snapshot QA: limit preserves baseline claims; whole selected facts and ranked additions share the existing token budget.')
+    candidate_contract: Literal['r2_g1_w1'] | None = Field(default=None,
+        description='Experimental R2 source/Head ranking with G1 children and W1 review-work sharing; individual edge selection only.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
@@ -620,6 +622,9 @@ class BusinessQuery(BaseModel):
         if self.evidence_union and (not self.snapshot_id or self.retrieval != 'hipporag2'
                 or self.answer_mode != 'synthesis' or self.requirement_ids):
             raise ValueError('근거 보존 실험은 요구 강제 선택 없는 snapshot hipporag2 종합 답변에서만 지원합니다.')
+        if self.candidate_contract and (not self.snapshot_id or self.retrieval != 'hipporag2'
+                or self.graph_variant != 'full' or self.answer_mode != 'synthesis' or self.requirement_ids):
+            raise ValueError('검토 작업 후보 실험은 요구 강제 선택 없는 snapshot hipporag2/full 종합 답변에서만 지원합니다.')
         return self
 
 

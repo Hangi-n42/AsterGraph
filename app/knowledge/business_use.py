@@ -1154,6 +1154,8 @@ def query(service, request, *, context_mode='graph'):
         raise ValueError('Unknown query context')
     if request.evidence_union and context_mode != 'graph':
         raise ValueError('근거 보존 실험은 graph context에서만 지원합니다.')
+    if request.candidate_contract and context_mode != 'graph':
+        raise ValueError('검토 작업 후보 실험은 graph context에서만 지원합니다.')
     if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
         raise ValueError('문서 기준선은 bm25 또는 hybrid를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
     with service.lock, service.repository.connect() as db:
@@ -1247,6 +1249,9 @@ def query(service, request, *, context_mode='graph'):
         if request.evidence_union:
             run['execution_boundary']['evidence_union'] = dict(contract=request.evidence_union,
                 experimental=True, baseline_limit=request.limit, final_limit='existing_token_budget')
+        if request.candidate_contract:
+            run['execution_boundary']['candidate_contract'] = dict(contract=request.candidate_contract,
+                experimental=True, individual_edge_selection=True)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     built = None
     get_bundles = None
