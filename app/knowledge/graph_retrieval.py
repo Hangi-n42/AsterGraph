@@ -447,6 +447,9 @@ def retrieve(service, run, snapshot, request, *, built=None, get_bundles=None):
         trace['fallback'] = 'dense_passages' if request.retrieval == 'hipporag2' else 'dense_baseline'
     trace['ranked_passages'] = [dict(id=p, score=s, evidence=passages[p]['evidence'],
                                    claim_ids=passages[p]['claim_ids']) for p, s in ranked]
+    if request.evidence_union:
+        trace['selected_factual_claim_ids'] = list(dict.fromkeys(e.get('claim_id') for e in edges
+            if e['id'] in selected and e['relation'] != 'has_concept'))
     if run.get('answer_basis') == 'source_passages_not_ontology_approval':
         hits = [dict(block_id=pid, file_id=passages[pid]['evidence']['source_version_id'],
                      score=score, selection_reason=request.retrieval) for pid, score in ranked]
