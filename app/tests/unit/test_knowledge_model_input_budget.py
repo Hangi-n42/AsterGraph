@@ -155,3 +155,12 @@ def test_unverified_contract_keeps_original_conservative_estimate(monkeypatch):
     result=business_run.request_budget(run,messages,None,8192)
     assert result['estimate_tokens']==business_run.request_tokens(messages,None,8192)
     assert result['method']=='utf8_bytes/2+output+1000' and result['fallback_reason']=='unsupported'
+
+
+@pytest.mark.parametrize("version", ["0.40.3", "0.40.6"])
+def test_both_verified_engine_versions_keep_their_renderer_contract(local, version):
+    state, measure, _, _, _ = local
+    state["version"] = version
+    result, error = measure()
+    assert error is None
+    assert result["renderer_contract"].endswith(version)
