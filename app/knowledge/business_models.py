@@ -595,6 +595,8 @@ class BusinessQuery(BaseModel):
         description='Experimental snapshot QA: limit preserves baseline claims; whole selected facts and ranked additions share the existing token budget.')
     candidate_contract: Literal['r2_g1_w1'] | None = Field(default=None,
         description='Experimental R2 source/Head ranking with G1 children and W1 review-work sharing; individual edge selection only.')
+    source_citation_contract: Literal['provided_source_quotes_v1'] | None = Field(default=None,
+        description='Experimental synthesis output: record selected source quotations separately from claim citations.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
@@ -604,6 +606,8 @@ class BusinessQuery(BaseModel):
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.source_citation_contract and (self.source_run_id or self.answer_mode != 'synthesis'):
+            raise ValueError('직접 원문 인용 계약은 snapshot synthesis에서만 지원합니다.')
         if self.concept_run_id and not self.source_run_id:
             raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):

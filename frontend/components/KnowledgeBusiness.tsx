@@ -1,5 +1,7 @@
 "use client";
 
+import KnowledgeAnswerSources, { type AnswerSourceCitations } from "./KnowledgeAnswerSources";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 type Request = <T>(path: string, init?: RequestInit) => Promise<T>;
@@ -158,7 +160,7 @@ export default function KnowledgeBusiness({ request, sources, visible, initialRu
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [snapshotId, setSnapshotId] = useState("");
   const [querySource, setQuerySource] = useState("reviewed");
-  const [answer, setAnswer] = useState<{ status: string; answer?: { answer: string; citations: string[]; limitations: string[] } } | null>(null);
+  const [answer, setAnswer] = useState<{ status: string; source_citations?: AnswerSourceCitations; answer?: { answer: string; citations: string[]; limitations: string[] } } | null>(null);
   const [impacts, setImpacts] = useState<{ requirement_id: string; status: string; reason: string; new_relevance: boolean }[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -248,7 +250,7 @@ export default function KnowledgeBusiness({ request, sources, visible, initialRu
     <form className="space-y-3 rounded border p-4" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); action(async () => setAnswer(await request("/business/search", json({ ...(querySource === "extracted" ? { source_run_id: run!.id } : { snapshot_id: snapshotId, ...reviewedQueryFields(f, requirements) }), question: f.get("question"), retrieval: f.get("retrieval") })))); }}>
       {querySource === "reviewed" && <div><label>답변 방식<select name="answer_mode" className={field}><option value="synthesis">근거를 종합해 설명</option><option value="reviewed_items">검토 의미를 선택해 조건과 함께 표시</option></select></label><label>업무 요구 (검토 의미 선택 방식)<select name="answer_requirement" className={field}><option value="">선택</option>{requirements.map(r => <option key={r.id} value={r.id}>{r.question}</option>)}</select></label></div>}
       <h3 className="font-semibold">검토한 지식에 질문</h3><label className="block">답변 근거<select className={field} value={querySource} onChange={e => { setQuerySource(e.target.value); setAnswer(null); }}><option value="reviewed">승인한 지식 버전</option><option value="extracted" disabled={!run || running}>선택한 추출 실행의 원문</option></select></label>{querySource === "extracted" && <p className="text-sm">현재 선택한 실행의 그래프로 원문을 찾습니다. 답변 생성은 온톨로지 승인이나 업무 요구 전체의 충족을 뜻하지 않습니다.</p>}<label className="block">근거 찾기<select name="retrieval" className={field} defaultValue="hipporag2"><option value="hipporag2">개념·관계 연결 검색 (개발 기본)</option><option value="bm25">단어 검색 (BM25 비교)</option></select></label><label className="block">사용할 버전<select className={field} required={querySource === "reviewed"} disabled={querySource === "extracted"} value={snapshotId} onChange={e => { setSnapshotId(e.target.value); setAnswer(null); }}><option value="">선택</option>{snapshots.map(s => <option key={s.id} value={s.id}>{s.reason} · {s.counts.claims}개 주장</option>)}</select></label><label className="block">질문<textarea name="question" required className={field} /></label><button className={button} disabled={busy || (querySource === "reviewed" ? !snapshotId : !run || running)}>답변 확인</button>
-      {answer && <div><p>{status[answer.status] || answer.status}</p><p className="whitespace-pre-wrap">{answer.answer?.answer}</p>{answer.answer?.limitations.map((l, i) => <p key={i}>{l}</p>)}<p className="text-xs">사용 근거: {answer.answer?.citations.join(", ") || "없음"}</p></div>}
+      {answer && <div><p>{status[answer.status] || answer.status}</p><p className="whitespace-pre-wrap">{answer.answer?.answer}</p>{answer.answer?.limitations.map((l, i) => <p key={i}>{l}</p>)}<KnowledgeAnswerSources record={answer.source_citations} /><p className="text-xs">인용 ID: {answer.answer?.citations.join(", ") || "없음"}</p></div>}
     </form>
     <form className="space-y-3 rounded border p-4" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); action(async () => { const result = await request<{ impacts: typeof impacts }>("/business/changes", json({ before_version_id: f.get("before"), after_version_id: f.get("after"), key_fields: String(f.get("keys") || "").split(",").map(v => v.trim()).filter(Boolean) })); setImpacts(result.impacts); await refresh(); }); }}>
       <h3 className="font-semibold">원문 변경 영향 확인</h3><p className="text-sm">기존 근거 연결과 새 의미의 관련성을 함께 확인합니다. 영향이 있거나 미확정이면 위에서 새 버전으로 같은 요구를 다시 확인하세요.</p>

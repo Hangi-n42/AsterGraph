@@ -22,6 +22,35 @@ def test_claim_view_exposes_stored_interpretation_errors_without_changing_the_cl
     assert workbench._claim_view(dict(id='legacy'), {}, {}, {})['interpretation_errors'] == []
 
 
+@pytest.mark.parametrize('block_version,block_parse,attach', [('v1', 'p1', True), ('other', 'p1', False), ('v1', 'other', False)])
+def test_answer_source_quotes_keep_stored_identity_when_enriching(service, block_version, block_parse, attach):
+    from copy import deepcopy
+    from app.knowledge.business_use import record_answer_source_citations
+    view = dict(id='block', text='기록된 원문 인용', span=[0, 9], source_version_id='v1', parse_run_id='p1')
+    view['span'][1] = len(view['text'])
+    answer = dict(answer='보존할 답변', choice=None, citations=['c0'], limitations=['미확정'])
+    run = dict(id='source-answer', kind='business_query', status='succeeded',
+        query=dict(question='계약 인용 조회', source_run_id='run1', retrieval='hipporag2'),
+        answer_status='answered', units=[], provided_ids=['c0'], retrieval=[], input_version_ids=['v1'])
+    output = dict(answer, source_citations=[dict(evidence_ref='block', quote=view['text'])])
+    record_answer_source_citations(run, output, [view], [view])
+    run['answer'] = output
+    original = deepcopy(run)
+    with service.repository.connect() as db:
+        parent = service.repository.get(db, 'runs', 'run1')
+        parent['blocks'] = [dict(view, source_version_id=block_version, parse_run_id=block_parse, locator={'line': 1})]
+        service.repository.save(db, 'runs', parent)
+        db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], json.dumps(run)))
+    detail = workbench.answers(service, 'run', 'run1', run['id'])['detail']
+    ref = detail['source_citations']['citations'][0]
+    assert detail['answer'] == answer
+    assert ref['quote'] == view['text'] and ref['parse_run_id'] == 'p1' and ref['source_version_id'] == 'v1'
+    assert (ref['block_text'] == view['text']) is attach
+    assert (ref['locator'] == {'line': 1}) is attach
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'runs', run['id']) == original
+
+
 def test_snapshot_concepts_separate_known_history_but_keep_failed_and_unresolved_links(service, monkeypatch):
     from copy import deepcopy
     from app.knowledge import autoschema

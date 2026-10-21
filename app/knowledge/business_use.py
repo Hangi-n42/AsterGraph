@@ -975,6 +975,11 @@ REVIEWED_MEANINGS_PROMPT = (
     '질문에 해당하는 의미와 실제 인용을 함께 사용하고, 후보의 다른 절이나 검수 문장의 확대 해석을 그대로 확정하지 않는다. '
     '원문에서 직접 확인되는 사실과 추가 해석이 필요한 결론을 구분해 답한다.'
 )
+SOURCE_CITATIONS_PROMPT = (
+    '\nsource_citations에는 실제 선택한 source_evidence의 id를 evidence_ref로, 원문의 정확한 구절을 quote로 반환한다. '
+    '주장 citations와 별도이며 같은 원문의 모든 주장을 인용한 것으로 취급하지 않는다. '
+    '원문 인용 위치는 문장별 의미 지지 판정이 아니다.'
+)
 
 
 def graph_source_evidence(snapshot, recipe, selected, reviewed_meanings):
@@ -1035,11 +1040,18 @@ def source_evidence_views(evidence_rows, previous_order):
 
 
 
-def answer_references(context, source_evidence, required_source_context=(), source_claims=None):
+def answer_references(context, source_evidence, required_source_context=(), source_claims=None, *, source_citation_contract=None):
     references = {c['id']: f'q{i+1}' for i, c in enumerate(context)}
     citation_type = list[Literal[tuple(references)]] if references else list[str]
     context_answer = create_model('ContextAnswer', __base__=SourceAnswer if source_claims is not None else Answer,
         citations=(citation_type, Field(max_length=len(context), json_schema_extra={'uniqueItems': True})))
+    if source_citation_contract:
+        # Address failures belong to individual quotes, not the normal answer.
+        source_quote = create_model('AnswerSourceQuote',
+            evidence_ref=(str, Field(json_schema_extra={'enum': list(dict.fromkeys(s['id'] for s in source_evidence))})),
+            quote=(str, Field(description='Literal quotation from the provided source view; not an answer paraphrase.')))
+        context_answer = create_model('SourceQuotedContextAnswer', __base__=context_answer,
+            source_citations=(list[source_quote], Field(...)))
     # Reuse the existing reversible reference map for long source addresses too.
     # Citation choices remain context IDs; the server restores original IDs.
     reference_map = dict(references)
@@ -1052,6 +1064,47 @@ def answer_references(context, source_evidence, required_source_context=(), sour
         values = list(dict.fromkeys(v[field] for v in source_addresses if v.get(field)))
         reference_map.update({value: f'{prefix}{i+1}' for i, value in enumerate(values) if value not in reference_map})
     return context_answer, reference_map
+
+
+def record_answer_source_citations(run, output, source_evidence, blocks):
+    """Validate recorded quotation addresses, without judging answer support."""
+    record = dict(status='not_recorded', citations=[], duplicates_removed=0,
+                  semantic_support='not_assessed', answer_binding='global')
+    run['answer_source_citations'] = record
+    if output is None or 'source_citations' not in output:
+        return
+    returned = output.pop('source_citations')
+    seen = set()
+    for item in returned:
+        entry = dict(item, address_status='unresolved')
+        matches = {}
+        try:
+            views = business_run.contiguous_evidence_views(source_evidence, item['evidence_ref'])
+            for view in views:
+                if not view.get('source_version_id') or not view.get('parse_run_id') or not item['quote'].strip():
+                    continue
+                position = view['text'].find(item['quote'])
+                while position >= 0:
+                    start = view['span'][0] + position
+                    ref = dict(block_id=view['id'], source_version_id=view['source_version_id'],
+                        parse_run_id=view['parse_run_id'], quote=item['quote'],
+                        start_char=start, end_char=start + len(item['quote']))
+                    exact = business_run.exact_evidence([ref], blocks)[0]
+                    key = tuple(exact[k] for k in ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char'))
+                    matches[key] = exact
+                    position = view['text'].find(item['quote'], position + 1)
+            if len(matches) != 1:
+                raise ValueError('non_unique_or_unprovided_source_quote')
+            key, exact = next(iter(matches.items()))
+            if key in seen:
+                record['duplicates_removed'] += 1
+                continue
+            seen.add(key)
+            entry.update(exact, address_status='matched')
+        except (ValueError, KeyError) as exc:
+            entry['address_error'] = str(exc)
+        record['citations'].append(entry)
+    record['status'] = 'unresolved' if any(c['address_status'] != 'matched' for c in record['citations']) else 'recorded'
 
 
 def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previous_order):
@@ -1078,7 +1131,7 @@ def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previo
     body = dict(question=request.question, choices=request.choices, context=context,
         source_versions=snapshot['source_versions'], source_evidence=sources,
         requirement_limitations=limitations, reviewed_meanings=meanings)
-    schema, references = answer_references(context, sources)
+    schema, references = answer_references(context, sources, source_citation_contract=request.source_citation_contract)
     return state, body, schema, references
 
 
@@ -1110,7 +1163,8 @@ def preserved_graph_hits(run, snapshot, original, request, candidates, baseline)
         proposed = trials[index] if required else accepted + [remainder[index - len(trials)]]
         state, body, schema, references = graph_qa_input(snapshot, original, run['recipe'], request,
             candidates, proposed, order)
-        packet = business_run.json_request(run, 'business_qa', SYNTHESIS_PROMPT + REVIEWED_MEANINGS_PROMPT,
+        packet = business_run.json_request(run, 'business_qa', SYNTHESIS_PROMPT + REVIEWED_MEANINGS_PROMPT + (
+            SOURCE_CITATIONS_PROMPT if request.source_citation_contract else ''),
             body, schema, reference_map=references)
         budget = business_run.request_budget(run, packet['messages'], packet['schema'],
             run['recipe']['options']['review_tokens'])
@@ -1372,7 +1426,7 @@ def query(service, request, *, context_mode='graph'):
     if request.evidence_union:
         run['source_reference_order'] = source_order
     context_answer, reference_map = answer_references(context, source_evidence, required_source_context,
-        snapshot['claims'] if source_reader else None)
+        snapshot['claims'] if source_reader else None, source_citation_contract=request.source_citation_contract)
     # Complete claim bundles retain conditions and source provenance; no gold mappings.
     limitations = [dict(requirement_id=r, status=a['status'], gaps=(a.get('source') or {}).get('gaps', []))
                    for r, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
@@ -1409,6 +1463,8 @@ def query(service, request, *, context_mode='graph'):
             '검색에 사용한 그래프 연결은 미승인 추출일 수 있으며 그 존재가 의미 검증은 아니다. '
             '원문에 없는 조건이나 연결을 추론해서 채우지 않는다. 이 답변은 온톨로지 승인이나 업무 요구 전체 충족 판정이 아니다.'
             if source_reader else '')
+        if request.source_citation_contract:
+            instruction += SOURCE_CITATIONS_PROMPT
         answer_context = dict(question=request.question, choices=request.choices, **({} if structured_reader else dict(context=context)),
                  source_versions=snapshot['source_versions'], source_evidence=source_evidence,
                  **({'public_requirements': answer_requirements} if answer_requirements else {}),
@@ -1422,6 +1478,7 @@ def query(service, request, *, context_mode='graph'):
                 return evidence_failure(service, run, hits, 'final_input_changed', started)
         output = business_run.json_call(service, run, 'business_qa', instruction, answer_context, context_answer,
             reference_map=reference_map)
+    record_answer_source_citations(run, output, source_evidence, snapshot['blocks'])
     if source_reader:
         run['answer_contract'] = 'source-unique-provided-citations-lossless-dedup-v3'
         raw_ids = ((run['units'][-1].get('response') or {}).get('parsed') or {}).get('citations', []) if run['units'] else []
@@ -1438,6 +1495,7 @@ def query(service, request, *, context_mode='graph'):
         if restricted_sources(db, snapshot['source_versions']) or any(
                 n['revision'] != r['revision'] or n['status'] == 'needs_review' for n, r in zip(now, requirements)):
             status, output = 'needs_review', None
+            run['answer_source_citations'] = dict(run['answer_source_citations'], status='needs_review', citations=[])
         run.update(status='succeeded' if status == 'answered' else 'partial', finished_at=utcnow(),
                    answer=output, answer_status=status, retrieval=hits, provided_ids=sorted(selected),
                    retrieval_concept_hints=hints, retrieval_contract=('required-reviewed-claims+ranked-remainder-v1' if context_mode == 'graph' and requirement_ids
@@ -1450,6 +1508,7 @@ def query(service, request, *, context_mode='graph'):
         run['metrics']['elapsed_s'] = monotonic() - started
         service.repository.save(db, 'runs', run)
     return dict(run_id=run['id'], status=status, answer=output, retrieval=hits,
+                source_citations=run['answer_source_citations'],
                 context_mode=context_mode, snapshot_id=None if source_reader else snapshot['id'],
                 source_run_id=request.source_run_id, answer_basis=run['answer_basis'], limitations=limitations,
                 execution_boundary=run['execution_boundary'],
