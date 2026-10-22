@@ -10,10 +10,12 @@ type Snapshot = { id: string; run_id: string; reason: string; created_at: string
 type Result = { run_id?: string; status: string; answer?: { answer: string } | null; limitations?: string[] };
 const statuses: Record<string, string> = { answered: "답변 생성·의미 정확성 확인 필요", needs_review: "현재 사용 상태가 바뀌어 재검토가 필요합니다.", no_reviewed_claims: "사용할 승인 지식이 없습니다.", retrieval_failed: "근거 검색 실패", input_capacity: "답변 입력 용량 초과", unverified: "답변 확인 미완료" };
 
-export function businessSearchRequest(snapshotId: string, question: string, retrieval: string) {
+export function businessSearchRequest(snapshotId: string, question: string, retrieval: string, configuration = "baseline") {
   if (!snapshotId || !question.trim()) throw new Error("출처 지식 버전과 질문을 선택하세요.");
   if (!["hipporag2", "bm25", "dense"].includes(retrieval)) throw new Error("이 버전에서 지원하지 않는 검색 방식입니다.");
-  return { snapshot_id: snapshotId, question: question.trim(), retrieval, graph_variant: "full", answer_mode: "synthesis" };
+  if (!["baseline", "preserved"].includes(configuration) || configuration === "preserved" && retrieval !== "hipporag2") throw new Error("근거 확장은 개념·관계 연결 검색에서만 선택하세요.");
+  return { snapshot_id: snapshotId, question: question.trim(), retrieval, graph_variant: "full", answer_mode: "synthesis",
+    ...(configuration === "preserved" ? { candidate_contract: "r2_g1_w1", evidence_union: "ranked_preserved_claims_v2" } : {}) };
 }
 
 export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore }: {
@@ -26,6 +28,7 @@ export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [configuration, setConfiguration] = useState("baseline");
   const inFlight = useRef(false);
   const alive = useRef(true);
   const snapshot = scope?.kind === "source_graph" ? snapshots.find(s => s.id === scope.id) : undefined;
@@ -45,7 +48,7 @@ export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore
     inFlight.current = true; setBusy(true); setError(""); setResult(null);
     try {
       const value = await request<Result>("/business/search", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(businessSearchRequest(snapshot.id, query, retrieval)) });
+        body: JSON.stringify(businessSearchRequest(snapshot.id, query, retrieval, configuration)) });
       if (alive.current) setResult(value);
     } catch (e) { if (alive.current) setError((e as Error).message); }
     finally { inFlight.current = false; if (alive.current) setBusy(false); }
@@ -65,9 +68,13 @@ export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore
         {snapshot && <p className={styles.muted}>{snapshot.reason}</p>}
         {!loading && !snapshots.length && <p className={styles.empty}>저장된 출처 지식 버전이 없습니다. 검토·승인 뒤 생성한 버전으로 질문할 수 있습니다.</p>}
         {!loading && snapshots.length > 0 && !snapshot && <p className={styles.warning}>현재 상단의 범위는 사용 가능한 출처 지식 버전이 아닙니다. 다른 버전으로 자동 대체하지 않습니다.</p>}
-        <label>근거 찾기<select aria-label="근거 찾기" value={retrieval} onChange={e => { setRetrieval(e.target.value); setResult(null); }}>
+        <label>근거 찾기<select aria-label="근거 찾기" value={retrieval} onChange={e => { setRetrieval(e.target.value); setConfiguration("baseline"); setResult(null); }}>
           <option value="hipporag2">개념·관계 연결 검색</option><option value="bm25">단어 검색 (BM25)</option><option value="dense">임베딩 검색</option>
         </select></label>
+        {retrieval === "hipporag2" && <label>검색 구성<select aria-label="검색 구성" value={configuration} onChange={e => { setConfiguration(e.target.value); setResult(null); }}>
+          <option value="baseline">기본</option><option value="preserved">근거 확장 (검증 중)</option>
+        </select></label>}
+        {configuration === "preserved" && <p className={styles.warning}>선택한 사실과 추가 근거를 입력 예산 안에서 보존합니다. 새 질문의 검색·답변 품질은 검증 중이며, 원문과 조건을 확인해야 합니다.</p>}
         <label>질문<textarea aria-label="질문" rows={3} required maxLength={4000} value={query} onChange={e => { setQuery(e.target.value); setResult(null); }} /></label>
         <button className={styles.primary} disabled={!snapshot || !query.trim()}>검색하고 답변 생성</button>
       </fieldset>

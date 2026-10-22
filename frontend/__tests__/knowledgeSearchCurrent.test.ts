@@ -30,6 +30,19 @@ it('uses only an explicit current snapshot and supported retrieval contract', ()
   expect(() => businessSearchRequest('v',' ','bm25')).toThrow();
 });
 
+it('sends preservation options only through the explicit search configuration', async () => {
+  const expanded = businessSearchRequest('v', '새 질문', 'hipporag2', 'preserved');
+  expect(expanded).toMatchObject({ candidate_contract: 'r2_g1_w1', evidence_union: 'ranked_preserved_claims_v2' });
+  expect(expanded).not.toHaveProperty('source_citation_contract');
+  for (const retrieval of ['bm25', 'dense']) expect(() => businessSearchRequest('v', '질문', retrieval, 'preserved')).toThrow();
+  seed(); hooks.seeds.push('preserved');
+  const request = vi.fn().mockResolvedValue({ status: 'answered' });
+  const tree = KnowledgeSearch({request,scope,onOpenScope:vi.fn(),onExplore:vi.fn()});
+  const submit = nodes(tree).find(n=>n.type==='form')!.props.onSubmit as (e:{preventDefault:()=>void})=>void;
+  submit({preventDefault:vi.fn()}); await Promise.resolve();
+  expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({ ...expanded, snapshot_id: scope.id, question: '상품의 보관 조건은?' });
+});
+
 it('mount reads current snapshots without starting a model call', async () => {
   const request=vi.fn().mockResolvedValue({items:[snapshot]});
   KnowledgeSearch({request,scope,onOpenScope:vi.fn(),onExplore:vi.fn()});

@@ -85,6 +85,24 @@ def test_first_excess_rolls_back_all_state_without_skipping(monkeypatch):
     assert snapshot == before and run['units'] == []
 
 
+@pytest.mark.parametrize('contract', [None, 'provided_source_quotes_v1', 'provided_source_quote_links_v1'])
+def test_combined_quote_contract_has_identical_preview_and_final_qa_input(monkeypatch, contract):
+    snapshot, original, candidates, baseline, run = data()
+    query = request(candidate_contract='r2_g1_w1', source_citation_contract=contract)
+    run['query'] = query.model_dump()
+    monkeypatch.setattr(business_run, 'request_budget', lambda *args: dict(estimate_tokens=1))
+    hits = use.preserved_graph_hits(run, snapshot, original, query, candidates, baseline)
+    _, body, schema, refs = use.graph_qa_input(snapshot, original, run['recipe'], query, candidates,
+        hits, run['source_reference_order'])
+    packet = business_run.json_request(run, 'business_qa',
+        use.SYNTHESIS_PROMPT + use.REVIEWED_MEANINGS_PROMPT + use.source_citations_instruction(contract),
+        body, schema, reference_map=refs)
+    assert run['evidence_assembly']['request_fingerprint'] == business_run.autoschema.identifier('qa_input', packet)
+    assert ('source_citations' in packet['schema']['properties']) == bool(contract)
+    assert ('answer_links' in packet['schema']['properties']) == (contract == 'provided_source_quote_links_v1')
+    assert run['units'] == []
+
+
 @pytest.mark.parametrize('capacity', [0, 10])
 def test_baseline_or_mandatory_overflow_is_not_silently_reduced(monkeypatch, capacity):
     snapshot, original, candidates, baseline, run = data()
@@ -166,6 +184,8 @@ def fixture_service(tmp_path, monkeypatch):
         body = json.loads(payload['messages'][1]['content'])
         if 'candidate_facts' in body:
             output = dict(selected_ids=[body['candidate_facts'][0]['id']])
+        elif 'candidate_fact_groups' in body:
+            output = dict(selected_ids=[body['candidate_fact_groups'][0]['members'][0]['id']])
         else:
             output = dict(answer='Explicit fixture response', choice=None,
                 citations=[body['context'][0]['id']], limitations=['Fixture, not model evidence'])
@@ -200,6 +220,29 @@ def test_actual_api_common_dispatch_restore_store_and_question_isolation(tmp_pat
         assert second.json()['data']['status'] == 'answered'
         other = service.run(second.json()['data']['run_id'])
         assert len(other['retrieval']) == 1 and 'source_reference_order' not in other and 'evidence_assembly' not in other
+    finally:
+        service.executor.shutdown(wait=True)
+
+
+def test_candidate_and_preservation_options_share_the_api_without_quote_contract(tmp_path, monkeypatch):
+    service, client, wires = fixture_service(tmp_path, monkeypatch)
+    try:
+        with service.repository.connect() as db:
+            original = service.repository.get(db, 'runs', 'origin')
+            snapshot = service.repository.get(db, 'snapshots', 's')
+            original['graph'] = business_run.autoschema.graph(snapshot['claims'])
+            db.execute('UPDATE runs SET payload=? WHERE id=?', (json.dumps(original), 'origin'))
+        response = client.post('/api/v1/knowledge/business/search', json=request(candidate_contract='r2_g1_w1').model_dump())
+        reply = response.json()['data']
+        assert reply['status'] == 'answered', reply
+        saved = service.run(reply['run_id'])
+        assert saved['query']['candidate_contract'] == 'r2_g1_w1'
+        assert saved['query']['source_citation_contract'] is None
+        assert saved['evidence_assembly']['final_claim_ids']
+        assert 'candidate_fact_groups' in json.loads(wires[0]['messages'][1]['content'])
+        assert 'source_citations' not in wires[-1]['format']['properties']
+        assert 'answer_links' not in saved
+        assert len(wires) == 2
     finally:
         service.executor.shutdown(wait=True)
 
