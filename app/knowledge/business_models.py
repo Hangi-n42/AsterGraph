@@ -591,6 +591,8 @@ class BusinessQuery(BaseModel):
     concept_run_id: str | None = Field(default=None, min_length=1)
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
+    source_citation_contract: Literal['provided_source_quotes_v1', 'provided_source_quote_links_v1'] | None = Field(default=None,
+        description='Opt-in source quotations and optional model-declared answer links; not semantic support.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
@@ -600,6 +602,8 @@ class BusinessQuery(BaseModel):
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.source_citation_contract and (self.source_run_id or self.answer_mode != 'synthesis'):
+            raise ValueError('직접 원문 인용 계약은 snapshot synthesis에서만 지원합니다.')
         if self.concept_run_id and not self.source_run_id:
             raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):
