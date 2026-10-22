@@ -1,5 +1,6 @@
 """Read saved business scopes without inference or merging experimental runs."""
 import json
+from copy import deepcopy
 from collections import Counter
 
 
@@ -280,10 +281,20 @@ def answers(service, kind, scope_id, answer_id=None):
             evidence=_claim_view(dict(evidence=refs), blocks, sources, versions)['evidence'],
             fallback_text=(run.get('passage_index') or {}).get('texts', {}).get(identifier)))
     retrieval = run.get('graph_retrieval') or {}
+    source_citations = deepcopy(run.get('answer_source_citations') or dict(status='not_recorded', citations=[],
+        duplicates_removed=0, semantic_support='not_assessed', answer_binding='global'))
+    for ref in source_citations['citations']:
+        if ref['address_status'] == 'matched':
+            block = blocks.get(ref['block_id'], {})
+            matching = (block.get('source_version_id') == ref['source_version_id']
+                and (block.get('parse_run_id') or block.get('run_id')) == ref['parse_run_id'])
+            ref.update(_claim_view(dict(evidence=[ref]),
+                {ref['block_id']: block} if matching else {}, sources, versions)['evidence'][0])
     selected_links = [e for e in graph['edges'] if e['id'] in selected_edges]
     return dict(items=items, detail=dict(id=run['id'], question=run['query']['question'],
         status=run.get('answer_status'), answer=answer, finished_at=run.get('finished_at'),
-        evidence=evidence, source_run_id=run['query'].get('source_run_id'),
+        evidence=evidence, source_citations=source_citations, source_run_id=run['query'].get('source_run_id'),
+        **({'answer_links': deepcopy(run['answer_links'])} if 'answer_links' in run else {}),
         snapshot_id=run['query'].get('snapshot_id') or (None if run['query'].get('source_run_id') else run.get('snapshot_id')),
         context_mode=run.get('context_mode'), retrieval=run['query'].get('retrieval'),
         graph_links=selected_links, recorded_links=list(recorded_links.values()), recorded_edge_count=len(selected_edges),
