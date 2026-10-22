@@ -255,8 +255,10 @@ def start(service, request):
             from .business_rebuild import inherit_review_guard
             inherit_review_guard(service, db, parent, run)
             if parent.get('source_concept_retention'):
-                for key in ('units', 'concept_work', 'concept_bindings', 'concept_link_checks', 'source_concept_retention'):
-                    run[key] = deepcopy(parent[key])
+                for key in ('units', 'concept_work', 'concept_bindings', 'concept_link_checks', 'source_concept_retention',
+                            'source_concept_materialization'):
+                    if key in parent:
+                        run[key] = deepcopy(parent[key])
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     service.executor.submit(execute, service, run['id'])
     return dict(run_id=run['id'], status='queued')

@@ -667,6 +667,11 @@ class ConceptPreservationRequest(BaseModel):
     expected_parent_fingerprint: str
 
 
+class ConceptMaterializationRequest(ConceptPreservationRequest):
+    concept_run_id: str
+    expected_child_fingerprint: str
+
+
 class ExtractionQualifier(BaseModel):
     """Text and its availability travel together; a status is never the text."""
     model_config = {'extra': 'forbid', 'str_strip_whitespace': True}

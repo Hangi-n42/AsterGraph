@@ -17,7 +17,7 @@ from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRe
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
-from app.knowledge.business_models import ConceptPreservationRequest
+from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest
 
 
 class KnowledgeRoute(APIRoute):
@@ -136,6 +136,18 @@ def source_concept_preservation_preview(parent_run_id: str, service=Depends(get_
 def source_concept_preservation(request: ConceptPreservationRequest, service=Depends(get_knowledge_service)):
     from app.knowledge.business_concepts import source_preservation
     return result(source_preservation(service, request.parent_run_id, request=request))
+
+
+@router.get('/business/concept-view-materializations', response_model=KnowledgeResponse)
+def concept_materialization_preview(parent_run_id: str, concept_run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import materialize_view
+    return result(materialize_view(service, parent_run_id, concept_run_id))
+
+
+@router.post('/business/concept-view-materializations', response_model=KnowledgeResponse)
+def concept_materialization(request: ConceptMaterializationRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import materialize_view
+    return result(materialize_view(service, request.parent_run_id, request.concept_run_id, request=request))
 
 
 @router.post('/business/concepts', response_model=KnowledgeResponse)

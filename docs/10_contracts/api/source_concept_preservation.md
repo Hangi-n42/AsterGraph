@@ -26,3 +26,18 @@ GET의 `parent_fingerprint`를 `expected_parent_fingerprint`로 받는다.
 보존 실행은 `stored_pool`과 원본 생산 실행을 가리키는 review guard를 가진다.
 재개·재검수는 이 원형·작업 원장·실패 계보를 유지하며 원문을 다시 추출하지 않는다.
 미처리 대상이 있거나 원래 실패가 남으면 `partial`을 유지한다.
+
+## 완료 child의 명시적 저장 연결
+
+`GET /business/concept-view-materializations?parent_run_id=...&concept_run_id=...`는
+기존 `concept_read_view` 검증을 재사용해 합집합과 양쪽 fingerprint를 반환한다.
+POST는 같은 두 ID와 `expected_parent_fingerprint`, `expected_child_fingerprint`를 받는다.
+부모의 기존 원형 proof와 child의 실제 원시 응답·작업·한도·주소·입력까지 대조한다.
+검증된 결과만 새 `business` stored_pool에 저장하며 부모·child·snapshot은 바꾸지 않는다.
+같은 요청은 같은 실행을 반환하고, 기준 변경은 충돌이다.
+
+원래 결과와 완료 child의 생산 runtime/work/proof를 각각 보존한다.
+대상 대체가 있으면 보존 ID·proof·미처리 요약도 실제 합집합으로 갱신한다.
+이 저장 연결은 새 생성이나 승인·요구 충족 판정이 아니다. 다음 단계는 기존
+`reassess_run_id` 검수와 명시적 decision/snapshot 경로이며 자동으로 실행하지 않는다.
+전체 원문·같은 이웃 정책의 비분할 child만 지원한다. 분할 대상 검사를 완화하지 않는다.
