@@ -17,6 +17,7 @@ from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRe
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
+from app.knowledge.business_models import ConceptPreservationRequest
 
 
 class KnowledgeRoute(APIRoute):
@@ -123,6 +124,18 @@ def requirements(service=Depends(get_knowledge_service)):
 @router.post('/business/runs', response_model=KnowledgeResponse)
 def start_business(request: BusinessRunRequest, service=Depends(get_knowledge_service)):
     return result(service.start_business(request))
+
+
+@router.get('/business/source-concept-preservations/{parent_run_id}', response_model=KnowledgeResponse)
+def source_concept_preservation_preview(parent_run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import source_preservation
+    return result(source_preservation(service, parent_run_id))
+
+
+@router.post('/business/source-concept-preservations', response_model=KnowledgeResponse)
+def source_concept_preservation(request: ConceptPreservationRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import source_preservation
+    return result(source_preservation(service, request.parent_run_id, request=request))
 
 
 @router.post('/business/concepts', response_model=KnowledgeResponse)

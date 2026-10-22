@@ -254,6 +254,9 @@ def start(service, request):
         elif parent and (request.reassess_run_id or request.resume_run_id):
             from .business_rebuild import inherit_review_guard
             inherit_review_guard(service, db, parent, run)
+            if parent.get('source_concept_retention'):
+                for key in ('units', 'concept_work', 'concept_bindings', 'concept_link_checks', 'source_concept_retention'):
+                    run[key] = deepcopy(parent[key])
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     service.executor.submit(execute, service, run['id'])
     return dict(run_id=run['id'], status='queued')
@@ -1807,7 +1810,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
         if (run.get('source_rebuild', {}).get('unresolved_source_units')
-                or run.get('source_rebuild', {}).get('inherited_failures')):
+                or run.get('source_rebuild', {}).get('inherited_failures')
+                or run.get('source_concept_retention', {}).get('inherited_failures')):
             run['extraction_complete'] = False
         if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
                           or projected['unattempted_concept_target_ids']):
@@ -1816,6 +1820,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             run['status'] = 'partial'
         elif not run['requirements']:
             run['status'] = 'succeeded' if all(u['status'] == 'succeeded' for u in run['units']) else 'partial'
+        if run.get('source_concept_retention', {}).get('pending_targets'):
+            run['status'] = 'partial'
     except Exception as exc:
         run.update(status='failed', error=f'{type(exc).__name__}: {exc}')
     finally:

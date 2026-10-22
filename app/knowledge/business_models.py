@@ -658,6 +658,13 @@ class ConceptRunRequest(BaseModel):
     donor_run_id: str | None = None
     target_ids: list[str] = Field(min_length=1)
     neighbor_mode: Literal['plain', 'structured']
+    include_events_and_relations: bool = False
+
+
+class ConceptPreservationRequest(BaseModel):
+    model_config = {'extra': 'forbid'}
+    parent_run_id: str
+    expected_parent_fingerprint: str
 
 
 class ExtractionQualifier(BaseModel):
