@@ -24,7 +24,7 @@ export type KnowledgeItem = { id: string; kind: string; label: string; claim_ids
 export type KnowledgeClaim = {
   id: string; role: string; statement: string; review_status?: string; conditions?: string[]; exceptions?: string[]; period?: string;
   extraction_error?: string; editable: boolean; meanings: Record<string, unknown>[]; interpretation_errors?: string[];
-  evidence: { block_id: string; quote?: string; source_title?: string; source_url?: string; rights?: { status?: string; note?: string }; version_file?: KnowledgeVersion; precision?: string; context_only?: boolean; locator?: Record<string, unknown>; block_text?: string }[];
+  evidence: { block_id: string; quote?: string; source_version_id?: string; parse_run_id?: string; start_char?: number; end_char?: number; source_title?: string; source_url?: string; rights?: { status?: string; note?: string }; version_file?: KnowledgeVersion; precision?: string; context_only?: boolean; locator?: Record<string, unknown>; block_text?: string }[];
 };
 export type KnowledgeDetail = { item: KnowledgeItem; claims: KnowledgeClaim[]; relations: { id: string; relation: string; head_label: string; tail_label: string }[]; concept_records?: { id: string; target: { id: string; label: string; kind: string; claim_ids: string[] }; concepts: string[]; status: string; request_id?: string; work_id?: string }[]; changeset_id?: string; run_id?: string; history: { id: string; actor?: string; reason?: string; status?: string; changes: { before?: string; after?: string }[] }[] };
 export type KnowledgeView = {
