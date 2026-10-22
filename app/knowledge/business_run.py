@@ -1806,7 +1806,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         run['status'] = 'review_ready' if all(a['status'] == 'satisfied' for a in latest.values()) and len(latest) == len(run['requirements']) else 'partial'
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
-        if run.get('source_rebuild', {}).get('unresolved_source_units'):
+        if (run.get('source_rebuild', {}).get('unresolved_source_units')
+                or run.get('source_rebuild', {}).get('inherited_failures')):
             run['extraction_complete'] = False
         if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
                           or projected['unattempted_concept_target_ids']):

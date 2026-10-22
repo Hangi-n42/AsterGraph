@@ -643,6 +643,7 @@ class SourceRebuildPlanRequest(ChangeRequest):
     model_config = {'extra': 'forbid'}
     parent_run_id: str
     base_snapshot_id: str | None = None
+    rebuild_scope: Literal['existing', 'whole_source'] = 'existing'
 
 
 class HtmlLiteralRowsRequest(BaseModel):
