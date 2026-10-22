@@ -53,3 +53,47 @@ it("keeps malformed link declarations readable as diagnostics", () => {
   expect(html).toContain("원래 연결 선언 진단");
   expect(html).not.toContain("연결 목록을 비워 반환했습니다");
 });
+
+const inspection = {
+  status:"recorded" as const, relation:"model_declared" as const, semantic_support:"not_assessed" as const,
+  duplicates_removed:0,claims_without_resolved_links:[],quote_lookup:{sq_local:{status:"resolved",citation_index:1}},
+  links:[{status:"resolved" as const,declaration:{target:"answer",anchor:"일반 부위 설명",claim_refs:["proposal"],quote_refs:["sq_local"]}}],
+};
+const inspectionBodies={status:"recorded" as const,unit_id:"qa",claims:{proposal:{status:"recorded" as const,statement:"별미 세 가지를 제안했다",body_origin:"raw_duplicate" as const,source_version_ids:["v"]}}};
+const quoteRecord: AnswerSourceCitations={...base,citations:[
+  {quote:"다른 원문",quote_ids:["sq_other"],address_status:"matched"},
+  {quote:"등심은 담백해 어떤 요리에도 무난하게 어울린다.",quote_ids:["sq_local"],address_status:"matched",source_version_id:"v",parse_run_id:"p",block_id:"b",start_char:582,end_char:608},
+]};
+
+it("inspects recorded claim bodies and exact quotes through opaque ID lookup without changing declarations",()=>{
+  const props={record:quoteRecord,links:inspection,claimBodies:inspectionBodies};const before=structuredClone(props);
+  const html=renderToStaticMarkup(createElement(KnowledgeAnswerSources,props));
+  for(const s of ["별미 세 가지를 제안했다","일반 부위 설명","연결된 원문 구절 · 해당 답변의 기록된 위치","문자 [582, 608)","의미 지지는 검증하지"]) expect(html).toContain(s);
+  expect(props).toEqual(before);
+  expect(html).not.toContain("직접지원");
+});
+
+it.each([undefined,{sq_local:{status:"unresolved"}},{sq_local:{status:"resolved",citation_index:0}},{sq_local:{status:"resolved",citation_index:99}}])("does not guess a source from an unavailable or conflicting lookup %j",lookup=>{
+  const html=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record:quoteRecord,links:{...inspection,quote_lookup:lookup},claimBodies:{status:"unresolved",claims:{proposal:{status:"unresolved"}}}}));
+  expect(html).toContain("저장된 원문 참조 연결을 확인할 수 없습니다");
+  expect(html).toContain("생성 입력의 주장 본문을 확인할 수 없습니다");
+});
+
+it("withholds the added bodies and quotes on review and preserves source-only declarations",()=>{
+  const blocked=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record:quoteRecord,links:inspection,claimBodies:{...inspectionBodies,status:"needs_review"}}));
+  for(const s of ["별미 세 가지를 제안했다","일반 부위 설명","sq_local","582"]) expect(blocked).not.toContain(s);
+  const sourceOnly=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record:quoteRecord,links:{...inspection,links:[{status:"resolved",declaration:{target:"answer",anchor:"일반 부위 설명",claim_refs:[],quote_refs:["sq_local"]}}]},claimBodies:{status:"recorded",claims:{}}}));
+  expect(sourceOnly).toContain("주장 참조 없이 원문 참조만 선언했습니다");
+  const immediate=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record:quoteRecord,links:inspection}));
+  expect(immediate).not.toContain("모델이 연결한 주장 본문 · 생성 입력");
+});
+
+it.each(["missing_parse","duplicate_id","invalid_span"])("keeps an invalid source address local to the inspection %s",fault=>{
+  const record=structuredClone(quoteRecord);
+  if(fault==="missing_parse") delete record.citations[1].parse_run_id;
+  else if(fault==="duplicate_id") record.citations[0].quote_ids=["sq_local"];
+  else record.citations[1].end_char=500;
+  const html=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record,links:inspection,claimBodies:inspectionBodies}));
+  expect(html).toContain("저장된 원문 참조 연결을 확인할 수 없습니다");
+  expect(html).toContain("별미 세 가지를 제안했다");
+});
