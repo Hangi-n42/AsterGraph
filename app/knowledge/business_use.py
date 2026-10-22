@@ -1209,6 +1209,8 @@ def source_citations_instruction(contract):
 def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
     from .source_index import FrozenIndex
+    if request.answer_mode == 'source_list_comparison' and context_mode != 'graph':
+        raise ValueError('목록 대조는 snapshot 경로에서만 지원합니다.')
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
@@ -1318,6 +1320,9 @@ def query(service, request, *, context_mode='graph'):
             run['execution_boundary']['candidate_contract'] = dict(contract=request.candidate_contract,
                 experimental=True, individual_edge_selection=True)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
+    if request.answer_mode == 'source_list_comparison':
+        from . import source_list_service
+        return source_list_service.execute(service, run, request, snapshot, requirements)
     built = None
     get_bundles = None
     if source_reader:

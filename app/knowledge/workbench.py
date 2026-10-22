@@ -335,6 +335,8 @@ def answers(service, kind, scope_id, answer_id=None):
                        for k, v in row['source_reference'].items()}
                 ref['quote'] = row.get('text', '')
                 passages[reverse.get(row.get('id'), row.get('id'))] = dict(evidence=ref, claim_ids=[])
+    for identifier, ref in run.get('source_reference_map', {}).items():
+        passages[identifier] = dict(evidence=ref, claim_ids=[])
     blocks = {b['id']: b for b in value.get('blocks', [])}
     claims = {c['id']: c for c in value.get('claims', [])}
     answer = run.get('answer') or {}
@@ -367,6 +369,7 @@ def answers(service, kind, scope_id, answer_id=None):
         evidence=evidence, source_citations=source_citations, source_run_id=run['query'].get('source_run_id'),
         **({'answer_links': deepcopy(run['answer_links'])} if 'answer_links' in run else {}),
         **({'answer_link_claims': _answer_link_claims(run)} if 'answer_links' in run else {}),
+        **{key: deepcopy(run[key]) for key in ('condition_consumer', 'timing_consumer') if key in run},
         snapshot_id=run['query'].get('snapshot_id') or (None if run['query'].get('source_run_id') else run.get('snapshot_id')),
         context_mode=run.get('context_mode'), retrieval=run['query'].get('retrieval'),
         graph_links=selected_links, recorded_links=list(recorded_links.values()), recorded_edge_count=len(selected_edges),
