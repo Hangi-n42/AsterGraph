@@ -91,3 +91,15 @@ POST → 저장 → GET run → workbench에서 답변·전체 map 85개·실제
 조건·시점 펼침에는 원래 생산 실행/단계, 기록된 생산 상태와 소비 상태, 의미 미검증·사람 승인 여부, 항목별 상태 및 미소비 수를 구분한다. 생산 상태가 소비 기록에 없으면 미기록으로 표시한다. `not_stated`는 무조건 사용이 아니고 `not_consumed`는 조건 부재가 아니다. 원문 근거는 기존 `source_reference_map`의 버전·처리 기록·블록·문자 범위를 사용하며 주소 일치를 의미 승인으로 바꾸지 않는다.
 
 이 연결은 원래 snapshot의 저장 결과 재사용이다. 사람의 결정으로 생성되는 새 snapshot은 기존 same-snapshot 검사를 ID 치환으로 우회해 사용할 수 없다. 새 사용 범위의 실제 원문·목록·조건·상품 사실 결속은 별도로 확인해야 한다.
+
+## 전체 입력이 같은 새 선택 버전의 명시적 재사용
+
+`list_comparison.reuse_from_snapshot_id`를 지정한 요청만 다른 snapshot에서 저장 생산 기록을 소비할 수 있다. 생략하면 기존 same-snapshot 검사와 출력이 유지된다. 같은 ID를 재사용 출처로 지정하거나, 이름·의미만 비슷한 입력을 연결하는 기능은 지원하지 않는다.
+
+서버는 지정한 원래 snapshot과 현재 소비 snapshot을 DB에서 각각 읽는다. `id`, `created_at`, `actor`, `reason` 네 생성 메타데이터만 제외하고 전체 payload를 비교한다. 따라서 선택한 주장·조건·주소·날짜·검토 상태, 원문 버전·전체 블록, source run·요구·평가·검토/사용 문맥이 모두 같아야 한다. 부분집합, 상품 제외, 추가·중복 주장/블록, 새 원문 버전이나 주소 재매핑은 거부한다. 현재 자료에서 실제 decision API가 만든 새 snapshot은 위 네 필드만 달랐으며, 이는 별도 `FIXTURE_ONLY` DB의 테스트 결정으로 확인한 결과다. 실제 사용자 승인이 아니다.
+
+현재 `Sources`로 목록·부모 문맥·상품을 검증하면서, 조건과 시점 helper에는 실제로 읽은 원래 snapshot 객체를 전달한다. 원래 run/query/unit/응답/ID를 변경하지 않고 기존 same-snapshot 비교도 완화하지 않는다. 새 consumer의 query/run/응답 snapshot ID는 현재 소비 ID를 유지한다.
+
+재사용 경계는 현재 원문/근거 사용 제한, 원래·소비 snapshot의 correction/source-change/rebuild 무효화, 등록 evidence와 블록, 현재 요구 기준·revision·검토 필요 상태를 확인한다. 원래 조건 생산 계약·지시문·raw/text/parsed, 모델 설정·실행 한도·정상 종료를 확인하며 기존 시점 계약 검사도 그대로 적용한다. 저장 직전 동일성·생산 기록·요구/변경안·사용 상태를 다시 대조한다. 기준이 바뀌면 답변을 저장하지 않고 기존 `needs_review` 경로로 종료한다.
+
+`execution_boundary.stored_scope_reuse`는 출처/소비 snapshot ID, deep equality로 확인한 입력 fingerprint, 두 snapshot 및 실제 source run/producer run/unit의 hash·계약, 요구/변경안/사용 상태 revision을 기록한다. 기존 `GET /runs/{run_id}`에서 읽는다. 이는 저장 입력 재사용 영수증이며 현재 모델의 생성 캐시나 의미 승인 기록이 아니다. 원래 `partial`/`unverified`, validation 오류, `human_approval=false`, 미확인·미소비 상태를 그대로 유지한다.

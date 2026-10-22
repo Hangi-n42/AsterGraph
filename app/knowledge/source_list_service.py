@@ -4,6 +4,7 @@ The condition consumer only binds a complete Korean conditional seasoning choice
 sentence. Other syntax remains unresolved; stored model omissions are not repaired.
 """
 from copy import deepcopy
+from hashlib import sha256
 import json
 import re
 from time import monotonic
@@ -14,6 +15,79 @@ from .service import utcnow
 
 CONTRACT = 'stored-list-condition-addresses-v1'
 ADDRESS = ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char', 'quote')
+CONDITION_INSTRUCTION_SHA256 = 'ebf79339a62327a25b801395d92edf1da5dc2bd50e0030b5da7f6b6cf5259a65'
+
+
+def reused_scope(service, db, snapshot, spec):
+    if spec.reuse_from_snapshot_id is None:
+        return snapshot, None
+    from .availability import _state, current_restrictions
+    from .business_changes import snapshot_invalidations
+    from .business_use import restricted_sources
+    from .source_timing_consumer import stored
+    origin = service.repository.get(db, 'snapshots', spec.reuse_from_snapshot_id)
+    current = service.repository.get(db, 'snapshots', snapshot['id'])
+    # Only a new selection of the entire identical snapshot is supported.
+    metadata = {'id', 'created_at', 'actor', 'reason'}
+    inputs = [{k:v for k,v in value.items() if k not in metadata} for value in (origin, current)]
+    if (origin['id'] == current['id'] or current != snapshot or inputs[0] != inputs[1]
+            or origin.get('kind') != 'source_graph'):
+        raise ValueError('저장 조건 재사용은 생성 메타데이터 외 전체 입력이 동일한 새 snapshot에서만 지원합니다.')
+    for key in ('claims', 'blocks'):
+        ids = [row['id'] for row in origin[key]]
+        if len(ids) != len(set(ids)):
+            raise ValueError('재사용 입력의 주장·블록 ID가 중복됩니다.')
+    source_run = service.repository.get(db, 'runs', origin['run_id'])
+    corrections = [json.loads(row[0]) for row in db.execute('SELECT payload FROM snapshot_events')]
+    for value in (origin, current):
+        if (restricted_sources(db, value['source_versions'])
+                or any(e.get('event') == 'business_correction' and e['snapshot_id'] == value['id'] for e in corrections)
+                or snapshot_invalidations(service, db, value, source_run)):
+            raise ValueError('사용 제한 또는 무효화된 snapshot의 저장 조건은 재사용할 수 없습니다.')
+    evidence_ids = []
+    for block in current['blocks']:
+        identifier = block['evidence_id']
+        if service.repository.get(db, 'evidence', identifier)['block_id'] != block['id']:
+            raise ValueError('등록된 원문 근거와 재사용 블록이 다릅니다.')
+        evidence_ids.append(identifier)
+    if current_restrictions(service.repository, db, dict(evidence_ids=evidence_ids)):
+        raise ValueError('사용이 제한된 원문 근거는 재사용할 수 없습니다.')
+    criteria = [service.repository.get(db, 'requirements', r['id']) for r in current['requirements']]
+    public = ('id', 'revision', 'question_ids', 'question', 'target', 'situation', 'period', 'criterion', 'source_ids', 'required')
+    if any(live['status'] == 'needs_review' or any(live.get(k) != recorded.get(k) for k in public)
+           for live, recorded in zip(criteria, current['requirements'])):
+        raise ValueError('현재 요구 기준이 재사용 snapshot과 다릅니다.')
+    def digest(value):
+        return sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    producers = []
+    selected = [(spec.condition_run_id, spec.condition_unit_id, 'source_list_conditions')]
+    if spec.timing_run_id is not None:
+        selected.append((spec.timing_run_id, spec.timing_unit_id, 'source_step_conditions'))
+    for rid, uid, stage in selected:
+        run, unit, context, _ = stored(service, db, origin, rid, uid, stage)
+        systems = [m['content'] for m in unit['messages'] if m.get('role') == 'system']
+        if stage == 'source_list_conditions' and (run.get('answer_contract') != 'source-list-conditions-v1'
+                or len(systems) != 1 or sha256(systems[0].encode()).hexdigest() != CONDITION_INSTRUCTION_SHA256):
+            raise ValueError('지원하는 원래 조건 생산 계약이 아닙니다.')
+        response, config, options = unit['response'], unit['request_configuration'], run['recipe']['options']
+        if (response.get('done') is not True or response.get('done_reason') != 'stop'
+                or response.get('stage') != stage or response['model'] != run['recipe']['models']['review']
+                or response['provider'] != run['recipe']['generation']['provider']
+                or config['model'] != response['model'] or config['generation'] != run['recipe']['generation']
+                or config['identity'] != run['model_identity'] or config['timeout'] != options['timeout']
+                or unit['requested_limits'] != unit['executed_limits']
+                or unit['requested_limits'] != dict(max_tokens=options['review_tokens'], context_tokens=options['context_tokens'], think=options['think'])):
+            raise ValueError('원래 생산 실행의 설정·한도·종료 기록이 다릅니다.')
+        producers.append(dict(run_id=rid, unit_id=uid, stage=stage, contract=run.get('answer_contract') or run.get('comparison_role'),
+            unit_sha256=digest(unit), input_sha256=digest(context), run_sha256=digest(run)))
+    change_id = source_run.get('changeset_id')
+    change = service.repository.get(db, 'changesets', change_id) if change_id else None
+    return origin, dict(contract='identical-stored-snapshot-inputs-v1', producer_snapshot_id=origin['id'],
+        consumer_snapshot_id=current['id'], input_sha256=digest(inputs[0]), producer_snapshot_sha256=digest(origin),
+        consumer_snapshot_sha256=digest(current), source_run_id=source_run['id'], source_run_sha256=digest(source_run),
+        producers=producers, criteria_sha256=digest(criteria), requirement_revisions={r['id']:r['revision'] for r in criteria},
+        changeset_id=change_id, changeset_revision=change['revision'] if change else None, changeset_sha256=digest(change),
+        status_revision=_state(db)['status_revision'], semantic_approval=False)
 
 
 class Sources:
@@ -250,15 +324,16 @@ def product_facts(sources, snapshot, bindings, common):
 
 def assemble(service, db, request, snapshot):
     spec = request.list_comparison
+    origin, reuse = reused_scope(service, db, snapshot, spec)
     sources = Sources(service, db, snapshot)
     fields = [sources.field(f) for f in spec.fields]
     comparison = compare_lists(*fields)
     if comparison['status'] != 'ready':
         raise ValueError('목록 경계가 모호하여 대조할 수 없습니다.')
-    conditions = stored_conditions(service, db, sources, snapshot, spec, fields)
+    conditions = stored_conditions(service, db, sources, origin, spec, fields)
     products = product_facts(sources, snapshot, spec.products, {r['name'] for r in comparison['common']})
     from .source_timing_consumer import consume
-    timing = consume(service, db, sources, snapshot, spec)
+    timing = consume(service, db, sources, origin, spec)
     references = {}
     def cite(ref):
         ref = {k: ref[k] for k in ADDRESS}
@@ -321,6 +396,7 @@ def assemble(service, db, request, snapshot):
                            sections=sections, limitations=limits),
                 source_reference_map=references, list_comparison=dict(fields=fields, comparison=comparison),
                 condition_consumer=conditions, product_facts=products,
+                **(dict(stored_scope_reuse=reuse) if reuse is not None else {}),
                 **(dict(timing_consumer=timing) if timing is not None else {}))
 
 
@@ -331,6 +407,7 @@ def execute(service, run, request, snapshot, requirements):
     try:
         with service.repository.connect() as db:
             result = assemble(service, db, request, snapshot)
+        reuse = result.pop('stored_scope_reuse', None)
         with service.lock, service.repository.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             live = service.repository.get(db, 'runs', run['id'])
@@ -342,11 +419,20 @@ def execute(service, run, request, snapshot, requirements):
             invalidations = snapshot_invalidations(service, db, snapshot, original)
             events = [json.loads(r['payload']) for r in db.execute('SELECT payload FROM snapshot_events')]
             corrections = [e for e in events if e.get('event') == 'business_correction' and e['snapshot_id'] == snapshot['id']]
+            reuse_changed = False
+            if reuse is not None:
+                try:
+                    _, checked = reused_scope(service, db, snapshot, request.list_comparison)
+                    reuse_changed = checked != reuse
+                except (ValueError, KeyError, TypeError):
+                    reuse_changed = True
             if live['status'] == 'cancel_requested' or service.closed:
                 run.update(status='cancelled', answer=None, answer_status='cancelled')
-            elif restrictions or stale or any(i not in run['snapshot_invalidations'] for i in [*corrections, *invalidations]):
+            elif restrictions or stale or reuse_changed or any(i not in run['snapshot_invalidations'] for i in [*corrections, *invalidations]):
                 run.update(status='partial', answer=None, answer_status='needs_review', restrictions=restrictions,
                            stale_requirement_ids=stale)
+                if reuse_changed:
+                    run['execution_boundary']['stored_scope_reuse_conflict'] = True
             else:
                 run.update(result, status='succeeded', answer_status='partial',
                     provided_ids=list(result['source_reference_map']), retrieval=[],
@@ -357,6 +443,8 @@ def execute(service, run, request, snapshot, requirements):
                 if 'timing_consumer' in run:
                     run['execution_boundary'].update(timing_support=run['timing_consumer']['contract'],
                                                     timing_status=run['timing_consumer']['status'])
+                if reuse is not None:
+                    run['execution_boundary']['stored_scope_reuse'] = reuse
             run['finished_at'] = utcnow(); run['metrics']['elapsed_s'] = monotonic() - started
             service.repository.save(db, 'runs', run)
     except Exception as exc:
