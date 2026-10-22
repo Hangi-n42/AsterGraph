@@ -222,6 +222,77 @@ def changes(service, kind, scope_id):
                                supersedes_version_id=versions[v].get('supersedes_version_id')) for v in ids if v in versions])
 
 
+def _answer_link_claims(run):
+    """Read claim bodies from the producing QA input, never today's snapshot."""
+    record = run['answer_links']
+    if (run.get('answer_status') == 'needs_review' or record.get('status') == 'needs_review'
+            or run.get('answer_source_citations', {}).get('status') == 'needs_review'):
+        return dict(status='needs_review', claims={})
+    ids = set()
+    for link in record.get('links', []):
+        declaration = link.get('declaration')
+        if isinstance(declaration, dict) and isinstance(declaration.get('claim_refs'), list):
+            ids.update(cid for cid in declaration['claim_refs'] if isinstance(cid, str))
+    result = dict(status='unresolved', claims={cid: dict(status='unresolved') for cid in sorted(ids)})
+    units = [u for u in run.get('units', []) if u.get('stage') == 'business_qa']
+    if len(units) != 1 or not isinstance(units[0].get('id'), str) or not units[0]['id']:
+        return result
+    unit = units[0]
+    mapping = unit.get('reference_map') or {}
+    if (not isinstance(mapping, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in mapping.items())
+            or len(set(mapping.values())) != len(mapping)):
+        return result
+    reverse = {alias: cid for cid, alias in mapping.items()}
+    messages = [m for m in unit.get('messages') or [] if isinstance(m, dict) and m.get('role') == 'user']
+    if len(messages) != 1:
+        return result
+    try:
+        context = json.loads(messages[0]['content'])
+    except (KeyError, TypeError, ValueError):
+        return result
+    if (not isinstance(context, dict) or context.get('question') != run.get('query', {}).get('question')
+            or not isinstance(context.get('context'), list)):
+        return result
+    result['unit_id'] = unit['id']
+    rows = {}
+    for row in context['context']:
+        if isinstance(row, dict) and isinstance(row.get('id'), str):
+            cid = reverse.get(row['id'], row['id'])
+            rows.setdefault(cid, []).append(row)
+    allowed = set(run.get('provided_ids', [])).intersection((run.get('answer') or {}).get('citations', []))
+    for cid in ids & allowed:
+        if len(rows.get(cid, [])) != 1:
+            continue
+        row = rows[cid][0]
+        try:
+            claim = json.loads(row.get('text'))
+        except (TypeError, ValueError):
+            continue
+        if (not isinstance(claim, dict) or not isinstance(claim.get('id'), str)
+                or reverse.get(claim['id'], claim['id']) != cid or not isinstance(row.get('file_id'), str)):
+            continue
+        versions = claim.get('source_version_ids')
+        if (not isinstance(versions, list) or not versions or any(not isinstance(v, str) for v in versions)
+                or not set(versions) <= set(run.get('input_version_ids', []))
+                or reverse.get(row.get('file_id'), row.get('file_id')) not in versions):
+            continue
+        statement, origin = claim.get('statement'), 'statement'
+        if 'statement' not in claim:
+            raw = claim.get('raw') or {}
+            if not isinstance(raw, dict):
+                continue
+            if isinstance(raw.get('Event'), str) and raw['Event'].strip():
+                statement = raw['Event']
+            elif all(isinstance(raw.get(k), str) and raw[k].strip() for k in ('Head', 'Relation', 'Tail')):
+                statement = ' — '.join(raw[k] for k in ('Head', 'Relation', 'Tail'))
+            origin = 'raw_duplicate'
+        if isinstance(statement, str) and statement.strip():
+            result['claims'][cid] = dict(status='recorded', statement=statement, body_origin=origin,
+                source_version_ids=versions)
+    result['status'] = 'recorded' if all(c['status'] == 'recorded' for c in result['claims'].values()) else 'unresolved'
+    return result
+
+
 def answers(service, kind, scope_id, answer_id=None):
     value, graph, sources, versions = _scope(service, kind, scope_id)
     field = 'source_run_id' if kind == 'run' else 'snapshot_id'
@@ -295,6 +366,7 @@ def answers(service, kind, scope_id, answer_id=None):
         status=run.get('answer_status'), answer=answer, finished_at=run.get('finished_at'),
         evidence=evidence, source_citations=source_citations, source_run_id=run['query'].get('source_run_id'),
         **({'answer_links': deepcopy(run['answer_links'])} if 'answer_links' in run else {}),
+        **({'answer_link_claims': _answer_link_claims(run)} if 'answer_links' in run else {}),
         snapshot_id=run['query'].get('snapshot_id') or (None if run['query'].get('source_run_id') else run.get('snapshot_id')),
         context_mode=run.get('context_mode'), retrieval=run['query'].get('retrieval'),
         graph_links=selected_links, recorded_links=list(recorded_links.values()), recorded_edge_count=len(selected_edges),
