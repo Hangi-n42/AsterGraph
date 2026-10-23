@@ -105,6 +105,76 @@ def test_r2_uses_best_exact_head_path_and_leaves_dense_scores_unchanged():
     assert result['edge_scores']['e2']['J1_path_count'] == 0
 
 
+def event_subject_fixture():
+    c1, c2, e1, e2, nodes, blocks = roles_fixture()
+    blocks['b']['text'] = 'A B C'
+    ref = dict(c2['evidence'][0], start_char=4, end_char=5, quote='C')
+    role = dict(c2['interpretation']['mentions'][2], entity_index=2, value='C', evidence=[ref])
+    c2['raw'] = dict(Event='A B C', Entity=['A', 'B', 'C'])
+    c2['interpretation']['mentions'].append(role)
+    event = c2['interpretation']['mentions'][0]
+    event.update(value='A B C', evidence=[dict(ref, start_char=0, quote='A B C')])
+    c2['evidence'] = deepcopy(event['evidence'])
+    c2['interpretation']['meanings'][0]['evidence'] = deepcopy(event['evidence'])
+    nodes['event']['label'] = 'A B C'
+    nodes['c'] = dict(nodes['b'], label='C')
+    e2.append(dict(e2[0], id='e4', tail='c', tail_label='C'))
+    for e in e2:
+        e['head_label'] = 'A B C'
+    return c1, c2, e1, e2, nodes, blocks
+
+
+def test_j1_reaches_event_subject_without_sharing_or_rewriting_roles():
+    c1, c2, e1, e2, nodes, blocks = event_subject_fixture()
+    inputs = dict(claims=[c1, c2], blocks=list(blocks.values()))
+    edges = e1 + e2
+    before = deepcopy((inputs, nodes, edges))
+    scores = np.arange(len(edges), dtype=float)
+    passages = {'p': dict(evidence=c1['evidence'][0], claim_ids=['c1'])}
+    ranking = [dict(block_id='p', file_id='v', score=1.)]
+    result = work.rank_edges(inputs, nodes, edges, passages, scores, ranking)
+    assert all(result['edge_scores'][e['id']]['J1_path_count'] == 1 for e in e2)
+    reverse = work.rank_edges(inputs, nodes, edges,
+        {'p': dict(evidence=c2['evidence'][0], claim_ids=['c2'])}, scores, ranking)
+    assert reverse['edge_scores']['e1']['J1_path_count'] == 1
+    with pytest.raises(work.NotShareable, match='no_bijective_entity_roles'):
+        work.signature(c2, e2, nodes, blocks, 's')
+    assert (inputs, nodes, edges) == before
+    np.testing.assert_array_equal(scores, np.arange(len(edges), dtype=float))
+
+
+@pytest.mark.parametrize('damage', ['subject', 'index', 'unresolved', 'quote', 'event_address',
+                                  'reference', 'mentions', 'node', 'different_address', 'multiple_meanings'])
+def test_event_j1_rejects_ambiguous_roles_and_nonidentical_addresses(damage):
+    c1, c2, e1, e2, nodes, blocks = event_subject_fixture()
+    meaning = c2['interpretation']['meanings'][0]
+    role = meaning['participants'][1]
+    if damage == 'subject':
+        meaning['subject'] = 'not a stored entity'
+    elif damage == 'index':
+        role['entity_index'] = None
+    elif damage == 'unresolved':
+        role['address_status'] = 'unresolved'
+    elif damage == 'quote':
+        meaning['participants'][-1]['evidence'][0]['quote'] = 'wrong'
+    elif damage == 'event_address':
+        meaning['participants'][0]['evidence'][0]['quote'] = 'wrong'
+    elif damage == 'reference':
+        role['meaning_refs'] = []
+    elif damage == 'mentions':
+        c2['interpretation']['mentions'] = []
+    elif damage == 'node':
+        nodes['a']['identity_scope'] = 'label_only'
+    elif damage == 'different_address':
+        blocks['other'] = dict(blocks['b'], id='other')
+        role['evidence'] = [dict(role['evidence'][0], block_id='other')]
+    else:
+        c2['interpretation']['meanings'].append(deepcopy(meaning))
+    result = work.rank_edges(dict(claims=[c1, c2], blocks=list(blocks.values())), nodes, e1 + e2,
+        {'p': dict(evidence=c1['evidence'][0], claim_ids=['c1'])}, np.ones(4), [dict(block_id='p', file_id='v', score=1.)])
+    assert all(result['edge_scores'][e['id']]['J1_path_count'] == 0 for e in e2)
+
+
 @pytest.mark.parametrize('change', [dict(source_run_id='origin', snapshot_id=None), dict(retrieval='dense'),
     dict(graph_variant='entity'), dict(graph_variant='entity_event'), dict(requirement_ids=['r'])])
 def test_explicit_option_rejects_unsupported_scope(change):

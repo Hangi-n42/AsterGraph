@@ -40,3 +40,9 @@
 직접 실행 전에는 선택한 `snapshot_id`가 승인 버전과 같고 `candidate_contract=r2_g1_w1`, `evidence_union=ranked_preserved_claims_v2`, `source_citation_contract=provided_source_quote_links_v1`이 모두 있는지 확인한다. 이 요청을 그대로 기존 `/business/search`에 전달한다. 과거 기본 요청이나 성공 응답으로 대체하지 않는다. 현재44개에서 정확한 선택 응답이 없으면 선택 입력·설정까지만 동결하며 새 선택·PPR·QA의 실행 승인을 앞당기지 않는다.
 
 이 연결은 기존 기능의 요청 누락을 고친 것이다. 새 자료의 후보 선택·PPR·답변 품질을 보증하지 않는다. 과거57개/v1의 선택 응답을 현재44개/v2에 재생하려면 요청·ID·원문·모델 계약이 정확히 같아야 한다. 부위/용도 추가 지시 실험의 기본 채택 보류와 QA 전용57,344 승인 사례를 전체 단계의 설정 변경으로 확대하지 않는다.
+
+## 저장된 Event 주체의 J1 연결
+
+직접 관계형에만 적용되던 동일 주체 원문 연결을 단일 의미의 Event 표현에도 적용한다. 저장된 `meaning.subject`가 유일한 Entity에 대응하고, 같은 출처 버전의 모든 Entity/index/value/원문 주소와 원래 participation 끝점, Event 자체 주소 및 mentions 결속이 맞을 때만 사용한다. 주체의 정확한 source/parse/block/span/quote와 기존 entity node가 같은 후보 사이에서 기존 한 단계 J1 순위를 전달한다. 문자열이나 같은 부모 문서만으로 연결하지 않는다.
+
+Event를 직접 관계형으로 고치거나 서로 다른 Entity를 합치지 않는다. W1의 두 역할 공유 조건·dense 배열·RRF k=60·30개 검토 단위·개별 선택 최대30은 유지한다. 주소 연결은 의미 지지나 `unknown/unverified`의 해소가 아니다. 현재44개 무모델 대조에서 기존 사실 후보29개를 유지하며 새 등심 용도·브랜드·원산지3개가 유입됐고, 용도 Event는 W1 공유 제외 상태로 독립 후보에 들어갔다. 실제 선택·PPR·최종 근거·QA는 이 후보 유입 검사와 별도 검증한다.

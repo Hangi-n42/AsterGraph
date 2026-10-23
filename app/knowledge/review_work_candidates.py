@@ -135,7 +135,7 @@ def signature(claim, edges, nodes, blocks, snapshot_id):
 
 
 def rank_edges(snapshot, nodes, edges, passages, edge_scores, source_ranking):
-    """R2: RRF dense rank + best J0/J1 source rank, k=60; exact one-hop Head only."""
+    """R2: RRF dense rank + best J0/J1 source rank, k=60; exact stored subject only."""
     claims = {c['id']: c for c in snapshot['claims']}
     blocks = {b['id']: b for b in snapshot['blocks']}
     by_claim = {}
@@ -168,8 +168,47 @@ def rank_edges(snapshot, nodes, edges, passages, edge_scores, source_ranking):
             or p.get('address_errors') or p.get('value') != raw.get('Head') or not p.get('evidence')
             or any(not valid(r) or r['quote'] != raw['Head'] for r in p['evidence']) for p in heads):
             continue
-        keys = {tuple(r[k] for k in EVIDENCE_FIELDS[:6]) + ('Head',) for p in heads for r in p['evidence']}
-        eligible[cid] = dict(edge=direct_edges[0], keys=keys)
+        keys = {tuple(r[k] for k in EVIDENCE_FIELDS[:6]) for p in heads for r in p['evidence']}
+        eligible[cid] = dict(node=direct_edges[0]['head'], edges=direct_edges, keys=keys)
+    # Event attributes retain their original participation edges. A literal,
+    # uniquely addressed stored subject can anchor retrieval without sharing work.
+    for cid, claim in claims.items():
+        raw = claim['raw']
+        entities = raw.get('Entity')
+        meanings = (claim.get('interpretation') or {}).get('meanings', [])
+        if (not raw.get('Event') or not isinstance(entities, list) or not entities
+                or len(set(entities)) != len(entities) or len(meanings) != 1
+                or meanings[0].get('address_errors') != [] or len(claim['source_version_ids']) != 1):
+            continue
+        meaning = meanings[0]
+        events = [p for p in meaning.get('participants', []) if p.get('field') == 'Event']
+        roles = [p for p in meaning.get('participants', []) if p.get('field') == 'Entity']
+        version = claim['source_version_ids'][0]
+        if (len(events) != 1 or events[0].get('entity_index') is not None or events[0].get('value') != raw['Event']
+                or events[0].get('address_status') != 'resolved' or events[0].get('address_errors') != []
+                or meaning.get('id') not in events[0].get('meaning_refs', []) or not events[0].get('evidence')
+                or any(not valid(r, version) for r in events[0]['evidence'])
+                or not claim.get('evidence') or any(not valid(r, version) for r in claim['evidence'])
+                or any(p not in claim['interpretation'].get('mentions', []) for p in [*events, *roles])
+                or len(roles) != len(entities) or {p.get('entity_index') for p in roles} != set(range(len(entities)))
+                or any(type(p.get('entity_index')) is not int or p.get('address_status') != 'resolved'
+                    or p.get('address_errors') != [] or meaning.get('id') not in p.get('meaning_refs', [])
+                    or p.get('value') != entities[p['entity_index']] or not p.get('evidence')
+                    or any(not valid(r, version) or r['quote'] != p['value'] for r in p['evidence']) for p in roles)):
+            continue
+        subjects = [p for p in roles if p['value'] == meaning.get('subject')]
+        claim_edges = by_claim.get(cid, [])
+        if (len(subjects) != 1 or len(claim_edges) != len(entities)
+                or any(e['relation'] != 'participation' or nodes[e['head']]['kind'] != 'event'
+                    or nodes[e['head']]['label'] != raw['Event'] or nodes[e['tail']]['kind'] != 'entity'
+                    or nodes[e['tail']].get('identity_scope') != 'source_version+exact_mention+kind+endpoint_text'
+                    for e in claim_edges)
+                or {nodes[e['tail']]['label'] for e in claim_edges} != set(entities)):
+            continue
+        subject = subjects[0]
+        node = next(e['tail'] for e in claim_edges if nodes[e['tail']]['label'] == subject['value'])
+        eligible[cid] = dict(node=node, edges=claim_edges,
+            keys={tuple(r[k] for k in EVIDENCE_FIELDS[:6]) for r in subject['evidence']})
     links = {e['id']: [] for e in edges}
     for position, hit in enumerate(source_ranking, 1):
         passage = passages[hit['block_id']]
@@ -189,17 +228,18 @@ def rank_edges(snapshot, nodes, edges, passages, edge_scores, source_ranking):
                 if cid in passage['claim_ids']:
                     continue
                 shared = sorted(k for k in anchor['keys'] & target['keys'] if k[0] == version)
-                if not shared or anchor['edge']['head'] != target['edge']['head']:
+                if not shared or anchor['node'] != target['node']:
                     continue
                 claim, tails = claims[cid], participants(claims[cid], 'Tail')
                 evidence = claim.get('evidence', [])
                 if (version not in claim['source_version_ids'] or not evidence or any(not valid(r, version) for r in evidence)
-                    or not tails or any(p.get('address_status') != 'resolved' or p.get('address_errors')
+                    or 'Head' in claim['raw'] and (not tails or any(p.get('address_status') != 'resolved' or p.get('address_errors')
                         or p.get('value') != claim['raw']['Tail'] or not p.get('evidence')
-                        or any(not valid(r, version) or r['quote'] != claim['raw']['Tail'] for r in p['evidence']) for p in tails)):
+                        or any(not valid(r, version) or r['quote'] != claim['raw']['Tail'] for r in p['evidence']) for p in tails))):
                     continue
-                links[target['edge']['id']].append(dict(kind='J1', rank=position,
-                    passage_id=hit['block_id'], anchor_claim_id=anchor_id))
+                for edge in target['edges']:
+                    links[edge['id']].append(dict(kind='J1', rank=position,
+                        passage_id=hit['block_id'], anchor_claim_id=anchor_id))
     dense = sorted(range(len(edges)), key=lambda i: (-edge_scores[i], edges[i]['id']))
     rows = {}
     for position, i in enumerate(dense, 1):
