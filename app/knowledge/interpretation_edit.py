@@ -30,6 +30,36 @@ def concept_packets(run):
     return packets
 
 
+def participant_errors_only(scope, claim, blocks):
+    """An unresolved endpoint cannot approve use, but need not block an unrelated field edit."""
+    meanings = scope.get('meanings', [])
+    participants = [p for m in meanings for p in m.get('participants', [])]
+    errors = [error for p in participants for error in p.get('address_errors', [])]
+    if (not errors or sorted(scope['errors']) != sorted(errors)
+            or scope.get('mentions') != participants or scope.get('target_status') != 'addressed'
+            or any(p.get('address_status') != ('unresolved' if p.get('address_errors') else 'resolved') for p in participants)):
+        return False
+    outer = business_run.exact_evidence(scope.get('evidence', []), blocks)
+    if not outer or any(e.get('context_only') or e['source_version_id'] not in claim['source_version_ids'] for e in outer):
+        return False
+    for meaning in meanings:
+        refs = business_run.exact_evidence(meaning.get('evidence', []), blocks)
+        if (meaning.get('address_errors') or not refs or any(e.get('context_only')
+                or e['source_version_id'] not in claim['source_version_ids'] for e in refs)
+                or not all(any(e['source_version_id'] == s['source_version_id'] and e['block_id'] == s['block_id']
+                    and s['start_char'] <= e['start_char'] < e['end_char'] <= s['end_char'] for s in outer) for e in refs)):
+            return False
+        for participant in meaning.get('participants', []):
+            if not participant.get('address_errors'):
+                continue
+            evidence = business_run.exact_evidence(participant.get('evidence', []), blocks)
+            if (participant.get('address_status') != 'unresolved' or not evidence
+                    or not all(any(e['source_version_id'] == s['source_version_id'] and e['block_id'] == s['block_id']
+                        and s['start_char'] <= e['start_char'] < e['end_char'] <= s['end_char'] for s in refs) for e in evidence)):
+                return False
+    return True
+
+
 def start(service, changeset_id, request):
     with service.lock, service.repository.connect() as db:
         db.execute('BEGIN IMMEDIATE')
@@ -75,7 +105,8 @@ def start(service, changeset_id, request):
                 if version['sha256'] != parent['sources'][vid]['sha256']:
                     raise KnowledgeConflict('원문 파일 해시가 변경됐습니다.')
             scope = old.get('interpretation') or {}
-            if scope.get('contract') != autoschema.SCOPE_CONTRACT or scope.get('errors'):
+            if (scope.get('contract') != autoschema.SCOPE_CONTRACT or scope.get('errors')
+                    and not participant_errors_only(scope, old, parent['blocks'])):
                 raise ValueError('현재 주소 결속이 유효한 추출 해석만 정정할 수 있습니다.')
             value = next(c for c in child['claims'] if c['id'] == old['id'])
             if len({(p.meaning_id, p.field) for p in item.changes}) != len(item.changes):

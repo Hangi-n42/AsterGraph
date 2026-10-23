@@ -98,3 +98,23 @@ def test_same_key_different_request_and_later_requirement_revision_conflict(link
         req=service.repository.get(db,'requirements','r');req['revision']=2
         service.repository.save(db,'requirements',req)
     assert client.post(url,json=dict(payload,idempotency_key='later')).status_code==409
+
+
+def test_field_edit_keeps_linked_public_requirement_and_review_draft(linked_input):
+    service,parent,reference,payload,client=linked_input
+    linked=client.post('/api/v1/knowledge/business/runs/'+parent['id']+'/requirement-links',json=payload).json()['data']
+    run=service.run(linked['run_id']);claim=run['claims'][0];meaning=claim['interpretation']['meanings'][0]
+    basis=interpretation_edit.basis(run,claim);basis.pop('meanings')
+    basis['changes']=[dict(meaning_id=meaning['id'],expected_meaning_version=concept_work.digest(meaning),
+        field='relation_kind',before=meaning['relation_kind'],after='other',
+        evidence=[dict(block_id='body',quote='기관은 본인이 신청한 경우 접수할 수 있다.')],reason='원문 한정 관계 정정')]
+    edit=dict(expected_revision=0,idempotency_key='linked-edit',actor='fixture reviewer',reason='정정만',claims=[basis])
+    reply=client.post('/api/v1/knowledge/business/changes/'+linked['changeset_id']+'/interpretation-edits',json=edit)
+    assert reply.status_code==200,reply.text
+    child=service.run(reply.json()['data']['run_id'])
+    assert child['requirements']==run['requirements'] and child['answer_items']==run['answer_items']
+    assert child['recipe']['options']['answer_items']==run['recipe']['options']['answer_items']
+    assert child['requirement_link']==run['requirement_link'] and child['assessments']==[]
+    assert business_use.change_view(service,child['changeset_id'])['eligible_ids']==[]
+    assert child['requirement_link']['usage']=='review_draft_only'
+    assert business_use.snapshots(service)['items']==[]

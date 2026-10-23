@@ -155,3 +155,69 @@ def test_preserved_supported_receipt_is_not_a_current_review_after_edit(editing,
 def test_only_existing_conditions_and_relation_kind_types_are_allowed(editing,field,after):
     payload=editing[-1];payload['claims'][0]['changes'][0].update(field=field,after=after)
     with pytest.raises(ValidationError):InterpretationEditRequest(**payload)
+
+
+@pytest.fixture
+def participant_edit(editing):
+    service,parent,change,payload=editing
+    old=parent['claims'][0]
+    claim=autoschema.graph_record(parent['chunks'][0], 'entity_relation',
+        dict(old['raw'],Tail='신청, 접수'),0,scope=old['interpretation']['raw'])
+    parent['claims'][0]=claim
+    parent['graph']=autoschema.graph(parent['claims'],parent['blocks'])
+    change['candidates']=deepcopy(parent['claims'])
+    with service.repository.connect() as db:
+        service.repository.save(db,'runs',parent)
+        service.repository.save(db,'changesets',change)
+    item=interpretation_edit.basis(parent,claim);meaning=claim['interpretation']['meanings'][0]
+    item.pop('meanings')
+    item['changes']=[dict(payload['claims'][0]['changes'][0],meaning_id=meaning['id'],
+        expected_meaning_version=concept_work.digest(meaning))]
+    payload['claims']=[item]
+    return service,parent,change,payload
+
+
+@pytest.mark.parametrize('field,after',[('conditions',dict(state='absent',text=None)),('relation_kind','other')])
+def test_field_edit_preserves_unresolved_participant_without_approving_it(participant_edit,field,after):
+    service,parent,change,payload=participant_edit
+    old=parent['claims'][0];scope=old['interpretation']
+    assert scope['errors'] and not scope['meanings'][0]['address_errors']
+    patch=payload['claims'][0]['changes'][0]
+    patch.update(field=field,before=scope['meanings'][0][field],after=after)
+    child=service.run(interpretation_edit.start(service,change['id'],InterpretationEditRequest(**payload))['run_id'])
+    current=child['claims'][0]['interpretation']
+    assert current['meanings'][0][field]==after and current['errors']==scope['errors']
+    assert current['raw']==scope['raw'] and child['claims'][0]['raw']==old['raw']
+    for before,after_participant in zip(scope['meanings'][0]['participants'],current['meanings'][0]['participants']):
+        for key in ['value','evidence','address_status','address_errors']:
+            assert after_participant[key]==before[key]
+    assert current['meanings'][0]['participants'][1]['address_status']=='unresolved'
+    assert business_use.change_view(service,child['changeset_id'])['eligible_ids']==[]
+
+
+@pytest.mark.parametrize('fault',['meaning_quote','meaning_address','scope_quote','scope_range','scope_error','missing_scope',
+    'foreign_meaning_version','missing_meaning','stale_revision','patch_quote'])
+def test_participant_exception_still_rejects_invalid_edit_basis(participant_edit,fault):
+    service,parent,change,payload=participant_edit
+    claim=parent['claims'][0];scope=claim['interpretation'];meaning=scope['meanings'][0]
+    if fault=='meaning_quote':meaning['evidence'][0]['quote']='원문에 없는 의미'
+    elif fault=='meaning_address':meaning['address_errors']=['invalid meaning address']
+    elif fault=='scope_quote':scope['evidence'][0]['quote']='원문에 없는 범위'
+    elif fault=='scope_range':scope['evidence'][0].update(quote='기관',start_char=0,end_char=2)
+    elif fault=='scope_error':scope['errors'].append('unrelated scope error')
+    elif fault=='missing_scope':scope['evidence']=[]
+    elif fault=='foreign_meaning_version':meaning['evidence'][0]['source_version_id']='another-version'
+    elif fault=='missing_meaning':meaning['evidence']=[]
+    elif fault=='stale_revision':payload['expected_revision']=99
+    else:payload['claims'][0]['changes'][0]['evidence'][0]['quote']='잘못된 정정 인용'
+    change['candidates']=deepcopy(parent['claims'])
+    with service.repository.connect() as db:
+        service.repository.save(db,'runs',parent)
+        service.repository.save(db,'changesets',change)
+    item=payload['claims'][0]
+    item.update(expected_claim_version=autoschema.identifier('claim',claim),
+        expected_source_fingerprint=interpretation_edit.source_fingerprint(parent,claim))
+    item['changes'][0]['expected_meaning_version']=concept_work.digest(meaning)
+    with pytest.raises((KnowledgeConflict,ValueError)):
+        interpretation_edit.start(service,change['id'],InterpretationEditRequest(**payload))
+    with service.repository.connect() as db:assert db.execute('SELECT count(*) FROM runs').fetchone()[0]==1
