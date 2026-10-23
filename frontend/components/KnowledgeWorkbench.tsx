@@ -35,8 +35,8 @@ function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; singl
         const present = fields.filter(field => !absent.includes(field));
         return <div key={i} className={styles.meaning}>
           {corrected && <p className={styles.muted}>현재 관계 해석: {String(meaning.relation_kind || '미기록')}</p>}
-          {!!present.length && <><p className={styles.muted}>{corrected ? '정정 해석' : '자동 해석'} {i + 1} · 저장된 조건</p><dl>{present.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></>}
-          {!!absent.length && <details className={styles.absentQualifiers}><summary>{absent.map(([, title]) => title).join('·')} 없음으로 {corrected ? '정정' : '자동'} 기록</summary><dl>{absent.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></details>}
+          {!!present.length && <><p className={styles.muted}>{corrected ? '저장 해석' : '자동 해석'} {i + 1} · 저장된 조건</p><dl>{present.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></>}
+          {!!absent.length && <details className={styles.absentQualifiers}><summary>{absent.map(([, title]) => title).join('·')} 없음으로 {corrected ? '저장' : '자동'} 기록</summary><dl>{absent.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></details>}
         </div>;
       }) : <dl><div><dt>조건</dt><dd>{claim.conditions?.length ? claim.conditions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>예외</dt><dd>{claim.exceptions?.length ? claim.exceptions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>기간</dt><dd>{claim.period || "기록 없음"}</dd></div></dl>}
       <h3>원문과 위치</h3>

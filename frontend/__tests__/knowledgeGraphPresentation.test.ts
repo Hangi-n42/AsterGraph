@@ -34,11 +34,15 @@ it("distinguishes explicit field corrections from automatic output and human use
       changes: [{ before: 'present: null', after: 'absent' }] }],
     claims: [{ id: 'claim', role: 'event_entity', statement: '보존된 문장', review_status: 'unreviewed', editable: true,
       qualifier_status: 'explicit_reviewer_correction_unverified',
-      meanings: [{ conditions: absent, exceptions: absent, time: absent, references: absent, relation_kind: 'other' }], evidence: [] }] };
+      meanings: [{ conditions: absent, exceptions: absent, time: absent, references: absent, relation_kind: 'other' },
+        { conditions: { state: 'present', text: '배송된 상품에서' }, exceptions: absent, time: absent, references: absent, relation_kind: 'other' }], evidence: [] }] };
   const before = JSON.stringify(detail);
   const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
   for (const text of ['일부 해석 필드를 정정', '의미 미검증·사용 미승인', '현재 관계 해석: other',
-    '조건·예외·기간 / 시점·참조 없음으로 정정 기록', 'Codex 검토', 'present: null', 'absent', '미검수']) expect(html).toContain(text);
+    '조건·예외·기간 / 시점·참조 없음으로 저장 기록', '저장 해석 2', '배송된 상품에서',
+    'Codex 검토', 'present: null', 'absent', '미검수']) expect(html).toContain(text);
+  expect(html).not.toContain('정정 해석');
+  expect(html).not.toContain('없음으로 정정 기록');
   expect(html).not.toContain('이 항목의 저장된 수정 이력이 없습니다');
   expect(html).not.toContain('없음으로 자동 기록');
   expect(html).not.toContain('이 자동 해석에는');
