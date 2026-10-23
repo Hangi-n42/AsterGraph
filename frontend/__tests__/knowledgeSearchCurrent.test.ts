@@ -97,3 +97,15 @@ it('changes the parent scope and reuses saved-answer evidence for the exact new 
   change({target:{value:'reviewed-v2'}});expect(onOpenScope).toHaveBeenCalledWith('source_graph:reviewed-v2');
   expect(all.find(n=>n.props.initialAnswerId==='answer-1')?.props.scope).toEqual(scope);
 });
+
+it('renders structured requirement limitations from the query response alongside legacy text', () => {
+  seed({run_id:'answer-1',status:'answered',limitations:[
+    {requirement_id:'M03',status:'partial',gaps:['전체 연결 검수 미완료']}, '기존 문자열 한계',
+  ]});
+  const request=vi.fn();
+  const html=renderToStaticMarkup(createElement(KnowledgeSearch,{request,scope,onOpenScope:vi.fn(),onExplore:vi.fn()}));
+  expect(html).toContain('M03 · 일부 완료 · 전체 연결 검수 미완료');
+  expect(html).toContain('기존 문자열 한계');
+  expect(html).toContain('답변 생성·의미 정확성 확인 필요');
+  expect(request).not.toHaveBeenCalled();
+});

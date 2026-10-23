@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import KnowledgeStoredAnswers from "./KnowledgeStoredAnswers";
-import { knowledgeDate, type KnowledgeScope } from "@/lib/knowledgeWorkbench";
+import { knowledgeDate, knowledgeLabels, type KnowledgeScope } from "@/lib/knowledgeWorkbench";
 import styles from "./KnowledgeWorkbench.module.css";
 
 type Request = <T>(path: string, init?: RequestInit) => Promise<T>;
 type Snapshot = { id: string; run_id: string; reason: string; created_at: string; counts: { claims: number } };
-type Result = { run_id?: string; status: string; answer?: { answer: string } | null; limitations?: string[] };
+type Result = { run_id?: string; status: string; answer?: { answer: string } | null; limitations?: (string | { requirement_id: string; status: string; gaps: string[] })[] };
 const statuses: Record<string, string> = { answered: "답변 생성·의미 정확성 확인 필요", needs_review: "현재 사용 상태가 바뀌어 재검토가 필요합니다.", no_reviewed_claims: "사용할 승인 지식이 없습니다.", retrieval_failed: "근거 검색 실패", input_capacity: "답변 입력 용량 초과", unverified: "답변 확인 미완료" };
 
 export function businessSearchRequest(snapshotId: string, question: string, retrieval: string, configuration = retrieval === "hipporag2" ? "preserved" : "baseline") {
@@ -80,7 +80,7 @@ export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore
       </fieldset>
     </form>
     {busy && <p role="status">선택한 버전에서 검색·답변을 실행하고 있습니다…</p>}
-    {result && <div role="status"><p>{statuses[result.status] || result.status}</p>{result.limitations?.map((v, i) => <p key={i}>{v}</p>)}</div>}
+    {result && <div role="status"><p>{statuses[result.status] || result.status}</p>{result.limitations?.map((v, i) => <p key={i}>{typeof v === "string" ? v : [v.requirement_id, knowledgeLabels[v.status] || v.status, ...v.gaps].join(" · ")}</p>)}</div>}
     {result?.run_id && scope && <KnowledgeStoredAnswers key={result.run_id} scope={scope} initialAnswerId={result.run_id} onExplore={onExplore} />}
   </section>;
 }
