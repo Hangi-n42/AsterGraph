@@ -82,22 +82,6 @@ class StoredRequirementLink(BaseModel):
     reason: str = Field(min_length=1)
 
 
-class ScopedCandidateReviewRequest(BaseModel):
-    model_config = {'extra': 'forbid'}
-    expected_parent_fingerprint: str
-    requirement_id: str
-    expected_requirement_revision: int = Field(ge=1)
-    claim_ids: list[str] = Field(min_length=1, max_length=3)
-    idempotency_key: str = Field(min_length=1, max_length=128)
-    actor: str = Field(min_length=1)
-    reason: str = Field(min_length=1)
-
-
-class ScopedCandidateReviewExecution(BaseModel):
-    model_config = {'extra': 'forbid'}
-    expected_input_fingerprint: str
-
-
 class QueryCapacityResume(BaseModel):
     model_config = {'extra': 'forbid'}
     expected_parent_fingerprint: str

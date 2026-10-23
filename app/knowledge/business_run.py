@@ -259,6 +259,18 @@ def start(service, request):
                             'source_concept_materialization'):
                     if key in parent:
                         run[key] = deepcopy(parent[key])
+            if run.get('stored_pool'):
+                for key in ('candidate_reviews', 'candidate_review_scope', 'candidate_challenges'):
+                    if key in parent:
+                        run[key] = deepcopy(parent[key])
+                reviewed = {r['unit_id'] for r in run.get('candidate_reviews', [])}
+                units = {}
+                for unit in [*run['units'], *(u for u in parent['units'] if u['id'] in reviewed
+                        and u['status'] == 'succeeded' and not u.get('error'))]:
+                    if unit['id'] in units and units[unit['id']] != unit:
+                        raise KnowledgeConflict('같은 검수 단위 ID의 저장 내용이 다릅니다.')
+                    units[unit['id']] = deepcopy(unit)
+                run['units'] = list(units.values())
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     service.executor.submit(execute, service, run['id'])
     return dict(run_id=run['id'], status='queued')
