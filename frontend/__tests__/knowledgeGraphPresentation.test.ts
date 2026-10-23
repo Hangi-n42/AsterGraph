@@ -27,20 +27,21 @@ it("keeps an unresolved concept link visible without treating it as an approval 
   for (const text of ['현재 주장·그래프의 대상 연결 확인 필요', '실패·미연결 기록도 현재 목록에 보존', '승인된 온톨로지가 아닙니다']) expect(html).toContain(text);
 });
 
-it("distinguishes explicit field corrections from automatic output and human use approval", () => {
+it.each(['unreviewed', 'accepted'] as const)("keeps field correction and separate use approval distinct for %s claims", reviewStatus => {
   const absent = { state: 'absent', text: null };
   const detail: KnowledgeDetail = { item: { id: 'claim', kind: 'claim', label: '보존된 문장', claim_ids: ['claim'] }, relations: [],
     history: [{ id: 'edit', actor: 'Codex 검토', reason: '원문에 한정한 필드 정정', status: 'applied_awaiting_recheck',
       changes: [{ before: 'present: null', after: 'absent' }] }],
-    claims: [{ id: 'claim', role: 'event_entity', statement: '보존된 문장', review_status: 'unreviewed', editable: true,
+    claims: [{ id: 'claim', role: 'event_entity', statement: '보존된 문장', review_status: reviewStatus, editable: true,
       qualifier_status: 'explicit_reviewer_correction_unverified',
       meanings: [{ conditions: absent, exceptions: absent, time: absent, references: absent, relation_kind: 'other' },
         { conditions: { state: 'present', text: '배송된 상품에서' }, exceptions: absent, time: absent, references: absent, relation_kind: 'other' }], evidence: [] }] };
   const before = JSON.stringify(detail);
   const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
-  for (const text of ['일부 해석 필드를 정정', '의미 미검증·사용 미승인', '현재 관계 해석: other',
+  for (const text of ['일부 해석 필드를 정정', '의미 검증과 사용 여부는 각각의 검토·사용 버전 상태에서 확인', '현재 관계 해석: other',
     '조건·예외·기간 / 시점·참조 없음으로 저장 기록', '저장 해석 2', '배송된 상품에서',
-    'Codex 검토', 'present: null', 'absent', '미검수']) expect(html).toContain(text);
+    'Codex 검토', 'present: null', 'absent', reviewStatus === 'accepted' ? '수락' : '미검수']) expect(html).toContain(text);
+  expect(html).not.toContain('사용 미승인입니다');
   expect(html).not.toContain('정정 해석');
   expect(html).not.toContain('없음으로 정정 기록');
   expect(html).not.toContain('이 항목의 저장된 수정 이력이 없습니다');

@@ -28,7 +28,7 @@ function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; singl
         <details><summary>자동 해석에 저장된 오류 사유 · 의미 판정과 별도</summary><ul>{claim.interpretation_errors.map((error, i) => <li key={i}>{error}</li>)}</ul></details>
       </div>}
       <h3>조건 · 예외 · 기간</h3>
-      {corrected && <p className={styles.warning}>검토자가 일부 해석 필드를 정정했습니다. 의미 미검증·사용 미승인입니다.</p>}
+      {corrected && <p className={styles.warning}>검토자가 일부 해석 필드를 정정했습니다. 의미 검증과 사용 여부는 각각의 검토·사용 버전 상태에서 확인하세요.</p>}
       {claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => {
         const fields = [['conditions', '조건'], ['exceptions', '예외'], ['time', '기간 / 시점'], ['references', '참조']] as const;
         const absent = fields.filter(([key]) => typeof meaning[key] === 'object' && meaning[key] !== null && (meaning[key] as { state?: string }).state === 'absent');
