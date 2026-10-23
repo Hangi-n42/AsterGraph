@@ -17,7 +17,7 @@ from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRe
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
-from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest
+from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest, StoredRequirementLink
 
 
 class KnowledgeRoute(APIRoute):
@@ -213,6 +213,11 @@ def business_search(request: BusinessQuery, service=Depends(get_knowledge_servic
 def business_capacity_resume(run_id: str, request: QueryCapacityResume, service=Depends(get_knowledge_service)):
     from app.knowledge.query_capacity_resume import start
     return result(start(service, run_id, request))
+
+
+@router.post('/business/runs/{run_id}/requirement-links', response_model=KnowledgeResponse)
+def business_requirement_link(run_id: str, request: StoredRequirementLink, service=Depends(get_knowledge_service)):
+    return result(business_store.link_stored_requirement(service, run_id, request))
 
 
 @router.post('/business/runs/{run_id}/answer-rechecks', response_model=KnowledgeResponse)

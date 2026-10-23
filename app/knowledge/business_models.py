@@ -70,6 +70,18 @@ class BusinessAnswerRecheck(BaseModel):
     repair: bool = True
 
 
+class StoredRequirementLink(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_parent_fingerprint: str
+    reference_run_id: str
+    expected_reference_fingerprint: str
+    requirement_id: str
+    expected_requirement_revision: int = Field(ge=1)
+    idempotency_key: str = Field(min_length=1, max_length=128)
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+
 class QueryCapacityResume(BaseModel):
     model_config = {'extra': 'forbid'}
     expected_parent_fingerprint: str

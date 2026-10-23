@@ -146,7 +146,9 @@ def usage(service, kind, scope_id):
             current = json.loads(row['payload']) if row else {}
             requirements.append(dict(id=recorded['id'], question=recorded.get('question'),
                 recorded_revision=recorded.get('revision'), current_revision=current.get('revision'),
-                recorded_status=assessments.get(recorded['id'], {}).get('status'), current_status=current.get('status'),
+                criterion=recorded.get('criterion'),
+                recorded_status=assessments.get(recorded['id'], {}).get('status') or (
+                    'unassessed' if value.get('requirement_link') else None), current_status=current.get('status'),
                 revision_matches=isinstance(recorded.get('revision'), int) and current.get('revision') == recorded['revision'],
                 source_change_requires_review=recorded['id'] in affected,
                 current_assessment=current.get('current_assessment')))
@@ -171,7 +173,9 @@ def usage(service, kind, scope_id):
         requirements=requirements, invalidations=invalidations,
         excluded_claim_ids=sorted({cid for event in invalidations for cid in event['claim_ids']}),
         excluded_block_ids=sorted({bid for event in invalidations for bid in event.get('block_ids', [])}),
-        linked_snapshots=linked, review=review)
+        linked_snapshots=linked, review=review,
+        **(dict(requirement_link=dict(deepcopy(value['requirement_link']), public_answer_items=deepcopy(value.get('answer_items', []))))
+            if value.get('requirement_link') else {}))
 
 
 def review_status(service, run_id):

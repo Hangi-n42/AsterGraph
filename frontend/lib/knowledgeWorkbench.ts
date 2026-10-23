@@ -47,7 +47,8 @@ export type KnowledgeUsage = {
   version_files: KnowledgeVersion[];
   active_snapshot_id: string | null; status_revision: number; status_checked_at: string;
   source_restrictions: { source_version_id: string; state: string }[];
-  requirements: { id: string; question?: string; recorded_revision?: number; current_revision?: number; recorded_status?: string; current_status?: string; revision_matches: boolean; source_change_requires_review: boolean }[];
+  requirements: { id: string; question?: string; criterion?: string; recorded_revision?: number; current_revision?: number; recorded_status?: string; current_status?: string; revision_matches: boolean; source_change_requires_review: boolean }[];
+  requirement_link?: { reference_run_id: string; assessment_status: string; usage: string; public_answer_items: { id: string; request_quote: string }[] };
   excluded_claim_ids: string[]; excluded_block_ids: string[];
   invalidations: { event: string; requirement_ids: string[]; claim_ids: string[]; block_ids?: string[]; run_ids?: string[] }[];
   linked_snapshots: { id: string; run_id?: string; activation?: string; reason?: string; actor?: string; created_at?: string }[];

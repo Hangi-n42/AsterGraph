@@ -233,6 +233,8 @@ def decide(service, changeset_id, request):
         if change['kind'] != 'source_graph' or change['revision'] != request.expected_revision:
             raise KnowledgeConflict('검토 변경안의 종류/버전이 다릅니다.')
         run = service.repository.get(db, 'runs', change['run_id'])
+        if run.get('requirement_link', {}).get('usage') == 'review_draft_only':
+            raise KnowledgeConflict('요구 연결 검토 초안은 현재 평가와 별도 사용 검토 전까지 승인할 수 없습니다.')
         if run.get('source_rebuild') or run.get('source_rebuild_guard'):
             from .business_rebuild import validate_run
             validate_run(service, db, run)
@@ -1235,6 +1237,9 @@ def query(service, request, *, context_mode='graph'):
             original = service.repository.get(db, 'runs', request.source_run_id)
             if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'review_ready', 'failed', 'cancelled'}:
                 raise ValueError('종료된 업무 지식 추출 실행을 선택하세요.')
+            if original.get('requirement_link', {}).get('usage') == 'review_draft_only':
+                return dict(status='needs_review', answer=None, source_run_id=original['id'], model_called=False,
+                    reason='requirement_link_review_draft', requirement_ids=[r['id'] for r in original['requirements']])
             concepts = original['concepts']
             if request.concept_run_id:
                 concepts, concept_view = concept_read_view(service, db, original, request.concept_run_id)
