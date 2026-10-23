@@ -1,6 +1,6 @@
 """Persistent public requirements and the selectable source-graph workflow."""
 from typing import Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, TypeAdapter, model_validator
 from .source_meanings import SourceMeaning
 from .vendor.autoschemakg.validate_json_schema import ATLAS_SCHEMA
 
@@ -68,6 +68,14 @@ class BusinessAnswerRecheck(BaseModel):
     qa_run_id: str = Field(min_length=1)
     task_ids: list[str] = Field(min_length=1)
     repair: bool = True
+
+
+class QueryCapacityResume(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_parent_fingerprint: str
+    expected_snapshot_fingerprint: str
+    expected_packet_fingerprint: str
+    context_tokens: int = Field(ge=4096)
 
 
 class BusinessParticipantResume(BaseModel):
@@ -772,6 +780,46 @@ class ExtractionScope(BaseModel):
     model_config = {'extra': 'forbid'}
     evidence: list[EvidenceQuote]
     meanings: list[ExtractionMeaning] = Field(min_length=1)
+
+
+class InterpretationFieldChange(BaseModel):
+    model_config = {'extra': 'forbid'}
+    meaning_id: str
+    expected_meaning_version: str
+    field: Literal['conditions', 'relation_kind']
+    before: object
+    after: object
+    evidence: list[EvidenceQuote] = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+    @model_validator(mode='after')
+    def supported_value(self):
+        adapter = TypeAdapter(ExtractionMeaning.model_fields[self.field].annotation)
+        for name in ('before', 'after'):
+            value = adapter.validate_python(getattr(self, name))
+            setattr(self, name, value.model_dump() if isinstance(value, BaseModel) else value)
+        if self.before == self.after:
+            raise ValueError('정정 전후 값이 같습니다.')
+        if self.field == 'conditions' and self.after.get('state') == 'present' and self.after['text'].strip().lower() == 'null':
+            raise ValueError('조건 본문에 null 문자열을 정정값으로 사용할 수 없습니다.')
+        return self
+
+
+class ClaimInterpretationEdit(BaseModel):
+    model_config = {'extra': 'forbid'}
+    claim_id: str
+    expected_claim_version: str
+    expected_source_fingerprint: str
+    changes: list[InterpretationFieldChange] = Field(min_length=1)
+
+
+class InterpretationEditRequest(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_revision: int = Field(ge=0)
+    idempotency_key: str = Field(min_length=1, max_length=128)
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    claims: list[ClaimInterpretationEdit] = Field(min_length=1)
 
 
 ClaimPatch.model_rebuild()

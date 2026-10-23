@@ -27,6 +27,30 @@ it("keeps an unresolved concept link visible without treating it as an approval 
   for (const text of ['현재 주장·그래프의 대상 연결 확인 필요', '실패·미연결 기록도 현재 목록에 보존', '승인된 온톨로지가 아닙니다']) expect(html).toContain(text);
 });
 
+it("distinguishes explicit field corrections from automatic output and human use approval", () => {
+  const absent = { state: 'absent', text: null };
+  const detail: KnowledgeDetail = { item: { id: 'claim', kind: 'claim', label: '보존된 문장', claim_ids: ['claim'] }, relations: [],
+    history: [{ id: 'edit', actor: 'Codex 검토', reason: '원문에 한정한 필드 정정', status: 'applied_awaiting_recheck',
+      changes: [{ before: 'present: null', after: 'absent' }] }],
+    claims: [{ id: 'claim', role: 'event_entity', statement: '보존된 문장', review_status: 'unreviewed', editable: true,
+      qualifier_status: 'explicit_reviewer_correction_unverified',
+      meanings: [{ conditions: absent, exceptions: absent, time: absent, references: absent, relation_kind: 'other' }], evidence: [] }] };
+  const before = JSON.stringify(detail);
+  const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
+  for (const text of ['일부 해석 필드를 정정', '의미 미검증·사용 미승인', '현재 관계 해석: other',
+    '조건·예외·기간 / 시점·참조 없음으로 정정 기록', 'Codex 검토', 'present: null', 'absent', '미검수']) expect(html).toContain(text);
+  expect(html).not.toContain('이 항목의 저장된 수정 이력이 없습니다');
+  expect(html).not.toContain('없음으로 자동 기록');
+  expect(html).not.toContain('이 자동 해석에는');
+  expect(JSON.stringify(detail)).toBe(before);
+  const inherited = renderToStaticMarkup(createElement(KnowledgeSelection, {
+    detail: { ...detail, parent_run_id: 'previous-edit', history: [] }, onSelect: () => {},
+  }));
+  for (const text of ['일부 해석 필드를 정정', '현재 실행에서 추가한 기록만', 'previous-edit',
+    '이전 실행의 이력이 없다는 뜻은 아닙니다']) expect(inherited).toContain(text);
+  expect(inherited).not.toContain('이 항목의 저장된 수정 이력이 없습니다');
+});
+
 it("keeps distinct homonyms, parallel edge IDs and directions while abbreviating only visual labels", () => {
   const graph: KnowledgeGraphView = { depth: 1, nodes: 2, relations: 3, eligible_nodes: 2, eligible_relations: 3,
     omitted_nodes: 0, omitted_relations: 0, filter_excluded_relations: 0, selected_excluded: false, reason: 'contract fixture',

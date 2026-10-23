@@ -17,7 +17,7 @@ from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRe
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
-from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest
+from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest
 
 
 class KnowledgeRoute(APIRoute):
@@ -193,6 +193,12 @@ def business_edit(changeset_id: str, request: BusinessEventEdit, service=Depends
     return result(start(service, changeset_id, request))
 
 
+@router.post('/business/changes/{changeset_id}/interpretation-edits', response_model=KnowledgeResponse)
+def business_interpretation_edit(changeset_id: str, request: InterpretationEditRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.interpretation_edit import start
+    return result(start(service, changeset_id, request))
+
+
 @router.get('/business/snapshots', response_model=KnowledgeResponse)
 def business_snapshots(service=Depends(get_knowledge_service)):
     return result(business_use.snapshots(service))
@@ -201,6 +207,12 @@ def business_snapshots(service=Depends(get_knowledge_service)):
 @router.post('/business/search', response_model=KnowledgeResponse)
 def business_search(request: BusinessQuery, service=Depends(get_knowledge_service)):
     return result(business_use.query(service, request))
+
+
+@router.post('/business/runs/{run_id}/capacity-resumes', response_model=KnowledgeResponse)
+def business_capacity_resume(run_id: str, request: QueryCapacityResume, service=Depends(get_knowledge_service)):
+    from app.knowledge.query_capacity_resume import start
+    return result(start(service, run_id, request))
 
 
 @router.post('/business/runs/{run_id}/answer-rechecks', response_model=KnowledgeResponse)

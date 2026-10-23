@@ -209,7 +209,10 @@ def change_view(service, changeset_id):
             raise ValueError('업무 지식 변경안이 아닙니다.')
         run = service.repository.get(db, 'runs', change['run_id'])
     eligible, blocked = review_eligibility(change, run)
+    from .interpretation_edit import basis
     return dict(change, eligible_ids=sorted(eligible), published_eligible_ids=change['eligible_ids'],
+                interpretation_edit_basis=[basis(run, c) for c in change['candidates']
+                    if (c.get('interpretation') or {}).get('contract') == business_run.autoschema.SCOPE_CONTRACT],
                 explicit_review_options=[o for o in explicit_correction_options(run)
                     if not set(o['claim_ids']).intersection(change.get('invalidated_claim_ids', []))],
                 candidate_versions={c['id']: business_run.autoschema.identifier('claim', c) for c in change['candidates']},
@@ -1492,6 +1495,19 @@ def query(service, request, *, context_mode='graph'):
                 return evidence_failure(service, run, hits, 'final_input_changed', started)
         output = business_run.json_call(service, run, 'business_qa', instruction, answer_context, context_answer,
             reference_map=reference_map)
+    run['retrieval_concept_hints'] = hints
+    return finish_query(service, run, request, snapshot, requirements, output, hits, source_evidence, limitations, started)
+
+
+def finish_query(service, run, request, snapshot, requirements, output, hits, source_evidence, limitations, started):
+    """Shared answer validation and storage for new searches and fixed-input capacity resumes."""
+    source_reader = bool(request.source_run_id)
+    context_mode = run['context_mode']
+    requirement_ids = request.requirement_ids or ([r['id'] for r in snapshot['requirements']]
+        if request.answer_mode == 'reviewed_items' else [])
+    concept_view = run.get('concept_view')
+    selected = {h['block_id'] for h in hits}
+    hints = run.get('retrieval_concept_hints', {})
     record_answer_source_citations(run, output, source_evidence, snapshot['blocks'])
     answer_links.record(run, output, selected)
     if source_reader:

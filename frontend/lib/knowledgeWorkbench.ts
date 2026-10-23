@@ -23,10 +23,10 @@ export type KnowledgeScope = { kind: "run" | "source_graph"; id: string; title: 
 export type KnowledgeItem = { id: string; kind: string; label: string; claim_ids: string[]; disambiguation?: string; state?: string; issue?: string; concepts?: string[]; head?: string; tail?: string; head_label?: string; tail_label?: string; concept_record_ids?: string[]; request_ids?: string[]; work_ids?: string[]; approved_is_a?: boolean };
 export type KnowledgeClaim = {
   id: string; role: string; statement: string; review_status?: string; conditions?: string[]; exceptions?: string[]; period?: string;
-  extraction_error?: string; editable: boolean; meanings: Record<string, unknown>[]; interpretation_errors?: string[];
+  extraction_error?: string; editable: boolean; meanings: Record<string, unknown>[]; interpretation_errors?: string[]; qualifier_status?: string;
   evidence: { block_id: string; quote?: string; source_version_id?: string; parse_run_id?: string; start_char?: number; end_char?: number; source_title?: string; source_url?: string; rights?: { status?: string; note?: string }; version_file?: KnowledgeVersion; precision?: string; context_only?: boolean; locator?: Record<string, unknown>; block_text?: string }[];
 };
-export type KnowledgeDetail = { item: KnowledgeItem; claims: KnowledgeClaim[]; relations: { id: string; relation: string; head_label: string; tail_label: string }[]; concept_records?: { id: string; target: { id: string; label: string; kind: string; claim_ids: string[] }; concepts: string[]; status: string; request_id?: string; work_id?: string }[]; changeset_id?: string; run_id?: string; history: { id: string; actor?: string; reason?: string; status?: string; changes: { before?: string; after?: string }[] }[] };
+export type KnowledgeDetail = { item: KnowledgeItem; claims: KnowledgeClaim[]; relations: { id: string; relation: string; head_label: string; tail_label: string }[]; concept_records?: { id: string; target: { id: string; label: string; kind: string; claim_ids: string[] }; concepts: string[]; status: string; request_id?: string; work_id?: string }[]; changeset_id?: string; run_id?: string; parent_run_id?: string; history: { id: string; actor?: string; reason?: string; status?: string; changes: { before?: string; after?: string }[] }[] };
 export type KnowledgeView = {
   scope: KnowledgeScope; counts: { nodes: number | null; relations: number | null; claims: number; blocks: number; sources: number; versions: number; concepts: number; stored_concepts?: number; historical_concepts?: number; unresolved_concept_links?: number; search_concepts?: number; failed_concepts: number; excluded_claims: number; claim_review: Record<string, number> };
   items: KnowledgeItem[]; filtered_count: number; offset: number; limit: number; detail: KnowledgeDetail | null; count_policy: string;
@@ -63,7 +63,7 @@ export function qualifier(value: unknown): string {
   if (typeof value === "string") return value || "별도 기록 없음";
   if (value && typeof value === "object" && "state" in value) {
     const item = value as { state: string; text?: string };
-    return item.text || (item.state === "absent" ? "이 자동 해석에는 없음으로 기록" : "미확인");
+    return item.text || (item.state === "absent" ? "이 해석에는 없음으로 기록" : "미확인");
   }
   return "별도 기록 없음 · 원문에서 확인";
 }

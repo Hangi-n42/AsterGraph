@@ -285,7 +285,8 @@ def cancelled(service, run):
 def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None, timeout=None, capacity_repair=None, concept_work_input=None):
     options = run['recipe']['options']
     budget = max_tokens or (options['review_tokens'] if review else options['extraction_tokens'])
-    context_tokens = options.get('representation_context_tokens') if stage == 'requirement_representation' else None
+    context_tokens = (options.get('representation_context_tokens') if stage == 'requirement_representation'
+                      else options.get('qa_context_tokens') if stage == 'business_qa' else None)
     request = ModelRequest(stage, run['recipe']['models']['review' if review else 'draft'], messages,
                            schema=schema, max_tokens=budget, context_tokens=context_tokens or options['context_tokens'],
                            think=options['think'], timeout=options['timeout'] if timeout is None else timeout)
@@ -356,8 +357,9 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
     save(service, run)
     unit['input_budget'] = request_budget(run, messages, schema, budget, review=review)
     estimate = unit['input_budget']['estimate_tokens']
-    if estimate > request.context_tokens:
-        unit.update(status='failed', error='input_capacity', finished_at=utcnow())
+    unverified_resume = run.get('capacity_resume') and stage == 'business_qa' and not unit['input_budget'].get('prompt_exact')
+    if estimate > request.context_tokens or unverified_resume:
+        unit.update(status='failed', error='input_count_unverified' if unverified_resume else 'input_capacity', finished_at=utcnow())
         save(service, run)
         return None
     metadata = asyncio.run(ModelClient(run['recipe']['generation']).generate(request, lambda: cancelled(service, run)))

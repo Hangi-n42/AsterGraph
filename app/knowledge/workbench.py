@@ -513,10 +513,19 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
                       relations=[dict(**e, head_label=nodes.get(e['head'], {}).get('label'),
                                       tail_label=nodes.get(e['tail'], {}).get('label')) for e in connected],
                       changeset_id=value.get('changeset_id'), run_id=value['id'] if kind == 'run' else value.get('run_id'),
+                      parent_run_id=value.get('parent_run_id'),
                       history=[dict(id=r['id'], actor=r.get('actor'), reason=r.get('reason'), status=r.get('status'),
                           changes=[dict(before=c.get('before', {}).get('statement'), after=c.get('after', {}).get('statement'))
                                    for c in r.get('changes', []) if c.get('after', {}).get('id') in selected['claim_ids']])
                                for r in value.get('repairs', []) if any(c.get('after', {}).get('id') in selected['claim_ids'] for c in r.get('changes', []))])
+        edit = value.get('interpretation_edit') or {}
+        field_changes = [dict(deepcopy(patch), claim_id=record['claim_id'],
+            before=json.dumps(patch['before'], ensure_ascii=False), after=json.dumps(patch['after'], ensure_ascii=False))
+            for record in edit.get('records', []) if record['claim_id'] in selected['claim_ids']
+            for patch in record['changes']]
+        if field_changes:
+            detail['history'].append(dict(id=value['id'], actor=edit['actor'], reason=edit['reason'],
+                status='applied_awaiting_recheck', changes=field_changes))
     version_ids = value.get('input_version_ids') or list(value.get('source_versions') or [])
     if not version_ids:
         version_ids = list(dict.fromkeys(b.get('source_version_id') for b in blocks.values() if b.get('source_version_id')))
