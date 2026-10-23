@@ -24,16 +24,16 @@ function nodes(node: unknown): ReactElement<Record<string, unknown>>[] {
 beforeEach(() => { hooks.seeds=[]; hooks.effects=[]; hooks.setters=[]; });
 
 it('uses only an explicit current snapshot and supported retrieval contract', () => {
-  expect(businessSearchRequest('reviewed-v1', ' 보관 조건 ', 'hipporag2')).toEqual({ snapshot_id: 'reviewed-v1', question: '보관 조건', retrieval: 'hipporag2', graph_variant: 'full', answer_mode: 'synthesis' });
+  expect(businessSearchRequest('reviewed-v1', ' 보관 조건 ', 'hipporag2')).toEqual({ snapshot_id: 'reviewed-v1', question: '보관 조건', retrieval: 'hipporag2', graph_variant: 'full', answer_mode: 'synthesis', candidate_contract: 'r2_g1_w1', evidence_union: 'ranked_preserved_claims_v2', source_citation_contract: 'provided_source_quote_links_v1' });
   for (const mode of ['hybrid','hybrid_graph','unsupported']) expect(() => businessSearchRequest('v','질문',mode)).toThrow();
   expect(() => businessSearchRequest('','질문','bm25')).toThrow();
   expect(() => businessSearchRequest('v',' ','bm25')).toThrow();
 });
 
-it('sends preservation options only through the explicit search configuration', async () => {
+it('keeps preservation and source quotation contracts together in the supported search request', async () => {
   const expanded = businessSearchRequest('v', '새 질문', 'hipporag2', 'preserved');
   expect(expanded).toMatchObject({ candidate_contract: 'r2_g1_w1', evidence_union: 'ranked_preserved_claims_v2' });
-  expect(expanded).not.toHaveProperty('source_citation_contract');
+  expect(expanded.source_citation_contract).toBe('provided_source_quote_links_v1');
   for (const retrieval of ['bm25', 'dense']) expect(() => businessSearchRequest('v', '질문', retrieval, 'preserved')).toThrow();
   seed(); hooks.seeds.push('preserved');
   const request = vi.fn().mockResolvedValue({ status: 'answered' });
@@ -41,6 +41,22 @@ it('sends preservation options only through the explicit search configuration', 
   const submit = nodes(tree).find(n=>n.type==='form')!.props.onSubmit as (e:{preventDefault:()=>void})=>void;
   submit({preventDefault:vi.fn()}); await Promise.resolve();
   expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({ ...expanded, snapshot_id: scope.id, question: '상품의 보관 조건은?' });
+});
+
+it('restores the supported improvements after switching retrieval without injecting them into other modes', () => {
+  for (const retrieval of ['bm25', 'dense']) {
+    expect(businessSearchRequest('v', '질문', retrieval)).toMatchObject({ source_citation_contract: 'provided_source_quote_links_v1' });
+    expect(businessSearchRequest('v', '질문', retrieval)).not.toHaveProperty('candidate_contract');
+    expect(businessSearchRequest('v', '질문', retrieval)).not.toHaveProperty('evidence_union');
+  }
+  expect(businessSearchRequest('v', '질문', 'hipporag2', 'baseline')).not.toHaveProperty('candidate_contract');
+  seed();
+  const all=nodes(KnowledgeSearch({request:vi.fn(),scope,onOpenScope:vi.fn(),onExplore:vi.fn()}));
+  const configuration=all.find(n=>n.type==='select' && n.props['aria-label']==='검색 구성')!;
+  expect(configuration.props.value).toBe('preserved');
+  const change=all.find(n=>n.type==='select' && n.props['aria-label']==='근거 찾기')!.props.onChange as (e:{target:{value:string}})=>void;
+  change({target:{value:'bm25'}});expect(hooks.setters[7]).toHaveBeenLastCalledWith('baseline');
+  change({target:{value:'hipporag2'}});expect(hooks.setters[7]).toHaveBeenLastCalledWith('preserved');
 });
 
 it('mount reads current snapshots without starting a model call', async () => {
@@ -68,7 +84,7 @@ it('submits exactly one request and keeps the selected snapshot', async () => {
   submit({preventDefault:vi.fn()}); submit({preventDefault:vi.fn()});
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0][0]).toBe('/business/search');
-  expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({snapshot_id:scope.id,question:'상품의 보관 조건은?',retrieval:'hipporag2'});
+  expect(JSON.parse(request.mock.calls[0][1].body)).toMatchObject({snapshot_id:scope.id,question:'상품의 보관 조건은?',retrieval:'hipporag2',candidate_contract:'r2_g1_w1',evidence_union:'ranked_preserved_claims_v2',source_citation_contract:'provided_source_quote_links_v1'});
   expect(JSON.parse(request.mock.calls[0][1].body)).not.toHaveProperty('source_run_id');
   resolve({run_id:'answer-1',status:'answered'}); await Promise.resolve(); await Promise.resolve();
   expect(hooks.setters[4]).toHaveBeenCalledWith({run_id:'answer-1',status:'answered'});
