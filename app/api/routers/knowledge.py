@@ -18,6 +18,7 @@ from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
 from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest, StoredRequirementLink
+from app.knowledge.business_models import ScopedCandidateReviewRequest, ScopedCandidateReviewExecution
 
 
 class KnowledgeRoute(APIRoute):
@@ -223,6 +224,18 @@ def business_requirement_link(run_id: str, request: StoredRequirementLink, servi
 @router.post('/business/runs/{run_id}/answer-rechecks', response_model=KnowledgeResponse)
 def business_answer_recheck(run_id: str, request: BusinessAnswerRecheck, service=Depends(get_knowledge_service)):
     from app.knowledge.business_feedback import start
+    return result(start(service, run_id, request))
+
+
+@router.post('/business/runs/{run_id}/candidate-review-preparations', response_model=KnowledgeResponse)
+def prepare_candidate_review(run_id: str, request: ScopedCandidateReviewRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_candidate_review import prepare
+    return result(prepare(service, run_id, request))
+
+
+@router.post('/business/runs/{run_id}/candidate-review-execution', response_model=KnowledgeResponse)
+def execute_candidate_review(run_id: str, request: ScopedCandidateReviewExecution, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_candidate_review import start
     return result(start(service, run_id, request))
 
 
