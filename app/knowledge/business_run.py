@@ -912,6 +912,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                       source_record_challenges=[], issues=[])
     if business_review.owned_errors(run):
         assessment['candidate_accuracy_contract'] = 'candidate-own-source-errors-v1'
+    checkpointed = False
     if source:
         if source.get('answer_scope_contract'):
             assessment['answer_scope_issues'] = business_review.answer_scope_issues(source)
@@ -947,6 +948,14 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                     record_error=str(exc), evidence=deepcopy(meaning['evidence']),
                     provided_block_ids=sorted(provided_ids),
                     correction_scope='원문에 맞는 정확 인용과 자료 상태를 정정한다. 인용 오류만으로 정상 의미를 바꾸거나 새 의미를 만들지 않는다.'))
+        if source.get('public_scope') and business_review.public_scope_valid(run, requirement, source):
+            assessment['input_fingerprint'] = assessment_fingerprint(run, requirement, source)
+            run['assessments'].append(assessment)
+            save(service, run)
+            business_store.save_assessment(service, run, requirement, assessment)
+            checkpointed = True
+            if cancelled(service, run):
+                return assessment
         histories = business_review.repair_context(run, requirement, source['meanings']) if business_review.current(run) else run['repairs']
         initial_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source))
         repair_context = [dict(id=r['id'], targets=r['targets'], preserve_meanings=r['preserve_meanings'],
@@ -1084,7 +1093,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
         assessment['candidate_review_ids'] = sorted({v['receipt_id'] for v in direct.values()})
     assessment['claim_ids'] = sorted(set(assessment['claim_ids']))
     assessment.update(requirement_completion(assessment, claims=run['claims']))
-    run['assessments'].append(assessment)
+    if not checkpointed:
+        run['assessments'].append(assessment)
     save(service, run)
     business_store.save_assessment(service, run, requirement, assessment)
     return assessment
@@ -1798,6 +1808,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             if cancelled(service, run):
                 return
             assessment = assess(service, run, requirement)
+            if cancelled(service, run):
+                return
             representation = assessment.get('representation') or {}
             if business_review.current(run) and business_review.needs_source_read(assessment.get('source') or {}, representation):
                 expanded = business_review.source(service, run, requirement, previous=assessment['source'])

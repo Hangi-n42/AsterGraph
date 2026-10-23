@@ -165,7 +165,7 @@ def business_html_rows(request: HtmlLiteralRowsRequest, service=Depends(get_know
 def business_runs(service=Depends(get_knowledge_service)):
     import json
     with service.repository.connect() as db:
-        items = [dict(id=r['id'], status=r['status'], started_at=r['started_at'],
+        items = [dict(id=r['id'], status=r['status'], started_at=r.get('started_at'),
                       questions=[q['question'] for q in r['requirements']])
                  for row in db.execute('SELECT payload FROM runs ORDER BY rowid DESC')
                  if (r := json.loads(row['payload'])).get('kind') == 'business']

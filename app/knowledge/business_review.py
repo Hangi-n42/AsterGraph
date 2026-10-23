@@ -1455,7 +1455,7 @@ candidate_inventory와 source_inventory는 전체 탐색 목록이다. 미제공
         return execution.request_budget(run, request['messages'], request['schema'],
             request['max_tokens'] or run['recipe']['options']['review_tokens'])['estimate_tokens'] > run['recipe']['options']['context_tokens']
     direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
-    if oversized(direct):
+    if set(claim_ids) - direct.keys() or oversized(direct):
         return public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory)
     review_candidate_pool(service, run, claims, requirement=requirement)
     direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}

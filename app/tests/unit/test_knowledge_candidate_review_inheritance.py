@@ -148,3 +148,13 @@ def test_historical_states_remain_readable_and_retired_post_routes_are_absent(st
         assert not any(suffix in p for p in paths)
         assert client.post('/api/v1/knowledge/business/runs/'+parent['id']+'/'+suffix,json={}).status_code==404
     assert tasks==[]
+
+
+def test_business_list_keeps_history_without_a_start_timestamp(stored_review):
+    service,parent,client,tasks=stored_review
+    current=deepcopy(parent);current.update(id='current',started_at='2026-10-23T00:00:00+00:00')
+    with service.repository.connect() as db:db.execute('INSERT INTO runs VALUES(?,?)',(current['id'],encode(current)))
+    response=client.get('/api/v1/knowledge/business/runs');assert response.status_code==200,response.text
+    rows={row['id']:row for row in response.json()['data']['items']}
+    assert rows[parent['id']]['started_at'] is None and rows['current']['started_at']==current['started_at']
+    assert tasks==[]
