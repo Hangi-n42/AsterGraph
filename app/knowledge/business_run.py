@@ -558,8 +558,12 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         mapping = {key: value for key, value in mapping.items() if key in serialized}
     payload = remap_expression_keys(remap(context, mapping), mapping)
     content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage == 'requirement_representation' or source_only_public else encode(payload)
+    from . import answer_links
+    schema = remap(output_type.model_json_schema(), mapping)
+    if answer_links.enabled(run, stage):
+        schema = answer_links.generation_schema(schema)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
-        schema=remap(output_type.model_json_schema(), mapping), reference_map=mapping or None,
+        schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
@@ -583,6 +587,12 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         return None
     try:
         reverse = {v: k for k, v in mapping.items()}
+        from . import answer_links
+        if answer_links.enabled(run, stage):
+            parsed, metadata = answer_links.restore(result['parsed'], reverse)
+            normalized = output_type.model_validate(parsed).model_dump()
+            normalized['_answer_link_metadata'] = metadata
+            return normalized
         parsed = remap_expression_keys(remap(result['parsed'], reverse), reverse)
         if views is None:
             return output_type.model_validate(parsed).model_dump()

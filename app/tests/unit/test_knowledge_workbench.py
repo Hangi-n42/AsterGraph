@@ -196,6 +196,7 @@ def test_saved_answers_separate_provided_citations_and_scope(service, monkeypatc
     with pytest.raises(KeyError):
         workbench.answers(service, 'run', 'run2', 'answer1')
     result = workbench.answers(service, 'run', 'run1', 'answer1')['detail']
+    assert 'answer_link_claims' not in result
     assert [(e['id'], e['cited'], e['provided']) for e in result['evidence']] == [
         ('p1', True, True), ('p2', False, True), ('p3', False, False)]
     assert result['evidence'][0]['evidence'][0]['quote'] == '정확한 저장 인용'
@@ -317,3 +318,81 @@ def test_changes_use_explicit_scope_and_impact_ids_when_source_ids_are_empty(ser
     assert {r['id'] for r in result['requirements']} == {'scope-linked','impact-linked'}
     assert result['snapshot_review_requirement_ids'] == []
     assert result['records'][0]['impacts'][0]['status'] == 'unknown'
+
+
+def link_input_run():
+    """Synthetic stored QA input, not model-quality evidence."""
+    claims = [dict(id=f'c{i}', source_version_ids=['v1'], raw=dict(Event=f'생성 당시 본문 {i}')) for i in range(2)]
+    context = dict(question='기록 질문', context=[dict(id=f'q{i+1}', file_id='v1-alias', text=json.dumps(c)) for i,c in enumerate(claims)])
+    return dict(id='linked-answer', kind='business_query', status='succeeded', query=dict(question='기록 질문', source_run_id='run1', retrieval='hybrid'),
+        answer=dict(answer='그대로 보존할 답변', citations=['c0','c1'], limitations=['기존 한계']),
+        answer_status='answered', input_version_ids=['v1'], provided_ids=['c0','c1'], retrieval=[],
+        answer_links=dict(status='recorded', relation='model_declared', semantic_support='not_assessed',
+            links=[dict(status='resolved', declaration=dict(target='answer', anchor='그대로', claim_refs=['c0','c1'], quote_refs=['sq_a']))]),
+        units=[dict(id='qa-unit', stage='business_qa', reference_map={'c0':'q1','c1':'q2','v1':'v1-alias'},
+            messages=[dict(role='user',content=json.dumps(context))])])
+
+
+def test_link_claim_bodies_use_recorded_input_without_changing_snapshot_or_response(service):
+    from copy import deepcopy
+    run=link_input_run();before=deepcopy(run)
+    with service.repository.connect() as db:
+        db.execute('INSERT INTO runs VALUES(?,?)',(run['id'],json.dumps(run)))
+        payloads={r['id']:r['payload'] for r in db.execute('SELECT id,payload FROM runs')}
+    detail=workbench.answers(service,'run','run1',run['id'])['detail']
+    assert detail['evidence'][0]['statement']=='조건 0'  # Selected scope remains separate.
+    assert detail['answer_link_claims']['claims']['c0']==dict(status='recorded',statement='생성 당시 본문 0',body_origin='raw_duplicate',source_version_ids=['v1'])
+    assert detail['answer_link_claims']['unit_id']=='qa-unit'
+    assert detail['answer_links']==run['answer_links'] and detail['answer']==run['answer']
+    assert run==before
+    with service.repository.connect() as db:
+        assert {r['id']:r['payload'] for r in db.execute('SELECT id,payload FROM runs')}==payloads
+
+
+@pytest.mark.parametrize('fault',['missing_unit','multiple_units','alias_collision','multiple_user_messages','wrong_question','broken_json'])
+def test_ambiguous_qa_input_does_not_choose_a_unit_or_current_snapshot(fault):
+    from copy import deepcopy
+    run=link_input_run();unit=run['units'][0]
+    if fault=='missing_unit':run['units']=[]
+    elif fault=='multiple_units':run['units'].append(deepcopy(unit))
+    elif fault=='alias_collision':unit['reference_map']['other']='q1'
+    elif fault=='multiple_user_messages':unit['messages'].append(deepcopy(unit['messages'][0]))
+    elif fault=='broken_json':unit['messages'][0]['content']='{'
+    else:
+        context=json.loads(unit['messages'][0]['content']);context['question']='다른 질문';unit['messages'][0]['content']=json.dumps(context)
+    before=deepcopy(run);result=workbench._answer_link_claims(run)
+    assert result['status']=='unresolved' and all(v==dict(status='unresolved') for v in result['claims'].values())
+    assert run==before
+
+
+@pytest.mark.parametrize('fault',['duplicate_id','missing_row','wrong_id','invalid_id_type','wrong_version','missing_version','wrong_file_version','invalid_file_type','missing_body','invalid_body','broken_text'])
+def test_bad_claim_input_only_withholds_its_body(fault):
+    run=link_input_run();unit=run['units'][0];context=json.loads(unit['messages'][0]['content']);row=context['context'][0];claim=json.loads(row['text'])
+    if fault=='duplicate_id':context['context'].append(dict(row))
+    elif fault=='missing_row':context['context']=context['context'][1:]
+    elif fault=='wrong_id':claim['id']='different'
+    elif fault=='invalid_id_type':claim['id']=[]
+    elif fault=='wrong_version':claim['source_version_ids']=['unregistered']
+    elif fault=='missing_version':claim.pop('source_version_ids')
+    elif fault=='wrong_file_version':row['file_id']='different'
+    elif fault=='invalid_file_type':row['file_id']=[]
+    elif fault=='missing_body':claim['raw']={};claim['interpretation']=dict(statement='해석을 본문으로 대체 금지')
+    elif fault=='invalid_body':claim['statement']=[]
+    if fault=='broken_text':row['text']='not JSON'
+    else:row['text']=json.dumps(claim)
+    unit['messages'][0]['content']=json.dumps(context);result=workbench._answer_link_claims(run)
+    assert result['status']=='unresolved' and result['claims']['c0']==dict(status='unresolved')
+    assert result['claims']['c1']['statement']=='생성 당시 본문 1'
+
+
+def test_literal_statement_triple_reconstruction_and_review_gate():
+    run=link_input_run();unit=run['units'][0];context=json.loads(unit['messages'][0]['content'])
+    a=json.loads(context['context'][0]['text']);a.update(raw=dict(Head='김치찌개',Relation='재료',Tail='돼지고기(등심)'),interpretation=dict(statement='120g으로 바꾸지 않음'))
+    b=json.loads(context['context'][1]['text']);b['statement']='q13 그대로인 명시 본문'
+    context['context'][0]['text']=json.dumps(a);context['context'][1]['text']=json.dumps(b);unit['messages'][0]['content']=json.dumps(context)
+    result=workbench._answer_link_claims(run)
+    assert result['claims']['c0']['statement']=='김치찌개 — 재료 — 돼지고기(등심)'
+    assert '120g' not in result['claims']['c0']['statement']
+    assert result['claims']['c1']['statement']=='q13 그대로인 명시 본문' and result['claims']['c1']['body_origin']=='statement'
+    run['answer_status']='needs_review'
+    assert workbench._answer_link_claims(run)==dict(status='needs_review',claims={})

@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, create_model, field_validator
 
-from . import business_run, business_review
+from . import business_run, business_review, answer_links
 from .service import KnowledgeConflict, encode, utcnow
 
 ELIGIBILITY_CONTRACT = 'current-claim-local-dependencies-v8-applicability'
@@ -962,9 +962,269 @@ def source_quote_answer(service, run, request, source_evidence, source_versions,
                 citations=list(dict.fromkeys(citations)), limitations=limitations)
 
 
+SYNTHESIS_PROMPT = (
+    '제공된 검색 근거만으로 질문에 한국어로 답한다. 선택지가 있으면 choice에 선택지의 A/B/C/D를 반환한다. '
+    '부족하면 확인 불가와 구체 한계를 표시한다. citations에는 사용한 context id만 쓴다. '
+    '각 인용 ID는 한 번만 쓰며 제공된 context 개수를 넘지 않는다. 빈 답변을 반환하지 않는다. '
+    '미승인 개념이나 원문보다 강한 효과를 사실로 쓰지 않는다. 조건/예외/기간을 유지한다. '
+    'source_evidence는 연결된 승인 후보의 출처와 범위를 확인하는 원문이다. '
+    '같은 인용 안의 다른 의미까지 승인된 것으로 취급하지 않는다.'
+)
+REVIEWED_MEANINGS_PROMPT = (
+    'reviewed_meanings는 기존 검수의 주장·조건·예외·기간과 원문을 연결한 범위이지 정답표가 아니다. '
+    '질문에 해당하는 의미와 실제 인용을 함께 사용하고, 후보의 다른 절이나 검수 문장의 확대 해석을 그대로 확정하지 않는다. '
+    '원문에서 직접 확인되는 사실과 추가 해석이 필요한 결론을 구분해 답한다.'
+)
+
+
+def graph_source_evidence(snapshot, recipe, selected, reviewed_meanings):
+    source_evidence = {}
+    blocks = {b['id']: b for b in snapshot['blocks']}
+    review_chunks = business_run.autoschema.chunks(snapshot['blocks'], recipe['options']['context_tokens'],
+        recipe['options']['review_tokens'], 1) if reviewed_meanings else []
+    for claim in snapshot['claims']:
+        if claim['id'] not in selected:
+            continue
+        meanings = [m for m in reviewed_meanings if claim['id'] in m['claim_ids'] and not m['record_error']
+                    and m['source_status'] == 'supported' and m['availability'] == 'provided'
+                    and (m.get('requirement_link') or {}).get('applicability') != 'unresolved'
+                    and m['expression_status'] == 'represented' and m['claim_support'][claim['id']] == 'supported']
+        meaning_refs = []
+        if meanings and any(m['evidence'] for m in meanings):
+            scoped = business_review.related_blocks(dict(blocks=snapshot['blocks'], recipe=recipe),
+                                                    meanings, chunks=review_chunks)
+            meaning_refs = [business_run.exact_evidence([dict(block_id=b['id'], quote=b['text'])], [b])[0]
+                            for b in scoped]
+        # Chunk references locate extraction input. For an explicitly reviewed
+        # meaning retain the whole source unit and its existing mandatory
+        # context. Partial/unknown judgments cannot replace the chunk source.
+        refs = [e for e in claim.get('evidence', []) if not meaning_refs or e.get('precision') != 'chunk']
+        for ref in [*refs, *meaning_refs]:
+            key = json.dumps(ref, ensure_ascii=False, sort_keys=True)
+            row = source_evidence.setdefault(key, dict(evidence=deepcopy(ref),
+                locator=deepcopy(blocks.get(ref['block_id'], {}).get('locator', {})), claim_ids=[]))
+            if claim['id'] not in row['claim_ids']:
+                row['claim_ids'].append(claim['id'])
+    return list(source_evidence.values())
+
+
+def source_evidence_views(evidence_rows, previous_order):
+    """Keep delivered reference order and append only newly encountered references."""
+    keyed = {json.dumps(row['evidence'], ensure_ascii=False, sort_keys=True): row for row in evidence_rows}
+    evidence_rows = [keyed[key] for key in dict.fromkeys([*previous_order, *keyed]) if key in keyed]
+    views = [dict(id=row['evidence']['block_id'], text=row['evidence']['quote'],
+        source_version_id=row['evidence']['source_version_id'], parse_run_id=row['evidence'].get('parse_run_id'),
+        span=[row['evidence']['start_char'], row['evidence']['end_char']]) for row in evidence_rows]
+    delivered = []
+    for block_id in dict.fromkeys(view['id'] for view in views):
+        for view in business_run.contiguous_evidence_views(views, block_id):
+            rows = [row for row in evidence_rows if row['evidence']['block_id'] == block_id
+                and row['evidence']['source_version_id'] == view['source_version_id']
+                and row['evidence'].get('parse_run_id') == view.get('parse_run_id')
+                and view['span'][0] <= row['evidence']['start_char'] < row['evidence']['end_char'] <= view['span'][1]]
+            links = [dict(claim_ids=row['claim_ids'], span=[row['evidence']['start_char'], row['evidence']['end_char']],
+                          precision=row['evidence'].get('precision', 'unspecified')) for row in rows]
+            delivered.append((dict(view, claim_references=links), rows))
+    if previous_order:
+        positions = {json.dumps(row['evidence'], ensure_ascii=False, sort_keys=True): i
+                     for i, row in enumerate(evidence_rows)}
+        delivered.sort(key=lambda item: min(positions[json.dumps(row['evidence'], ensure_ascii=False, sort_keys=True)]
+                                           for row in item[1]))
+    return [view for view, _ in delivered], [json.dumps(row['evidence'], ensure_ascii=False, sort_keys=True)
+                                            for _, rows in delivered for row in rows]
+
+
+
+SOURCE_CITATIONS_PROMPT = (
+    '\nsource_citations에는 실제 선택한 source_evidence의 id를 evidence_ref로, 원문의 정확한 구절을 quote로 반환한다. '
+    '주장 citations와 별도이며 같은 원문의 모든 주장을 인용한 것으로 취급하지 않는다. '
+    '원문 인용 위치는 문장별 의미 지지 판정이 아니다.'
+)
+
+def answer_references(context, source_evidence, required_source_context=(), source_claims=None, *, source_citation_contract=None):
+    references = {c['id']: f'q{i+1}' for i, c in enumerate(context)}
+    citation_type = list[Literal[tuple(references)]] if references else list[str]
+    context_answer = create_model('ContextAnswer', __base__=SourceAnswer if source_claims is not None else Answer,
+        citations=(citation_type, Field(max_length=len(context), json_schema_extra={'uniqueItems': True})))
+    if source_citation_contract:
+        # Address failures belong to individual quotes, not the normal answer.
+        source_quote = create_model('AnswerSourceQuote',
+            evidence_ref=(str, Field(json_schema_extra={'enum': list(dict.fromkeys(s['id'] for s in source_evidence))})),
+            quote=(str, Field(description='Literal quotation from the provided source view; not an answer paraphrase.')))
+        context_answer = create_model('SourceQuotedContextAnswer', __base__=context_answer,
+            source_citations=(list[source_quote], Field(...)))
+    # Reuse the existing reversible reference map for long source addresses too.
+    # Citation choices remain context IDs; the server restores original IDs.
+    reference_map = dict(references)
+    if source_claims is not None:
+        reference_map.update({c['id']: f'c{i+1}' for i, c in enumerate(source_claims)})
+    source_addresses = source_evidence + list(required_source_context) + [dict(id=c['source_reference']['block_id'], **{
+        k: c['source_reference'].get(k) for k in ('source_version_id', 'parse_run_id')})
+        for c in context if 'source_reference' in c]
+    for field, prefix in [('id', 'b'), ('source_version_id', 'v'), ('parse_run_id', 'p')]:
+        values = list(dict.fromkeys(v[field] for v in source_addresses if v.get(field)))
+        reference_map.update({value: f'{prefix}{i+1}' for i, value in enumerate(values) if value not in reference_map})
+    return context_answer, reference_map
+
+
+def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previous_order):
+    selected = {h['block_id'] for h in hits}
+    claims = {c['id']: c for c in snapshot['claims']}
+    for cid in selected:
+        claim = claims[cid]
+        if claim.get('review_status') != 'accepted' or not claim.get('evidence'):
+            raise ValueError('selected_fact_unrepresentable: ' + cid)
+        for ref in claim['evidence']:
+            exact = business_run.exact_evidence([ref], snapshot['blocks'])[0]
+            if (ref.get('source_version_id') not in claim['source_version_ids']
+                    or any(ref.get(k) != exact[k] for k in
+                        ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char', 'quote'))):
+                raise ValueError('evidence_address_mismatch: ' + cid)
+    context = [c for c in candidates if c['id'] in selected]
+    meanings = reviewed_answer_meanings(snapshot, selected, [])
+    sources, order = source_evidence_views(graph_source_evidence(snapshot, recipe, selected, meanings), previous_order)
+    state = dict(answer_scope_contract='reviewed-meanings-and-source-qualifications-v1',
+        reviewed_meanings=deepcopy(meanings), reviewed_connections=reviewed_answer_connections(snapshot, original, []),
+        source_reference_order=order)
+    limitations = [dict(requirement_id=r, status=a['status'], gaps=(a.get('source') or {}).get('gaps', []))
+        for r, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
+    body = dict(question=request.question, choices=request.choices, context=context,
+        source_versions=snapshot['source_versions'], source_evidence=sources,
+        requirement_limitations=limitations, reviewed_meanings=meanings)
+    schema, references = answer_references(context, sources, source_citation_contract=request.source_citation_contract)
+    return state, body, schema, references
+
+
+def preserved_graph_hits(run, snapshot, original, request, candidates, baseline):
+    """Preview one query in memory; commit only the last complete, admitted input."""
+    retrieval = run['graph_retrieval']
+    factual = retrieval['selected_factual_claim_ids']
+    trace = dict(contract=request.evidence_union, baseline_claim_ids=[h['block_id'] for h in baseline],
+        selected_factual_claim_ids=deepcopy(factual), limit_semantics='baseline_claim_count',
+        capacity_policy='mandatory_union_then_ranked_whole_claims_stop_at_first_excess', steps=[])
+    run['evidence_assembly'] = trace
+    ranked = {}
+    for passage in retrieval['ranked_passages']:
+        for cid in passage['claim_ids']:
+            ranked.setdefault(cid, dict(block_id=cid, file_id=passage['evidence']['source_version_id'],
+                score=passage['score'], passage_id=passage['id'], selection_reason=request.retrieval))
+    if not baseline or any(cid not in ranked for cid in factual):
+        raise ValueError('selected_fact_unrepresentable: missing baseline or ranked factual claim')
+    mandatory = list(baseline) + [h for cid, h in ranked.items() if cid in factual
+        and cid not in trace['baseline_claim_ids']]
+    trace['mandatory_claim_ids'] = [h['block_id'] for h in mandatory]
+    accepted, order, last = list(baseline), [], None
+    trials = [baseline]
+    if mandatory != baseline:
+        trials.append(mandatory)
+    remainder = [h for cid, h in ranked.items() if cid not in trace['mandatory_claim_ids']]
+    for index in range(len(trials) + len(remainder)):
+        required = index < len(trials)
+        proposed = trials[index] if required else accepted + [remainder[index - len(trials)]]
+        state, body, schema, references = graph_qa_input(snapshot, original, run['recipe'], request,
+            candidates, proposed, order)
+        packet = business_run.json_request(run, 'business_qa',
+            SYNTHESIS_PROMPT + REVIEWED_MEANINGS_PROMPT + source_citations_instruction(request.source_citation_contract),
+            body, schema, reference_map=references)
+        budget = business_run.request_budget(run, packet['messages'], packet['schema'],
+            run['recipe']['options']['review_tokens'])
+        within = budget['estimate_tokens'] <= run['recipe']['options']['context_tokens']
+        fingerprint = business_run.autoschema.identifier('qa_input', packet)
+        trace['steps'].append(dict(claim_ids=[h['block_id'] for h in proposed], mandatory=required,
+            budget=budget, within_limit=within, request_fingerprint=fingerprint))
+        if not within:
+            trace['rejected_input'] = dict(hits=proposed, state=state, request=packet)
+            if required:
+                trace['failure_kind'] = 'mandatory_capacity'
+                raise ValueError('mandatory_capacity')
+            trace['stopped_at_first_capacity_excess'] = True
+            break
+        accepted, order, last = proposed, state['source_reference_order'], (state, fingerprint)
+    run.update(last[0])
+    trace.update(final_claim_ids=[h['block_id'] for h in accepted], request_fingerprint=last[1])
+    return accepted
+
+
+def evidence_failure(service, run, hits, error, started):
+    run.update(status='failed', finished_at=utcnow(), answer=None, answer_status='unverified',
+        error=str(error), retrieval=hits, provided_ids=[])
+    run['metrics']['elapsed_s'] = monotonic() - started
+    business_run.save(service, run)
+    return dict(run_id=run['id'], status='input_capacity' if str(error) == 'mandatory_capacity'
+        else 'evidence_assembly_failed', answer=None, error=run['error'], qa_model_called=False,
+        evidence_assembly=run.get('evidence_assembly'), execution_boundary=run['execution_boundary'])
+
+
+def record_answer_source_citations(run, output, source_evidence, blocks):
+    """Validate recorded quotation addresses, without judging answer support."""
+    record = dict(status='not_recorded', citations=[], duplicates_removed=0,
+                  semantic_support='not_assessed', answer_binding='global')
+    run['answer_source_citations'] = record
+    if output is None or 'source_citations' not in output:
+        return
+    returned = output.pop('source_citations')
+    seen = {}
+    indices = []
+    for item in returned:
+        entry = dict(item, address_status='unresolved')
+        matches = {}
+        try:
+            views = business_run.contiguous_evidence_views(source_evidence, item['evidence_ref'])
+            for view in views:
+                if not view.get('source_version_id') or not view.get('parse_run_id') or not item['quote'].strip():
+                    continue
+                position = view['text'].find(item['quote'])
+                while position >= 0:
+                    start = view['span'][0] + position
+                    ref = dict(block_id=view['id'], source_version_id=view['source_version_id'],
+                        parse_run_id=view['parse_run_id'], quote=item['quote'],
+                        start_char=start, end_char=start + len(item['quote']))
+                    exact = business_run.exact_evidence([ref], blocks)[0]
+                    key = tuple(exact[k] for k in ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char'))
+                    matches[key] = exact
+                    position = view['text'].find(item['quote'], position + 1)
+            if len(matches) != 1:
+                raise ValueError('non_unique_or_unprovided_source_quote')
+            key, exact = next(iter(matches.items()))
+            if key in seen:
+                record['duplicates_removed'] += 1
+                indices.append(seen[key])
+                continue
+            seen[key] = len(record['citations'])
+            entry.update(exact, address_status='matched')
+        except (ValueError, KeyError) as exc:
+            entry['address_error'] = str(exc)
+        indices.append(len(record['citations']))
+        record['citations'].append(entry)
+    record['status'] = 'unresolved' if any(c['address_status'] != 'matched' for c in record['citations']) else 'recorded'
+    if answer_links.enabled(run):
+        metadata = output.get('_answer_link_metadata', {})
+        metadata['quote_lookup'] = answer_links.quote_lookup(metadata.get('quote_ids', []), indices, record['citations'])
+
+
+def source_citations_instruction(contract):
+    return (SOURCE_CITATIONS_PROMPT if contract else '') + (answer_links.PROMPT if contract == answer_links.CONTRACT else '')
+
+
+def resolve_query_defaults(request, context_mode):
+    """Resolve omitted options for a new supported search; stored queries keep their values."""
+    defaults = dict(candidate_contract='r2_g1_w1', evidence_union='ranked_preserved_claims_v2',
+                    source_citation_contract='provided_source_quote_links_v1')
+    supported = (context_mode == 'graph' and request.snapshot_id and not request.source_run_id
+        and request.retrieval == 'hipporag2' and request.graph_variant == 'full'
+        and request.answer_mode == 'synthesis' and not request.requirement_ids)
+    missing = [key for key in defaults if key not in request.model_fields_set] if supported else []
+    if missing:
+        values = request.model_dump()
+        values.update({key: defaults[key] for key in missing})
+        request = request.model_validate(values)
+    return request, missing
+
+
 def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
     from .source_index import FrozenIndex
+    request, defaulted = resolve_query_defaults(request, context_mode)
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
@@ -973,6 +1233,10 @@ def query(service, request, *, context_mode='graph'):
     structured_reader = False
     if context_mode not in {'graph', 'document'}:
         raise ValueError('Unknown query context')
+    if request.evidence_union and context_mode != 'graph':
+        raise ValueError('근거 보존 실험은 graph context에서만 지원합니다.')
+    if request.candidate_contract and context_mode != 'graph':
+        raise ValueError('검토 작업 후보 실험은 graph context에서만 지원합니다.')
     if context_mode == 'document' and request.retrieval not in {'bm25', 'hybrid'}:
         raise ValueError('문서 기준선은 bm25 또는 hybrid를 사용합니다. 그래프 검색은 graph 경로를 선택하세요.')
     with service.lock, service.repository.connect() as db:
@@ -1056,6 +1320,9 @@ def query(service, request, *, context_mode='graph'):
             run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, requirement_ids)
         run['execution_boundary'] = dict(
             answer_mode=request.answer_mode, answer_contract=None,
+            query_contracts={key: getattr(request, key) for key in
+                ('candidate_contract', 'evidence_union', 'source_citation_contract')},
+            defaulted_query_fields=defaulted,
             unadopted_answer_mode=request.answer_mode in {'source_quotes', 'items'},
             source_review_run_id=original['id'],
             source_run_review_contract=original['recipe'].get('review_contract'),
@@ -1063,6 +1330,12 @@ def query(service, request, *, context_mode='graph'):
                 business_review.ANSWER_SCOPE_EXPERIMENT, business_review.MEANING_SELECTION_EXPERIMENT},
             review_provenance_scope='source_run_recipe_not_all_snapshot_assessments',
             status_semantics='answered는 응답 형식·제공 근거 참조 검사 상태이며 의미 정확성이나 요구 전체 충족을 보증하지 않는다.')
+        if request.evidence_union:
+            run['execution_boundary']['evidence_union'] = dict(contract=request.evidence_union,
+                experimental=True, baseline_limit=request.limit, final_limit='existing_token_budget')
+        if request.candidate_contract:
+            run['execution_boundary']['candidate_contract'] = dict(contract=request.candidate_contract,
+                experimental=True, individual_edge_selection=True)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     built = None
     get_bundles = None
@@ -1114,6 +1387,11 @@ def query(service, request, *, context_mode='graph'):
         mandatory = [dict(by_id.get(c['id']) or dict(block_id=c['id'], file_id=c['file_id'], score=None),
                           selection_reason='required_reviewed_meaning') for c in candidates if c['id'] in required_ids]
         hits = mandatory + [h for h in hits if h['block_id'] not in required_ids][:request.limit - len(mandatory)]
+    if request.evidence_union:
+        try:
+            hits = preserved_graph_hits(run, snapshot, original, request, candidates, hits)
+        except (ValueError, KeyError, TypeError) as exc:
+            return evidence_failure(service, run, hits, exc, started)
     selected = {h['block_id'] for h in hits}
     context = [c for c in candidates if c['id'] in selected]
     if not context:
@@ -1171,65 +1449,14 @@ def query(service, request, *, context_mode='graph'):
                 business_run.save(service, run)
                 return dict(run_id=run['id'], status='input_capacity', answer=None,
                             error=run['error'], source_context_budget=run['source_context_budget'])
-    source_evidence = {}
-    if context_mode == 'graph' and not source_reader:
-        blocks = {b['id']: b for b in snapshot['blocks']}
-        review_chunks = business_run.autoschema.chunks(snapshot['blocks'], run['recipe']['options']['context_tokens'],
-            run['recipe']['options']['review_tokens'], 1) if reviewed_meanings else []
-        for claim in snapshot['claims']:
-            if claim['id'] not in selected:
-                continue
-            meanings = [m for m in reviewed_meanings if claim['id'] in m['claim_ids'] and not m['record_error']
-                        and m['source_status'] == 'supported' and m['availability'] == 'provided'
-                        and (m.get('requirement_link') or {}).get('applicability') != 'unresolved'
-                        and m['expression_status'] == 'represented' and m['claim_support'][claim['id']] == 'supported']
-            meaning_refs = []
-            if meanings and any(m['evidence'] for m in meanings):
-                scoped = business_review.related_blocks(dict(blocks=snapshot['blocks'], recipe=run['recipe']),
-                                                        meanings, chunks=review_chunks)
-                meaning_refs = [business_run.exact_evidence([dict(block_id=b['id'], quote=b['text'])], [b])[0]
-                                for b in scoped]
-            # Chunk references locate extraction input. For an explicitly reviewed
-            # meaning retain the whole source unit and its existing mandatory
-            # context. Partial/unknown judgments cannot replace the chunk source.
-            refs = [e for e in claim.get('evidence', []) if not meaning_refs or e.get('precision') != 'chunk']
-            for ref in [*refs, *meaning_refs]:
-                key = json.dumps(ref, ensure_ascii=False, sort_keys=True)
-                row = source_evidence.setdefault(key, dict(evidence=deepcopy(ref),
-                    locator=deepcopy(blocks.get(ref['block_id'], {}).get('locator', {})), claim_ids=[]))
-                if claim['id'] not in row['claim_ids']:
-                    row['claim_ids'].append(claim['id'])
-    evidence_rows = list(source_evidence.values())
-    views = [dict(id=row['evidence']['block_id'], text=row['evidence']['quote'],
-        source_version_id=row['evidence']['source_version_id'], parse_run_id=row['evidence'].get('parse_run_id'),
-        span=[row['evidence']['start_char'], row['evidence']['end_char']]) for row in evidence_rows]
-    source_evidence = []
-    for block_id in dict.fromkeys(view['id'] for view in views):
-        for view in business_run.contiguous_evidence_views(views, block_id):
-            # The enclosing view already carries source/version/parse/block IDs.
-            # Keep each claim's exact span without repeating those addresses.
-            links = [dict(claim_ids=row['claim_ids'], span=[row['evidence']['start_char'], row['evidence']['end_char']],
-                          precision=row['evidence'].get('precision', 'unspecified'))
-                for row in evidence_rows if row['evidence']['block_id'] == block_id
-                and row['evidence']['source_version_id'] == view['source_version_id']
-                and row['evidence'].get('parse_run_id') == view.get('parse_run_id')
-                and view['span'][0] <= row['evidence']['start_char'] < row['evidence']['end_char'] <= view['span'][1]]
-            source_evidence.append(dict(view, claim_references=links))
-    references = {c['id']: f'q{i+1}' for i, c in enumerate(context)}
-    citation_type = list[Literal[tuple(references)]] if references else list[str]
-    context_answer = create_model('ContextAnswer', __base__=SourceAnswer if source_reader else Answer,
-        citations=(citation_type, Field(max_length=len(context), json_schema_extra={'uniqueItems': True})))
-    # Reuse the existing reversible reference map for long source addresses too.
-    # Citation choices remain context IDs; the server restores original IDs.
-    reference_map = dict(references)
-    if source_reader:
-        reference_map.update({c['id']: f'c{i+1}' for i, c in enumerate(snapshot['claims'])})
-    source_addresses = source_evidence + required_source_context + [dict(id=c['source_reference']['block_id'], **{
-        k: c['source_reference'].get(k) for k in ('source_version_id', 'parse_run_id')})
-        for c in context if 'source_reference' in c]
-    for field, prefix in [('id', 'b'), ('source_version_id', 'v'), ('parse_run_id', 'p')]:
-        values = list(dict.fromkeys(v[field] for v in source_addresses if v.get(field)))
-        reference_map.update({value: f'{prefix}{i+1}' for i, value in enumerate(values) if value not in reference_map})
+    source_evidence, source_order = source_evidence_views(
+        graph_source_evidence(snapshot, run['recipe'], selected, reviewed_meanings)
+        if context_mode == 'graph' and not source_reader else [],
+        run.get('source_reference_order', []) if request.evidence_union else [])
+    if request.evidence_union:
+        run['source_reference_order'] = source_order
+    context_answer, reference_map = answer_references(context, source_evidence, required_source_context,
+        snapshot['claims'] if source_reader else None, source_citation_contract=request.source_citation_contract)
     # Complete claim bundles retain conditions and source provenance; no gold mappings.
     limitations = [dict(requirement_id=r, status=a['status'], gaps=(a.get('source') or {}).get('gaps', []))
                    for r, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
@@ -1252,18 +1479,10 @@ def query(service, request, *, context_mode='graph'):
     elif request.answer_mode == 'source_quotes':
         output = source_quote_answer(service, run, request, source_evidence, snapshot['source_versions'], reference_map, answer_requirements)
     else:
-        output = business_run.json_call(service, run, 'business_qa',
-            '제공된 검색 근거만으로 질문에 한국어로 답한다. 선택지가 있으면 choice에 선택지의 A/B/C/D를 반환한다. '
-            '부족하면 확인 불가와 구체 한계를 표시한다. citations에는 사용한 context id만 쓴다. '
-            '각 인용 ID는 한 번만 쓰며 제공된 context 개수를 넘지 않는다. 빈 답변을 반환하지 않는다. '
-            '미승인 개념이나 원문보다 강한 효과를 사실로 쓰지 않는다. 조건/예외/기간을 유지한다. '
-            'source_evidence는 연결된 승인 후보의 출처와 범위를 확인하는 원문이다. '
-            '같은 인용 안의 다른 의미까지 승인된 것으로 취급하지 않는다.' + (
+        instruction = SYNTHESIS_PROMPT + (
             'public_requirements의 question/criterion은 공개 답변 기준이다. 기준에서 요청한 항목도 답하거나 구체 공백을 표시한다. '
             '대상·상황·시점은 적용 범위이며 기준 자체를 원문 근거나 정답으로 사용하지 않는다.' if answer_requirements else '') + (
-            'reviewed_meanings는 기존 검수의 주장·조건·예외·기간과 원문을 연결한 범위이지 정답표가 아니다. '
-            '질문에 해당하는 의미와 실제 인용을 함께 사용하고, 후보의 다른 절이나 검수 문장의 확대 해석을 그대로 확정하지 않는다. '
-            '원문에서 직접 확인되는 사실과 추가 해석이 필요한 결론을 구분해 답한다.' if not source_reader else '') + (
+            REVIEWED_MEANINGS_PROMPT if not source_reader else '') + (
             '\n이번 context는 검색된 원문 구간이다. 원문 자체를 대조하여 답한다. ' +
             (reader.FORMAT + ('source_documents는 원문 버전과 parse 실행별 독립 source_document이며 입력 배열은 context_input_rows/source_context_input_rows로 복원한다. '
                 if 'source_documents' in reader_context else '') if request.source_format == 'structured' and
@@ -1273,14 +1492,22 @@ def query(service, request, *, context_mode='graph'):
             'context_id만 있는 문맥은 같은 context의 원문을 참조한다. 문맥 근거도 연결된 context id로 인용한다. '
             '검색에 사용한 그래프 연결은 미승인 추출일 수 있으며 그 존재가 의미 검증은 아니다. '
             '원문에 없는 조건이나 연결을 추론해서 채우지 않는다. 이 답변은 온톨로지 승인이나 업무 요구 전체 충족 판정이 아니다.'
-            if source_reader else ''),
-            dict(question=request.question, choices=request.choices, **({} if structured_reader else dict(context=context)),
+            if source_reader else '') + source_citations_instruction(request.source_citation_contract)
+        answer_context = dict(question=request.question, choices=request.choices, **({} if structured_reader else dict(context=context)),
                  source_versions=snapshot['source_versions'], source_evidence=source_evidence,
                  **({'public_requirements': answer_requirements} if answer_requirements else {}),
                  requirement_limitations=limitations, **(reader_context if structured_reader else
                     {'source_context': required_source_context} if source_reader else
-                    {'reviewed_meanings': reviewed_meanings})), context_answer,
+                    {'reviewed_meanings': reviewed_meanings}))
+        if request.evidence_union:
+            packet = business_run.json_request(run, 'business_qa', instruction, answer_context, context_answer,
+                reference_map=reference_map)
+            if business_run.autoschema.identifier('qa_input', packet) != run['evidence_assembly']['request_fingerprint']:
+                return evidence_failure(service, run, hits, 'final_input_changed', started)
+        output = business_run.json_call(service, run, 'business_qa', instruction, answer_context, context_answer,
             reference_map=reference_map)
+    record_answer_source_citations(run, output, source_evidence, snapshot['blocks'])
+    answer_links.record(run, output, selected)
     if source_reader:
         run['answer_contract'] = 'source-unique-provided-citations-lossless-dedup-v3'
         raw_ids = ((run['units'][-1].get('response') or {}).get('parsed') or {}).get('citations', []) if run['units'] else []
@@ -1297,6 +1524,8 @@ def query(service, request, *, context_mode='graph'):
         if restricted_sources(db, snapshot['source_versions']) or any(
                 n['revision'] != r['revision'] or n['status'] == 'needs_review' for n, r in zip(now, requirements)):
             status, output = 'needs_review', None
+            run['answer_source_citations'] = dict(run['answer_source_citations'], status='needs_review', citations=[])
+            answer_links.withhold(run)
         run.update(status='succeeded' if status == 'answered' else 'partial', finished_at=utcnow(),
                    answer=output, answer_status=status, retrieval=hits, provided_ids=sorted(selected),
                    retrieval_concept_hints=hints, retrieval_contract=('required-reviewed-claims+ranked-remainder-v1' if context_mode == 'graph' and requirement_ids
@@ -1309,6 +1538,8 @@ def query(service, request, *, context_mode='graph'):
         run['metrics']['elapsed_s'] = monotonic() - started
         service.repository.save(db, 'runs', run)
     return dict(run_id=run['id'], status=status, answer=output, retrieval=hits,
+                source_citations=run['answer_source_citations'],
+                **({'answer_links': run['answer_links']} if 'answer_links' in run else {}),
                 context_mode=context_mode, snapshot_id=None if source_reader else snapshot['id'],
                 source_run_id=request.source_run_id, answer_basis=run['answer_basis'], limitations=limitations,
                 execution_boundary=run['execution_boundary'],

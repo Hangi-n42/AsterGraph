@@ -117,7 +117,8 @@ def test_product_query_runs_filter_then_qa_and_does_not_pass_concepts_as_facts(t
         return dict(answer='원문 답변', choice=None, citations=[context['context'][0]['id']], limitations=[])
     monkeypatch.setattr(business_run, 'json_call', call)
     try:
-        request = BusinessQuery(snapshot_id='s', question='신청', limit=2)
+        request = BusinessQuery(snapshot_id='s', question='신청', limit=2,
+            candidate_contract=None, evidence_union=None, source_citation_contract=None)
         result = business_use.query(service, request)
         assert result['status'] == 'answered' and stages == ['graph_retrieval_filter', 'business_qa']
         run = service.run(result['run_id'])

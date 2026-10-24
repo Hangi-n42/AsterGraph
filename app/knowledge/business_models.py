@@ -591,6 +591,12 @@ class BusinessQuery(BaseModel):
     concept_run_id: str | None = Field(default=None, min_length=1)
     requirement_ids: list[str] = Field(default_factory=list)
     limit: int = Field(default=12, ge=1, le=50)
+    evidence_union: Literal['ranked_preserved_claims_v2'] | None = Field(default=None,
+        description='Experimental snapshot QA: limit preserves baseline claims; whole selected facts and ranked additions share the existing token budget.')
+    candidate_contract: Literal['r2_g1_w1'] | None = Field(default=None,
+        description='Experimental R2 source/Head ranking with G1 children and W1 review-work sharing; individual edge selection only.')
+    source_citation_contract: Literal['provided_source_quotes_v1', 'provided_source_quote_links_v1'] | None = Field(default=None,
+        description='Opt-in source quotations and optional model-declared answer links; not semantic support.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
@@ -600,6 +606,8 @@ class BusinessQuery(BaseModel):
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.source_citation_contract and (self.source_run_id or self.answer_mode != 'synthesis'):
+            raise ValueError('직접 원문 인용 계약은 snapshot synthesis에서만 지원합니다.')
         if self.concept_run_id and not self.source_run_id:
             raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):
@@ -615,6 +623,12 @@ class BusinessQuery(BaseModel):
             raise ValueError('answer_items는 요구에 묶인 항목별 답변에서만 사용합니다.')
         if len({i.id for i in self.answer_items}) != len(self.answer_items):
             raise ValueError('공개 답변 항목 ID가 중복됩니다.')
+        if self.evidence_union and (not self.snapshot_id or self.retrieval != 'hipporag2'
+                or self.answer_mode != 'synthesis' or self.requirement_ids):
+            raise ValueError('근거 보존 실험은 요구 강제 선택 없는 snapshot hipporag2 종합 답변에서만 지원합니다.')
+        if self.candidate_contract and (not self.snapshot_id or self.retrieval != 'hipporag2'
+                or self.graph_variant != 'full' or self.answer_mode != 'synthesis' or self.requirement_ids):
+            raise ValueError('검토 작업 후보 실험은 요구 강제 선택 없는 snapshot hipporag2/full 종합 답변에서만 지원합니다.')
         return self
 
 
