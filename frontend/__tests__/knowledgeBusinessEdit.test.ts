@@ -37,6 +37,17 @@ it("continues edited text through stored-pool reassessment instead of extracting
     .toMatchObject({ reassess_run_id: "next-run", resume_run_id: null, reuse_run_id: null, repair: false });
 });
 
+it("reviews a stored pool without replaying its original construction plan", () => {
+  const options = { source_rebuild_plan_id: "old-construction", repair: false, review_tokens: 8192 };
+  const run = { id: "reviewed-pool", status: "partial", recipe: { options }, stored_pool: { parent_run_id: "source-pool" },
+    units: [], assessments: [], repairs: [] };
+  expect(resumeBusinessRequest(run, {})).toMatchObject({ reassess_run_id: run.id, resume_run_id: null,
+    reuse_run_id: null, source_rebuild_plan_id: null, repair: false, review_tokens: 8192 });
+  expect(options.source_rebuild_plan_id).toBe("old-construction");
+  const ordinary = resumeBusinessRequest({ ...run, stored_pool: undefined }, {});
+  expect(ordinary).toMatchObject({ resume_run_id: run.id, reassess_run_id: null, source_rebuild_plan_id: "old-construction" });
+});
+
 it("binds explicit source correction to the displayed version without inventing independence", () => {
   const source = { requirement_id: "r", version: "meaning-v1", meaning: { key: "m", statement: "이전 해석", conditions: [], exceptions: [], period: "", references: [], evidence: [{ block_id: "body", quote: "원문 근거" }] } };
   const form = new FormData();

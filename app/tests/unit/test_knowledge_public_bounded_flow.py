@@ -89,7 +89,9 @@ def test_public_subset_keeps_premises_cross_source_fields_and_full_unread_invent
     def own(_s, _r, claims, **kw):
         own_batches.append(deepcopy(claims))
     monkeypatch.setattr(review, 'review_candidate_pool', own)
-    monkeypatch.setattr(review, 'current_candidate_reviews', lambda r: {})
+    monkeypatch.setattr(review, 'current_candidate_reviews', lambda r: {c['id']: dict(receipt_id='own', unit_id='own',
+        check=dict(claim_support={c['id']: 'supported'}, incorrect_claim_ids=[], error_fields={}, evidence=[]))
+        for c in r['claims'][:3]})
     def application(_s, current, stage, instruction, packet, schema):
         packets.append(deepcopy(packet))
         assert '미제공·주소 미일치 후보는 부재·오류·승인이 아니며' in instruction

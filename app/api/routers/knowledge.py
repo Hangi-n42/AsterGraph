@@ -17,6 +17,7 @@ from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRe
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
 from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessSearchRequest, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
+from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest, StoredRequirementLink
 
 
 class KnowledgeRoute(APIRoute):
@@ -125,6 +126,30 @@ def start_business(request: BusinessRunRequest, service=Depends(get_knowledge_se
     return result(service.start_business(request))
 
 
+@router.get('/business/source-concept-preservations/{parent_run_id}', response_model=KnowledgeResponse)
+def source_concept_preservation_preview(parent_run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import source_preservation
+    return result(source_preservation(service, parent_run_id))
+
+
+@router.post('/business/source-concept-preservations', response_model=KnowledgeResponse)
+def source_concept_preservation(request: ConceptPreservationRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import source_preservation
+    return result(source_preservation(service, request.parent_run_id, request=request))
+
+
+@router.get('/business/concept-view-materializations', response_model=KnowledgeResponse)
+def concept_materialization_preview(parent_run_id: str, concept_run_id: str, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import materialize_view
+    return result(materialize_view(service, parent_run_id, concept_run_id))
+
+
+@router.post('/business/concept-view-materializations', response_model=KnowledgeResponse)
+def concept_materialization(request: ConceptMaterializationRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.business_concepts import materialize_view
+    return result(materialize_view(service, request.parent_run_id, request.concept_run_id, request=request))
+
+
 @router.post('/business/concepts', response_model=KnowledgeResponse)
 def business_concepts(request: ConceptRunRequest, service=Depends(get_knowledge_service)):
     from app.knowledge.business_concepts import start
@@ -140,7 +165,7 @@ def business_html_rows(request: HtmlLiteralRowsRequest, service=Depends(get_know
 def business_runs(service=Depends(get_knowledge_service)):
     import json
     with service.repository.connect() as db:
-        items = [dict(id=r['id'], status=r['status'], started_at=r['started_at'],
+        items = [dict(id=r['id'], status=r['status'], started_at=r.get('started_at'),
                       questions=[q['question'] for q in r['requirements']])
                  for row in db.execute('SELECT payload FROM runs ORDER BY rowid DESC')
                  if (r := json.loads(row['payload'])).get('kind') == 'business']
@@ -168,6 +193,12 @@ def business_edit(changeset_id: str, request: BusinessEventEdit, service=Depends
     return result(start(service, changeset_id, request))
 
 
+@router.post('/business/changes/{changeset_id}/interpretation-edits', response_model=KnowledgeResponse)
+def business_interpretation_edit(changeset_id: str, request: InterpretationEditRequest, service=Depends(get_knowledge_service)):
+    from app.knowledge.interpretation_edit import start
+    return result(start(service, changeset_id, request))
+
+
 @router.get('/business/snapshots', response_model=KnowledgeResponse)
 def business_snapshots(service=Depends(get_knowledge_service)):
     return result(business_use.snapshots(service))
@@ -176,6 +207,17 @@ def business_snapshots(service=Depends(get_knowledge_service)):
 @router.post('/business/search', response_model=KnowledgeResponse)
 def business_search(request: BusinessSearchRequest, service=Depends(get_knowledge_service)):
     return result(business_use.query(service, request))
+
+
+@router.post('/business/runs/{run_id}/capacity-resumes', response_model=KnowledgeResponse)
+def business_capacity_resume(run_id: str, request: QueryCapacityResume, service=Depends(get_knowledge_service)):
+    from app.knowledge.query_capacity_resume import start
+    return result(start(service, run_id, request))
+
+
+@router.post('/business/runs/{run_id}/requirement-links', response_model=KnowledgeResponse)
+def business_requirement_link(run_id: str, request: StoredRequirementLink, service=Depends(get_knowledge_service)):
+    return result(business_store.link_stored_requirement(service, run_id, request))
 
 
 @router.post('/business/runs/{run_id}/answer-rechecks', response_model=KnowledgeResponse)

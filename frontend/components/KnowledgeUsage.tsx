@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { knowledgeRequest, knowledgeDate, knowledgeLabels, knowledgeVersionName, hasUsageRecords, type KnowledgeScope, type KnowledgeUsage } from "@/lib/knowledgeWorkbench";
 import styles from "./KnowledgeWorkbench.module.css";
 
-const requirementStatus = (value?: string) => value === 'partial' ? '일부 미완료' : knowledgeLabels[value || 'unknown'] || value;
+const requirementStatus = (value?: string) => value === 'unassessed' ? '미평가' : value === 'partial' ? '일부 미완료' : knowledgeLabels[value || 'unknown'] || value;
 const reviewReason: Record<string, string> = { own_source_review_pending_or_not_supported: '자기 원문 검수 미완료 또는 미지지', stale_assessment: '검수 대상 버전 변경', unresolved_claim_support: '주장의 원문 지지 미확정', confirmed_expression_error: '표현 오류 확인', confirmed_error_or_refutation: '오류 또는 원문 반박 확인', unresolved_meaning_not_false: '의미 미확정', normal_meaning_preservation_conflict: '정상 의미 보존 충돌', meaning_dependency_blocked: '관련 의미 판단 제한', normal_meaning_preservation_unconfirmed: '기존 정상 의미 보존 미확인', whole_claim_support_unconfirmed: '주장 전체의 원문 지지 미확인', corrected_in_new_run: '후속 실행에서 수정된 주장', candidate_changed_since_publication: '검토안 게시 이후 후보 변경' };
 
 export function KnowledgeUsageDetails({ view, selectedClaimIds = [], onOpenScope }: { view: KnowledgeUsage; selectedClaimIds?: string[]; onOpenScope?: (key: string) => void }) {
@@ -14,6 +14,7 @@ export function KnowledgeUsageDetails({ view, selectedClaimIds = [], onOpenScope
   return <details className={styles.diagnostics}>
     <summary>사용 버전·검토 상태 · {policy}{view.invalidations.length ? ' · 변경 후 제외 기록 있음' : ''}{view.source_restrictions.length ? ' · 원문 사용 제한 있음' : ''}</summary>
     <p>일반 활성 지식 버전: {view.active_snapshot_id ? '활성 선택 기록 있음' : '없음'}</p>
+    {view.requirement_link && <div className={styles.warning}><h3>검토 초안 · 사용 불가</h3><p>원래 공개 요구를 연결했습니다. 이 연결본의 평가는 미실행이며 사용 승인은 없습니다.</p><p>아래 현재 요구 상태는 원장의 과거 기록이며 이 연결본의 평가 결과가 아닙니다.</p><ul>{view.requirement_link.public_answer_items.map(item => <li key={item.id}>{item.request_quote}</li>)}</ul>{onOpenScope && <button className={styles.textLink} onClick={() => onOpenScope(`run:${view.requirement_link!.reference_run_id}`)}>과거 요구 실행 기록 열기 →</button>}</div>}
     {view.scope.kind === 'source_graph' ? <><p>{policy}. 일반 활성 지식과 별도로 관리됩니다.</p><p>선택 기록: {view.actor || '결정자 미기록'} · {view.reason || '사유 미기록'}</p></> : <p>이 저장 결과의 원문 QA와 검토된 출처 지식 활용은 별도입니다.</p>}
     <p className={styles.muted}>조회 {knowledgeDate(view.status_checked_at)} · 사용 상태 이력 버전 {view.status_revision}</p>
     <h3>선택한 원문 버전</h3>{view.version_files.map((v, i) => <p key={v.id || i}>{knowledgeVersionName(v)}</p>)}
@@ -21,7 +22,7 @@ export function KnowledgeUsageDetails({ view, selectedClaimIds = [], onOpenScope
     <p>현재 원문 사용 제한: {view.source_restrictions.length ? view.source_restrictions.map(r => knowledgeLabels[r.state] || r.state).join(' / ') : '저장된 제한 없음'}</p>
     <h3>업무 요구의 저장 결과와 현재 상태</h3>
     {!view.requirements.length && <p>이 범위에 저장된 업무 요구가 없습니다.</p>}
-    {view.requirements.map(r => <div key={r.id} className={styles.claim}><strong>{r.question || r.id}</strong><p>이 버전의 검토: {requirementStatus(r.recorded_status)} · 현재 요구: {requirementStatus(r.current_status)}</p><p>저장 요구 버전 {r.recorded_revision ?? '미기록'} → 현재 {r.current_revision ?? '미확인'}</p>{r.source_change_requires_review && <p className={styles.warning}>이 지식 버전으로 이 요구에 답하려면 원문 변경 후 재검토가 필요합니다.</p>}{!r.revision_matches && <p className={styles.warning}>요구 버전 일치가 확인되지 않아 현재 요구의 근거로 확정할 수 없습니다.</p>}{r.current_status === 'needs_review' && <p className={styles.warning}>현재 요구가 재검토 필요 상태입니다.</p>}</div>)}
+    {view.requirements.map(r => <div key={r.id} className={styles.claim}><strong>{r.question || r.id}</strong>{view.requirement_link && <p>기준: {r.criterion}</p>}<p>이 버전의 검토: {requirementStatus(r.recorded_status)} · 현재 요구: {requirementStatus(r.current_status)}</p><p>저장 요구 버전 {r.recorded_revision ?? '미기록'} → 현재 {r.current_revision ?? '미확인'}</p>{r.source_change_requires_review && <p className={styles.warning}>이 지식 버전으로 이 요구에 답하려면 원문 변경 후 재검토가 필요합니다.</p>}{!r.revision_matches && <p className={styles.warning}>요구 버전 일치가 확인되지 않아 현재 요구의 근거로 확정할 수 없습니다.</p>}{r.current_status === 'needs_review' && <p className={styles.warning}>현재 요구가 재검토 필요 상태입니다.</p>}</div>)}
     {view.invalidations.length > 0 && <p className={styles.warning}>변경 기록에 따라 주장 {view.excluded_claim_ids.length}개·원문 구간 {view.excluded_block_ids.length}개를 이 버전의 질의에서 제외합니다. 영향받은 요구의 답변은 재검토가 필요하며, 다른 요구도 해당 요청의 버전·사용 제한을 확인합니다.</p>}
     {selectedExcluded.length > 0 && <p className={styles.warning}>선택 항목에 변경 후 제외된 주장 {selectedExcluded.length}개가 있습니다.</p>}
     {view.review && <p>현재 변경안의 후보 자격 검사 통과 {view.review.eligible_ids.length}개 · 부적격 사유 기록 {Object.keys(view.review.blocks).length}개 · 별도 원문 직접 대조 대상 {view.review.explicit_review_ids.length}개. 승인에는 원문·요구 변경 제한도 적용됩니다. 이 수는 승인·활성화 또는 업무 요구 전체 충족을 뜻하지 않습니다.</p>}

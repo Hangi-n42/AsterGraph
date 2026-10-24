@@ -12,11 +12,242 @@ def plan(service, request):
         parent = service.repository.get(db, 'runs', request.parent_run_id)
     if parent.get('kind') != 'business' or parent['status'] in {'queued', 'running', 'cancel_requested'}:
         raise ValueError('종료된 업무 지식 실행의 추출 풀을 선택하세요.')
-    targets = {t['id']: t for t in autoschema.concept_targets(parent['graph']) if t['kind'] == 'entity'}
+    targets = {t['id']: t for t in autoschema.concept_targets(parent['graph'])
+               if request.include_events_and_relations or t['kind'] == 'entity'}
     if not set(request.target_ids) <= targets.keys():
-        raise ValueError('현재 그래프의 개체 대상만 선택하세요.')
+        raise ValueError('현재 그래프와 선택한 종류의 대상만 선택하세요.')
     return parent, prepare(parent, [targets[i] for i in dict.fromkeys(request.target_ids)], request.neighbor_mode,
         service=service, source_context=request.concept_source_context)
+
+
+def source_preservation(service, parent_run_id, *, request=None):
+    """Retain old source knowledge; never call it a current-runtime cache hit."""
+    from . import business_rebuild, business_rebuild_source
+    with service.lock, service.repository.connect() as db:
+        if request:
+            db.execute('BEGIN IMMEDIATE')
+        if service.closed or service.repository.has_active_runs(db):
+            raise KnowledgeConflict('기존 실행 종료 후 저장 개념을 연결하세요.')
+        parent = service.repository.get(db, 'runs', parent_run_id)
+        receipt = parent.get('source_rebuild') or {}
+        if parent.get('kind') != 'business' or receipt.get('whole_source_policy') != 'whole_source_v1':
+            raise ValueError('종료된 문서 전체 재구축 실행이 필요합니다.')
+        business_rebuild.validate_run(service, db, parent)
+        business_rebuild_source.inventory(service, db, parent)
+        if autoschema.graph(parent['claims'], parent['blocks']) != parent['graph']:
+            raise KnowledgeConflict('추출 후보와 저장 그래프가 다릅니다.')
+        if parent['recipe']['options'].get('concept_source_context', 'whole') != 'whole':
+            raise ValueError('이 보존 경로는 전체 원문 문맥 정책만 지원합니다.')
+        fingerprint = concept_work.digest(parent)
+        if request and request.expected_parent_fingerprint != fingerprint:
+            raise KnowledgeConflict('검토한 추출 기준이 변경됐습니다.')
+        plan_record = service.repository.get(db, 'runs', receipt['plan_id'])
+        donor = service.repository.get(db, 'runs', plan_record['construction_run_id'])
+        units = {u['id']: u for u in donor['units']}
+        chunks = business_run.source_chunks(parent)
+        retained, pending, proofs, bindings, works = [], [], [], [], {}
+        for target in autoschema.concept_targets(parent['graph']):
+            messages, selection = autoschema.concept_messages(target, parent['graph'], chunks,
+                parent['recipe']['options']['neighbor_mode'])
+            item = dict(target=target, messages=messages, selection=selection)
+            item['work_input'] = concept_work.prepare(parent, item)
+            matches = [c for c in donor['concepts'] if c['target'] == target]
+            if len(matches) != 1:
+                partitioned = any(c['target'].get('partition_of') == target['id'] for c in donor['concepts'])
+                pending.append(dict(target=target, reason='stored_partition_requires_prepare' if partitioned else 'new_or_changed_target'))
+                continue
+            concept = matches[0]
+            unit = units.get(concept.get('request_id'), {})
+            original = unit.get('concept_work_input') or {}
+            expected = deepcopy(item['work_input']); expected.pop('runtime')
+            old_input = deepcopy(original); old_input.pop('runtime', None)
+            connected = [b for b in donor.get('concept_bindings', []) if b['concept_id'] == concept['id']]
+            work = donor.get('concept_work', {}).get(concept.get('work_id'), {})
+            valid = (concept.get('status') == 'unreviewed' and not concept.get('discarded')
+                and not concept.get('superseded_by') and concept.get('relation') == 'has_concept'
+                and concept.get('approved_is_a') is False and concept_work.complete(unit)
+                and not concept_work.unknown_fields(original)
+                and unit.get('requested_limits') == unit.get('executed_limits') == original.get('requested_limits')
+                and not selection.get('relation_input_partition')
+                and unit.get('stage') == 'concept_' + target['kind'] and expected == old_input
+                and unit.get('messages') == messages and unit.get('schema') is None
+                and unit.get('reference_map') == selection['source_reference_map']
+                and concept['selection'] == selection and concept_work.same_input(unit, concept, item)
+                and concept['concepts'] == autoschema.concepts(unit['response']['text'])
+                and len(connected) == 1 and work.get('status') == 'complete'
+                and work.get('input') == original and work.get('fingerprint') == concept_work.digest(original)
+                and unit.get('concept_work_id') == concept.get('work_id'))
+            if valid:
+                binding = connected[0]
+                valid = (binding.get('target') == target and binding.get('target_id') == target['id']
+                    and binding.get('request_id') == unit['id'] and binding.get('work_id') == concept['work_id']
+                    and binding.get('source_reference_map') == selection['source_reference_map']
+                    and binding.get('status') == 'unreviewed' and binding.get('relation') == 'has_concept'
+                    and binding.get('approved_is_a') is False)
+            if not valid:
+                pending.append(dict(target=target, reason='stored_producer_or_actual_input_not_verified'))
+                continue
+            concept_work.validate_request(original, unit)
+            retained.append(deepcopy(concept)); bindings.append(deepcopy(binding))
+            works[work['id']] = deepcopy(work)
+            proofs.append(dict(target_id=target['id'], concept_id=concept['id'], donor_run_id=donor['id'],
+                unit_id=unit['id'], work_id=work['id'], original_unit_sha256=concept_work.digest(unit),
+                original_concept_sha256=concept_work.digest(concept), original_binding_sha256=concept_work.digest(binding),
+                source_input_fingerprint=concept_work.source_input_fingerprint(item),
+                original_runtime=deepcopy(original['runtime']), new_work_connected=False,
+                reason='execution_contract_unknown_or_changed; existing_result_retained'))
+        result = dict(parent_run_id=parent['id'], parent_fingerprint=fingerprint, donor_run_id=donor['id'],
+            retained_targets=len(retained), pending_targets=len(pending), retained_target_ids=[p['target_id'] for p in proofs],
+            pending=pending, current_runtime_exact_cache=False, actual_human_approval=False,
+            supported_source_context='whole; verified existing unpartitioned results only',
+            pending_plan='use existing prepare with current policy/budget; target count is not a call cap')
+        if not request:
+            return result
+        if service.closed:
+            raise KnowledgeConflict('서비스 종료로 저장 개념 연결을 중단했습니다.')
+        identifier = autoschema.identifier('source_concept_retention', [fingerprint, concept_work.digest(donor), proofs])
+        existing = db.execute('SELECT payload FROM runs WHERE id=?', (identifier,)).fetchone()
+        if existing:
+            return dict(result, run_id=identifier, status='partial', duplicate_request=True)
+        run = deepcopy(parent)
+        run.pop('source_rebuild', None); run.pop('changeset_id', None)
+        run.update(id=identifier, status='partial', parent_run_id=parent['id'], concepts=retained,
+            units=[deepcopy(units[p['unit_id']]) for p in proofs], concept_work=works, concept_bindings=bindings,
+            concept_link_checks=deepcopy(proofs), started_at=utcnow(), finished_at=utcnow(),
+            metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0),
+            source_concept_retention=dict(result, proofs=proofs, approval_inherited=False),
+            stored_pool=dict(parent_run_id=parent['id'], claims_hash=autoschema.identifier('claims', parent['claims']),
+                source_hash=autoschema.identifier('source', parent['blocks']), graph_hash=autoschema.identifier('graph', parent['graph']),
+                construction_recipe=deepcopy(parent['recipe']), construction_model_identity=deepcopy(parent['model_identity']),
+                assessment_inherited=False, approval_inherited=False),
+            conceptualization_scope='old_runtime_results_retained; changed_targets_pending')
+        run['source_concept_retention'].update(inherited_failures=deepcopy(receipt.get('inherited_failures', [])),
+            completed_extraction=deepcopy(receipt.get('completed_extraction', [])))
+        business_rebuild.inherit_review_guard(service, db, parent, run)
+        db.execute('INSERT INTO runs VALUES(?,?)', (identifier, encode(run)))
+        return dict(result, run_id=identifier, status=run['status'], duplicate_request=False)
+
+
+def materialize_view(service, parent_run_id, child_id, *, request=None):
+    from . import business_rebuild, business_use
+    with service.lock, service.repository.connect() as db:
+        if request:
+            db.execute('BEGIN IMMEDIATE')
+        if service.closed or service.repository.has_active_runs(db):
+            raise KnowledgeConflict('기존 실행 종료 후 완료된 개념 결과를 연결하세요.')
+        parent = service.repository.get(db, 'runs', parent_run_id)
+        child = service.repository.get(db, 'runs', child_id)
+        if not parent.get('source_concept_retention') or not parent.get('stored_pool'):
+            raise ValueError('검증된 기존 개념 보존 원문 풀을 선택하세요.')
+        business_rebuild.validate_run(service, db, parent)
+        parent_fp, child_fp = concept_work.digest(parent), concept_work.digest(child)
+        if request and (request.expected_parent_fingerprint != parent_fp or request.expected_child_fingerprint != child_fp):
+            raise KnowledgeConflict('검토한 부모 또는 완료 개념 기준이 변경됐습니다.')
+        previous_proofs = (parent['source_concept_retention']['proofs']
+                           + parent.get('source_concept_materialization', {}).get('proofs', []))
+        parent_units = {u['id']: u for u in parent['units']}
+        donors = {}
+        if {p['concept_id'] for p in previous_proofs} != {c['id'] for c in parent['concepts']}:
+            raise ValueError('부모의 원형 개념 보존 증거가 누락됐습니다.')
+        for concept in parent['concepts']:
+            found = [p for p in previous_proofs if p['concept_id'] == concept['id']]
+            bound = [b for b in parent['concept_bindings'] if b['concept_id'] == concept['id']]
+            if len(found) != 1 or len(bound) != 1:
+                raise ValueError('부모의 원형 개념 보존 증거가 중복됐습니다.')
+            proof, binding = found[0], bound[0]
+            unit = parent_units.get(concept.get('request_id'), {})
+            if any(concept_work.digest(value) != proof[key] for key, value in
+                   [('original_unit_sha256', unit), ('original_concept_sha256', concept), ('original_binding_sha256', binding)]):
+                raise ValueError('부모의 원본 unit·개념·binding이 변경됐습니다.')
+            if proof['donor_run_id'] not in donors:
+                donors[proof['donor_run_id']] = service.repository.get(db, 'runs', proof['donor_run_id'])
+            donor = donors[proof['donor_run_id']]
+            if (proof.get('donor_fingerprint') and concept_work.digest(donor) != proof['donor_fingerprint']
+                    or parent['concept_work'].get(proof['work_id']) != donor.get('concept_work', {}).get(proof['work_id'])):
+                raise ValueError('부모의 원형 work 또는 생산 계보가 변경됐습니다.')
+        view, provenance = business_use.concept_read_view(service, db, parent, child_id)
+        if len({c['id'] for c in view}) != len(view) or len({c['target']['id'] for c in view}) != len(view):
+            raise ValueError('연결할 개념 ID 또는 대상이 중복됩니다.')
+        options, child_options = parent['recipe']['options'], child['recipe']['options']
+        if (options.get('concept_source_context', 'whole') != 'whole'
+                or child_options.get('concept_source_context', 'whole') != 'whole'
+                or child_options['neighbor_mode'] != options['neighbor_mode']):
+            raise ValueError('저장 연결은 동일한 전체 원문·이웃 정책의 비분할 결과만 지원합니다.')
+        chunks = business_run.source_chunks(parent)
+        child_units = {u['id']: u for u in child['units']}
+        new_proofs = []
+        for concept in child['concepts']:
+            unit = child_units[concept['request_id']]
+            work = unit['concept_work_input']
+            concept_work.validate_request(work, unit)
+            messages, selection = autoschema.concept_messages(concept['target'], parent['graph'], chunks, options['neighbor_mode'])
+            item = dict(target=concept['target'], messages=messages, selection=selection)
+            expected = concept_work.prepare(parent, item)
+            original = deepcopy(work); original.pop('runtime')
+            expected.pop('runtime')
+            if (concept['concepts'] != autoschema.concepts(unit['response']['text'])
+                    or concept_work.unknown_fields(work) or unit.get('requested_limits') != unit.get('executed_limits')
+                    or original != expected or unit['messages'] != messages or concept['selection'] != selection
+                    or not concept_work.same_input(unit, concept, dict(item, work_input=work))):
+                raise ValueError('완료 개념의 실제 작업 입력·실행 계약이 현재 원문과 다릅니다.')
+            binding = next(b for b in child['concept_bindings'] if b['concept_id'] == concept['id'])
+            new_proofs.append(dict(target_id=concept['target']['id'], concept_id=concept['id'], donor_run_id=child['id'],
+                donor_fingerprint=child_fp, unit_id=unit['id'], work_id=concept['work_id'],
+                original_unit_sha256=concept_work.digest(unit), original_concept_sha256=concept_work.digest(concept),
+                original_binding_sha256=concept_work.digest(binding), original_runtime=deepcopy(work['runtime']),
+                preservation_kind='completed_child_result; not_generated_by_materialization'))
+        selected = set(provenance['target_ids'])
+        targets = {t['id']: t for t in autoschema.concept_targets(parent['graph'])}
+        previous_pending = {p['target']['id']: p for p in parent['source_concept_retention']['pending']}
+        pending = [deepcopy(previous_pending.get(tid, dict(target=t, reason='not_materialized'))) for tid, t in targets.items()
+                   if tid not in {c['target']['id'] for c in view}]
+        result = dict(parent_run_id=parent['id'], concept_run_id=child_id, parent_fingerprint=parent_fp,
+            child_fingerprint=child_fp, retained_targets=sum(c['target']['id'] not in selected for c in parent['concepts']),
+            child_targets=len(child['concepts']), combined_targets=len(view), pending_targets=len(pending),
+            actual_human_approval=False, new_model_calls=0)
+        if not request:
+            return result
+        identifier = autoschema.identifier('concept_view_materialization_v1', [parent_fp, child_fp])
+        if db.execute('SELECT 1 FROM runs WHERE id=?', (identifier,)).fetchone():
+            return dict(result, run_id=identifier, status='partial', duplicate_request=True)
+        run = deepcopy(parent)
+        run.pop('changeset_id', None)
+        run.update(id=identifier, parent_run_id=parent['id'], status='partial', concepts=deepcopy(view),
+            started_at=utcnow(), finished_at=utcnow(), metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0))
+        retained = {c['id'] for c in view if c['target']['id'] not in selected}
+        run['concept_bindings'] = [b for b in run['concept_bindings'] if b['concept_id'] in retained]
+        run['concept_bindings'].extend(deepcopy(child['concept_bindings']))
+        wanted = {c['request_id'] for c in view}
+        units = {u['id']: deepcopy(u) for u in parent['units'] if u['id'] in wanted}
+        for uid, unit in child_units.items():
+            if uid in units and units[uid] != unit:
+                raise ValueError('생산 unit ID가 충돌합니다.')
+            if uid in wanted:
+                units[uid] = deepcopy(unit)
+        run['units'] = list(units.values())
+        wanted_works = {c['work_id'] for c in view}
+        works = {k:deepcopy(v) for k,v in parent['concept_work'].items() if k in wanted_works}
+        for key, work in child['concept_work'].items():
+            if key in works and works[key] != work:
+                raise ValueError('생산 work ID가 충돌합니다.')
+            if key in wanted_works:
+                works[key] = deepcopy(work)
+        run['concept_work'] = works
+        run['concept_link_checks'] = [p for p in run['concept_link_checks'] if p['target_id'] not in selected]
+        run['source_concept_retention'].update(pending=pending, pending_targets=len(pending),
+            retained_targets=len(run['concept_link_checks']), proofs=deepcopy(run['concept_link_checks']),
+            retained_target_ids=[p['target_id'] for p in run['concept_link_checks']])
+        run['source_concept_materialization'] = dict(result, provenance=provenance,
+            parent_and_snapshot_persisted=False, stored_to_new_business_run=True, approval_inherited=False,
+            fixture_only=bool(child.get('fixture_only')),
+            proofs=[deepcopy(p) for p in parent.get('source_concept_materialization', {}).get('proofs', [])
+                    if p['target_id'] not in selected] + new_proofs)
+        run['conceptualization_scope'] = 'retained_original_results_and_completed_child; review_pending'
+        business_rebuild.inherit_review_guard(service, db, parent, run)
+        if service.closed:
+            raise KnowledgeConflict('서비스 종료로 저장 연결을 중단했습니다.')
+        db.execute('INSERT INTO runs VALUES(?,?)', (identifier, encode(run)))
+        return dict(result, run_id=identifier, status='partial', duplicate_request=False)
 
 
 def prepare(parent, targets, mode, *, service=None, source_context=None):

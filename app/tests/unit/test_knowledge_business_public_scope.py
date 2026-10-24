@@ -81,8 +81,9 @@ def setup(monkeypatch, *, support='supported'):
     run['answer_items'] = [dict(id=k, requirement_id='r', requirement_revision=1, field='question', request_quote=q)
         for k,q in [('cancel','신청'), ('proof','접수')]]
     cid = run['claims'][0]['id']
-    monkeypatch.setattr(review, 'current_candidate_reviews', lambda r: {cid:dict(receipt_id='local', unit_id='own',
-        check=dict(claim_support={cid:support}, incorrect_claim_ids=[], error_fields={}))})
+    monkeypatch.setattr(review, 'current_candidate_reviews', lambda r: {c['id']:dict(receipt_id='local', unit_id='own',
+        check=dict(claim_support={c['id']: support if c['id']==cid else 'supported'}, incorrect_claim_ids=[], error_fields={}))
+        for c in r['claims']})
     source = dict(meanings=[meaning('normal', required_for_requirement=True),
                             meaning('background', required_for_requirement=False)])
     return run, requirement, source, cid
@@ -244,7 +245,8 @@ def test_public_r_batches_independent_facts_and_reuses_own_source_verdicts(monke
         output=dict(checks=[], dependencies=[],source_challenges=[],meaning_challenges=[],candidate_challenges=[],preservation_checks=[])
         if packet['mode']=='meaning_batch':
             assert schema is ContributionReviewCheck and len(packet['source']['meanings'])==2
-            assert packet['whole_candidate_judgments'][0]['claim_id']==cid
+            judgments={row['claim_id']:row for row in packet['whole_candidate_judgments']}
+            assert judgments[cid]['check']['claim_support'][cid]=='supported'
             output.update(checks=[dict(meaning_key=m['key'],status='represented',claim_ids=[cid],reason='기여')
                 for m in packet['source']['meanings']], dependencies=[dict(meaning_key=m['key'],premise_keys=[])
                 for m in packet['source']['meanings']])

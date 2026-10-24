@@ -1,6 +1,6 @@
 """Persistent public requirements and the selectable source-graph workflow."""
 from typing import Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, TypeAdapter, model_validator
 from .source_meanings import SourceMeaning
 from .vendor.autoschemakg.validate_json_schema import ATLAS_SCHEMA
 
@@ -68,6 +68,26 @@ class BusinessAnswerRecheck(BaseModel):
     qa_run_id: str = Field(min_length=1)
     task_ids: list[str] = Field(min_length=1)
     repair: bool = True
+
+
+class StoredRequirementLink(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_parent_fingerprint: str
+    reference_run_id: str
+    expected_reference_fingerprint: str
+    requirement_id: str
+    expected_requirement_revision: int = Field(ge=1)
+    idempotency_key: str = Field(min_length=1, max_length=128)
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+
+class QueryCapacityResume(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_parent_fingerprint: str
+    expected_snapshot_fingerprint: str
+    expected_packet_fingerprint: str
+    context_tokens: int = Field(ge=4096)
 
 
 class BusinessParticipantResume(BaseModel):
@@ -583,6 +603,48 @@ class BusinessEventEdit(BaseModel):
         return self
 
 
+class SourceListField(BaseModel):
+    model_config = {'extra': 'forbid'}
+    source_version_id: str = Field(min_length=1)
+    parse_run_id: str = Field(min_length=1)
+    block_id: str = Field(min_length=1)
+    start_char: int = Field(ge=0)
+    end_char: int = Field(gt=0)
+    quote: str = Field(min_length=1)
+    field_label: str = Field(min_length=1)
+
+
+class SourceListProduct(BaseModel):
+    model_config = {'extra': 'forbid'}
+    type_claim_id: str
+    manufacturer_claim_id: str
+    storage_claim_id: str
+
+
+class SourceListComparison(BaseModel):
+    model_config = {'extra': 'forbid'}
+    contract: Literal['quantity-line-fields-v1']
+    fields: list[SourceListField] = Field(min_length=2, max_length=2)
+    condition_run_id: str = Field(min_length=1)
+    condition_unit_id: str = Field(min_length=1)
+    reuse_from_snapshot_id: str | None = Field(default=None, min_length=1)
+    timing_run_id: str | None = Field(default=None, min_length=1)
+    timing_unit_id: str | None = Field(default=None, min_length=1)
+    products: list[SourceListProduct] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode='after')
+    def timing_pair(self):
+        if bool(self.timing_run_id) != bool(self.timing_unit_id):
+            raise ValueError('저장 시점 실행과 unit을 함께 지정하세요.')
+        return self
+
+
+class StoredAfterConditions(BaseModel):
+    model_config = {'extra': 'forbid'}
+    run_id: str = Field(min_length=1)
+    unit_id: str = Field(min_length=1)
+
+
 class BusinessQuery(BaseModel):
     question: str = Field(min_length=1)
     choices: list[str] = Field(default_factory=list)
@@ -597,17 +659,34 @@ class BusinessQuery(BaseModel):
         description='Experimental R2 source/Head ranking with G1 children and W1 review-work sharing; individual edge selection only.')
     source_citation_contract: Literal['provided_source_quotes_v1', 'provided_source_quote_links_v1'] | None = Field(default=None,
         description='Opt-in source quotations and optional model-declared answer links; not semantic support.')
-    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph'] = 'hipporag2'
+    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph', 'explicit_sources'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
     source_format: Literal['structured', 'flat'] = 'structured'
     graph_variant: Literal['entity', 'entity_event', 'full'] = 'full'
-    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items'] = 'synthesis'
+    answer_mode: Literal['synthesis', 'source_quotes', 'items', 'reviewed_items', 'source_list_comparison', 'stored_after_conditions'] = 'synthesis'
     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
+    list_comparison: SourceListComparison | None = None
+    stored_after_conditions: StoredAfterConditions | None = None
 
     @model_validator(mode='after')
     def one_source(self):
         if self.source_citation_contract and (self.source_run_id or self.answer_mode != 'synthesis'):
             raise ValueError('직접 원문 인용 계약은 snapshot synthesis에서만 지원합니다.')
+        if self.answer_mode == 'stored_after_conditions':
+            if (not self.snapshot_id or self.source_run_id or self.concept_run_id or self.requirement_ids
+                    or self.answer_items or self.choices or self.source_context_tokens is not None
+                    or self.retrieval != 'explicit_sources' or self.list_comparison is not None
+                    or self.stored_after_conditions is None):
+                raise ValueError('저장 후 조건 조회는 같은 snapshot과 저장 B 실행·unit만 사용합니다.')
+        elif self.stored_after_conditions is not None:
+            raise ValueError('저장 후 조건 입력은 stored_after_conditions에서만 사용합니다.')
+        elif self.answer_mode == 'source_list_comparison':
+            if (not self.snapshot_id or self.source_run_id or self.concept_run_id or self.requirement_ids
+                    or self.answer_items or self.choices or self.source_context_tokens is not None
+                    or self.retrieval != 'explicit_sources' or self.list_comparison is None):
+                raise ValueError('목록 대조는 snapshot과 명시적 출처·저장 조건 기록만 사용합니다.')
+        elif self.list_comparison is not None or self.retrieval == 'explicit_sources':
+            raise ValueError('명시적 목록 입력은 source_list_comparison에서만 사용합니다.')
         if self.concept_run_id and not self.source_run_id:
             raise ValueError('개념 읽기 실행은 source_run_id 원문 조회에서만 선택하세요.')
         if bool(self.snapshot_id) == bool(self.source_run_id):
@@ -636,7 +715,7 @@ HYBRID_GRAPH_RETIRED = 'hybrid_graph 신규 검색은 종료되었습니다. 그
 
 
 class BusinessSearchRequest(BusinessQuery):
-    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2'] = Field(default='hipporag2',
+    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'explicit_sources'] = Field(default='hipporag2',
         description='그래프 검색은 hipporag2를 사용합니다. hybrid_graph는 과거 저장 질의용이며 신규 실행은 종료되었습니다.')
 
     @model_validator(mode='before')
@@ -658,6 +737,7 @@ class SourceRebuildPlanRequest(ChangeRequest):
     model_config = {'extra': 'forbid'}
     parent_run_id: str
     base_snapshot_id: str | None = None
+    rebuild_scope: Literal['existing', 'whole_source'] = 'existing'
 
 
 class HtmlLiteralRowsRequest(BaseModel):
@@ -672,6 +752,18 @@ class ConceptRunRequest(BaseModel):
     donor_run_id: str | None = None
     target_ids: list[str] = Field(min_length=1)
     neighbor_mode: Literal['plain', 'structured']
+    include_events_and_relations: bool = False
+
+
+class ConceptPreservationRequest(BaseModel):
+    model_config = {'extra': 'forbid'}
+    parent_run_id: str
+    expected_parent_fingerprint: str
+
+
+class ConceptMaterializationRequest(ConceptPreservationRequest):
+    concept_run_id: str
+    expected_child_fingerprint: str
 
 
 class ExtractionQualifier(BaseModel):
@@ -730,6 +822,46 @@ class ExtractionScope(BaseModel):
     model_config = {'extra': 'forbid'}
     evidence: list[EvidenceQuote]
     meanings: list[ExtractionMeaning] = Field(min_length=1)
+
+
+class InterpretationFieldChange(BaseModel):
+    model_config = {'extra': 'forbid'}
+    meaning_id: str
+    expected_meaning_version: str
+    field: Literal['conditions', 'relation_kind']
+    before: object
+    after: object
+    evidence: list[EvidenceQuote] = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+    @model_validator(mode='after')
+    def supported_value(self):
+        adapter = TypeAdapter(ExtractionMeaning.model_fields[self.field].annotation)
+        for name in ('before', 'after'):
+            value = adapter.validate_python(getattr(self, name))
+            setattr(self, name, value.model_dump() if isinstance(value, BaseModel) else value)
+        if self.before == self.after:
+            raise ValueError('정정 전후 값이 같습니다.')
+        if self.field == 'conditions' and self.after.get('state') == 'present' and self.after['text'].strip().lower() == 'null':
+            raise ValueError('조건 본문에 null 문자열을 정정값으로 사용할 수 없습니다.')
+        return self
+
+
+class ClaimInterpretationEdit(BaseModel):
+    model_config = {'extra': 'forbid'}
+    claim_id: str
+    expected_claim_version: str
+    expected_source_fingerprint: str
+    changes: list[InterpretationFieldChange] = Field(min_length=1)
+
+
+class InterpretationEditRequest(BaseModel):
+    model_config = {'extra': 'forbid'}
+    expected_revision: int = Field(ge=0)
+    idempotency_key: str = Field(min_length=1, max_length=128)
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    claims: list[ClaimInterpretationEdit] = Field(min_length=1)
 
 
 ClaimPatch.model_rebuild()

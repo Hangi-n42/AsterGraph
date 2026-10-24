@@ -39,6 +39,8 @@ def test_partial_override_and_quote_v1_are_preserved():
     ({'answer_mode': 'reviewed_items', 'answer_items': [dict(id='i', requirement_id='r',
         requirement_revision=1, field='question', request_quote='q')]}, 'graph'),
     ({'retrieval': 'bm25'}, 'document'),
+    ({'answer_mode': 'stored_after_conditions', 'retrieval': 'explicit_sources',
+      'stored_after_conditions': dict(run_id='stored-B', unit_id='unit-B')}, 'graph'),
 ])
 def test_other_modes_do_not_receive_defaults(change, context):
     request = BusinessQuery(**dict(dict(snapshot_id='s', question='q'), **change))

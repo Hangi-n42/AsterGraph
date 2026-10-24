@@ -25,6 +25,20 @@ it('does not call every saved run automatic extraction', () => {
   expect(html).not.toContain('자동 추출');
 });
 
+it('shows linked public criteria as an unassessed unusable draft beside historical registry status', () => {
+  const view=fixture();view.scope={kind:'run',id:'prepared'};view.linked_snapshots=[];
+  view.requirements=[{...view.requirements[0],question:'원래 상품 비교 질문',criterion:'원래 비교 기준',recorded_status:'unassessed',current_status:'partial'}];
+  view.requirement_link={reference_run_id:'historical',assessment_status:'unassessed',usage:'review_draft_only',
+    public_answer_items:[{id:'public-item',request_quote:'확정할 수 없는 점'}]};
+  const before=JSON.stringify(view);
+  const html=renderToStaticMarkup(createElement(KnowledgeUsageDetails,{view,onOpenScope:()=>{}}));
+  for (const text of ['검토 초안 · 사용 불가','미실행이며 사용 승인은 없습니다','현재 요구 상태는 원장의 과거 기록',
+    '원래 상품 비교 질문','원래 비교 기준','확정할 수 없는 점','이 버전의 검토: 미평가','과거 요구 실행 기록 열기']) expect(html).toContain(text);
+  expect(html).not.toContain('선택 항목 승인');
+  expect(html).not.toContain('검색하고 답변 생성');
+  expect(JSON.stringify(view)).toBe(before);
+});
+
 it('does not show an old scope while a different scope is loading', () => {
   hooks.seeds = [fixture(), '']; hooks.effects = []; hooks.setters = [];
   const html = renderToStaticMarkup(createElement(KnowledgeUsageState, { scope: { kind: 'source_graph', id: 'new', title: '새 범위', status: 'selection_recorded', data_label: '선택 기록' }, reload: 0, selectedClaimIds: [], onOpenScope: () => {} }));

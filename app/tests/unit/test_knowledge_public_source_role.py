@@ -11,10 +11,12 @@ from app.tests.unit.test_knowledge_business_local_review import meaning, judgmen
 from app.tests.unit.test_knowledge_business_scope import block
 
 
-def test_overflow_selects_original_items_before_own_review_and_keeps_unselected_work(monkeypatch):
+@pytest.mark.parametrize('oversized', [False, True])
+def test_pending_or_oversized_selector_precedes_own_review_and_keeps_unselected_work(monkeypatch, oversized):
     run, requirement = public_run()
     requirement['situation'] = '개인·단체 안내'
-    run['claims'][0]['interpretation'] = dict(meanings=[dict(conditions='조건' * 80000)])
+    if oversized:
+        run['claims'][0]['interpretation'] = dict(meanings=[dict(conditions='조건' * 80000)])
     source = dict(meanings=[meaning('m')])
     before = deepcopy((run['claims'], source))
     monkeypatch.setattr(FrozenIndex, 'search', lambda index, query, ids, limit=6:

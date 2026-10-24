@@ -1455,7 +1455,7 @@ candidate_inventory와 source_inventory는 전체 탐색 목록이다. 미제공
         return execution.request_budget(run, request['messages'], request['schema'],
             request['max_tokens'] or run['recipe']['options']['review_tokens'])['estimate_tokens'] > run['recipe']['options']['context_tokens']
     direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
-    if oversized(direct):
+    if set(claim_ids) - direct.keys() or oversized(direct):
         return public_source_scope(service, run, requirement, source, tasks, queries, selected, provided_blocks, blocks, inventory)
     review_candidate_pool(service, run, claims, requirement=requirement)
     direct = {cid: row for cid, row in current_candidate_reviews(run).items() if cid in claim_ids}
@@ -2193,6 +2193,9 @@ def own_source_errors(run, check, claims, blocks):
     return check
 
 
+SCOPED_CANDIDATE_INPUT = 'scoped-candidate-source-input-v1'
+
+
 def candidate_request(run, claims, repair_context=(), *, challenges=None):
     from . import business_run as execution
     from .business_participants import validate
@@ -2209,6 +2212,13 @@ def candidate_request(run, claims, repair_context=(), *, challenges=None):
         selected = {(b['id'], tuple(b.get('span', [0, len(b['text'])]))): b for b in [*blocks, *stored]}
         order = {b['id']: n for n, b in enumerate(run['blocks'])}
         blocks = sorted(selected.values(), key=lambda b: (order[b['id']], b.get('span', [0])[0]))
+    limited = run.get('candidate_review_scope', {})
+    if (limited.get('input_contract') == SCOPED_CANDIDATE_INPUT
+            and set(limited['claim_ids']) == {c['id'] for c in claims}):
+        # This explicit input contract must not alter ordinary or historical review packets.
+        selected = {b['id']: b for b in blocks}
+        selected.update({b['id']: b for b in run['blocks'] if b['id'] in limited['source_block_ids']})
+        blocks = [selected[b['id']] for b in run['blocks'] if b['id'] in selected]
     provided = {c['id']: execution.compact_claim(c) for c in claims}
     challenges = run.get('candidate_challenges', []) if challenges is None else challenges
     views = preservation_views(repair_context)
