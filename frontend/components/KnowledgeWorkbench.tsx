@@ -20,6 +20,7 @@ type SourceItem = { source: { id: string; title: string }; versions: { id: strin
 
 function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; single: boolean; editable: boolean }) {
   const [expanded, setExpanded] = useState(single);
+  const corrected = claim.qualifier_status === 'explicit_reviewer_correction_unverified';
   const content = <div className={styles.claimContent}>
       {claim.extraction_error && <p role="note" className={styles.warning}>추출 오류 기록: {claim.extraction_error}</p>}
       {!!claim.interpretation_errors?.length && <div role="note" className={styles.warning}>
@@ -27,13 +28,15 @@ function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; singl
         <details><summary>자동 해석에 저장된 오류 사유 · 의미 판정과 별도</summary><ul>{claim.interpretation_errors.map((error, i) => <li key={i}>{error}</li>)}</ul></details>
       </div>}
       <h3>조건 · 예외 · 기간</h3>
+      {corrected && <p className={styles.warning}>검토자가 일부 해석 필드를 정정했습니다. 의미 검증과 사용 여부는 각각의 검토·사용 버전 상태에서 확인하세요.</p>}
       {claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => {
         const fields = [['conditions', '조건'], ['exceptions', '예외'], ['time', '기간 / 시점'], ['references', '참조']] as const;
         const absent = fields.filter(([key]) => typeof meaning[key] === 'object' && meaning[key] !== null && (meaning[key] as { state?: string }).state === 'absent');
         const present = fields.filter(field => !absent.includes(field));
         return <div key={i} className={styles.meaning}>
-          {!!present.length && <><p className={styles.muted}>자동 해석 {i + 1} · 저장된 조건</p><dl>{present.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></>}
-          {!!absent.length && <details className={styles.absentQualifiers}><summary>{absent.map(([, title]) => title).join('·')} 없음으로 자동 기록</summary><dl>{absent.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></details>}
+          {corrected && <p className={styles.muted}>현재 관계 해석: {String(meaning.relation_kind || '미기록')}</p>}
+          {!!present.length && <><p className={styles.muted}>{corrected ? '저장 해석' : '자동 해석'} {i + 1} · 저장된 조건</p><dl>{present.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></>}
+          {!!absent.length && <details className={styles.absentQualifiers}><summary>{absent.map(([, title]) => title).join('·')} 없음으로 {corrected ? '저장' : '자동'} 기록</summary><dl>{absent.map(([key, title]) => <div key={key}><dt>{title}</dt><dd>{qualifier(meaning[key])}</dd></div>)}</dl></details>}
         </div>;
       }) : <dl><div><dt>조건</dt><dd>{claim.conditions?.length ? claim.conditions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>예외</dt><dd>{claim.exceptions?.length ? claim.exceptions.join("\n") : "별도 정리되지 않음 · 아래 원문 확인"}</dd></div><div><dt>기간</dt><dd>{claim.period || "기록 없음"}</dd></div></dl>}
       <h3>원문과 위치</h3>
@@ -74,7 +77,7 @@ export function KnowledgeSelection({ detail, onSelect, onReview }: { detail: Kno
     {detail.claims.map(claim => <ClaimDetail key={claim.id} claim={claim} single={detail.claims.length === 1} editable={!!detail.changeset_id} />)}
     {!!detail.history.length && <section><h3>저장된 변경 전후</h3>{detail.history.map(h => <div key={h.id}><p>{h.actor} · {h.reason}</p>{h.changes.map((c, i) => <div key={i}><p>변경 전: {c.before || "기록 없음"}</p><p>변경 후: {c.after || "기록 없음"}</p></div>)}<p className={styles.muted}>재검수 기록: {h.status ? labels[h.status] || h.status : "미기록"}</p></div>)}</section>}
     {onReview && <div className={styles.selectionAction}><button className={styles.primary} onClick={onReview}>이 항목 검토하기</button><p className={styles.muted}>저장·재검수·승인은 별도 단계입니다.</p></div>}
-    <details className={styles.diagnostics}><summary>진단 · 식별자와 변경 이력</summary><p>항목 {detail.item.id}</p><p>저장 표시값 {detail.item.label}</p><p>실행 {detail.run_id || "미기록"}</p><p>변경 묶음 {detail.changeset_id || "없음"}</p>{!!detail.item.request_ids?.length && <p>개념화 요청 {detail.item.request_ids.join(' / ')}</p>}{!!detail.item.work_ids?.length && <p>개념화 작업 {detail.item.work_ids.join(' / ')}</p>}{detail.history.length ? <pre>{JSON.stringify(detail.history, null, 2)}</pre> : <p>이 항목의 저장된 수정 이력이 없습니다.</p>}</details>
+    <details className={styles.diagnostics}><summary>진단 · 식별자와 변경 이력</summary><p>항목 {detail.item.id}</p><p>저장 표시값 {detail.item.label}</p><p>실행 {detail.run_id || "미기록"}</p>{detail.parent_run_id && <p>부모 실행 {detail.parent_run_id}</p>}<p>변경 묶음 {detail.changeset_id || "없음"}</p>{!!detail.item.request_ids?.length && <p>개념화 요청 {detail.item.request_ids.join(' / ')}</p>}{!!detail.item.work_ids?.length && <p>개념화 작업 {detail.item.work_ids.join(' / ')}</p>}<p>해석 필드 정정은 현재 실행에서 추가한 기록만 표시합니다. 이전 정정 기록은 부모 실행에 보존됩니다.</p>{detail.history.length ? <pre>{JSON.stringify(detail.history, null, 2)}</pre> : <p>이 화면 범위의 수정 기록이 없습니다. 이전 실행의 이력이 없다는 뜻은 아닙니다.</p>}</details>
   </div>;
 }
 

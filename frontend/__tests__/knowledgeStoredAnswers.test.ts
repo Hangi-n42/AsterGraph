@@ -10,12 +10,12 @@ vi.mock("@/lib/api", () => ({ API_BASE_URL: "http://localhost" }));
 vi.mock("../components/KnowledgeUsage", () => ({ KnowledgeUsageDetails: () => null }));
 
 const scope = { kind: "source_graph" as const, id: "snapshot", title: "저장 결과", status: "selection_recorded", data_label: "저장 결과" };
-const render = (evidence: Record<string, unknown>[], extra: Record<string, unknown> = {}) => {
+const render = (evidence: Record<string, unknown>[], extra: Record<string, unknown> = {}, items: unknown[] = []) => {
   const detail = { note: "저장 기록", answer: { answer: "저장 본문", limitations: ["저장 한계"] }, used_versions: [], used_version_ids: [], requirement_ids: [],
     current_usage: { requirements: [] }, evidence: evidence.map((e, i) => ({ id: `claim${i}`, cited: true, claim_ids: [`claim${i}`], evidence: [e] })),
     graph_links: [], recorded_links: [], ...extra };
   const original = structuredClone(detail);
-  hooks.seeds = [[], "answer", detail, "", "", false];
+  hooks.seeds = [items, "answer", detail, "", "", false];
   const html = renderToStaticMarkup(createElement(KnowledgeStoredAnswers, { scope, onExplore: () => {} }));
   expect(detail).toEqual(original);
   return html;
@@ -27,6 +27,26 @@ it("distinguishes a recorded claim range from a whole chunk and surrounding text
     { block_id: "block", source_version_id: "version", parse_run_id: "parse", start_char: 0, end_char: 1272, precision: "chunk", quote: "넓은 원문" },
   ]);
   for (const text of ["블록 내 문자 [367, 461)", "블록 내 문자 [0, 1272)", "의미 지지 미검증", "넓은 문맥 근거 (chunk)", "주변 원문 · 주장 근거 범위와 별도", "주소 범위는 문장별 의미 지지 판정이 아닙니다", "원문 버전 version", "원문 처리 기록 parse", "생산량 구절", "저장 본문", "저장 한계"]) expect(html).toContain(text);
+});
+
+it("separates a Codex reference correction from producer costs and hides blocked details", () => {
+  const answer_review={actor:"사용자 지시에 따른 Codex 명시 정정",reason:"명시한 참조 정정",parent_run_id:"parent",
+    producer_run_id:"producer",producer_metrics:{llm_calls:1},changes:[{field:"citations",before:["old"],after:[]}]};
+  const html=render([],{answer_review});
+  for(const text of ["저장 답변의 명시적 참조 정정","사용자 지시에 따른 Codex 명시 정정","명시한 참조 정정","정정 전 답변과 원래 생성 기록 보기","새 모델 호출은 0회","독립 사람 검수·새 사용 승인이 아닙니다"]) expect(html).toContain(text);
+  const hidden=render([],{status:"needs_review",answer_review});
+  for(const text of ["명시한 참조 정정","producer_metrics","사용자 지시에 따른 Codex 명시 정정"]) expect(hidden).not.toContain(text);
+  expect(hidden).toContain("정정 상세를 표시하지 않습니다");
+});
+
+it("shows stored list consumption without model-input or graph-search labels", () => {
+  const html = render([], { answer_mode: "source_list_comparison",
+    condition_consumer: { original_run_id: "producer", original_unit_id: "unit", original_status: "partial",
+      semantic_status: "unverified", human_approval: false, records: [{ status: "unresolved" }] },
+    evidence: [{ id: "ref", cited: false, provided: true, retrieved: false, claim_ids: [], evidence: [{ quote: "원문 조건" }] }],
+  }, [{ id: "answer", question: "저장 목록", retrieval: "explicit_sources" }]);
+  for (const text of ["명시적 원문 목록 대조 · 저장 결과", "명시적 목록 대조에 연결된 원문 참조", "원문 조건", "원래 생산 실행 상태: partial", "의미 검증: unverified", "사람 승인: 없음", "unresolved · 1개"]) expect(html).toContain(text);
+  for (const text of ["모델에 제공됨", "저장된 그래프 검색 연결", "검색 결과 목록에는 없음"]) expect(html).not.toContain(text);
 });
 
 it.each([

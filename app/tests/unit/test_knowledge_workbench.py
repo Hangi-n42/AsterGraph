@@ -85,6 +85,36 @@ def service(tmp_path, monkeypatch):
     value.shutdown()
 
 
+def test_explicit_interpretation_edit_keeps_field_provenance_in_read_history(service):
+    from copy import deepcopy
+    with service.repository.connect() as db:
+        run = service.repository.get(db, 'runs', 'run1')
+        patch = dict(field='conditions', before=dict(state='present', text='null'),
+            after=dict(state='absent', text=None), reason='자기 원문에 조건절 없음',
+            meaning_id='old', after_meaning_id='new', evidence=[dict(block_id='b', source_version_id='v1')])
+        run['interpretation_edit'] = dict(actor='Codex 검토', reason='일부 해석 필드 정정',
+            records=[dict(claim_id='c0', changes=[patch])])
+        run['parent_run_id'] = 'previous-edit'
+        run['claims'][0]['qualifier_status'] = 'explicit_reviewer_correction_unverified'
+        run['claims'][0]['interpretation'] = dict(meanings=[dict(conditions=patch['after'], relation_kind='other')])
+        service.repository.save(db, 'runs', run)
+    before = deepcopy(run)
+    detail = workbench.explore(service, 'run', 'run1', item_kind='claim', selected_id='c0')['detail']
+    history = detail['history'][0]
+    assert history['actor'] == 'Codex 검토' and history['status'] == 'applied_awaiting_recheck'
+    assert json.loads(history['changes'][0]['before']) == patch['before']
+    assert json.loads(history['changes'][0]['after']) == patch['after']
+    assert history['changes'][0]['evidence'] == patch['evidence']
+    assert history['changes'][0]['after_meaning_id'] == 'new'
+    assert detail['claims'][0]['meanings'][0]['relation_kind'] == 'other'
+    assert detail['claims'][0]['review_status'] == 'unreviewed'
+    assert detail['claims'][0]['qualifier_status'] == 'explicit_reviewer_correction_unverified'
+    assert detail['parent_run_id'] == 'previous-edit'
+    assert workbench.explore(service, 'run', 'run1', item_kind='claim', selected_id='c1')['detail']['history'] == []
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'runs', 'run1') == before
+
+
 def test_single_scope_counts_keep_homonyms_and_parallel_relations(service):
     assert len(workbench.catalog(service)['scopes']) == 2
     result = workbench.explore(service, 'run', 'run1', selected_id='n1', graph_root='n1')

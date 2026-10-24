@@ -254,6 +254,23 @@ def start(service, request):
         elif parent and (request.reassess_run_id or request.resume_run_id):
             from .business_rebuild import inherit_review_guard
             inherit_review_guard(service, db, parent, run)
+            if parent.get('source_concept_retention'):
+                for key in ('units', 'concept_work', 'concept_bindings', 'concept_link_checks', 'source_concept_retention',
+                            'source_concept_materialization'):
+                    if key in parent:
+                        run[key] = deepcopy(parent[key])
+            if run.get('stored_pool'):
+                for key in ('candidate_reviews', 'candidate_review_scope', 'candidate_challenges'):
+                    if key in parent:
+                        run[key] = deepcopy(parent[key])
+                reviewed = {r['unit_id'] for r in run.get('candidate_reviews', [])}
+                units = {}
+                for unit in [*run['units'], *(u for u in parent['units'] if u['id'] in reviewed
+                        and u['status'] == 'succeeded' and not u.get('error'))]:
+                    if unit['id'] in units and units[unit['id']] != unit:
+                        raise KnowledgeConflict('같은 검수 단위 ID의 저장 내용이 다릅니다.')
+                    units[unit['id']] = deepcopy(unit)
+                run['units'] = list(units.values())
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     service.executor.submit(execute, service, run['id'])
     return dict(run_id=run['id'], status='queued')
@@ -280,7 +297,8 @@ def cancelled(service, run):
 def call(service, run, stage, messages, schema=None, *, review=False, max_tokens=None, reference_map=None, timeout=None, capacity_repair=None, concept_work_input=None):
     options = run['recipe']['options']
     budget = max_tokens or (options['review_tokens'] if review else options['extraction_tokens'])
-    context_tokens = options.get('representation_context_tokens') if stage == 'requirement_representation' else None
+    context_tokens = (options.get('representation_context_tokens') if stage == 'requirement_representation'
+                      else options.get('qa_context_tokens') if stage == 'business_qa' else None)
     request = ModelRequest(stage, run['recipe']['models']['review' if review else 'draft'], messages,
                            schema=schema, max_tokens=budget, context_tokens=context_tokens or options['context_tokens'],
                            think=options['think'], timeout=options['timeout'] if timeout is None else timeout)
@@ -351,8 +369,9 @@ def call(service, run, stage, messages, schema=None, *, review=False, max_tokens
     save(service, run)
     unit['input_budget'] = request_budget(run, messages, schema, budget, review=review)
     estimate = unit['input_budget']['estimate_tokens']
-    if estimate > request.context_tokens:
-        unit.update(status='failed', error='input_capacity', finished_at=utcnow())
+    unverified_resume = run.get('capacity_resume') and stage == 'business_qa' and not unit['input_budget'].get('prompt_exact')
+    if estimate > request.context_tokens or unverified_resume:
+        unit.update(status='failed', error='input_count_unverified' if unverified_resume else 'input_capacity', finished_at=utcnow())
         save(service, run)
         return None
     metadata = asyncio.run(ModelClient(run['recipe']['generation']).generate(request, lambda: cancelled(service, run)))
@@ -893,6 +912,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                       source_record_challenges=[], issues=[])
     if business_review.owned_errors(run):
         assessment['candidate_accuracy_contract'] = 'candidate-own-source-errors-v1'
+    checkpointed = False
     if source:
         if source.get('answer_scope_contract'):
             assessment['answer_scope_issues'] = business_review.answer_scope_issues(source)
@@ -928,6 +948,14 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                     record_error=str(exc), evidence=deepcopy(meaning['evidence']),
                     provided_block_ids=sorted(provided_ids),
                     correction_scope='원문에 맞는 정확 인용과 자료 상태를 정정한다. 인용 오류만으로 정상 의미를 바꾸거나 새 의미를 만들지 않는다.'))
+        if source.get('public_scope') and business_review.public_scope_valid(run, requirement, source):
+            assessment['input_fingerprint'] = assessment_fingerprint(run, requirement, source)
+            run['assessments'].append(assessment)
+            save(service, run)
+            business_store.save_assessment(service, run, requirement, assessment)
+            checkpointed = True
+            if cancelled(service, run):
+                return assessment
         histories = business_review.repair_context(run, requirement, source['meanings']) if business_review.current(run) else run['repairs']
         initial_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source))
         repair_context = [dict(id=r['id'], targets=r['targets'], preserve_meanings=r['preserve_meanings'],
@@ -1065,7 +1093,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
         assessment['candidate_review_ids'] = sorted({v['receipt_id'] for v in direct.values()})
     assessment['claim_ids'] = sorted(set(assessment['claim_ids']))
     assessment.update(requirement_completion(assessment, claims=run['claims']))
-    run['assessments'].append(assessment)
+    if not checkpointed:
+        run['assessments'].append(assessment)
     save(service, run)
     business_store.save_assessment(service, run, requirement, assessment)
     return assessment
@@ -1779,6 +1808,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             if cancelled(service, run):
                 return
             assessment = assess(service, run, requirement)
+            if cancelled(service, run):
+                return
             representation = assessment.get('representation') or {}
             if business_review.current(run) and business_review.needs_source_read(assessment.get('source') or {}, representation):
                 expanded = business_review.source(service, run, requirement, previous=assessment['source'])
@@ -1806,7 +1837,9 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
         run['status'] = 'review_ready' if all(a['status'] == 'satisfied' for a in latest.values()) and len(latest) == len(run['requirements']) else 'partial'
         run['extraction_complete'] = not any(c.get('extraction_error') for c in run['claims']) and not any(
             u['status'] == 'failed' for u in run['units'] if u['stage'] in autoschema.ROLES)
-        if run.get('source_rebuild', {}).get('unresolved_source_units'):
+        if (run.get('source_rebuild', {}).get('unresolved_source_units')
+                or run.get('source_rebuild', {}).get('inherited_failures')
+                or run.get('source_concept_retention', {}).get('inherited_failures')):
             run['extraction_complete'] = False
         if projected and (projected['blocks_without_selected_extraction_target'] or projected['unattempted_extraction']
                           or projected['unattempted_concept_target_ids']):
@@ -1815,6 +1848,8 @@ def execute(service, run_id, *, defer_concepts=False, capacity_repairs=None):
             run['status'] = 'partial'
         elif not run['requirements']:
             run['status'] = 'succeeded' if all(u['status'] == 'succeeded' for u in run['units']) else 'partial'
+        if run.get('source_concept_retention', {}).get('pending_targets'):
+            run['status'] = 'partial'
     except Exception as exc:
         run.update(status='failed', error=f'{type(exc).__name__}: {exc}')
     finally:

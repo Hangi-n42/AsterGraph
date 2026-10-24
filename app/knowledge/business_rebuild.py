@@ -110,8 +110,21 @@ def plan(service, request):
                 any(b.get(k) != next(p for p in old if p['id'] == b['id']).get(k)
                     for k in ('text', 'locator', 'parse_run_id')) for b in previous):
             raise ValueError('부분 원문 부모의 미확인 범위를 전체 행으로 연결할 수 없습니다.')
-        source_units = []
-        if request.key_fields:
+        source_units, producer_proofs, producer_runs = [], {}, {}
+        if request.rebuild_scope == 'whole_source':
+            from . import business_rebuild_source
+            if request.key_fields:
+                raise ValueError('문서 전체 정책에는 행 식별 열을 지정할 수 없습니다.')
+            source_units = business_rebuild_source.unit_plan(parent, request.before_version_id,
+                request.after_version_id, old, new)
+            construction, producer_proofs, producer_runs, failures = business_rebuild_source.inventory(service, db, parent)
+            rows, actions = [], []
+            for claim in parent['claims']:
+                changed = request.before_version_id in claim['source_version_ids']
+                actions.append(dict(claim_id=claim['id'], action='rebuild_source' if changed else 'preserve',
+                    unit_key=business_rebuild_source.POLICY,
+                    reason='whole_changed_document' if changed else 'verified_frozen_source_producer'))
+        elif request.key_fields:
             rows = row_correspondence(old, new, request.key_fields)
             by_old = {r['before_block_id']: r for r in rows if r['before_block_id']}
             actions, represented = [], set()
@@ -162,6 +175,8 @@ def plan(service, request):
             unchanged_sources=[source_basis(service, db, vid)[0] for vid in parent['input_version_ids']
                                if vid != request.before_version_id],
             snapshot_id=request.base_snapshot_id, snapshot_sha256=concept_work.digest(snapshot) if snapshot else None)
+        if producer_runs:
+            basis['producer_runs'] = producer_runs
         identifier = autoschema.identifier('source_rebuild', [VERSION, request.model_dump(), basis])
         existing = db.execute('SELECT payload FROM runs WHERE id=?', (identifier,)).fetchone()
         if existing:
@@ -174,6 +189,9 @@ def plan(service, request):
             date_change_is_input_change=before['version']['dates'] != after['version']['dates'],
             approval_inherited=False, generation_reused=False, created_at=utcnow(),
             metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0))
+        if request.rebuild_scope == 'whole_source':
+            run.update(whole_source_policy=business_rebuild_source.POLICY, producer_proofs=producer_proofs,
+                construction_run_id=construction['id'], inherited_failures=failures)
         db.execute('INSERT INTO runs VALUES(?,?)', (identifier, encode(run)))
         return run
 
@@ -185,6 +203,9 @@ def validate(service, db, plan, *, run_id=None):
         raise KnowledgeConflict('절 단위 완결·실패 보존 정책이 변경됐습니다. 새 계획이 필요합니다.')
     if concept_work.digest(service.repository.get(db, 'runs', basis['parent_run_id'])) != basis['parent_sha256']:
         raise KnowledgeConflict('부분 재구축 계획의 부모 판단이 변경됐습니다.')
+    for identifier, expected in basis.get('producer_runs', {}).items():
+        if concept_work.digest(service.repository.get(db, 'runs', identifier)) != expected:
+            raise KnowledgeConflict('원문 생산·복구 계보가 변경됐습니다. 새 계획이 필요합니다.')
     for key in ('before', 'after'):
         current, _ = source_basis(service, db, basis[key]['version']['id'])
         if current != basis[key]:
@@ -206,7 +227,8 @@ def validate(service, db, plan, *, run_id=None):
 
 def fingerprint(plan):
     return concept_work.digest({k: plan[k] for k in ('contract', 'basis', 'request', 'actions', 'rows',
-        *[key for key in ('source_units', 'requirement_discovery') if key in plan])})
+        *[key for key in ('source_units', 'requirement_discovery', 'whole_source_policy',
+                         'producer_proofs', 'construction_run_id', 'inherited_failures') if key in plan])})
 
 
 def extraction_donor(service, db, parent, claim, cache):
@@ -261,11 +283,19 @@ def prepare_run(service, db, run, request):
     if request.reuse_run_id or request.reassess_run_id or request.block_ids or request.target_parse_run_ids:
         raise ValueError('부분 재구축은 서버 계획의 전체 문맥과 처리 단위를 사용합니다.')
     parent = service.repository.get(db, 'runs', plan['basis']['parent_run_id'])
+    whole_source = bool(plan.get('whole_source_policy'))
     run['parent_recipe'] = deepcopy(parent['recipe'])
     run['parent_model_identity'] = deepcopy(parent.get('model_identity'))
     run['reuse_pool_parent_run_id'] = parent['id']
     run['reusable_units'] = [deepcopy(u) for u in parent['units'] if u['stage'].startswith('concept_')
                              and concept_work.complete(u)]
+    if whole_source:
+        construction = service.repository.get(db, 'runs', plan['construction_run_id'])
+        run['reuse_pool_parent_run_id'] = construction['id']
+        run['parent_recipe'] = deepcopy(construction['recipe'])
+        run['parent_model_identity'] = deepcopy(construction['model_identity'])
+        run['reusable_units'] = [deepcopy(u) for u in construction['units']
+                                 if u['stage'].startswith('concept_') and concept_work.complete(u)]
     expected_versions = [plan['request']['after_version_id'] if v == plan['request']['before_version_id'] else v
                          for v in parent['input_version_ids']]
     if (run['input_version_ids'] != expected_versions
@@ -295,7 +325,7 @@ def prepare_run(service, db, run, request):
                 if not b.get('context_only') and b.get('locator', {}).get('fields')}
         carried, bindings, preserved_inputs, donors = [], [], [], {parent['id']: parent}
         source_map, source_bindings, source_inputs = {}, [], []
-        if plan.get('source_units'):
+        if plan.get('source_units') and not whole_source:
             if request.source_unit_policy != business_rebuild_html.POLICY:
                 raise ValueError('전후에 같은 명시 절 입력 정책이 필요합니다.')
             if (parent['model_identity'] != run['model_identity'] or any(parent['recipe'].get(k) != run['recipe'].get(k)
@@ -309,6 +339,14 @@ def prepare_run(service, db, run, request):
                 claim = deepcopy(claims[action['claim_id']])
                 old_chunk = next(c for c in parent['chunks'] if c['id'] == claim['chunk_id'])
                 validate_views(old_chunk['blocks'], run['blocks'])
+                if whole_source:
+                    proof = deepcopy(plan['producer_proofs'][claim['id']])
+                    if proof['stored_claim_sha256'] != concept_work.digest(claim):
+                        raise ValueError('보존 후보의 생산 원형이 변경됐습니다.')
+                    validate_views(proof['source_views'], run['blocks'])
+                    carried.append(claim)
+                    preserved_inputs.append(proof)
+                    continue
                 new_chunk = next((c for c in run['chunks'] if c['id'] == claim['chunk_id']), None)
                 stage = 'direct_definitions' if claim['role'] == 'direct_definition' else claim['role']
                 before_request = business_rebuild_html.extraction_request(parent, old_chunk, stage)
@@ -360,6 +398,9 @@ def prepare_run(service, db, run, request):
             removed_claim_ids=[a['claim_id'] for a in plan['actions'] if a['action'] in {'remove', 'remove_source'}],
             replaced_claim_ids=[a['claim_id'] for a in plan['actions'] if a['action'] in {'rebuild_row', 'rebuild_source'}],
             approval_inherited=False, completed_extraction=[], context_scope='full_stored_source; extraction_subset_only')
+        if whole_source:
+            run['source_rebuild'].update(whole_source_policy=plan['whole_source_policy'],
+                inherited_failures=deepcopy(plan['inherited_failures']))
         run['units'].append(dict(id=autoschema.identifier('source_rebind', plan['id']), stage='source_row_rebind',
             status='succeeded', model_called=False, bindings=deepcopy(bindings), finished_at=utcnow()))
     run['graph'] = autoschema.graph(run['claims'], run['blocks'])

@@ -209,7 +209,10 @@ def change_view(service, changeset_id):
             raise ValueError('업무 지식 변경안이 아닙니다.')
         run = service.repository.get(db, 'runs', change['run_id'])
     eligible, blocked = review_eligibility(change, run)
+    from .interpretation_edit import basis
     return dict(change, eligible_ids=sorted(eligible), published_eligible_ids=change['eligible_ids'],
+                interpretation_edit_basis=[basis(run, c) for c in change['candidates']
+                    if (c.get('interpretation') or {}).get('contract') == business_run.autoschema.SCOPE_CONTRACT],
                 explicit_review_options=[o for o in explicit_correction_options(run)
                     if not set(o['claim_ids']).intersection(change.get('invalidated_claim_ids', []))],
                 candidate_versions={c['id']: business_run.autoschema.identifier('claim', c) for c in change['candidates']},
@@ -230,6 +233,8 @@ def decide(service, changeset_id, request):
         if change['kind'] != 'source_graph' or change['revision'] != request.expected_revision:
             raise KnowledgeConflict('검토 변경안의 종류/버전이 다릅니다.')
         run = service.repository.get(db, 'runs', change['run_id'])
+        if run.get('requirement_link', {}).get('usage') == 'review_draft_only':
+            raise KnowledgeConflict('요구 연결 검토 초안은 현재 평가와 별도 사용 검토 전까지 승인할 수 없습니다.')
         if run.get('source_rebuild') or run.get('source_rebuild_guard'):
             from .business_rebuild import validate_run
             validate_run(service, db, run)
@@ -1225,6 +1230,9 @@ def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
     from .source_index import FrozenIndex
     request, defaulted = resolve_query_defaults(request, context_mode)
+    stored_after = request.answer_mode == 'stored_after_conditions'
+    if request.answer_mode in {'source_list_comparison', 'stored_after_conditions'} and context_mode != 'graph':
+        raise ValueError('목록 대조는 snapshot 경로에서만 지원합니다.')
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):
         raise ValueError('원문 선택 답변 실험은 승인 그래프 근거에서만 지원합니다.')
     started = monotonic()
@@ -1246,6 +1254,9 @@ def query(service, request, *, context_mode='graph'):
             original = service.repository.get(db, 'runs', request.source_run_id)
             if original.get('kind') != 'business' or original['status'] not in {'succeeded', 'partial', 'review_ready', 'failed', 'cancelled'}:
                 raise ValueError('종료된 업무 지식 추출 실행을 선택하세요.')
+            if original.get('requirement_link', {}).get('usage') == 'review_draft_only':
+                return dict(status='needs_review', answer=None, source_run_id=original['id'], model_called=False,
+                    reason='requirement_link_review_draft', requirement_ids=[r['id'] for r in original['requirements']])
             concepts = original['concepts']
             if request.concept_run_id:
                 concepts, concept_view = concept_read_view(service, db, original, request.concept_run_id)
@@ -1256,7 +1267,10 @@ def query(service, request, *, context_mode='graph'):
                 concepts=concepts, requirements=[], assessments={}, include_unlinked_blocks=True)
         else:
             snapshot = service.repository.get(db, 'snapshots', request.snapshot_id)
-        if snapshot.get('kind') != 'source_graph':
+        if stored_after:
+            from . import source_after_conditions
+            snapshot = source_after_conditions.read_view(snapshot, request.stored_after_conditions.run_id)
+        if snapshot.get('kind') != 'source_graph' and not stored_after:
             raise ValueError('출처 그래프 snapshot이 필요합니다.')
         requirement_ids = request.requirement_ids or ([r['id'] for r in snapshot['requirements']]
             if request.answer_mode == 'reviewed_items' else [])
@@ -1268,6 +1282,8 @@ def query(service, request, *, context_mode='graph'):
             from .business_changes import snapshot_invalidations
             invalidations.extend(snapshot_invalidations(service, db, snapshot, original))
         if invalidations:
+            if stored_after:
+                return dict(status='needs_review', answer=None, snapshot_id=snapshot['id'], invalidations=invalidations)
             affected = {rid for i in invalidations for rid in i['requirement_ids']}
             if affected.intersection(requirement_ids):
                 return dict(status='needs_review', answer=None, snapshot_id=snapshot['id'], invalidations=invalidations)
@@ -1288,7 +1304,7 @@ def query(service, request, *, context_mode='graph'):
         if stale:
             return dict(status='needs_review', requirement_ids=stale, answer=None, snapshot_id=snapshot['id'])
         answer_items = bind_answer_items(request, requirements)
-        if context_mode == 'graph' and not snapshot['claims'] and not source_reader:
+        if context_mode == 'graph' and not snapshot['claims'] and not source_reader and not stored_after:
             return dict(status='no_reviewed_claims', answer=None, snapshot_id=snapshot['id'], model_called=False)
         if source_reader and not any(c.get('evidence') for c in snapshot['claims']) and not snapshot['blocks']:
             return dict(status='no_source_passages', answer=None, source_run_id=request.source_run_id, model_called=False)
@@ -1336,7 +1352,13 @@ def query(service, request, *, context_mode='graph'):
         if request.candidate_contract:
             run['execution_boundary']['candidate_contract'] = dict(contract=request.candidate_contract,
                 experimental=True, individual_edge_selection=True)
+        if stored_after:
+            run['stored_after_input_digest'] = source_after_conditions.input_digest(
+                service, db, snapshot['id'], request.stored_after_conditions.run_id)
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
+    if request.answer_mode in {'source_list_comparison', 'stored_after_conditions'}:
+        from . import source_list_service
+        return source_list_service.execute(service, run, request, snapshot, requirements)
     built = None
     get_bundles = None
     if source_reader:
@@ -1506,6 +1528,19 @@ def query(service, request, *, context_mode='graph'):
                 return evidence_failure(service, run, hits, 'final_input_changed', started)
         output = business_run.json_call(service, run, 'business_qa', instruction, answer_context, context_answer,
             reference_map=reference_map)
+    run['retrieval_concept_hints'] = hints
+    return finish_query(service, run, request, snapshot, requirements, output, hits, source_evidence, limitations, started)
+
+
+def finish_query(service, run, request, snapshot, requirements, output, hits, source_evidence, limitations, started):
+    """Shared answer validation and storage for new searches and fixed-input capacity resumes."""
+    source_reader = bool(request.source_run_id)
+    context_mode = run['context_mode']
+    requirement_ids = request.requirement_ids or ([r['id'] for r in snapshot['requirements']]
+        if request.answer_mode == 'reviewed_items' else [])
+    concept_view = run.get('concept_view')
+    selected = {h['block_id'] for h in hits}
+    hints = run.get('retrieval_concept_hints', {})
     record_answer_source_citations(run, output, source_evidence, snapshot['blocks'])
     answer_links.record(run, output, selected)
     if source_reader:
