@@ -12,7 +12,7 @@ export type AnswerSourceCitations = {
 
 export type AnswerLinks = {
   status: "not_recorded" | "recorded" | "unresolved" | "needs_review";
-  semantic_support: "not_assessed"; relation: "model_declared";
+  semantic_support: "not_assessed"; relation: "model_declared" | "reviewer_corrected";
   links: { status: "resolved" | "unresolved"; declaration: unknown;
     location?: { target: "answer" | "limitations"; limitation_index?: number; start_char: number; end_char: number } }[];
   claims_without_resolved_links: string[]; duplicates_removed: number;
@@ -70,7 +70,7 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
         {!!record.duplicates_removed && <p>같은 위치의 반복 인용 {record.duplicates_removed}건을 합쳤습니다.</p>}
       </>}
     {!withheld && links && links.status !== "not_recorded" && <div className="border-t pt-2">
-      <h4 className="font-semibold">답변 구절의 모델 선언 연결</h4>
+      <h4 className="font-semibold">{links.relation === "reviewer_corrected" ? "명시 정정된 인용 연결" : "답변 구절의 모델 선언 연결"}</h4>
       {links.status === "recorded" && !links.links.length && <p>연결 목록을 비워 반환했습니다. 답변 전체의 근거 충족을 뜻하지 않습니다.</p>}
       {links.status === "unresolved" && <p>구절 또는 참조를 해석하지 못한 연결이 있습니다.</p>}
       {links.links.map((link, i) => {
@@ -80,12 +80,12 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
         {isDeclaration(link.declaration) && <>
           <p>대상: {link.declaration.target === "answer" ? "답변 본문" : "한계 설명"}</p>
           <blockquote className="whitespace-pre-wrap">{link.declaration.anchor}</blockquote>
-          <p>선언한 주장 참조: {link.declaration.claim_refs.join(", ") || "없음"}</p>
+          <p>{links.relation === "reviewer_corrected" ? "정정 후 주장 참조" : "선언한 주장 참조"}: {link.declaration.claim_refs.join(", ") || "없음"}</p>
           <p>선언한 원문 참조: {link.declaration.quote_refs.join(", ") || "없음"}</p>
         </>}
         {link.location && <p>{link.location.target === "answer" ? "답변" : `한계 항목 ${(link.location.limitation_index ?? 0) + 1}`} · 문자 [{link.location.start_char}, {link.location.end_char})</p>}
         {claimBodies && declaration && <>
-          <details><summary>모델이 연결한 주장 본문 · 생성 입력</summary>
+          <details><summary>{links.relation === "reviewer_corrected" ? "정정 후 주장 참조 · 원래 생성 입력" : "모델이 연결한 주장 본문 · 생성 입력"}</summary>
             {!declaration.claim_refs.length && <p>이 연결에는 주장 참조 없이 원문 참조만 선언했습니다.</p>}
             {declaration.claim_refs.map((id, j) => {
               const body = claimBodies.claims[id];
@@ -117,11 +117,11 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
             })}
           </details>
         </>}
-        <details><summary>원래 연결 선언 진단</summary><pre className="whitespace-pre-wrap">{JSON.stringify(link.declaration, null, 2)}</pre></details>
+        <details><summary>{links.relation === "reviewer_corrected" ? "정정 후 연결 진단" : "원래 연결 선언 진단"}</summary><pre className="whitespace-pre-wrap">{JSON.stringify(link.declaration, null, 2)}</pre></details>
       </article>; })}
       {!!links.duplicates_removed && <p>동일한 연결 선언 {links.duplicates_removed}건을 합쳤습니다.</p>}
       {!!links.claims_without_resolved_links.length && <details><summary>해석가능한 연결 미기록 주장 {links.claims_without_resolved_links.length}개</summary><p>{links.claims_without_resolved_links.join(", ")}</p><p>미사용 또는 허위 주장 판정이 아닙니다.</p></details>}
-      <p>모델이 선언한 연결입니다. 실제 내부 사용이나 개별 주장과 원문 사이의 의미 지지는 검증하지 않았습니다.</p>
+      <p>{links.relation === "reviewer_corrected" ? "명시적으로 정정한 참조입니다. 모델 자동 교정이나 일반 의미 검증 결과가 아닙니다." : "모델이 선언한 연결입니다. 실제 내부 사용이나 개별 주장과 원문 사이의 의미 지지는 검증하지 않았습니다."}</p>
     </div>}
     <p className="mt-2 text-slate-600">원문 위치 일치는 문장별 의미 지지 판정이 아닙니다.{!withheld && (!links || links.status === "not_recorded") && " 답변 구절과의 연결은 기록되지 않았습니다."}</p>
   </section>;

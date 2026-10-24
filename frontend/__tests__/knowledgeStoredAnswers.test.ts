@@ -29,6 +29,16 @@ it("distinguishes a recorded claim range from a whole chunk and surrounding text
   for (const text of ["블록 내 문자 [367, 461)", "블록 내 문자 [0, 1272)", "의미 지지 미검증", "넓은 문맥 근거 (chunk)", "주변 원문 · 주장 근거 범위와 별도", "주소 범위는 문장별 의미 지지 판정이 아닙니다", "원문 버전 version", "원문 처리 기록 parse", "생산량 구절", "저장 본문", "저장 한계"]) expect(html).toContain(text);
 });
 
+it("separates a Codex reference correction from producer costs and hides blocked details", () => {
+  const answer_review={actor:"사용자 지시에 따른 Codex 명시 정정",reason:"명시한 참조 정정",parent_run_id:"parent",
+    producer_run_id:"producer",producer_metrics:{llm_calls:1},changes:[{field:"citations",before:["old"],after:[]}]};
+  const html=render([],{answer_review});
+  for(const text of ["저장 답변의 명시적 참조 정정","사용자 지시에 따른 Codex 명시 정정","명시한 참조 정정","정정 전 답변과 원래 생성 기록 보기","새 모델 호출은 0회","독립 사람 검수·새 사용 승인이 아닙니다"]) expect(html).toContain(text);
+  const hidden=render([],{status:"needs_review",answer_review});
+  for(const text of ["명시한 참조 정정","producer_metrics","사용자 지시에 따른 Codex 명시 정정"]) expect(hidden).not.toContain(text);
+  expect(hidden).toContain("정정 상세를 표시하지 않습니다");
+});
+
 it("shows stored list consumption without model-input or graph-search labels", () => {
   const html = render([], { answer_mode: "source_list_comparison",
     condition_consumer: { original_run_id: "producer", original_unit_id: "unit", original_status: "partial",

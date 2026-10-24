@@ -8,7 +8,8 @@ import styles from "./KnowledgeWorkbench.module.css";
 
 type AnswerRow = { id: string; question: string; retrieval: string; status: string; finished_at?: string };
 type StoredConsumer = { original_run_id: string; original_unit_id: string; original_status?: string; status?: string; semantic_status: string; human_approval: boolean; records: { status: string }[]; not_consumed?: { status: string }[] };
-type AnswerDetail = { condition_consumer?: StoredConsumer; timing_consumer?: StoredConsumer; source_citations?: AnswerSourceCitations; answer_links?: AnswerLinks; answer_link_claims?: AnswerLinkClaims; id: string; question: string; note: string; status: string; source_run_id?: string; snapshot_id?: string; used_version_ids: string[]; used_versions: KnowledgeVersion[]; requirement_ids: string[]; answer_mode?: string; current_usage: KnowledgeUsage; answer: { answer?: string; citations?: string[]; limitations?: string[] }; evidence: { id: string; cited: boolean; provided: boolean; retrieved: boolean; claim_ids: string[]; statement?: string; evidence: KnowledgeClaim['evidence']; fallback_text?: string }[]; graph_links: { id: string; relation: string }[]; recorded_links: { id: string; text?: string; status?: string; concept_hint: boolean }[]; recorded_edge_count: number; fallback?: string; metrics?: Record<string, unknown> };
+type AnswerReview = { status?: string; actor?: string; reason?: string; created_at?: string; parent_run_id?: string; producer_run_id?: string; producer_metrics?: Record<string, unknown>; changes?: unknown };
+type AnswerDetail = { answer_review?: AnswerReview; condition_consumer?: StoredConsumer; timing_consumer?: StoredConsumer; source_citations?: AnswerSourceCitations; answer_links?: AnswerLinks; answer_link_claims?: AnswerLinkClaims; id: string; question: string; note: string; status: string; source_run_id?: string; snapshot_id?: string; used_version_ids: string[]; used_versions: KnowledgeVersion[]; requirement_ids: string[]; answer_mode?: string; current_usage: KnowledgeUsage; answer: { answer?: string; citations?: string[]; limitations?: string[] }; evidence: { id: string; cited: boolean; provided: boolean; retrieved: boolean; claim_ids: string[]; statement?: string; evidence: KnowledgeClaim['evidence']; fallback_text?: string }[]; graph_links: { id: string; relation: string }[]; recorded_links: { id: string; text?: string; status?: string; concept_hint: boolean }[]; recorded_edge_count: number; fallback?: string; metrics?: Record<string, unknown> };
 export default function KnowledgeStoredAnswers({ scope, onExplore, initialAnswerId = "" }: { scope: KnowledgeScope; onExplore: (id: string) => void; initialAnswerId?: string }) {
   const [items, setItems] = useState<AnswerRow[] | null>(null);
   const [selected, setSelected] = useState(initialAnswerId);
@@ -28,6 +29,8 @@ export default function KnowledgeStoredAnswers({ scope, onExplore, initialAnswer
   }, [scope.kind, scope.id, selected]);
   const matches = (items || []).filter(r => r.question.includes(query));
   const explicit = detail?.answer_mode === "source_list_comparison";
+  const review = detail?.answer_review;
+  const reviewBlocked = detail?.status === "needs_review" || detail?.source_citations?.status === "needs_review" || detail?.answer_links?.status === "needs_review";
   return <div className={styles.savedAnswers}>
     <h2>저장된 질문과 답변</h2><p className={styles.muted}>{items === null ? "현재 선택한 저장 범위의 답변 수를 확인하고 있습니다." : `현재 선택한 저장 범위에 연결된 ${items.length}건입니다.`} 조회는 모델을 실행하지 않습니다.</p>
     <label className={styles.answerFilter}>저장 질문 찾기<input value={query} onChange={e => setQuery(e.target.value)} placeholder="질문의 단어로 찾기" /></label>
@@ -49,6 +52,15 @@ export default function KnowledgeStoredAnswers({ scope, onExplore, initialAnswer
             <p>미확인·미소비 기록은 조건이 없다는 뜻이 아닙니다. 원래 생산 상태와 이번 소비 상태는 별도입니다.</p>
           </details>;
         })}</>}
+      {review && <section className={styles.warning}>
+        <h3>저장 답변의 명시적 참조 정정</h3>
+        {reviewBlocked || review.status === "needs_review" ? <p>재검토 필요 상태에서는 정정 상세를 표시하지 않습니다.</p> : <>
+          <p>정정 주체: {review.actor} · {knowledgeDate(review.created_at || "")}</p><p>이유: {review.reason}</p>
+          <p>모델 자동 교정·독립 사람 검수·새 사용 승인이 아닙니다. 원본문·한계·원문 인용은 유지했습니다. 이번 정정의 새 모델 호출은 0회입니다.</p>
+          <button className={styles.secondary} onClick={() => { if (review.parent_run_id) { setSelected(review.parent_run_id); setDetail(null); setLoading(true); } }}>정정 전 답변과 원래 생성 기록 보기</button>
+          <details><summary>정정 전후 참조와 원래 생성 비용</summary><p>원래 생성 실행 {review.producer_run_id}</p><pre>{JSON.stringify({ changes: review.changes, producer_metrics: review.producer_metrics }, null, 2)}</pre></details>
+        </>}
+      </section>}
       <KnowledgeAnswerSources record={detail.source_citations} links={detail.answer_links} claimBodies={detail.answer_link_claims} claimEvidence={detail.evidence} />
       <h3>기존 인용 ID의 근거 · {detail.evidence.filter(e => e.cited).length}개</h3>
       <p className={styles.muted}>{explicit ? '아래는 목록 대조 결과에 연결된 원문 범위입니다.' : '아래는 각 주장에 기록된 원문 범위입니다.'} 주소 범위는 문장별 의미 지지 판정이 아닙니다.</p>

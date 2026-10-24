@@ -8,6 +8,14 @@ const base: AnswerSourceCitations = {
 };
 const render = (record?: AnswerSourceCitations) => renderToStaticMarkup(createElement(KnowledgeAnswerSources, { record }));
 
+it("labels explicitly corrected references without calling them model declarations", () => {
+  const html=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{claimBodies:{status:"recorded",claims:{}},links:{status:"recorded",semantic_support:"not_assessed",relation:"reviewer_corrected",
+    links:[{status:"resolved",declaration:{target:"answer",anchor:"직접 사실",claim_refs:[],quote_refs:["sq_kept"]}}],
+    claims_without_resolved_links:[],duplicates_removed:0}}));
+  for(const text of ["명시 정정된 인용 연결","정정 후 주장 참조: 없음","정정 후 주장 참조 · 원래 생성 입력","정정 후 연결 진단","모델 자동 교정이나 일반 의미 검증 결과가 아닙니다"]) expect(html).toContain(text);
+  expect(html).not.toContain("답변 구절의 모델 선언 연결");
+});
+
 it("keeps a missing historical quotation distinct from an explicitly empty list", () => {
   expect(render()).toContain("별도로 반환한 원문 구절이 기록되지 않았습니다");
   expect(render({ ...base, status: "not_recorded" })).toContain("별도로 반환한 원문 구절이 기록되지 않았습니다");

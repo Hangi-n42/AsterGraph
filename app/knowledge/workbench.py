@@ -373,6 +373,9 @@ def answers(service, kind, scope_id, answer_id=None):
         evidence=evidence, source_citations=source_citations, source_run_id=run['query'].get('source_run_id'),
         **({'answer_links': deepcopy(run['answer_links'])} if 'answer_links' in run else {}),
         **({'answer_link_claims': _answer_link_claims(run)} if 'answer_links' in run else {}),
+        **({'answer_review': (dict(status='needs_review') if run.get('answer_status') == 'needs_review'
+            or source_citations['status'] == 'needs_review' or run.get('answer_links', {}).get('status') == 'needs_review'
+            else deepcopy(run['answer_review']))} if run.get('answer_review') else {}),
         **{key: deepcopy(run[key]) for key in ('condition_consumer', 'timing_consumer') if key in run},
         snapshot_id=run['query'].get('snapshot_id') or (None if run['query'].get('source_run_id') else run.get('snapshot_id')),
         context_mode=run.get('context_mode'), retrieval=run['query'].get('retrieval'),
