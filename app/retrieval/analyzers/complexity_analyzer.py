@@ -896,9 +896,6 @@ def _covered_content_term_count(title_content: set[str], question_content: set[s
     return len(covered)
 
 
-def _split_sentences(text: str) -> list[str]:
-    sentences, _ = _split_sentences_with_source(text)
-    return sentences
 
 
 def _split_sentences_with_source(text: str) -> tuple[list[str], str]:
@@ -1293,9 +1290,6 @@ def _is_phone_dialogue_weak_confirmation(segment: str) -> bool:
     return len(content) <= 1 or cleaned.startswith(("아", "네", "예", "그러면", "그럼", "이리", "그거", "이거"))
 
 
-def _has_concrete_request_content(segment: str) -> bool:
-    cleaned = _normalize_segment(segment)
-    return any(token in cleaned for token in _REQUEST_OBJECT_TOKENS) or len(_content_terms(cleaned)) >= 2
 
 
 def _is_admin_action_without_request(segment: str) -> bool:

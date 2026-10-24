@@ -17,19 +17,25 @@ const args = [
   "--max-events-per-scenario",
   process.env.COMPLAINT_INTELLIGENCE_REAL_REPLAY_MAX_PER_SCENARIO || "20",
 ];
-const input = findReplayInput();
-if (input) {
-  args.push("--input", input);
-  console.log(`[predev] real_replay 입력 경로: ${input}`);
-} else {
-  args.push("--skip-build");
-  console.log("[predev] 입력 원천을 찾지 못해 기존 real_replay seed로 DB만 준비합니다.");
+const cliArgs = process.argv.slice(2);
+const hasExplicitInput = cliArgs.some(arg => arg === "--input" || arg.startsWith("--input="));
+if (!hasExplicitInput && !cliArgs.includes("--skip-build")) {
+  const input = findReplayInput();
+  if (input) {
+    args.push("--input", input);
+    console.log(`[replay:prepare] real_replay 입력 경로: ${input}`);
+  } else {
+    args.push("--skip-build");
+    console.log("[replay:prepare] 입력 원천을 찾지 못해 기존 real_replay seed로 DB만 준비합니다.");
+  }
 }
 if (process.env.COMPLAINT_INTELLIGENCE_REAL_REPLAY_ALLOW_SYNTHETIC_FILL) {
   args.push("--allow-synthetic-fill", process.env.COMPLAINT_INTELLIGENCE_REAL_REPLAY_ALLOW_SYNTHETIC_FILL);
 }
 
-console.log("[predev] Complaint Intelligence real_replay seed/run-analysis 준비를 시작합니다.");
+args.push(...cliArgs);
+
+console.log("[replay:prepare] Complaint Intelligence real_replay seed/run-analysis 준비를 시작합니다.");
 const result = spawnSync(python, args, {
   cwd: repoRoot,
   stdio: "inherit",
@@ -37,14 +43,14 @@ const result = spawnSync(python, args, {
 });
 
 if (result.error) {
-  console.error(`[predev] Python 실행 실패: ${result.error.message}`);
+  console.error(`[replay:prepare] Python 실행 실패: ${result.error.message}`);
   process.exit(1);
 }
 if (result.status !== 0) {
-  console.error(`[predev] real_replay 준비 실패: exit ${result.status}`);
+  console.error(`[replay:prepare] real_replay 준비 실패: exit ${result.status}`);
   process.exit(result.status ?? 1);
 }
-console.log("[predev] real_replay 준비가 완료되었습니다.");
+console.log("[replay:prepare] real_replay 준비가 완료되었습니다.");
 
 function findReplayInput() {
   const candidates = [
@@ -61,7 +67,7 @@ function findReplayInput() {
   }
 
   if (!existsSync(seedPath)) {
-    console.warn("[predev] 기존 real_replay seed도 없습니다. 데이터 원천 경로를 확인하세요.");
+    console.warn("[replay:prepare] 기존 real_replay seed도 없습니다. 데이터 원천 경로를 확인하세요.");
   }
   return null;
 }

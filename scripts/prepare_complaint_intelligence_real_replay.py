@@ -1,4 +1,4 @@
-"""프론트 개발 서버 시작 전에 real_replay 관제 read-model을 준비한다."""
+"""명시적 replay 준비 명령으로 real_replay 관제 read-model을 재구성한다."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def main() -> int:
         if fallback:
             build_report["fallback_to_existing_seed"] = fallback
             print(
-                "[predev] 입력 데이터에서 real_replay 이벤트를 만들지 못해 기존 seed를 유지합니다.",
+                "[replay:prepare] 입력 데이터에서 real_replay 이벤트를 만들지 못해 기존 seed를 유지합니다.",
                 file=sys.stderr,
             )
         seed_path.parent.mkdir(parents=True, exist_ok=True)
@@ -100,7 +100,7 @@ def main() -> int:
         mode=str(seed_payload.get("mode") or "replay"),
         source_name=args.source_name,
         as_of=as_of,
-        metadata={"trigger": "frontend_predev_real_replay", "seed_file": str(seed_path)},
+        metadata={"trigger": "explicit_real_replay_prepare", "seed_file": str(seed_path)},
     )
     duplicate_groups = service.run_duplicate_analysis(
         events,

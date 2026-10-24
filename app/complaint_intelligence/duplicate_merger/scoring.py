@@ -268,13 +268,6 @@ def structural_evidence_count(event: ComplaintIntelligenceEvent) -> int:
     return count
 
 
-def _location_tokens(event: ComplaintIntelligenceEvent) -> list[str]:
-    region, details = _location_signals(event)
-    tokens = []
-    if region:
-        tokens.append(region)
-    tokens.extend(details)
-    return _dedupe(tokens)
 
 
 def _location_signals(event: ComplaintIntelligenceEvent) -> tuple[str | None, list[str]]:

@@ -70,7 +70,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001
 
 - API 코드·`.env.example` 기본 포트는 **8000**, FE 기본 주소는 **8001**이다. 위 예시는 둘을 8001로 맞춘 것이다. 8000을 사용하려면 FE 주소도 8000으로 바꾼다.
 - `.env.example`의 `EMBEDDING_DEVICE=cuda`는 Mac에 그대로 적용하지 않는다. 코드 기본값인 `cpu`로 시작하고, 다른 장치는 별도 확인 후 로컬 설정으로만 변경한다.
-- `COMPLAINT_INTELLIGENCE_DB_PATH`의 코드 기본 파일은 `complaint_intelligence.db`다. 위 예시는 아래 FE predev가 만드는 **별도 replay DB**에 맞춘 것이다. 실시간 저장소를 쓸 때에는 그 저장소 경로를 유지한다.
+- `COMPLAINT_INTELLIGENCE_DB_PATH`의 코드 기본 파일은 `complaint_intelligence.db`다. 위 예시는 아래 명시적 replay 준비 명령이 만드는 **별도 replay DB**에 맞춘 것이다. 실시간 저장소를 쓸 때에는 그 저장소 경로를 유지한다.
 - 상대경로와 공통 설정에는 Mac 개인 절대경로를 넣지 않는다. API는 루트에서 시작해 SQLite 상대경로의 실행 위치 차이를 피한다.
 
 ## 3. 데이터와 외부 모델
@@ -105,30 +105,27 @@ Windows PowerShell, 루트에서:
 .\.venv\Scripts\python.exe scripts\run_api.py
 ```
 
-별도 터미널에서 프론트엔드를 시작한다. `CIVIL_PYTHON`은 FE **predev용 셸 환경변수**이며 `.env.local`에 넣는 것으로 이 Node 스크립트에 전달되지 않는다.
+별도 터미널에서 `npm run dev`로 프론트엔드를 시작한다. 이 명령은 DB를 초기화하지 않는다.
+
+관제 replay를 새로 준비할 때만 아래 명령을 사용한다. **기본 replay DB의 검토·상태가 초기화되므로 먼저 백업한다.** 회사 지식 DB(`KNOWLEDGE_DB_PATH`)와 민원 replay DB는 별개다.
 
 Mac:
 
 ```bash
 export CIVIL_PYTHON="$PWD/.venv/bin/python"
-npm --prefix frontend run dev
+npm run replay:prepare
 ```
 
 Windows PowerShell:
 
 ```powershell
 $env:CIVIL_PYTHON = (Resolve-Path .\.venv\Scripts\python.exe).Path
-npm --prefix frontend run dev
+npm run replay:prepare
 ```
 
-**현재 `npm run dev`는 화면만 시작하지 않는다.** `predev`가 processed 입력 또는 기존 seed로 관제 replay를 준비하며, 유효 seed를 확인한 뒤 `complaint_intelligence_real_replay.db`를 초기화·재구성한다. 보고서도 `reports`에 출력한다. 기존 replay DB를 보존해야 하거나 FE만 띄우려면 다음처럼 predev를 거치지 않는다(기존 DB/데이터는 별도 준비되어 있어야 함).
+`CIVIL_PYTHON`은 명시적 replay 준비용 셸 환경변수다. Next.js `.env.local`로 이 Node 스크립트에 전달되지 않는다. 준비 명령은 processed 입력 또는 기존 seed를 사용하며, 유효 seed 확인 뒤 `complaint_intelligence_real_replay.db`를 초기화·재구성하고 `reports`에 보고서를 쓴다. 복사본 지정 옵션은 [프런트엔드 안내](../../frontend/README.md)를 따른다.
 
-```bash
-cd frontend
-npx next dev --webpack
-```
-
-화면: `http://localhost:3000`의 `/`, `/workbench`, `/intelligence`, `/admin`. 회사 지식 전용 화면은 아직 없다.
+화면: `http://localhost:3000`의 `/`, `/workbench`, `/intelligence`, `/admin`, `/knowledge`. 회사 지식 워크벤치는 원문·지식 버전·업무 검토·그래프 탐색·검색·저장 답변을 제공한다. 지식 기능 사용 시 `KNOWLEDGE_ENABLED`와 별도 지식 DB 경로를 확인한다.
 
 ## 5. 확인과 문제 해결
 
@@ -144,7 +141,7 @@ PowerShell에서는 `Invoke-RestMethod http://127.0.0.1:8001/health`를 사용�
 |---|---|
 | FE가 API를 못 찾음 | 실행 포트와 `NEXT_PUBLIC_API_BASE_URL`, FE 재시작 |
 | 관제 화면이 비어 있음 | API의 DB 경로와 replay가 생성한 DB 경로가 같은지, 필터·모드·자료 적재 여부 |
-| predev 실패 | `CIVIL_PYTHON` 및 processed 입력/기존 replay seed 존재 여부 |
+| 명시적 replay 준비 실패 | `CIVIL_PYTHON` 및 processed 입력/기존 replay seed 존재 여부 |
 | 검색 자료 없음 | Chroma 경로·collection·실제 인덱스 유무 |
 | 모델 호출 실패 | Ollama 실행 상태·주소·모델 태그·로컬 자원 |
 

@@ -1,5 +1,7 @@
 # 임베딩 후보 비교 계획 (Week 1, BE2)
 
+> 작성 당시 비교 계획이다. 아래 YAML 기준선은 [정리 전 models.yaml](https://github.com/Hangi-n42/AsterGraph/blob/e96febe6765123f663b19c1c554d93773c703d55/configs/models.yaml)에 보존돼 있다. 현재 런타임 설정은 `.env`와 `app/core/config.py`를 따른다.
+
 문서 버전: v1.0  
 작성일: 2026-03-17  
 담당: BE2 (민건)

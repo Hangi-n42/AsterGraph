@@ -182,12 +182,6 @@ def _short_phrase(text: str) -> str:
     return cleaned[:80]
 
 
-def _priority_texts(complaint: dict, fields: tuple[str, ...]) -> list[str]:
-    structured = [_structured_text(complaint, field) for field in fields]
-    structured = [text for text in structured if text]
-    if structured:
-        return structured
-    return [str(complaint.get("masked_text") or "")]
 
 
 def _first_matching_source(
@@ -261,11 +255,6 @@ def _source_spans(evidence_ids: list[str], source_field: str, source_payload: di
     ]
 
 
-def _first_matching_text(texts: list[str], keywords: list[str]) -> str:
-    for text in texts:
-        if any(keyword in text for keyword in keywords):
-            return text
-    return ""
 
 
 def _request_label(request_type: str, text: str) -> str:

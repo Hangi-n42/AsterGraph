@@ -1,5 +1,7 @@
 # Complaint Intelligence Demo/Replay Runbook
 
+일반 `npm run dev`는 replay DB를 준비하지 않는다. 명시적 초기화는 루트의 `npm run replay:prepare` 또는 아래 Python 명령을 사용한다. 기본 민원 replay DB는 초기화되므로 필요한 검토·상태를 먼저 백업한다. 회사 지식 DB와는 별개다.
+
 - 문서 상태: runbook
 - 최종 확인일: 2026-06-21
 - 기준 코드:
