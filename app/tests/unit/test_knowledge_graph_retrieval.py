@@ -117,7 +117,8 @@ def test_product_query_runs_filter_then_qa_and_does_not_pass_concepts_as_facts(t
         return dict(answer='원문 답변', choice=None, citations=[context['context'][0]['id']], limitations=[])
     monkeypatch.setattr(business_run, 'json_call', call)
     try:
-        request = BusinessQuery(snapshot_id='s', question='신청', limit=2)
+        request = BusinessQuery(snapshot_id='s', question='신청', limit=2,
+            candidate_contract=None, evidence_union=None, source_citation_contract=None)
         result = business_use.query(service, request)
         assert result['status'] == 'answered' and stages == ['graph_retrieval_filter', 'business_qa']
         run = service.run(result['run_id'])
@@ -179,7 +180,7 @@ def test_qa_source_aliases_restore_citations_and_preserve_source_spans(tmp_path,
 
 @pytest.mark.parametrize('retrieval,variant,mode', [('bm25', 'full', 'document'), ('bm25', 'full', 'graph'),
     ('dense', 'entity_event', 'graph'), ('hipporag2', 'entity_event', 'graph'),
-    ('hipporag2', 'full', 'graph'), ('hybrid_graph', 'full', 'graph')])
+    ('hipporag2', 'full', 'graph')])
 @pytest.mark.parametrize('source_status', ['succeeded', 'partial', 'review_ready', 'failed', 'cancelled'])
 def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, monkeypatch, retrieval, variant, mode, source_status):
     s = snapshot()

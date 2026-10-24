@@ -81,6 +81,7 @@ def test_hybrid_graph_reuses_b_and_keeps_graph_fallback_explicit(monkeypatch, se
         assert [(h['block_id'], h['score']) for h in c] == [(h['block_id'], h['score']) for h in b]
 
 
-def test_hybrid_graph_requires_source_run():
+def test_legacy_hybrid_graph_parsing_keeps_original_source_scope():
+    assert BusinessQuery(source_run_id="origin", question="질문", retrieval="hybrid_graph").retrieval == "hybrid_graph"
     with pytest.raises(ValueError, match='source_run_id'):
         BusinessQuery(snapshot_id='s', question='질문', retrieval='hybrid_graph')

@@ -7,9 +7,9 @@ import re
 
 import httpx
 
-# Ollama v0.40.3/eab97e9 model/renderers/qwen35.go, qwen3.8 variant.
+# Ollama v0.40.3/eab97e9 and v0.40.6/2476d5e model/renderers/qwen35.go, qwen3.8 variant.
 # shortcut: other engine versions/history/media need their own renderer verification.
-ENGINE_VERSION = '0.40.3'
+ENGINE_VERSIONS = ('0.40.3', '0.40.6')
 GO_SPACE = ' \t\n\v\f\r\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000'
 PATTERN = r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?[\p{L}\p{M}]+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
 
@@ -134,7 +134,8 @@ def count(config, model, identity, messages, schema, think, *, transport=None):
         if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected):
             raise ValueError('unverified_expected_model_digest')
         with httpx.Client(timeout=15, trust_env=False, follow_redirects=False, transport=transport) as client:
-            if get(client, endpoint, '/api/version').get('version') != ENGINE_VERSION:
+            version = get(client, endpoint, '/api/version').get('version')
+            if version not in ENGINE_VERSIONS:
                 raise ValueError('unsupported_engine_version')
             if model_digest(client, endpoint, model) != expected:
                 raise ValueError('serving_identity_changed')
@@ -156,6 +157,6 @@ def count(config, model, identity, messages, schema, think, *, transport=None):
             schema_serialized_tokens=schema_tokens, schema_reserve_tokens=schema_tokens,
             schema_reserve_is_separate_grammar_not_observed_prompt=True, model_digest=expected,
             configuration_sha256=config_hash, tokenizer_metadata_sha256=metadata_hash,
-            renderer_contract='ollama-qwen38-text-system-user-think-false-v0.40.3', **local), None
+            renderer_contract='ollama-qwen38-text-system-user-think-false-v' + version, **local), None
     except (httpx.HTTPError, OSError, ValueError, TypeError, KeyError, ImportError) as exc:
         return None, str(exc) if isinstance(exc, ValueError) else type(exc).__name__

@@ -17,7 +17,7 @@ it("offers public criteria and parsed source versions with explicit review and c
   expect(html).toContain('disabled=""');
   expect(html).toContain('value="plain" selected=""');
   expect(html).toContain('value="hipporag2" selected=""');
-  expect(html).toContain('개념·관계 연결 검색 (개발 기본)');
+  expect(html).toContain('개념·관계 연결 검색 (HippoRAG2 · 기본)');
   expect(html).toContain('연결 구조 (선택 시험)');
 });
 
