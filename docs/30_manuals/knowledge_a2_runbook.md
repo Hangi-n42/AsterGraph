@@ -1,5 +1,7 @@
 # A2 로컬 자료 탐색·분석 실행
 
+> 역사 문서: 아래 discovery 실행·환경변수는 현재 main에서 지원하지 않는다. 제거 직전 코드 [4334e8f8](https://github.com/Hangi-n42/AsterGraph/tree/4334e8f8be65fc82afde791125f55eb73b857682)와 당시 DB·원응답·모델/설정 기록을 함께 사용한다. 현재 경로는 [지원 종료와 보존 안내](../05_plans/company_knowledge/schema_first_retirement_20261019.md), [로컬 실행](local_dev_runbook.md), [지식 검색 계약](../10_contracts/api/knowledge_search_defaults.md)을 따른다. 아래 과거 절차·실측·한계는 변경하지 않았다.
+
 - 대상: [#521](https://github.com/Hangi-n42/Civil-Complaints-System/issues/521), [설계 §5~9](../05_plans/company_knowledge/autonomous_ontology_plan.md). A1 및 Markdown 표 헤더 수정이 반영된 `3dad404`에서 구현.
 - 기존 SQLite Run·직렬 executor·`call_ollama` 사용. 별도 DB·큐·프레임워크·패키지 추가 없음.
 - [기존 재사용 기록](../third_party/knowledge_k3_reuse.md)의 OntoGPT 구조·grounding 검사와 AutoSchemaKG 개념 추상화 지침을 역할별 JSON 계약에 적용. 전체 엔진·외부 온톨로지·코드 생성은 도입하지 않음.

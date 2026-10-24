@@ -64,7 +64,7 @@ Gemma=`gemma4:31b-it-q4_K_M`, Qwen=`qwen3.8:27b-q4_K_M`. 사용자가 EXAONE을 
 
 ## 설정·코드
 
-- 서비스 기본 모델과 `.env.example`, `configs/base.yaml`의 모델 표기를 두 모델 구성으로 갱신했다. 현재 앱은 환경변수를 읽으며 YAML을 런타임 모델 선택기로 사용하지 않는다.
+- 서비스 기본 모델과 `.env.example`, [당시 configs/base.yaml](https://github.com/Hangi-n42/AsterGraph/blob/e96febe6765123f663b19c1c554d93773c703d55/configs/base.yaml)의 모델 표기를 두 모델 구성으로 갱신했다. 현재 앱은 환경변수를 읽으며 YAML을 런타임 모델 선택기로 사용하지 않는다.
 - 로컬 `.env`도 동일 선택 적용. 생성·재작성·피드백 비교의 기존 로컬1536출력/8192문맥은 유지하고 신규 설치 예시에도 명시했다. 신규 설치의 코드 기본값도 검증된1536/8192로 맞췄다. 현재 로컬 실행의 출력·문맥 예산을 더 늘린 것은 아니다.
 - 공통 HTTP timeout 기본값은 이전 실제 생성121초 초과 결과를 반영한180초. 설계만 `KNOWLEDGE_DESIGN_TIMEOUT=360`. 새 선택적 call timeout은 요청과 로그에 같은 값을 쓰며 서비스 객체를 바꾸지 않는다.
 - K3/K4 recipe에 새 요청의 think=false를 기록. 과거 recipe의 미지정 think는 임의 변경하지 않는다. 기존 저장 결과·온톨로지·스냅샷·인덱스는 재생성하지 않았다.

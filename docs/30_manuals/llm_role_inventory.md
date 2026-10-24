@@ -1,6 +1,6 @@
 # LLM 사용 지점 — 모델 교체 전 기준선 조사
 
-> 이전 비교 기록. 현재 두 모델 선정·설정은 [후속 보고서](llm_two_model_selection.md)를 따른다.
+> 이전 비교 기록. 제거된 K3/K4/K6 코드 링크는 제거 직전 보존 커밋의 파일을 가리킨다. 현재 두 모델 선정·설정은 [후속 보고서](llm_two_model_selection.md)를 따른다.
 
 기준: 2026-09-29, K6 인도 커밋 이후 코드와 로컬 설정. **새 모델 선정 전 조사 기록**이며, 이후 교체 결과·최종 설정은 별도 비교 결과 문서를 따른다. 호출 성공이나 모델 크기를 정확도 근거로 해석하지 않는다.
 
@@ -27,10 +27,10 @@
 | 피드백·재작성 — [generation.py](../../app/api/routers/generation.py) `_maybe_apply_prometheus_revision`, [prometheus_feedback.py](../../app/evaluation/prometheus_feedback.py) | 평가 저점수 항목 기반 피드백 및 수정 프롬프트, `/api/generate` | 로컬1536/8192, think 미지정, temp0 | 저점수일 때 피드백1회+재작성1회. 수정 답변 평가 후 추가 수정 루프 없음 |
 | 민원 평가 — [civil_llm_rubric.py](../../app/evaluation/civil_llm_rubric.py), `GenerationService.call_rubric_judge` | **Q2 / Q3·Q4·Q5 / Q1·Q7 / Q6 / Q0의 5회**, 항목 정의·선택지 유지, `/api/generate` | 근거그룹1536/8192, 표현그룹640/8192, 단독192/8192; think=false, temp0 | 민원·검색 근거가 같은 요청 내 Q2 캐시. 재작성 후 나머지4회 평가. Q0는 다른 평가 결과 없이 독립 입력 |
 | 민원 구조화 — [service.py](../../app/structuring/service.py), [structured_extractor.py](../../app/structuring/structured_extractor.py) | **`STRUCTURING_CONSTRAINED=true`**, 관찰·결과·요청·맥락/주체와 근거 범위를 스키마 제약으로 추출, `/api/chat` | 512/4096, 입력 최대2000자, timeout90초, think 미지정, temp0.1 | 파싱·검증 실패시 강화 프롬프트/temp0으로1회 재시도. 실패시 기존 폴백 |
-| K3 분석·설계·수정 — [ontology_run.py](../../app/knowledge/ontology_run.py) | `COMMON/ANALYZE/DESIGN`, 동결 블록·CQ·기준 정의, `/api/generate` | 분석2048/16384, 설계·수정4096/32768, think 미지정, temp0 | 분석n+설계1+검토1. 필요시 수정1, 수정 후 AI 재검토 없음 |
+| K3 분석·설계·수정 — [ontology_run.py](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/ontology_run.py) | `COMMON/ANALYZE/DESIGN`, 동결 블록·CQ·기준 정의, `/api/generate` | 분석2048/16384, 설계·수정4096/32768, think 미지정, temp0 | 분석n+설계1+검토1. 필요시 수정1, 수정 후 AI 재검토 없음 |
 | K3 반례 검토 — 같은 파일 `REVIEW` | 개념/개체·범위·관계·근거·누락 비교, `/api/generate` | 2048/32768, think=false, temp0 | 실패는 단계 실패. 성공 단계 재사용하며 수동 재시도; 모델·프롬프트·예산 변경시 새 실행 필요 |
-| K4 추출 — [extraction.py](../../app/knowledge/extraction.py), [extraction_contract.py](../../app/knowledge/extraction_contract.py) | 온톨로지·허용 개체·블록에 연결한 사실 추출, `/api/generate` | 4096/32768, think 미지정, temp0 | 성공 단위 재사용, 실패 단위 재시도. **CSV 매핑·PDF 규칙 추출은 모델 호출0**. 모델 교체 비교에는 HTML/general 모델 단위를 포함해야 함 |
-| K6 Local — [search.py](../../app/knowledge/search.py), [search_answer.py](../../app/knowledge/search_answer.py) | 공개 A는 사실 그룹 선택 후 서버 원값 표시. B/C/D는 내부 비교용, `/api/generate` | 1536/16384, Qwen 이름이면 think=false; 명시적 추론 실험3072/16384 | 기본1회, 자동 평가·재작성·재시도 없음. 실험 후보를 공개 기본값으로 자동 채택하지 않음 |
+| K4 추출 — [extraction.py](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/extraction.py), [extraction_contract.py](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/extraction_contract.py) | 온톨로지·허용 개체·블록에 연결한 사실 추출, `/api/generate` | 4096/32768, think 미지정, temp0 | 성공 단위 재사용, 실패 단위 재시도. **CSV 매핑·PDF 규칙 추출은 모델 호출0**. 모델 교체 비교에는 HTML/general 모델 단위를 포함해야 함 |
+| K6 Local — [search.py](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/search.py), [search_answer.py](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/search_answer.py) | 공개 A는 사실 그룹 선택 후 서버 원값 표시. B/C/D는 내부 비교용, `/api/generate` | 1536/16384, Qwen 이름이면 think=false; 명시적 추론 실험3072/16384 | 기본1회, 자동 평가·재작성·재시도 없음. 실험 후보를 공개 기본값으로 자동 채택하지 않음 |
 | 검색 근거 필터 — [grounding_filter.py](../../app/retrieval/grounding_filter.py), [retrieval.py](../../app/api/routers/retrieval.py) | 민원-후보 쟁점 관련성0/1/2점, `/api/generate` | 배치max(24,4×후보수+12)/3072; 개별24/2048, think 미지정, temp0 | 배치 실패시 개별 채점. 전역 `GROUNDING_FILTER_ENABLED=false`여도 **검색API는 true 명시**. 민원 생성의 내부 재검색은 false 명시 |
 
 K3·K4·K6는 선택적 메타데이터 반환으로 `done_reason=length` 등을 확인한다. 일반 생성·구조화는 동일한 메타데이터 처리를 사용하지 않는다. 공통 `call_ollama()`의 기본 반환 계약은 문자열이다.

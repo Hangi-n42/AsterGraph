@@ -11,3 +11,5 @@
 P1은 원본 DB의 source run을 읽기 전용으로 `/private/tmp/rag-followup-20261012/source_snapshot_readonly.json`에 내보낸 입력을 읽었다. 이 사본은 source run digest와 대조했고 원본 DB는 불변이다. P2 준비6건의 capture와 종료 API 오류는 모델 호출·실제 모델 실패가 아니며, 별도 `preflight_close_failure/P2_driver.py`와 사본 DB에 보존됐다. final driver는 실제 `executor.shutdown`을 사용한다.
 
 평가 원문 정답은 비교 설계/판정 전용이다. 두 driver는 evaluation-reference/scoring 파일을 제품 입력으로 읽지 않는다. POSIX `fcntl`은 로컬 driver의 실행 조건이며 제품의 Windows 지원 판단과는 별개다. 실제 모델 실행 없이 재검토할 때는 full request SHA/원문 보존/코드 SHA/원형 응답을 우선 대조한다.
+
+재현 코드 경계: 원본 `P1_offline.py`의 `discovery_profile` import와 절대 경로는 당시 실행 코드다. 현재 main에서 실행하도록 원본을 수정하지 않는다. 해당 모듈은 [제거 직전 보존 커밋](https://github.com/Hangi-n42/AsterGraph/blob/4334e8f8be65fc82afde791125f55eb73b857682/app/knowledge/discovery_profile.py)에 있고 현재 공통 구현은 `app/knowledge/source_index.py`다. 기존 `preservation_manifest.json`의 코드·입력·원응답 해시 및 당시 환경이 재현 기준이며, 새 requirements가 과거 환경을 대신하지 않는다. 정리 전 설치 목록은 [e96febe6 requirements](https://github.com/Hangi-n42/AsterGraph/blob/e96febe6765123f663b19c1c554d93773c703d55/requirements.txt)에서 조회한다.

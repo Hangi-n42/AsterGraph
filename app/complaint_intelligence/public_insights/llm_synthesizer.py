@@ -236,10 +236,6 @@ supporting_evidence_ids, expected_impact, risk_or_dependency
         return f"{rules}\nACTION_RETRY_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False, default=str)}"
 
 
-def draft_to_json(draft: PublicAgencyInsightDraft) -> dict[str, Any]:
-    """테스트와 디버깅용 JSON 변환."""
-
-    return json.loads(draft.model_dump_json())
 
 
 def _compact_output_schema(allowed_action_types: list[str] | None = None) -> dict[str, Any]:

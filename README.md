@@ -24,7 +24,7 @@
 
 ## 개발 시작
 
-[로컬 개발 안내](docs/30_manuals/local_dev_runbook.md)에 Python 3.11.9, Mac/Windows 환경, 로컬 `.env`, 데이터·Ollama·포트 설정을 정리했습니다. [프런트엔드 안내](frontend/README.md)도 함께 확인합니다. `npm run dev`의 사전 처리에는 replay DB 초기화가 포함되므로 실행 안내의 데이터 보존 경로를 먼저 확인합니다.
+[로컬 개발 안내](docs/30_manuals/local_dev_runbook.md)에 Python 3.11.9, Mac/Windows 환경, 로컬 `.env`, 데이터·Ollama·포트 설정을 정리했습니다. [프런트엔드 안내](frontend/README.md)도 함께 확인합니다. 일반 `npm run dev`는 화면만 시작합니다. 민원 replay DB 초기화는 명시적 `npm run replay:prepare`로 분리했으며, 실행 전 대상·백업 안내를 확인합니다. 현재 런타임 설정은 `.env` 환경변수와 `app/core/config.py`를 따릅니다. 이전 `configs/base.yaml`, `local.yaml`, `models.yaml`은 런타임 로더가 없어 제거했으며 [정리 전 기준](https://github.com/Hangi-n42/AsterGraph/tree/e96febe6765123f663b19c1c554d93773c703d55/configs)에 보존돼 있습니다.
 
 ## 문서와 산출물
 

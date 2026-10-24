@@ -43,3 +43,7 @@
 ## 신규 제품과의 관계
 
 이 디렉터리는 기존 민원 기능의 참고 기준이다. 신규 회사 지식 제품은 [문서 지도](../../docs/README.md)를 통해 PRD·설계·구현·마일스톤을 확인한다. 과거 평가 결과는 [모듈별 실험](../../experiments/README.md)에 보관한다.
+
+## Python smoke와 배포 기록
+
+[Python Syntax Smoke](../../.github/workflows/deploy-production.yml)는 main push/수동 실행에서 Python 문법을 compileall로 검사한다. 서버 전송·배포·GitHub production deployment marker를 생성하지 않는다. 전체 기능·품질 CI도 아니다. 이전 marker 기록은 삭제하지 않았다. [DORA 계산](../../.github/scripts/calc_dora_metrics.mjs)은 GitHub Deployment의 성공/실패 이벤트를 집계하므로, 과거 marker가 포함된 값은 실제 서버 배포 빈도/실패율의 증거가 아니다. 앞으로 이 smoke 실행은 deployment 집계에 추가되지 않는다. 실제 배포가 필요하면 별도 배포 절차와 지표 기준을 정해야 하며 기존 DORA workflow의 활성 상태는 변경하지 않았다.

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/prepareComplaintIntelligenceReplay.mjs",
+    "replay:prepare": "node scripts/prepareComplaintIntelligenceReplay.mjs",
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
