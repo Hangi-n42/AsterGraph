@@ -21,6 +21,17 @@ const render = (evidence: Record<string, unknown>[], extra: Record<string, unkno
   return html;
 };
 
+it("labels legacy Hybrid+graph without rewriting the stored mode or answer", () => {
+  const html = render([], { retrieval: "hybrid_graph" });
+  expect(html).toContain("과거 Hybrid+graph 답변입니다");
+  expect(html).toContain("당시 답변과 인용을 그대로 조회합니다");
+  expect(html).toContain("저장 본문");
+  expect(html).not.toContain("HippoRAG2");
+  hooks.seeds = [[{ id: "old", question: "과거 질문", retrieval: "hybrid_graph", status: "needs_review" }], "", null, "", "", false];
+  const list = renderToStaticMarkup(createElement(KnowledgeStoredAnswers, { scope, onExplore: () => {} }));
+  expect(list).toContain("Hybrid+graph (과거 모드)");
+});
+
 it("distinguishes a recorded claim range from a whole chunk and surrounding text", () => {
   const html = render([
     { block_id: "block", source_version_id: "version", parse_run_id: "parse", start_char: 367, end_char: 461, precision: "exact_unverified_meaning", quote: "생산량 구절", block_text: "주변 원문 전체" },

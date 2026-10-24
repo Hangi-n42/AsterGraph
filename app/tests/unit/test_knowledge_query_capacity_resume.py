@@ -7,6 +7,44 @@ from app.knowledge.service import KnowledgeService, KnowledgeConflict, encode
 from app.tests.unit.test_knowledge_evidence_preservation import data, request
 
 
+def test_existing_hippo_resume_api_never_repeats_retrieval(failed, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.api.routers import knowledge
+    from app.core.config import settings
+    from app.knowledge import graph_retrieval
+    service, parent, _, packet, payload = failed
+    monkeypatch.setattr(settings, 'KNOWLEDGE_ENABLED', True)
+    monkeypatch.setattr(graph_retrieval, 'retrieve', lambda *a, **k: pytest.fail('No new retrieval'))
+    seen = []
+    def stored_qa(svc, child, stage, instruction, body, schema, **kw):
+        assert stage == 'business_qa'
+        assert business_run.json_request(child, stage, instruction, body, schema, **kw) == packet
+        seen.append(stage)
+        return dict(answer='Explicit fixture', choice=None, citations=['c2'], limitations=['Fixture only'])
+    monkeypatch.setattr(business_run, 'json_call', stored_qa)
+    app = FastAPI(); app.include_router(knowledge.router, prefix='/api/v1')
+    app.dependency_overrides[knowledge.get_knowledge_service] = lambda: service
+    with TestClient(app) as client:
+        response = client.post('/api/v1/knowledge/business/runs/failed/capacity-resumes', json=payload.model_dump())
+    assert response.status_code == 200 and response.json()['data']['status'] == 'answered'
+    assert seen == ['business_qa']
+    assert service.run(parent['id'])['query']['retrieval'] == 'hipporag2'
+
+
+def test_legacy_hg_source_query_does_not_gain_capacity_resume(failed):
+    from app.knowledge.business_models import BusinessQuery
+    service, parent, _, _, payload = failed
+    parent['query'] = BusinessQuery(source_run_id='origin', question='과거 원문', retrieval='hybrid_graph').model_dump()
+    with service.repository.connect() as db:
+        db.execute('UPDATE runs SET payload=? WHERE id=?', (encode(parent), parent['id']))
+    payload = payload.model_copy(update=dict(expected_parent_fingerprint=concept_work.digest(parent)))
+    with pytest.raises(ValueError, match='필수 입력 용량 실패'):
+        query_capacity_resume.start(service, parent['id'], payload)
+    with service.repository.connect() as db:
+        assert db.execute('SELECT COUNT(*) FROM runs').fetchone()[0] == 2
+
+
 @pytest.fixture
 def failed(tmp_path, monkeypatch):
     snapshot, original, candidates, baseline, run = data()

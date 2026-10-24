@@ -16,7 +16,7 @@ from app.knowledge.repository import VersionConflict
 from app.knowledge.schemas import RunRequest, SourceRegistration, AvailabilityRequest
 from app.knowledge import availability as usage_status
 from app.knowledge import business_store, business_use
-from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessQuery, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
+from app.knowledge.business_models import RequirementInput, BusinessRunRequest, BusinessDecision, BusinessEventEdit, BusinessSearchRequest, ChangeRequest, ConceptRunRequest, HtmlLiteralRowsRequest, BusinessAnswerRecheck, BusinessParticipantResume, SourceRebuildPlanRequest
 from app.knowledge.business_models import ConceptPreservationRequest, ConceptMaterializationRequest, QueryCapacityResume, InterpretationEditRequest, StoredRequirementLink
 
 
@@ -205,7 +205,7 @@ def business_snapshots(service=Depends(get_knowledge_service)):
 
 
 @router.post('/business/search', response_model=KnowledgeResponse)
-def business_search(request: BusinessQuery, service=Depends(get_knowledge_service)):
+def business_search(request: BusinessSearchRequest, service=Depends(get_knowledge_service)):
     return result(business_use.query(service, request))
 
 

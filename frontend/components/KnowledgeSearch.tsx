@@ -69,8 +69,9 @@ export default function KnowledgeSearch({ request, scope, onOpenScope, onExplore
         {!loading && !snapshots.length && <p className={styles.empty}>저장된 출처 지식 버전이 없습니다. 검토·승인 뒤 생성한 버전으로 질문할 수 있습니다.</p>}
         {!loading && snapshots.length > 0 && !snapshot && <p className={styles.warning}>현재 상단의 범위는 사용 가능한 출처 지식 버전이 아닙니다. 다른 버전으로 자동 대체하지 않습니다.</p>}
         <label>근거 찾기<select aria-label="근거 찾기" value={retrieval} onChange={e => { setRetrieval(e.target.value); setConfiguration(e.target.value === "hipporag2" ? "preserved" : "baseline"); setResult(null); }}>
-          <option value="hipporag2">개념·관계 연결 검색</option><option value="bm25">단어 검색 (BM25)</option><option value="dense">임베딩 검색</option>
+          <option value="hipporag2">개념·관계 연결 검색 (HippoRAG2 · 기본)</option><option value="bm25">단어 검색 (BM25)</option><option value="dense">임베딩 검색</option>
         </select></label>
+        {retrieval === "hipporag2" && <p className={styles.muted}>그래프 검색은 HippoRAG2 단일 경로를 사용합니다.</p>}
         {retrieval === "hipporag2" && <label>검색 구성<select aria-label="검색 구성" value={configuration} onChange={e => { setConfiguration(e.target.value); setResult(null); }}>
           <option value="baseline">이전 구성 (비교용)</option><option value="preserved">근거 보존·확장</option>
         </select></label>}
