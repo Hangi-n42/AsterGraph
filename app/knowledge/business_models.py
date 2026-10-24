@@ -632,6 +632,21 @@ class BusinessQuery(BaseModel):
         return self
 
 
+HYBRID_GRAPH_RETIRED = 'hybrid_graph 신규 검색은 종료되었습니다. 그래프 검색에는 hipporag2를 사용하세요. 저장된 결과 조회는 유지됩니다.'
+
+
+class BusinessSearchRequest(BusinessQuery):
+    retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2'] = Field(default='hipporag2',
+        description='그래프 검색은 hipporag2를 사용합니다. hybrid_graph는 과거 저장 질의용이며 신규 실행은 종료되었습니다.')
+
+    @model_validator(mode='before')
+    @classmethod
+    def current_retrieval(cls, value):
+        if isinstance(value, dict) and value.get('retrieval') == 'hybrid_graph':
+            raise ValueError(HYBRID_GRAPH_RETIRED)
+        return value
+
+
 class ChangeRequest(BaseModel):
     before_version_id: str
     after_version_id: str

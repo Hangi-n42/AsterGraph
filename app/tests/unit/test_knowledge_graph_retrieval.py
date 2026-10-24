@@ -180,7 +180,7 @@ def test_qa_source_aliases_restore_citations_and_preserve_source_spans(tmp_path,
 
 @pytest.mark.parametrize('retrieval,variant,mode', [('bm25', 'full', 'document'), ('bm25', 'full', 'graph'),
     ('dense', 'entity_event', 'graph'), ('hipporag2', 'entity_event', 'graph'),
-    ('hipporag2', 'full', 'graph'), ('hybrid_graph', 'full', 'graph')])
+    ('hipporag2', 'full', 'graph')])
 @pytest.mark.parametrize('source_status', ['succeeded', 'partial', 'review_ready', 'failed', 'cancelled'])
 def test_source_run_qa_uses_ranked_passages_without_creating_approval(tmp_path, monkeypatch, retrieval, variant, mode, source_status):
     s = snapshot()

@@ -1223,6 +1223,9 @@ def resolve_query_defaults(request, context_mode):
 
 def query(service, request, *, context_mode='graph'):
     """The same question/answer contract supports a recorded document baseline."""
+    from .business_models import HYBRID_GRAPH_RETIRED
+    if request.retrieval == 'hybrid_graph':
+        raise ValueError(HYBRID_GRAPH_RETIRED)
     from .source_index import FrozenIndex
     request, defaulted = resolve_query_defaults(request, context_mode)
     if request.answer_mode in {'source_quotes', 'items', 'reviewed_items'} and (request.source_run_id or context_mode != 'graph'):

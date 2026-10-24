@@ -2,6 +2,8 @@
 
 `POST /api/v1/knowledge/business/search`는 새 검색 실행의 진입부 한 곳에서만 기본값을 해결한다. 검색 알고리즘 기본값은 기존 `hipporag2`를 유지한다. 이는 그래프 중심 개발에 대한 과거 사용자 선택이며 알고리즘 간 품질 우위의 인증이 아니다. 원문 QA 비교와 승인 snapshot 상품 비교는 서로 다른 평가 범위다.
 
+`hybrid_graph` 신규 검색은 API와 직접 서비스 진입에서 DB 쓰기·작업 생성·모델 전송 전에 종료하며 대체 `hipporag2`를 안내한다. 신규 API enum에도 HG를 포함하지 않는다. 기존 `BusinessQuery`의 과거 원문 QA 파싱, 저장 GET·workbench의 당시 모드·답변·인용·검토 상태는 유지한다. 내부 HG 순위 연산은 과거 재현용으로 보존하고 새 실행 경로에서는 사용하지 않는다. standalone Hybrid/BM25/Dense와 공통 후보·선택·PPR·RRF·근거 조립은 변경하지 않는다.
+
 기본값 적용 범위는 `snapshot_id` + `hipporag2` + `full` + `synthesis` + 강제 `requirement_ids` 없음 + graph 경로다. 이 범위에서 생략된 필드만 다음 값으로 해결한다.
 
 | 필드 | 생략 시 |

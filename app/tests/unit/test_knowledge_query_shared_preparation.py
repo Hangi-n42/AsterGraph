@@ -35,7 +35,7 @@ def source_query(tmp_path, monkeypatch):
         service.shutdown()
 
 
-@pytest.mark.parametrize('retrieval', ['bm25', 'hybrid_graph'])
+@pytest.mark.parametrize('retrieval', ['bm25', 'hipporag2'])
 def test_source_query_builds_once_keeps_selected_contexts_independent_and_does_not_mutate(source_query, monkeypatch, retrieval):
     service, original = source_query
     build, chunks, source_context = gr.build, autoschema.chunks, gr.source_context
@@ -75,7 +75,7 @@ def test_source_query_builds_once_keeps_selected_contexts_independent_and_does_n
     assert built[0] is not built[1] and bundles[0] is not bundles[1]
 
 
-@pytest.mark.parametrize('retrieval', ['bm25', 'hybrid_graph'])
+@pytest.mark.parametrize('retrieval', ['bm25', 'hipporag2'])
 def test_bundle_provider_is_released_before_qa_and_is_fresh_for_each_request(source_query, monkeypatch, retrieval):
     service, _ = source_query
     factory, call = gr.source_context_bundles, business_run.json_call
@@ -103,7 +103,7 @@ def test_changed_source_run_and_options_get_new_request_bundles(source_query, mo
         inputs.append((deepcopy(blocks), context_tokens, output_tokens))
         return chunks(blocks, context_tokens, output_tokens, **kwargs)
     monkeypatch.setattr(autoschema, 'chunks', record)
-    request = BusinessQuery(source_run_id='origin', question='원문', retrieval='hybrid_graph', limit=2)
+    request = BusinessQuery(source_run_id='origin', question='원문', retrieval='hipporag2', limit=2)
     assert business_use.query(service, request)['status'] == 'answered'
     changed = deepcopy(original)
     changed['id'] = 'changed-origin'
@@ -212,7 +212,7 @@ def test_bundle_failure_keeps_retrieval_failure_trace_and_stored_state(source_qu
     def fail(*args, **kwargs):
         raise ValueError('No input capacity after instructions/schema/output reservation')
     monkeypatch.setattr(autoschema, 'chunks', fail)
-    result = business_use.query(service, BusinessQuery(source_run_id='origin', question='원문', retrieval='hybrid_graph'))
+    result = business_use.query(service, BusinessQuery(source_run_id='origin', question='원문', retrieval='hipporag2'))
     assert result['status'] == 'retrieval_failed' and 'No input capacity' in result['error']
     with service.repository.connect() as db:
         run = service.repository.get(db, 'runs', result['run_id'])
