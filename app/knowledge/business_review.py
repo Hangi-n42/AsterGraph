@@ -3347,14 +3347,6 @@ partial의 claim_ids는 각 묶음에서 확인한 부분 기여다. 실제 전�
 나머지 정상 국소 판정은 서버가 보존한다. 미제공 후보를 재판정하지 말고 새 모순은 관련 의미키의 이의로 남긴다.
 주체와 조건의 짝, AND/OR, 예외, 시점, 문서 간 결합 전제를 원문으로 확인한다.
 필수 의미·미해결 내용을 삭제해 성공으로 만들지 않는다. 의존 판단 불가이면 premise_keys=null이다.
-findings의 모든 ID에 finding_resolutions를 반환한다. 제공 범위는 unit_id가 가리키는 source_inspections/국소 판정 기록을 참조한다. 국소 미발견은 전체 자료 부재가 아니다.
-status는 실제 제공 근거로 해소 resolved, 공개 요구 밖 not_required, 필수 외부자료 공백 required_gap,
-원문 의미 오류 source_error, 후보 표현 오류 claim_error, 아직 판단 불가 unresolved로 구분한다.
-resolved/source_error/claim_error에는 이번 blocks의 정확 인용과 관련 meaning_keys를 쓴다.
-not_required도 근거를 적는다. 다만 조사 완료된 source_inspections의 local_not_found는 긍정 명제가 아니다.
-다른 실제 제공 의미로 필요한 내용이 확인돼 해당 국소 미발견이 요구 공백이 아니라면, not_required의 meaning_keys로 그 지지 의미를 연결한다.
-조사 실패/미읽기/외부 필수 참조에는 이 예외를 적용하지 않는다. reference_missing_here가 다른 원문에서 해소되면 resolved와 실제 인용을 적는다.
-후보 오류는 그 실제 claim_ids와 checks의 incorrect/incorrect_claim_ids에 함께 남긴다. 다른 후보로 이의를 옮기지 않는다.
 source_completeness는 전체 요구의 원문 조사 상태다. 모든 배치 조사나 부분 결과의 합계만으로 complete라 하지 않는다.
 source_selection의 정확 행 조회 조건과 공개 요구를 대조해 미선택 행도 필요한지 unselected_source_required로 판단한다.
 미선택 자료가 필요하거나 그 관련성을 판단할 수 없으면 complete로 선언하지 않는다.
@@ -3368,10 +3360,6 @@ checks는 새 근거/모순/구체 이전 오독 또는 실제 부분 표현의 
 원문에 있다는 이유로 후보가 없는 의미를 represented로 바꾸지 않는다. 부분 개수를 합쳐 완전하다고 하지 않는다.
 review_meaning_keys 밖의 판정은 수정하지 않는다. source 의미·필수성의 오류는 meaning_challenges로만 재판정을 요청한다.
 dependencies는 확인한 연결 전제만 반환한다. 생략은 이전 판정 보존, null은 미확정, []는 확인된 독립이다.
-findings의 각 ID를 finding_resolutions에 해소/요구 밖/필수 공백/원문 오류/후보 오류/미확정으로 구별한다.
-resolved/source_error/claim_error는 실제 evidence와 의미키를 요구한다. 후보 오류는 원래 후보에 귀속한다.
-조사 완료한 국소 local_not_found가 다른 지지 의미로 충족되면 not_required와 그 의미키를 반환할 수 있다.
-이는 조사 실패·미읽기·외부 필수 참조를 자동 해소하는 규칙이 아니다. 자유 이의를 삭제하거나 독립으로 추정하지 않는다.
 source_completeness는 필수 범위 조사 상태이며 unselected_source_required에는 남은 자료의 필요 여부를 적는다.
 필수 범위와 연결 전제를 확인하지 못하면 satisfied/conjunctions_satisfied는 false다.
 '''
@@ -3430,6 +3418,19 @@ item_ids는 실제 관련된 public_answer_items의 ID만 선택한다. 항목�
 근거와 공개 요구상 이유 없이 background/outside_scope로 면제하지 않는다. 원문 진위와 질문 필요성은 별개다.
 필수 연결 미확인은 전체 완료를 막지만 독립 정상 사실의 오류가 아니다. 정상 기관/제외/구비항목과 local_judgments는 그대로 유지한다.
 결합 해석의 수정/철회만으로 그 전제 의미들을 meaning_challenges에 넣지 않는다. 실제 원문 의미 자체의 오류가 특정된 경우만 기존 부분 재판정을 요청한다.
+'''
+    join_instruction += '''
+findings의 모든 ID에 finding_resolutions를 정확히 한 행씩 반환한다. 제공 범위는 unit_id의 source_inspections/국소 판정 기록을 참조한다. 국소 미발견은 전체 자료 부재가 아니다.
+status는 실제 제공 근거로 해소 resolved, 공개 요구 밖 not_required, 필수 외부자료 공백 required_gap,
+원문 의미 오류 source_error, 후보 표현 오류 claim_error, 아직 판단 불가 unresolved로 구분한다.
+not_required를 포함한 해소 판정은 이번 blocks의 실제 evidence를 선택한다. reason 설명만으로 evidence를 대신하지 않는다.
+resolved/source_error/claim_error에는 관련 meaning_keys도 쓴다. 후보 오류는 원래 claim_ids와 checks의 incorrect/incorrect_claim_ids에 함께 남긴다. 다른 후보로 이의를 옮기지 않는다.
+not_required는 왜 공개 요구의 공백이 아닌지 원문 근거로 설명한다. 근거를 확인하지 못하면 unresolved로 남긴다.
+단, source의 local_not_found이고 해당 source_inspections에 오류가 없고 inspection_status=complete이며 조사한 제공 블록 범위가 일치할 때만 예외를 허용한다.
+다른 실제 제공 의미가 required_for_requirement=true이고 모든 필드가 supported/not_applicable, source_status=supported, availability=provided이며 오류 없이 실제 원문 근거로 지지되면,
+그 의미가 필요한 내용을 충족하는지 확인하고 not_required의 meaning_keys로 연결할 수 있다. 이 엄격한 경우만 해소 행의 evidence=[]를 허용한다.
+조사 실패·미읽기·reference_missing_here에는 이 예외를 적용하지 않는다. 외부 참조가 다른 제공 원문에서 해소되면 resolved와 실제 evidence를 반환한다.
+자유 이의를 삭제하거나 독립으로 추정하지 않는다. 근거 ID·주소를 만들거나 기존 빈 근거를 설명문에서 보완하지 않는다.
 '''
     result = execution.json_call(service, run, 'requirement_representation', join_instruction,
         dict(mode='requirement_join', requirement=requirement, review_meaning_keys=sorted(join_keys),
