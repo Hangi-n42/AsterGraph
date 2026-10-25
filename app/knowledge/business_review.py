@@ -3,7 +3,7 @@ from collections import Counter
 from copy import deepcopy
 import json
 import re
-from typing import Literal
+from typing import Literal, get_args
 from uuid import uuid4
 
 from pydantic import Field, create_model
@@ -3332,6 +3332,14 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
             claim_ids=(list[Literal[tuple(contribution_ids)]] if contribution_ids else list[str], Field(max_length=len(contribution_ids))))
         join_type = create_model('PublicItemContributionSynthesis', __base__=join_type,
             public_item_checks=(list[item_type], Field(min_length=len(public_items), max_length=len(public_items))))
+    if split_roles and join_keys:
+        scoped = {}
+        for field in ('checks', 'dependencies'):
+            row_type = get_args(join_type.model_fields[field].annotation)[0]
+            row_type = create_model('Scoped' + row_type.__name__, __base__=row_type,
+                meaning_key=(Literal[tuple(sorted(join_keys))], Field(...)))
+            scoped[field] = (list[row_type], deepcopy(join_type.model_fields[field]))
+        join_type = create_model('Scoped' + join_type.__name__, __base__=join_type, **scoped)
     # No repeated local output transcripts or source batch history in the join.
     # The source statements and their claim locations remain complete.
     preservation_instruction = ('\nrepair_context의 실제 수정 대상마다 원래 정상 의미 전체와 현재 after/replacements/claims의 위치를 대조해 preservation_checks에 명시한다. '
@@ -3358,7 +3366,9 @@ mode=requirement_join: 원문/표현 판정 전체를 다시 작성하지 않는
 checks는 새 근거/모순/구체 이전 오독 또는 실제 부분 표현의 결합으로 바뀌는 행만 반환한다. 변경 없으면 [].
 변경에는 revision_basis, 실제 evidence, 이전 판정의 어느 부분이 왜 달라지는지 reason을 쓴다.
 원문에 있다는 이유로 후보가 없는 의미를 represented로 바꾸지 않는다. 부분 개수를 합쳐 완전하다고 하지 않는다.
-review_meaning_keys 밖의 판정은 수정하지 않는다. source 의미·필수성의 오류는 meaning_challenges로만 재판정을 요청한다.
+checks와 dependencies 각 행의 meaning_key는 review_meaning_keys의 허용 대상 ID만 쓴다.
+같은 값이어도 범위 밖 행은 반환하지 않는다. 생략한 기존 판정은 서버가 보존한다.
+source 의미·필수성의 오류는 meaning_challenges로만 재판정을 요청한다.
 dependencies는 확인한 연결 전제만 반환한다. 생략은 이전 판정 보존, null은 미확정, []는 확인된 독립이다.
 source_completeness는 필수 범위 조사 상태이며 unselected_source_required에는 남은 자료의 필요 여부를 적는다.
 필수 범위와 연결 전제를 확인하지 못하면 satisfied/conjunctions_satisfied는 false다.
