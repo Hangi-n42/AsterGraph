@@ -493,6 +493,53 @@ def reference_source_facts(context, views):
     return bindings
 
 
+def repair_input_references(context, mapping, schema):
+    """Shorten identifiers and share exact repeated field values only in repair input."""
+    if 'shared_interpretation_fields' in context:
+        raise ValueError('repair_input_reference_name_collision')
+    meanings = [m for c in context.get('reuse_candidates', [])
+                for m in (c.get('interpretation') or {}).get('meanings', [])]
+    defined = {m['id'] for m in meanings if isinstance(m.get('id'), str) and m['id'].startswith('interpretation_')}
+    counts = {}
+    for meaning in meanings:
+        for value in [meaning.get('id'), *meaning.get('premise_ids', []),
+                      *[ref for p in meaning.get('participants', []) for ref in p.get('meaning_refs', [])]]:
+            if value in defined:
+                counts[value] = counts.get(value, 0) + 1
+    serialized = encode(context) + encode(schema)
+    next_ids = {}
+    def fresh(prefix):
+        index = next_ids.get(prefix, 0)
+        while True:
+            index += 1
+            alias = prefix + str(index)
+            if encode(alias) not in serialized and alias not in mapping and alias not in mapping.values():
+                next_ids[prefix] = index
+                return alias
+    for identity, count in counts.items():
+        # A literal quotation/value equal to an identifier must remain literal.
+        if identity not in mapping and serialized.count(encode(identity)) == count:
+            mapping[identity] = fresh('i')
+    shared = {}
+    fields = ('conditions', 'exceptions', 'time', 'local_negation', 'references', 'premises')
+    for value in (dict(state='absent', text=None), dict(state='absent', meaning_indices=[])):
+        locations = [(meaning, field) for meaning in meanings for field in fields if meaning.get(field) == value]
+        if len(locations) < 2:
+            continue
+        alias = fresh('sf')
+        shared[alias] = value
+        for meaning, field in locations:
+            meaning[field] = alias
+    if not shared:
+        return ''
+    context['shared_interpretation_fields'] = shared
+    return '''
+reuse_candidates의 interpretation.meanings에서 conditions/exceptions/time/local_negation/references/premises가 sf ID이면 shared_interpretation_fields의 같은 ID 객체를 그대로 읽는다.
+각 원래 필드의 동일 값 참조이며 다른 후보에 조건을 공통 적용하거나 후보를 병합하지 않는다. state/null/배열/소속과 원래 미검증·미확정·오류 상태는 그대로다.
+absent는 원래 미검증 해석의 값이며 새 조건 부재 판단이나 원문 지지·승인이 아니다.
+'''
+
+
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .source_meanings import remap
     context = deepcopy(context)
@@ -570,13 +617,15 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         for prefix, values in [('b', run.get('blocks', [])), ('c', run.get('claims', []))]:
             mapping.update({v['id']: prefix + str(n + 1) for n, v in enumerate(values)})
         mapping.update({v: 'v' + str(n + 1) for n, v in enumerate(run.get('sources', {}))})
+    if stage == 'requirement_repair':
+        instruction += repair_input_references(context, mapping, output_type.model_json_schema())
     if business_review.separated(run):
         # Unused IDs are not model input. Adding an unrelated candidate must not
         # invalidate an otherwise exact, unchanged local request.
         serialized = encode(context) + encode(output_type.model_json_schema())
         mapping = {key: value for key, value in mapping.items() if key in serialized}
     payload = remap_expression_keys(remap(context, mapping), mapping)
-    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage == 'requirement_representation' or source_only_public else encode(payload)
+    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage in {'requirement_representation', 'requirement_repair'} or source_only_public else encode(payload)
     from . import answer_links
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
