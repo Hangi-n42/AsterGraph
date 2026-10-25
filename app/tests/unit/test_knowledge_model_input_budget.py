@@ -157,10 +157,16 @@ def test_unverified_contract_keeps_original_conservative_estimate(monkeypatch):
     assert result['method']=='utf8_bytes/2+output+1000' and result['fallback_reason']=='unsupported'
 
 
-@pytest.mark.parametrize("version", ["0.40.3", "0.40.6"])
-def test_both_verified_engine_versions_keep_their_renderer_contract(local, version):
+@pytest.mark.parametrize("version", ["0.40.3", "0.40.6", "0.40.10"])
+def test_verified_engine_versions_keep_their_renderer_contract(local, version):
     state, measure, _, _, _ = local
     state["version"] = version
     result, error = measure()
     assert error is None
     assert result["renderer_contract"].endswith(version)
+
+
+def test_unverified_engine_version_is_still_rejected(local):
+    state, measure, _, _, _ = local
+    state['version'] = '0.40.11'
+    assert measure() == (None, 'unsupported_engine_version')
