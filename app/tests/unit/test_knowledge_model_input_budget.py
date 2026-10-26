@@ -157,7 +157,7 @@ def test_unverified_contract_keeps_original_conservative_estimate(monkeypatch):
     assert result['method']=='utf8_bytes/2+output+1000' and result['fallback_reason']=='unsupported'
 
 
-@pytest.mark.parametrize("version", ["0.40.3", "0.40.6", "0.40.10"])
+@pytest.mark.parametrize("version", ["0.40.3", "0.40.6", "0.40.10", "0.40.11"])
 def test_verified_engine_versions_keep_their_renderer_contract(local, version):
     state, measure, _, _, _ = local
     state["version"] = version
@@ -168,5 +168,15 @@ def test_verified_engine_versions_keep_their_renderer_contract(local, version):
 
 def test_unverified_engine_version_is_still_rejected(local):
     state, measure, _, _, _ = local
-    state['version'] = '0.40.11'
+    state['version'] = '0.40.12'
     assert measure() == (None, 'unsupported_engine_version')
+
+
+@pytest.mark.parametrize('scheme',['never','first','always','unknown',''])
+def test_new_metaspace_metadata_cannot_silently_change_the_qwen35_counter(local,scheme):
+    state,measure,_,_,_=local
+    state['version']='0.40.11'
+    state['shown']['model_info']['tokenizer.ggml.metaspace.prepend_scheme']=scheme
+    result,error=measure()
+    assert bool(result)==(scheme=='never')
+    assert error==(None if scheme=='never' else 'unsupported_tokenizer_contract')

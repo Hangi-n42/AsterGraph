@@ -7,10 +7,10 @@ import re
 
 import httpx
 
-# Ollama v0.40.3/eab97e9, v0.40.6/2476d5e and v0.40.10/f52b9e7, qwen3.8 variant.
-# 0.40.10 keeps the 0.40.6 renderer, prompt, tokenization and grammar paths unchanged.
+# Ollama v0.40.3/eab97e9, v0.40.6/2476d5e, v0.40.10/f52b9e7 and v0.40.11/675150d, qwen3.8 variant.
+# 0.40.11 keeps this text renderer; its new BPE metaspace mode is excluded below.
 # shortcut: other engine versions/history/media need their own renderer verification.
-ENGINE_VERSIONS = ('0.40.3', '0.40.6', '0.40.10')
+ENGINE_VERSIONS = ('0.40.3', '0.40.6', '0.40.10', '0.40.11')
 GO_SPACE = ' \t\n\v\f\r\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000'
 PATTERN = r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?[\p{L}\p{M}]+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
 
@@ -105,7 +105,8 @@ def tokenizer(endpoint, model, digest, config_hash, transport):
             raise ValueError('model_changed_during_tokenizer_read')
     meta = shown['model_info']
     if (meta.get('tokenizer.ggml.model') != 'gpt2' or meta.get('tokenizer.ggml.pre') != 'qwen35'
-            or meta.get('tokenizer.ggml.add_bos_token') is not False):
+            or meta.get('tokenizer.ggml.add_bos_token') is not False
+            or meta.get('tokenizer.ggml.metaspace.prepend_scheme', 'never') != 'never'):
         raise ValueError('unsupported_tokenizer_contract')
     words, kinds, merges = [meta['tokenizer.ggml.' + k] for k in ('tokens', 'token_type', 'merges')]
     vocab = {word: i for i, word in enumerate(words)}
