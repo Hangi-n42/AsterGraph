@@ -540,6 +540,94 @@ absent는 원래 미검증 해석의 값이며 새 조건 부재 판단이나 �
 '''
 
 
+def reference_representation_evidence(context, mapping, schema):
+    """Share exact evidence objects, retaining every field and each owner's position."""
+    if 'shared_input_evidence' in context:
+        raise ValueError('representation_input_reference_name_collision')
+    compact = lambda value: json.dumps(value, ensure_ascii=False, separators=(',', ':'))
+    serialized = compact(context) + compact(schema) + compact(mapping)
+    if '"input_evidence_ref"' in serialized:
+        return ''  # A literal marker stays literal; leave this request unchanged.
+    locations = {}
+    def visit(value):
+        if isinstance(value, dict):
+            if isinstance(value.get('quote'), str) and 'block_id' in value:
+                locations.setdefault(compact(value), []).append(value)
+                return
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+    for field in ('source', 'whole_candidate_judgments', 'claims', 'repair_context'):
+        if field in context:
+            visit(context[field])
+    shared, index = {}, 0
+    for encoded, values in locations.items():
+        if len(values) < 2:
+            continue
+        while True:
+            index += 1
+            alias = 'er' + str(index)
+            if compact(alias) not in serialized:
+                break
+        marker = dict(input_evidence_ref=alias)
+        if len(encoded) * len(values) <= len(encoded) + len(compact(marker)) * len(values) + len(alias) + 4:
+            continue
+        shared[alias] = deepcopy(values[0])
+        for value in values:
+            value.clear()
+            value.update(marker)
+    if not shared:
+        return ''
+    context['shared_input_evidence'] = shared
+    return '''
+shared_input_evidence는 이번 입력 안의 읽기 전용 근거 객체 값이다. source/whole_candidate_judgments/claims/repair_context 아래 input_evidence_ref 객체는 표의 해당 객체 전체를 원래 위치에서 그대로 읽는다.
+각 위치의 소유 후보·의미·필드·조건·역할·순서는 그대로이며 다른 대상의 조건이나 판정을 합치지 않는다. 인용·문서·버전·파서·절대 주소·precision·context_only·추가 필드는 표의 원래 값 그대로다. 참조 자체는 의미 지지나 검수·완료·승인이 아니다. 출력 근거는 기존 blocks의 eN만 선택한다.
+'''
+
+
+def restore_representation_evidence(context):
+    """Expand the request-local table without altering the supplied payload."""
+    context = deepcopy(context)
+    if 'shared_input_evidence' not in context:
+        return context
+    shared = context.pop('shared_input_evidence')
+    if not isinstance(shared, dict):
+        raise ValueError('representation_input_reference_missing')
+    def restore(value):
+        if isinstance(value, dict):
+            if set(value) == {'input_evidence_ref'}:
+                key = value['input_evidence_ref']
+                if not isinstance(key, str) or key not in shared:
+                    raise ValueError('representation_input_reference_missing')
+                return deepcopy(shared[key])
+            return {key: restore(child) for key, child in value.items()}
+        return [restore(child) for child in value] if isinstance(value, list) else value
+    for field in ('source', 'whole_candidate_judgments', 'claims', 'repair_context'):
+        if field in context:
+            context[field] = restore(context[field])
+    return context
+
+
+def reference_representation_request(run, messages, schema, mapping):
+    """Use local-R references only when their complete prompt is exactly smaller."""
+    referenced = json.loads(messages[1]['content'])
+    if referenced.get('mode') != 'meaning_batch':
+        return messages
+    notice = reference_representation_evidence(referenced, mapping, schema)
+    if notice:
+        candidate = [dict(role='system', content=messages[0]['content'] + notice),
+                     dict(role='user', content=json.dumps(referenced, ensure_ascii=False, separators=(',', ':')))]
+        output = run['recipe']['options'].get('representation_tokens') or run['recipe']['options']['review_tokens']
+        before = request_budget(run, messages, schema, output)
+        if before.get('prompt_exact'):
+            after = request_budget(run, candidate, schema, output)
+            if after.get('prompt_exact') and after['prompt_tokens'] < before['prompt_tokens']:
+                return candidate
+    return messages
+
+
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .source_meanings import remap
     context = deepcopy(context)
@@ -630,7 +718,10 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
         schema = answer_links.generation_schema(schema)
-    return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
+    messages = [dict(role='system', content=instruction), dict(role='user', content=content)]
+    if stage == 'requirement_representation' and context.get('mode') == 'meaning_batch':
+        messages = reference_representation_request(run, messages, schema, mapping)
+    return dict(messages=messages,
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
