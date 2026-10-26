@@ -406,6 +406,8 @@ def evidence_fields(output_type):
     from .business_models import PublicScopeCheck
     if issubclass(output_type, (RequirementApplicationCheck, PublicScopeCheck)):
         names = ['meaning_challenges']
+        if issubclass(output_type, RequirementApplicationCheck):
+            names.append('links')
     elif issubclass(output_type, CandidateSourceReview):
         names = ['checks']
     elif issubclass(output_type, SelectedRequirementSourceCheck):
@@ -418,6 +420,8 @@ def evidence_fields(output_type):
             names.extend(['checks', 'meaning_challenges'])
             if 'candidate_challenges' in output_type.model_fields:
                 names.append('candidate_challenges')
+            if 'requirement_checks' in output_type.model_fields:
+                names.append('requirement_checks')
         if 'conjunction_reviews' in output_type.model_fields:
             names.append('conjunction_reviews')
     if 'public_item_checks' in output_type.model_fields:
@@ -815,7 +819,7 @@ COMPLETION_CONTRACT = 'required-meaning-completion-v3-read-application'
 
 def requirement_completion(assessment, accepted_ids=None, *, claims=None):
     source = assessment.get('source') or {}
-    representation = assessment.get('representation') or {}
+    representation = business_review.question_representation(source,assessment.get('representation') or {})
     states = business_review.requirement_states(source, representation)
     required = {key for key, state in states.items() if state is True}
     unresolved = {key for key, state in states.items() if state is None}
@@ -964,6 +968,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 source, dict(unselected_source_required=False)):
             source = business_review.source(service, run, requirement, previous=source)
     if source:
+        if source.get('public_scope', {}).get('input_contract') in business_review.PUBLIC_APPLICATION_INPUTS:
+            source['requirement_content_contract'] = business_review.CONTENT_CONTRACT
         source = apply_source_corrections(run, requirement, source)
         source.pop('processing_scope', None)
         if focus_meaning_keys is not None:
@@ -1050,6 +1056,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 dict(requirement=requirement, blocks=blocks, source=source, claims=[compact_claim(c) for c in run['claims']],
                      repair_context=repair_context), RequirementCheck)
         assessment['input_fingerprint'] = assessment_fingerprint(run, requirement, source, assessment.get('review_scope'))
+        representation = business_review.question_representation(source,representation) if representation else representation
         assessment['representation'] = representation
         if representation:
             reused_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source),
@@ -1128,12 +1135,17 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                     business_review.issue(assessment, '실제 표현 위치 없는 유지 판정', check['meaning_key'])
                     action = 'hold'
                 remainder = action == 'recover' and check['status'] == 'partial'
+                required_recovery = action == 'recover' and source.get('requirement_content_contract') == business_review.CONTENT_CONTRACT
+                recovery_target = business_review.requirement_content_target(source,meaning) if required_recovery else None
                 assessment['actions'].append(dict(meaning_key=meaning['key'], action=action,
                     claim_ids=[] if remainder else check['claim_ids'],
                     reason=check['reason'] + ('; ' + hold_reason if hold_reason else ''), review_unit_ids=check.get('review_unit_ids', []),
                     **(dict(contributing_claim_ids=list(check['claim_ids']),
                         represented_content=check['represented_content'], missing_content=check['missing_content'],
-                        missing_evidence=deepcopy(check['missing_evidence'])) if remainder else {}),
+                        missing_evidence=deepcopy(check['missing_evidence'])) if remainder or required_recovery else {}),
+                    **(dict(requirement_scope_id=recovery_target['scope_id'],required_content=recovery_target['content'],
+                        required_evidence=deepcopy(recovery_target['evidence']),requirement_applications=deepcopy(recovery_target['applications']))
+                       if recovery_target else {}),
                     error_fields=deepcopy(check.get('error_fields', {})), error_evidence=deepcopy(check.get('error_evidence', []))))
                 if (check.get('incorrect_claim_ids') and check['status'] in {'represented', 'partial'}
                         and meaning['source_status'] == 'supported' and meaning['availability'] == 'provided'):
@@ -1455,6 +1467,36 @@ def repair(service, run, requirement, assessment, *, replay_unit=None, proposals
     targets = [a for a in assessment['actions'] if a['action'] in {'recover', 'correct'}]
     states = business_review.requirement_states(assessment.get('source') or {}, assessment.get('representation') or {})
     targets = [t for t in targets if t['action'] != 'recover' or states.get(t['meaning_key']) is True]
+    source = assessment.get('source') or {}
+    content_scoped = source.get('requirement_content_contract') == business_review.CONTENT_CONTRACT
+    if content_scoped or source.get('public_scope', {}).get('input_contract') in business_review.PUBLIC_APPLICATION_INPUTS:
+        selected = []
+        checks = {c['meaning_key']:c for c in business_review.question_representation(source,assessment.get('representation') or {})['checks']}
+        for target in targets:
+            if target['action'] != 'recover':
+                selected.append(target)
+                continue
+            meaning = next((m for m in source['meanings'] if m['key'] == target['meaning_key']), {})
+            scope = business_review.requirement_content_target(source,meaning) if content_scoped else None
+            check = checks.get(target['meaning_key'], {})
+            reason = 'required_recovery_scope_or_remainder_unverified'
+            matches = []
+            if (scope and target.get('requirement_scope_id') == scope['scope_id'] == check.get('requirement_scope_id')
+                    and check.get('content_scope_bound') and check.get('status') in {'partial','missing'}
+                    and all(target.get(k) == check.get(k) for k in ('represented_content','missing_content','missing_evidence'))):
+                matches = business_review.stored_remainder_matches(run,scope,target['missing_content'],
+                    assessment.get('review_scope', {}).get('batches', []))
+                if not matches:
+                    selected.append(target)
+                    continue
+                reason = 'stored_remainder_position_requires_recheck'
+            hold = dict(meaning_key=target['meaning_key'],reason=reason,matching_claim_ids=matches,
+                        requirement_scope_id=target.get('requirement_scope_id'))
+            if hold not in assessment.setdefault('recovery_holds', []):
+                assessment['recovery_holds'].append(hold)
+        targets = selected
+        if assessment.get('recovery_holds') and service is not None:
+            save(service,run)
     protected_claims = set()
     direct = business_review.current_candidate_reviews(run) if (business_review.separate_application(run)
         or (assessment.get('source') or {}).get('public_scope')) else {}
@@ -1478,10 +1520,16 @@ def repair(service, run, requirement, assessment, *, replay_unit=None, proposals
     for target in targets:
         scope = assessment.get('review_scope', {})
         batches = [b for b in scope.get('batches', []) if target['meaning_key'] in b['meaning_keys']]
+        required_recovery = content_scoped and target['action'] == 'recover'
+        contribution_ids = set(target.get('contributing_claim_ids', [])) if required_recovery else set(target['claim_ids'])
         target['review_records'] = [dict(unit_id=batch['unit_id'], check=deepcopy(check),
             provided_block_ids=batch['provided_block_ids']) for batch in batches if not batch['error']
-            for check in batch['output']['checks'] if check['meaning_key'] == target['meaning_key']
-            and set(target['claim_ids']).intersection(check['claim_ids'] + check.get('incorrect_claim_ids', []))]
+            for check in batch['output'].get('requirement_checks' if required_recovery else 'checks', [])
+            if check['meaning_key'] == target['meaning_key']
+            and (check.get('requirement_scope_id') == target.get('requirement_scope_id') and check.get('content_scope_bound')
+                 if required_recovery else True)
+            and (contribution_ids.intersection(check['claim_ids'] + check.get('incorrect_claim_ids', []))
+                 or required_recovery and not contribution_ids and check['status'] == 'missing')]
         if target.get('candidate_review_id'):
             reviewed = direct[target['claim_ids'][0]]
             target['review_records'] = [dict(unit_id=reviewed['unit_id'], candidate_review_id=reviewed['receipt_id'],
@@ -1555,6 +1603,8 @@ def repair(service, run, requirement, assessment, *, replay_unit=None, proposals
 recover의 contributing_claim_ids는 원문에 맞는 기존 부분 표현이며 교정/삭제 대상이 아니다.
 missing_content가 있으면 원문과 missing_evidence를 확인하여 그 나머지를 새 후보로 보완한다.
 대상·조건·시점을 보존하고 원문이 지지하지 않는 결합이나 배타 규칙을 만들지 않는다.
+requirement_scope_id가 있는 recover는 required_content/required_evidence/requirement_applications의 요청상 필요한 부족함만 보완한다. source의 전체 복합 의미나 참고 잔여를 보강 대상으로 넓히지 않는다.
+이 recover의 review_records는 같은 scope의 필수부분 기여이며 원문 전체 판정·자기원문 정확성의 대체 정답이 아니다.
 ''' + ('''\n
 candidate_review_id가 있는 correct는 후보 자체의 원문 오류 판정이다. meaning_key는 귀속 ID이며 검증된 원문 의미가 아니다.
 그 review_records의 실제 오류 필드·근거를 원문과 대조하여 고친다. source 의미의 누락/실패는 이 판정의 대체 정답이 아니다.

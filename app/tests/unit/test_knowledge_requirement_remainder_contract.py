@@ -146,6 +146,8 @@ def install_synthetic_dispatch(monkeypatch,run,req,source,*,required=True,blank=
             for m in packet['source_facts']:
                 value=application(required if m['key']=='part' else None if m['key']=='pending' else False)
                 value['key']=m['key'];value['requirement_link'].pop('requirement_quote')
+                value.update(required_content=m['statement'] if value['required_for_requirement'] else '',
+                    evidence=m['evidence'] if value['required_for_requirement'] else [])
                 links.append(value)
             out=dict(links=links,meaning_challenges=[])
         else:
@@ -158,6 +160,9 @@ def install_synthetic_dispatch(monkeypatch,run,req,source,*,required=True,blank=
                         missing_content='' if blank else '추가 서류를 확인한다.',
                         missing_evidence=[] if blank else business_run.exact_evidence([dict(block_id='body',quote='추가 서류를 확인한다.')],current['blocks'])))
                 out['dependencies']=[dict(meaning_key=key,premise_keys=[]) for key in keys]
+                out['requirement_checks']=[dict(next(c for c in out['checks'] if c['meaning_key']==target['meaning_key']),
+                    requirement_scope_id=target['scope_id'],expression_quotes=[dict(claim_id=current['claims'][0]['id'],
+                        field='raw.Relation',quote='접수')]) for target in packet['required_content_targets']]
             else:
                 out.update(satisfied=False,conjunctions_satisfied=True,reason='합성 검수',source_completeness='complete',
                     unselected_source_required=False,finding_resolutions=[],public_item_checks=[dict(item_id='item',status='partial',
@@ -169,6 +174,11 @@ def install_synthetic_dispatch(monkeypatch,run,req,source,*,required=True,blank=
                 out['checks'].append(dict(meaning_key='pending',status='unknown',claim_ids=[],reason='적용성과 잔여 미확정',
                     represented_content='',missing_content='',missing_evidence=[],revision_basis='new_evidence',
                     evidence=source['meanings'][0]['evidence']))
+                for check in out['checks']:
+                    target=next((t for t in packet['required_content_targets'] if t['meaning_key']==check['meaning_key']),None)
+                    if target:
+                        check.update(requirement_scope_id=target['scope_id'],expression_quotes=[dict(
+                            claim_id=current['claims'][0]['id'],field='raw.Relation',quote='접수')])
         normalized=schema.model_validate(out).model_dump()
         current['units'].append(dict(id='synthetic-'+str(len(current['units'])),stage=stage,status='succeeded',error=None,
             response=dict(request_id='synthetic-'+str(len(current['units']))),restored_evidence_output=deepcopy(normalized)))
@@ -190,6 +200,8 @@ def synthetic_run():
             public_items=deepcopy(run['answer_items']),tasks=[],items=[dict(item_id='item',meaning_keys=['part'],read_block_ids=['body'],source_state='available')],
             errors=[],followup=[],public_requirement={k:v for k,v in req.items() if k!='source_ids'}))
     for m in source['meanings']:m['evidence']=business_run.exact_evidence(m['evidence'],run['blocks'])
+    source['meanings'][0].update(statement=run['blocks'][0]['text'],evidence=business_run.exact_evidence(
+        [dict(block_id='body',quote=run['blocks'][0]['text'])],run['blocks']))
     source['source_batches']=[dict(unit_id='E',meaning_keys=['part','reference','pending'],errors=[],provided_block_ids=['body'],
         target_block_ids=['body'],output=dict(inspection_status='complete',examined_block_ids=['body']),
         target_evidence=business_run.exact_evidence([dict(block_id='body',quote=run['blocks'][0]['text'])],run['blocks']))]
@@ -230,6 +242,10 @@ def test_mixed_read_scope_to_action_save_and_real_api_get(monkeypatch,tmp_path,r
             assert task['missing_content']==action['missing_content'] and task['missing_evidence']==action['missing_evidence']
             assert any(c['id']==before[0]['id'] for c in captured[0]['reuse_candidates'])
         elif required is None:assert 'requirement_application_unresolved' in action['reason']
+        elif blank and required:
+            assert 'required_contribution_unreviewed_or_invalid' in action['reason']
+            assert a['representation']['whole_expression_checks'][0]['status']=='partial'
+            assert a['representation']['checks'][0]['contract_errors'][0]['check']['missing_content']==''
         elif blank:assert 'partial_remainder_unconfirmed' in action['reason']
         with TestClient(app) as client:
             data=client.get('/knowledge/runs/'+run['id']).json()['data']

@@ -367,6 +367,8 @@ class MeaningApplicability(BaseModel):
     key: str
     requirement_link: RequirementLink
     required_for_requirement: bool
+    required_content: str | None = None
+    evidence: list[EvidenceQuote] = Field(default_factory=list)
 
 
 class GroundedMeaningChallenge(MeaningChallenge):
@@ -478,6 +480,13 @@ class RequirementSynthesisCheck(BaseModel):
     finding_resolutions: list[FindingResolution]
 
 
+class ExpressionQuote(BaseModel):
+    model_config = {'extra': 'forbid'}
+    claim_id: str
+    field: str
+    quote: str
+
+
 class ContributionCheck(BaseModel):
     model_config = {'extra': 'forbid'}
     meaning_key: str
@@ -487,10 +496,17 @@ class ContributionCheck(BaseModel):
     represented_content: str
     missing_content: str
     missing_evidence: list[EvidenceQuote]
+    requirement_scope_id: str | None = None
+    expression_quotes: list[ExpressionQuote] = Field(default_factory=list)
+
+
+class RequiredContributionCheck(ContributionCheck):
+    requirement_scope_id: str
 
 
 class ContributionReviewCheck(ExpressionReviewCheck):
     checks: list[ContributionCheck]
+    requirement_checks: list[RequiredContributionCheck] = Field(default_factory=list)
     candidate_challenges: list[GroundedMeaningChallenge]
 
 
