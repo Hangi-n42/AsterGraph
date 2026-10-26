@@ -51,7 +51,8 @@ def native_contract(monkeypatch, run, *, status='partial', evidence=True, locati
                     'represented_content','missing_content','missing_evidence') if k in row},
                     revision_basis='combined_expression',evidence=[dict(block_id='body',quote=run['blocks'][0]['text'])])
                     for row in packet['local_judgments']['checks']]
-        return schema.model_validate(out).model_dump()
+        # Invalid historical responses still reach the consumer in this boundary test.
+        return schema.model_validate(out).model_dump() if packet['mode']=='meaning_batch' or (evidence and confirm) else out
     monkeypatch.setattr(business_run,'json_call',response)
     return calls
 

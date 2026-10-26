@@ -90,12 +90,16 @@ def test_source_input_reference_uses_exact_view_and_preserves_original_on_mismat
 def test_completion_requires_real_public_item_expression_witnesses(monkeypatch, status):
     run, _ = public_run(); cid = run['claims'][0]['id']
     fact = meaning('m', required_for_requirement=True)
+    fact.update(requirement_link=dict(requested_fact='질문',applicability='applicable',contribution='direct_answer',reason='필수'),
+        requirement_applications=[dict(item_id='question',required_for_requirement=True,
+            requirement_link=dict(requested_fact='질문',applicability='applicable',contribution='direct_answer',reason='필수'))])
     fact['evidence'] = business_run.exact_evidence(fact['evidence'], run['blocks'])
     source = dict(meanings=[fact], completeness='complete', gaps=[], meaning_gaps=[],
         public_scope=dict(input_contract=review.PUBLIC_SOURCE_INPUT_CONTRACT,
             public_items=[dict(id='question')], items=[dict(item_id='question', source_state='available', meaning_keys=['m'])],
             review_meaning_keys=['m']))
     result = judgments(['m'], ids=[cid])
+    result.update(source_completeness='complete',unselected_source_required=False)
     result['checks'][0].update(claim_support={cid:'supported'}, error_fields={})
     direct = {cid:dict(receipt_id='own',unit_id='own-unit',check=dict(claim_support={cid:'supported'},
         incorrect_claim_ids=[],error_fields={}))}

@@ -355,6 +355,70 @@ def current_source():
         source_selection=dict(unselected_block_ids=[]), review_contract=review.CONTRACT)
 
 
+@pytest.mark.parametrize('contract,public_input', [
+    (contract, None) for contract in ['requirement-local-review-v2', 'requirement-local-review-v3',
+        'requirement-local-review-v4', *sorted(review.SEPARATED_CONTRACTS)]
+] + [(review.CONTRACT, 'public'), (review.SOURCE_APPLICATION_CONTRACT, review.PUBLIC_SOURCE_INPUT_CONTRACT)])
+def test_every_active_join_requires_evidenced_not_required(monkeypatch, contract, public_input):
+    run = local_run(); run['recipe']['review_contract'] = contract
+    source = current_source(); source['review_contract'] = contract
+    if public_input:
+        source['public_scope'] = dict(review_meaning_keys=['m'], tasks=[], items=[], errors=[], followup=[],
+                                      public_items=[dict(id='item')], input_contract=public_input)
+    monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
+    monkeypatch.setattr(review, 'review_candidate_pool', lambda *a, **k: None)
+    class JoinInspected(Exception):
+        pass
+    def answer(_service, current, stage, instruction, context, schema):
+        current['units'].append(dict(id=str(len(current['units']))))
+        if context['mode'] == 'requirement_join':
+            assert 'not_required를 포함한 해소 판정은 이번 blocks의 실제 evidence' in instruction
+            assert '근거를 확인하지 못하면 unresolved' in instruction
+            assert 'local_not_found' in instruction and 'inspection_status=complete' in instruction
+            assert 'reference_missing_here에는 이 예외를 적용하지 않는다' in instruction
+            raise JoinInspected
+        return judgments(['m'], ids=[run['claims'][0]['id']])
+    monkeypatch.setattr(business_run, 'json_call', answer)
+    with pytest.raises(JoinInspected):
+        review.represent(None, run, run['requirements'][0], source, [])
+
+
+@pytest.mark.parametrize('fault', ['valid', 'valid_empty_keys', 'empty', 'block', 'version', 'quote', 'duplicate', 'meaning', 'claim'])
+def test_not_required_keeps_actual_evidence_and_address_guards(fault):
+    run = local_run(); source = current_source()
+    source['findings'][0].update(kind='reference_missing_here', meaning_keys=[], scope_meaning_keys=[])
+    row = resolution(status='not_required')
+    if fault == 'valid_empty_keys': row['meaning_keys'] = []
+    if fault == 'empty': row.update(meaning_keys=[], evidence=[])
+    if fault == 'block': row['evidence'][0]['block_id'] = 'missing'
+    if fault == 'version': row['evidence'][0]['source_version_id'] = 'wrong-version'
+    if fault == 'quote': row['evidence'][0]['quote'] = '원문에 없는 인용'
+    if fault == 'meaning': row['meaning_keys'] = ['outside']
+    if fault == 'claim': row['claim_ids'] = ['outside']
+    result = judgments(['m'])
+    result.update(source_completeness='complete', finding_resolutions=[row] * (2 if fault == 'duplicate' else 1))
+    before = deepcopy(source)
+    review.resolve_findings(source, result, source['findings'], run['blocks'], run['claims'], joined=True)
+    valid = fault in {'valid', 'valid_empty_keys'}
+    assert source['finding_resolutions'][0]['status'] == ('not_required' if valid else 'unresolved')
+    assert source['meanings'] == before['meanings'] and source['findings'] == before['findings']
+    assessment = dict(source=source, representation=result, errors=[], issues=[])
+    assert review.blocked(assessment)[1] == ([] if valid else ['unscoped_source_challenge'])
+
+
+@pytest.mark.parametrize('status', ['represented', 'partial'])
+def test_expression_without_claim_location_remains_unknown(monkeypatch, status):
+    run = local_run(); source = current_source()
+    monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
+    def answer(_service, current, stage, instruction, context, schema):
+        current['units'].append(dict(id=str(len(current['units']))))
+        return None if context['mode'] == 'requirement_join' else judgments(['m'], status=status)
+    monkeypatch.setattr(business_run, 'json_call', answer)
+    result, scope = review.represent(None, run, run['requirements'][0], source, [])
+    assert result['checks'][0]['status'] == 'unknown' and not result['checks'][0]['claim_ids']
+    assert any(f['reason'] == 'expression_without_candidate_location' for f in scope['failures'])
+
+
 def test_extra_join_row_keeps_independent_resolution_without_certifying_whole_join():
     run = local_run(); source = current_source()
     source['meanings'].append(meaning('outside'))
@@ -1070,7 +1134,8 @@ def test_empty_represented_keeps_completed_missing_and_source_resolution_indepen
     assert result['checks'][0]['status'] == 'missing' and result['dependencies'][0]['premise_keys'] is None
     assert source['completeness'] == 'complete' and source['finding_resolutions'][0]['status'] == 'resolved'
     assert not result['meaning_challenges'] and valid['retained_missing'] == {'m'}
-    assert review.blocked(dict(source=source, representation=result, errors=[], issues=[])) == (set(), [])
+    # Source resolution does not confirm an explicitly unknown required premise.
+    assert review.blocked(dict(source=source, representation=result, errors=[], issues=[])) == ({'m'}, [])
 
 
 @pytest.mark.parametrize('status', ['missing', 'partial', 'unknown'])

@@ -205,7 +205,7 @@ class FieldPreservationCheck(PreservationCheck):
 
 class SourceMeaningCheck(BaseModel):
     meaning_key: str
-    required_for_requirement: bool
+    required_for_requirement: bool | None
     field_checks: dict[Literal['statement', 'conditions', 'exceptions', 'period', 'references'],
                        Literal['supported', 'refuted', 'unknown', 'not_applicable', 'not_assessed']]
     reason: str
@@ -484,9 +484,9 @@ class ContributionCheck(BaseModel):
     status: Literal['represented', 'partial', 'missing', 'unknown']
     claim_ids: list[str]
     reason: str
-    represented_content: str = ''
-    missing_content: str = ''
-    missing_evidence: list[EvidenceQuote] = Field(default_factory=list)
+    represented_content: str
+    missing_content: str
+    missing_evidence: list[EvidenceQuote]
 
 
 class ContributionReviewCheck(ExpressionReviewCheck):
@@ -505,9 +505,6 @@ class ContributionSynthesisCheck(RequirementSynthesisCheck):
 
 
 class ChallengedContributionRevision(ContributionRevision):
-    represented_content: str = Field(...)
-    missing_content: str = Field(...)
-    missing_evidence: list[EvidenceQuote] = Field(...)
     revision_basis: Literal['new_evidence', 'contradiction', 'prior_misreading', 'combined_expression', 'rechecked_unchanged']
 
 
