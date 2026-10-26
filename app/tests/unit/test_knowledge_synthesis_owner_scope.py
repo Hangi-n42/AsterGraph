@@ -112,8 +112,9 @@ def test_dependency_endpoints_and_omitted_null_empty_remain_distinct(monkeypatch
     captured['output_type'].model_validate(response)
     response['checks'][0]['incorrect_claim_ids']=[]
     result, joined, _, errors = review.retain_synthesis(compact, response, {'m'}, set(), captured['run']['blocks'])
-    assert joined and not errors
-    assert result['dependencies'][0]['premise_keys'] == (['normal'] if premises == 'omitted' else premises)
+    accepted = premises is None or premises == 'omitted'
+    assert joined == accepted and bool(errors) != accepted
+    assert result['dependencies'][0]['premise_keys'] == (None if premises is None else ['normal'])
     assert result['dependencies'][1:] == compact['dependencies'][1:]
 
 

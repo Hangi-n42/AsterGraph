@@ -103,3 +103,32 @@ run `5689dfa06cfd47f6a0757b44e4fa7618`의 실제 2개 unit과 원시·정규화�
 **입력 절감과 정상 수치·선택·주소 유효성 보존의 부분 효과만 확인하며, 전체 의미 보존 통과와 자동 적용 확대는 보류한다.** 반복 노출된 한 M03 개발 사례의 두 묶음으로 문서·제품 전체에 일반화할 수 없다. 이후 AND 전제와 질문 정보 필요성, 상태·잔여 일관성을 별도 범위로 검토해야 하며 이번에 추가 수정·재실행은 시작하지 않는다. 현재 검증 보고 범위에서 사용자 결정이 필요한 사항 없음.
 
 사전 고정·원시 결과·상세 비교·보존 근거는 `~/.codex/artifacts/retail-knowledge-pilot-20261018/retail_representation_reference_native_comparison_20261026_v1/`의 `PLAN.json`, `EVALUATION_CRITERIA.json`, `R1_EVALUATION.json`, `R2_EVALUATION.json`, `R2_DEPENDENCY_COMPARISON.json`, `FINAL_SAVE_GET_VERIFICATION.json`, `FINAL_PRESERVATION.json`, `RESULT_REPORT.json`에 있다. DB·원시 응답은 로컬에 보존한다.
+
+## 후속: 전제 소유와 상태·잔여 계약 보호 — 2026-10-27
+
+`a94409ad`의 읽기 전용 감사 이후 사용자 승인으로 확인된 소비 결함 두 가지를 수정했다. 기존 [#616](https://github.com/Hangi-n42/AsterGraph/issues/616)의 검수 경계와 [#620](https://github.com/Hangi-n42/AsterGraph/issues/620)의 후속 소비에 연결하며 이슈를 종료하지 않는다. #660의 별도 검색 비교는 변경하지 않았다. 작업 위치·원격 브랜치가 유휴·동일 HEAD임을 확인해 재사용했고 기존 서버는 재시작하지 않았다.
+
+`business_review.py`의 현재 분리 검수 소비에서는 원문 전제와 `RequirementLink`의 질문 필요성을 재사용한다. R의 새·삭제된 비null 전제는 원문 사실 갱신으로 채택하지 않고 제안 행을 이의에 보존하며 해당 범위를 보류한다. 질문에 필요하다는 True 자체는 내리지 않는다. 생략은 기존 값 보존, 명시 null은 전제 미확정이며 기존 실제 원문 의존의 오류 영향 전파는 유지한다. []와 null을 합치지 않고, 기존 []도 영구 정답으로 고정하지 않는다. 새 조건은 실제 근거를 갖춘 기존 원문 이의·부분 재판정 경로로만 원문 전제를 갱신할 수 있다. G도 허용 ID만으로 새 연결·독립을 확정할 수 없도록 제한했으며 실제 split-candidate R/G 지시를 같은 책임에 맞췄다. 주소 일치를 의미 타당성으로 인정한 변경은 없다.
+
+`represented`와 비어 있지 않은 `missing_content` 또는 `missing_evidence`가 공존하면 그 행을 완전 표현으로 요약하지 않는다. 원시/정규화 출력은 바꾸지 않고, 소비 결과는 unknown으로 두며 원래 행·라벨·누락 내용·인용을 `contract_errors`에 보존한다. 재요약·저장·GET 뒤에도 잔여가 남는다. partial로 의미 정답을 만들어 고치지 않았다. 같은 의미의 별도 정상 complete 판정은 유지하며, 같은 claim ID를 언급한 모순 sibling/G가 기존 정상 기여를 사실 오류로 취소하지 않는 합성 대조를 포함했다. 기존 근거 있는 partial 보강 경로도 유지한다.
+
+저장된 실제 R2 출력에 기존 원문·질문 적용성 판정을 붙여 수정된 요약→실제 assess 저장→GET→완료·repair 선정에 연결했다. E/적용성/국소 compact를 저장 값으로 공급한 경계는 하네스에 명시했다. 후보 7개를 전체 후보 조사로 바꾸지 않았으며, 새 R/G 모델 출력이나 새 지시의 정확 생성 캐시 재사용으로 세지 않는다.
+
+| 과거 출력 재생 | 이전 소비 | 수정 후 소비 |
+| --- | --- | --- |
+| 기준 R2 | 생산량 m2→한돈데이 발표 m1 채택 | 근거 없는 전제 1행 거절·제안 보존; m2 범위 보류 |
+| 참조 R2 | 상품 2개→김치찌개 레시피 채택 | 근거 없는 전제 2행 거절·제안 보존; 상품 범위 보류 |
+| 각 R2의 recipe/m1/m3 | represented+누락 3행의 잔여가 compact에서 소실 | 3행 모두 unknown, 원래 represented 라벨과 잔여 인용 보존 |
+| 두 R2의 후속 소비 | 고정 사례의 과거 M03 partial | 질문 필요성 3 True/7 False 불변, 완료 partial, 저장·GET 동일, 실제 repair 미시작 |
+
+누락 상품의 recover 액션 행 2개는 질문 필요성 True에 따라 남지만, 실제 repair 함수는 거절 전제 및 불완전한 후보 대조 경계에서 선정하지 않았다. 액션 생성과 교정 실행 성공을 구분한다. 실제 `eligibility` 재조회도 두 재생 전후 사용 가능 156개·차단 43개로 동일했다. 자기 출처 검수의 후보 사용 자격과 질문 전체의 표현 완료는 별개다.
+
+최종 DB는 `~/.codex/artifacts/retail-knowledge-pilot-20261018/retail_representation_contract_guards_20261027_v1/final/service/knowledge.db`, 기준/참조 child run은 각각 `5aa98ddd98e9447ab6a89c8a19996ec7`, `21b3b0b4ec9d43218306268fd42d8044`다. 원본 DB·동결 입력·원시 응답 등 **1,045개 파일의 SHA-256이 동일**했고 199개 지식·교정 묶음 1개의 실제 변경 2건·기존 assessments/units/metrics·부모 run을 보존했다. 복사 DB의 요구 이력에는 새 평가 참조만 추가했으며 기존 이력·승인·snapshot·knowledge_state는 보존했다. 닫힌 `configuration 7 / 6/6 / remaining 0 / no_reset=true` 계보를 바꾸지 않았다.
+
+저장 재생의 새 모델·JSON 검수 dispatch·네트워크 연결은 모두 0회다. 초기 재생의 마지막 검사에는 checkpoint와 최종 저장의 요구 이력을 case당 한 행으로 가정한 하네스 오류가 있었으며, 해당 로그·DB·run을 보존했다. 질문 필수성과 전제 미확정의 임시 설계도 별도 검증 이력으로 남겼다. 수정 후 `verified/`와 제품 코드 hash를 시작·종료에 고정한 `final/` 재생을 구분했다. 이 검증 반복을 모델 재시도나 의미 개선으로 계산하지 않는다.
+
+합성 검사는 진짜 원문 의존 보존, 근거를 가진 **합성 원문 부분 재판정 응답**의 갱신 연결, 범위 밖 ID/주소 거절, 생략/null/[], 정상 represented/partial, 모순 행 및 동일 후보의 정상 기여 보존을 확인한다. 실제 저장 출력 재생과 합성 정상·오류 계약 검사는 별도 증거다. 실제 모델의 조건 해석·의존 판단·신규 종합·QA·M03 충족 개선은 확인하지 않았다. 필요시 다음 별도 범위는 새 지시를 받은 모델의 의미 판단 검증이며 이번 작업에서 자동 실행하지 않는다. 현재 사용자 결정이 필요한 사항 없음.
+
+최종 관련 검사 **292개(신규 합성 17개 포함)가 모두 통과**했다. 실행 중 제품·검사 파일 hash를 고정했고 네트워크 연결·모델 호출 guard 횟수는 각각 0회다. 앞선 244개 통과와 중간 실패·수정 기록도 보존하며 중복 횟수를 합쳐 검사 수나 품질 향상으로 보고하지 않는다.
+
+제품 코드 hash·각 출력별 before/after·저장 GET·호출 차단·보존 결과는 위 산출물 위치의 `final/RESULT_REPORT.json`, `final/FINAL_PRESERVATION.json`, `FINAL_TESTS.json`, `VALIDATION_ATTEMPTS.json`에 기록한다. DB·원시 응답은 커밋하지 않는다.

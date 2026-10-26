@@ -1134,7 +1134,8 @@ def test_empty_represented_keeps_completed_missing_and_source_resolution_indepen
     assert result['checks'][0]['status'] == 'missing' and result['dependencies'][0]['premise_keys'] is None
     assert source['completeness'] == 'complete' and source['finding_resolutions'][0]['status'] == 'resolved'
     assert not result['meaning_challenges'] and valid['retained_missing'] == {'m'}
-    assert review.blocked(dict(source=source, representation=result, errors=[], issues=[])) == (set(), [])
+    # Source resolution does not confirm an explicitly unknown required premise.
+    assert review.blocked(dict(source=source, representation=result, errors=[], issues=[])) == ({'m'}, [])
 
 
 @pytest.mark.parametrize('status', ['missing', 'partial', 'unknown'])

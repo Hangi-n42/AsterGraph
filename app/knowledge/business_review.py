@@ -141,18 +141,48 @@ def application_required(meaning):
     return required
 
 
+def dependency_judgments(meanings, proposed):
+    """R/G may retain source premises or report uncertainty, never rewrite source facts."""
+    rows = {m['key']: dict(meaning_key=m['key'], premise_keys=deepcopy(m.get('premise_keys'))) for m in meanings}
+    errors = []
+    counts = Counter(row['meaning_key'] for row in proposed)
+    for row in proposed:
+        key, premises = row['meaning_key'], row['premise_keys']
+        previous = rows.get(key)
+        if previous is None or counts[key] != 1:
+            reason = 'dependency_outside_source_scope_or_duplicate'
+        elif premises is None:
+            previous['premise_keys'] = None
+            continue
+        elif previous['premise_keys'] is not None and set(premises) == set(previous['premise_keys']):
+            continue
+        else:
+            reason = 'dependency_change_requires_source_reassessment'
+        errors.append(dict(meaning_key=key, claim_ids=[], fields=['premise_keys'], evidence=[],
+            source_reassessment_needed=False, reason=reason, proposed_dependency=deepcopy(row)))
+    return list(rows.values()), errors
+
+
+def represented_remainder(check):
+    return check['status'] == 'represented' and bool(
+        (check.get('missing_content') or '').strip() or check.get('missing_evidence'))
+
+
 def requirement_states(source, representation):
     meanings = {m['key']:m for m in source.get('meanings', [])}
     public = source.get('public_scope', {}).get('input_contract') in PUBLIC_APPLICATION_INPUTS
     states = {c['meaning_key']: application_required(meanings.get(c['meaning_key'], {})) if public
             else c['required_for_requirement'] for c in representation.get('source_checks', [])}
+    dependencies = representation.get('dependencies', [])
+    if source.get('review_contract') in SEPARATED_CONTRACTS:
+        dependencies, _ = dependency_judgments(source.get('meanings', []), dependencies)
     pending,seen = [key for key,state in states.items() if state is True],set()
     while pending:
         key=pending.pop()
         if key in seen:
             continue
         seen.add(key)
-        premises = set(meanings.get(key, {}).get('premise_keys') or []) | {p for row in representation.get('dependencies', [])
+        premises = set(meanings.get(key, {}).get('premise_keys') or []) | {p for row in dependencies
             if row['meaning_key'] == key for p in row.get('premise_keys') or []}
         for premise in premises:
             if states.get(premise) is False:
@@ -822,7 +852,10 @@ def issue(assessment, reason, meaning_key=None, claim_ids=()):
 
 
 def dependency_rows(assessment):
-    meanings = (assessment.get('source') or {}).get('meanings', [])
+    source = assessment.get('source') or {}
+    meanings = source.get('meanings', [])
+    if source.get('review_contract') in SEPARATED_CONTRACTS:
+        return dependency_judgments(meanings, (assessment.get('representation') or {}).get('dependencies', []))[0]
     rows = {m['key']: dict(meaning_key=m['key'], premise_keys=m.get('premise_keys')) for m in meanings}
     for d in (assessment.get('representation') or {}).get('dependencies', []):
         if d['meaning_key'] in rows:
@@ -841,6 +874,9 @@ def affected(assessment, keys):
     if keys:
         keys.update(r['meaning_key'] for r in rows if r['premise_keys'] is None)
     normalized = [dict(r, premise_keys=r['premise_keys'] or []) for r in rows]
+    if (assessment.get('source') or {}).get('review_contract') in SEPARATED_CONTRACTS:
+        normalized.extend(dict(meaning_key=m['key'], premise_keys=m.get('premise_keys') or [])
+                          for m in assessment['source'].get('meanings', []))
     # Sharing a claim is not a premise dependency. The consumer blocks that
     # compound claim, without poisoning a common meaning and its other claims.
     return affected_keys(normalized, keys) & reviewed
@@ -870,6 +906,12 @@ def blocked(assessment, *, include_global=True):
                 or unresolved_source_fields(m)
                 or (m.get('requirement_link') or {}).get('applicability') == 'unresolved')
     keys.update(c['meaning_key'] for c in representation.get('checks', []) if c['status'] == 'unknown')
+    keys.update(c['meaning_key'] for c in representation.get('checks', []) if represented_remainder(c))
+    if source.get('review_contract') in SEPARATED_CONTRACTS:
+        dependencies, errors = dependency_judgments(source.get('meanings', []), representation.get('dependencies', []))
+        keys.update(e['meaning_key'] for e in errors)
+        states = requirement_states(source, representation)
+        keys.update(d['meaning_key'] for d in dependencies if d['premise_keys'] is None and states.get(d['meaning_key']) is not False)
     return affected(assessment, keys), [global_reason] if global_reason else []
 
 
@@ -2021,7 +2063,7 @@ def source(service, run, requirement, *, previous=None):
     return merged
 
 
-def summarize_local(meanings, outputs):
+def summarize_local(meanings, outputs, *, source_owned=False):
     """Retain usable local judgments after a sibling/join failure, never certify the join."""
     result = dict(source_checks=[], checks=[], dependencies=[], satisfied=False, conjunctions_satisfied=False,
                   reason='국소 결과만 보존; 전체 요구 연결 검수 미완료', source_challenges=[],
@@ -2031,12 +2073,13 @@ def summarize_local(meanings, outputs):
     for meaning in meanings:
         key = meaning['key']
         checks = [c for o in outputs for c in o['checks'] if c['meaning_key'] == key]
-        present = [c for c in checks if c['status'] != 'missing']
+        contradictory = [c for c in checks if represented_remainder(c)]
+        present = [c for c in checks if c['status'] != 'missing' and not represented_remainder(c)]
         incorrect = {cid for c in checks for cid in c.get('incorrect_claim_ids', [])}
         incorrect.update(cid for c in present if c['status'] == 'incorrect' for cid in c['claim_ids'])
         represented = [c for c in present if c['status'] == 'represented']
         statuses = {c['status'] for c in present}
-        status = (next(iter(statuses)) if len(statuses) == 1 else 'unknown') if present else ('missing' if checks else 'unknown')
+        status = (next(iter(statuses)) if len(statuses) == 1 else 'unknown') if present else ('missing' if checks and not contradictory else 'unknown')
         candidate_uncertainty = all(c['status'] != 'unknown' or (c['claim_ids'] and c.get('error_evidence')
             and all(c.get('claim_support', {}).get(cid) == 'unknown' and c.get('error_fields', {}).get(cid)
                     for cid in c['claim_ids'])) for c in present)
@@ -2058,6 +2101,13 @@ def summarize_local(meanings, outputs):
                             ('represented_content', 'missing_content', 'missing_evidence')) for c in parts):
             result['checks'][-1].update({k: deepcopy(parts[0][k]) for k in
                 ('represented_content', 'missing_content', 'missing_evidence')})
+        contract_errors = [e for c in checks for e in c.get('contract_errors', [])]
+        contract_errors.extend(dict(reason='represented_with_explicit_remainder', check=deepcopy(c)) for c in contradictory)
+        if contract_errors:
+            result['checks'][-1]['contract_errors'] = deepcopy(contract_errors)
+            if status == 'unknown':
+                result['checks'][-1].update({k: deepcopy(contract_errors[0]['check'].get(k)) for k in
+                    ('represented_content', 'missing_content', 'missing_evidence')})
         for field in ('error_attributions', 'candidate_dispositions'):
             if any(field in c for c in checks):
                 result['checks'][-1][field] = [deepcopy(row) for c in checks for row in c.get(field, [])]
@@ -2090,6 +2140,14 @@ def summarize_local(meanings, outputs):
         dependencies = [d['premise_keys'] for o in outputs for d in o.get('dependencies', []) if d['meaning_key'] == key]
         result['dependencies'].append(dict(meaning_key=key, premise_keys=dependencies[0] if dependencies
             and all(d == dependencies[0] for d in dependencies) else meaning.get('premise_keys')))
+    if source_owned:
+        result['dependencies'], _ = dependency_judgments(meanings, result['dependencies'])
+        for output in outputs:
+            rows, errors = dependency_judgments(meanings, output.get('dependencies', []))
+            result['meaning_challenges'].extend(errors)
+            for row in rows:
+                if row['premise_keys'] is None:
+                    next(d for d in result['dependencies'] if d['meaning_key'] == row['meaning_key'])['premise_keys'] = None
     return result
 
 
@@ -2632,7 +2690,7 @@ def review_candidates(service, run, claims, *, repair_context=()):
     return receipt
 
 
-def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, required_check_keys=()):
+def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, required_check_keys=(), source_meanings=None):
     """Synthesis updates only explicitly evidenced changes; E and stable R stay stored."""
     from .business_run import exact_evidence
     result = deepcopy(compact)
@@ -2647,12 +2705,16 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
                   'unselected_source_required', 'finding_resolutions', 'preservation_checks',
                   'source_challenges', 'meaning_challenges'):
         result[field] = deepcopy(response.get(field, result.get(field)))
+    result['meaning_challenges'].extend(deepcopy(c) for c in compact['meaning_challenges']
+        if c.get('proposed_dependency') and c not in result['meaning_challenges'])
     for challenge in result['meaning_challenges']:
         try:
             if challenge['meaning_key'] not in known or not exact_evidence(challenge['evidence'], blocks):
                 raise ValueError('synthesis_source_challenge_without_actual_evidence')
         except ValueError as exc:
             challenge['reason'] = str(exc) + ': ' + challenge['reason']
+    dependency_source = source_meanings if source_meanings is not None else [
+        dict(key=d['meaning_key'], premise_keys=d['premise_keys']) for d in compact['dependencies']]
     for field in ('checks', 'dependencies'):
         counts = {row['meaning_key']: sum(other['meaning_key'] == row['meaning_key'] for other in response[field])
                   for row in response[field]}
@@ -2676,7 +2738,9 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
                         raise ValueError('synthesis_change_without_actual_evidence')
                     if row['status'] in {'represented', 'partial'} and not row['claim_ids']:
                         raise ValueError('represented_without_expression_location')
-                    missing_refs = exact_evidence(row.get('missing_evidence', []), blocks) if row['status'] == 'partial' else []
+                    missing_refs = exact_evidence(row.get('missing_evidence', []), blocks)
+                    if represented_remainder(row):
+                        raise ValueError('represented_with_explicit_remainder')
                     if row['status'] == 'partial' and (not row.get('represented_content', '').strip()
                             or not row.get('missing_content', '').strip() or not missing_refs):
                         if key not in required_check_keys and any(c['meaning_key'] == key and c['required_for_requirement'] is False
@@ -2686,9 +2750,14 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
                         raise ValueError('challenged_partial_without_explicit_remainder')
                 elif not set(row['premise_keys'] or []) <= known:
                     raise ValueError('synthesis_dependency_outside_scope')
+                elif dependency_judgments(dependency_source, [row])[1] or dependency_judgments([
+                        dict(key=d['meaning_key'], premise_keys=d['premise_keys']) for d in compact['dependencies']], [row])[1]:
+                    raise ValueError('dependency_change_requires_source_reassessment')
                 update = deepcopy(row)
                 if field == 'checks':
                     previous = next(old for old in compact['checks'] if old['meaning_key'] == key)
+                    if previous.get('contract_errors'):
+                        update['contract_errors'] = deepcopy(previous['contract_errors'])
                     retained = {cid: state for cid, state in previous.get('claim_support', {}).items()
                                 if state in {'unknown', 'incorrect'}
                                 and update.get('claim_support', {}).get(cid) in {None, 'not_assessed'}}
@@ -2707,7 +2776,14 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
                 valid[field].add(key)
             except ValueError as exc:
                 errors.append(dict(field=field, meaning_key=key, reason=str(exc)))
-                if key in known:
+                if str(exc) == 'represented_with_explicit_remainder':
+                    previous = next(c for c in result['checks'] if c['meaning_key'] == key)
+                    previous.setdefault('contract_errors', []).append(dict(reason=str(exc), check=deepcopy(row)))
+                    if previous['status'] != 'represented' or represented_remainder(previous):
+                        previous.update(status='unknown', **{k: deepcopy(row.get(k)) for k in
+                            ('represented_content', 'missing_content', 'missing_evidence')})
+                if key in known and not (str(exc) == 'represented_with_explicit_remainder'
+                        and previous['status'] == 'represented' and not represented_remainder(previous)):
                     result['meaning_challenges'].append(dict(meaning_key=key, claim_ids=[], fields=[],
                         evidence=[], source_reassessment_needed=False,
                         reason=str(exc) + ': 기존 판정 보존; 변경 근거 미확인'))
@@ -2716,7 +2792,7 @@ def retain_synthesis(compact, response, join_keys, claim_ids, blocks, *, require
         result['meaning_challenges'].append(dict(meaning_key=key, claim_ids=[], fields=[], evidence=[],
             source_reassessment_needed=False, reason='challenged_contribution_final_check_missing_or_invalid'))
     relevant = question_check_keys(compact,{c['meaning_key']:c['required_for_requirement'] for c in compact['source_checks']}) | required_check_keys
-    if any(not e.get('meaning_key') or e['meaning_key'] in relevant for e in errors):
+    if any(not e.get('meaning_key') or e['meaning_key'] not in known or e['meaning_key'] in relevant for e in errors):
         result.update(satisfied=False, conjunctions_satisfied=False)
     return result, not errors, valid, errors
 
@@ -3171,7 +3247,9 @@ partial에는 represented_content로 실제 후보의 정상 기여를, missing_
 후보 검수 결과를 질문 충족이나 원문 의미 정답으로 승격하지 않는다.
 새 구체 원문 모순을 발견하면 candidate_challenges에 의미키·실제 claim_ids·실제 필드 경로·원문 인용·이유를 기록한다.
 후보 판정은 서버가 해당 후보만 다시 검수한다. 원문 의미 자체의 모순은 meaning_challenges에 남긴다.
-의미별 AND 전제는 dependencies에 기록한다. 보존 여부는 실제 before/after의 정상 의미로 판단한다.
+dependencies는 source의 원문 사실·적용 전제를 보존한다. 질문 비교에 함께 필요한 정보는 RequirementLink의 책임이며 사실의 AND 전제로 바꾸지 않는다.
+새 조건·원문 전제 오류는 실제 근거를 갖춘 meaning_challenges로만 제안한다. 전제 미확정은 null, 생략은 보존이며 []로 지워 해소하지 않는다.
+보존 여부는 실제 before/after의 정상 의미로 판단한다.
 '''
         if any(f['origin'] == 'qa' for f in source.get('findings', [])):
             instruction += '''
@@ -3260,11 +3338,11 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
             batch, active_meanings = groups[position]; position += 1
             keys = {m['key'] for m in active_meanings}
             if execution.cancelled(service, run):
-                return summarize_local(meanings, outputs + local_outputs), dict(cancelled=True, batches=receipts)
+                return summarize_local(meanings, outputs + local_outputs, source_owned=split_roles), dict(cancelled=True, batches=receipts)
             if any(i['requirement_id'] == requirement['id'] for i in run.get('answer_items', [])):
                 review_candidate_pool(service, run, batch, requirement=requirement)
                 if execution.cancelled(service, run):
-                    return summarize_local(meanings, outputs + local_outputs), dict(cancelled=True, batches=receipts)
+                    return summarize_local(meanings, outputs + local_outputs, source_owned=split_roles), dict(cancelled=True, batches=receipts)
                 # Fresh own-source judgments are part of packet(). Recompute
                 # its actual capacity before dispatch; exact reviews are reused.
                 split = packs(batch, active_meanings)
@@ -3326,7 +3404,7 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
                     groups.extend(packs(remaining, pending))
                 remaining = []
         outputs.extend(local_outputs)
-    compact = summarize_local(meanings, outputs)
+    compact = summarize_local(meanings, outputs, source_owned=split_roles)
     if split_roles:
         compact['source_checks'] = source_judgments(source,meanings)
     findings = deepcopy(source.get('findings', []))
@@ -3362,7 +3440,7 @@ claim_support는 후보가 자기 출처/버전에서 지지되는지를 대조�
     deferred_ids = {r['finding']['id'] for r in source_reuses} | {f['id'] for f in qa_findings}
     generated_findings = [f for f in findings if f['id'] not in deferred_ids]
     join_keys = {key for m in meanings if m.get('premise_keys') for key in [m['key'], *m['premise_keys']]}
-    required_keys = {key for key,state in requirement_states(source,compact).items() if state is True}
+    required_keys = {key for key,state in requirement_states(source,compact).items() if state is not False}
     join_keys.update(d['meaning_key'] for d in compact['dependencies']
         if d['meaning_key'] in required_keys and d['premise_keys'] is None)
     join_keys.update(key for d in compact['dependencies'] if d['premise_keys']
@@ -3469,6 +3547,7 @@ checks와 dependencies 각 행의 meaning_key는 review_meaning_keys의 허용 �
 같은 값이어도 범위 밖 행은 반환하지 않는다. 생략한 기존 판정은 서버가 보존한다.
 source 의미·필수성의 오류는 meaning_challenges로만 재판정을 요청한다.
 dependencies는 확인한 연결 전제만 반환한다. 생략은 이전 판정 보존, null은 미확정, []는 확인된 독립이다.
+질문에 함께 필요한 정보와 원문 사실·적용의 AND 전제를 구별한다. 기존 전제의 새 연결·삭제는 여기서 확정하지 않고 실제 근거를 갖춘 meaning_challenges로 원문 부분 재판정을 요청한다.
 source_completeness는 필수 범위 조사 상태이며 unselected_source_required에는 남은 자료의 필요 여부를 적는다.
 필수 범위와 연결 전제를 확인하지 못하면 satisfied/conjunctions_satisfied는 false다.
 '''
@@ -3587,7 +3666,7 @@ not_required는 왜 공개 요구의 공백이 아닌지 원문 근거로 설명
             for check in result['checks']:
                 own_source_errors(run, check, join_claims, join_blocks)
         result, joined, valid_rows, join_errors = retain_synthesis(compact, result, join_keys, matched, join_blocks,
-            required_check_keys=final_check_keys)
+            required_check_keys=final_check_keys, source_meanings=meanings)
     else:
         result, joined, valid_rows, join_errors = retain_join_rows(compact, result, join_keys, matched, confirmed_missing)
     valid_join_keys = valid_rows['checks'] & valid_rows['source_checks']
