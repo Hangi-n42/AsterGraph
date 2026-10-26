@@ -9,10 +9,18 @@ from app.tests.unit.test_knowledge_business_local_review import meaning
 from app.tests.unit.test_knowledge_business_separated_review import synthesis
 
 
+def required_fact(key):
+    fact=meaning(key,required_for_requirement=True)
+    link=dict(requested_fact='공개 질문',applicability='applicable',contribution='direct_answer',reason='합성 필수성')
+    fact.update(requirement_link=deepcopy(link),requirement_applications=[dict(item_id='question',
+        required_for_requirement=True,requirement_link=deepcopy(link))])
+    return fact
+
+
 @pytest.mark.parametrize('status', ['represented', 'unknown'])
 def test_same_R_and_join_calls_resolve_public_items_with_actual_source_witnesses(monkeypatch, status):
     run, requirement = public_run()
-    fact = meaning('m', required_for_requirement=True)
+    fact = required_fact('m')
     fact['evidence'] = business_run.exact_evidence(fact['evidence'], run['blocks'])
     items = deepcopy(run['answer_items'])
     scope = dict(input_contract=review.PUBLIC_SOURCE_INPUT_CONTRACT, public_items=items,
@@ -37,7 +45,8 @@ def test_same_R_and_join_calls_resolve_public_items_with_actual_source_witnesses
         calls.append(context['mode'])
         current['units'].append(dict(id=str(len(calls)),status='succeeded',error=None))
         if context['mode']=='meaning_batch':
-            result=dict(checks=[dict(meaning_key='m',status='represented',claim_ids=[cid],reason='실제 후보의 정상 기여')],
+            result=dict(checks=[dict(meaning_key='m',status='represented',claim_ids=[cid],reason='실제 후보의 정상 기여',
+                represented_content='기관은 신청을 접수한다.',missing_content='',missing_evidence=[])],
                 source_challenges=[],meaning_challenges=[],candidate_challenges=[],preservation_checks=[],
                 dependencies=[dict(meaning_key='m',premise_keys=[])])
         else:
@@ -63,7 +72,7 @@ def test_same_R_and_join_calls_resolve_public_items_with_actual_source_witnesses
 def test_qualified_source_uncertainty_cannot_be_promoted_by_item_success(monkeypatch, field_state):
     from app.tests.unit.test_knowledge_business_local_review import judgments
     run, _ = public_run(); cid=run['claims'][0]['id']
-    fact=meaning('m',required_for_requirement=True)
+    fact=required_fact('m')
     fact['field_judgments']=dict(conditions=dict(status=field_state,statement_affected=True))
     source=dict(meanings=[fact],completeness='complete',gaps=[],meaning_gaps=[],
         public_scope=dict(input_contract=review.PUBLIC_SOURCE_INPUT_CONTRACT,public_items=[dict(id='question')],
@@ -88,19 +97,20 @@ def test_extra_quote_cannot_resolve_an_unselected_scope_without_its_R_meaning(mo
     run, _ = public_run(); cid=run['claims'][0]['id']
     needed=block('needed','단체 접수에는 다른 조건이 적용된다.')
     run['blocks'].append(needed)
-    fact=meaning('m',required_for_requirement=True)
+    fact=required_fact('m')
     fact['evidence']=business_run.exact_evidence(fact['evidence'],run['blocks'])
     source=dict(meanings=[fact],completeness='complete',gaps=[],meaning_gaps=[],
         public_scope=dict(input_contract=review.PUBLIC_SOURCE_INPUT_CONTRACT,public_items=[dict(id='question')],
             items=[dict(item_id='question',source_state='unselected',meaning_keys=['m'],read_block_ids=['needed'])],
             review_meaning_keys=['m']))
     result=judgments(['m'],ids=[cid])
+    result.update(source_completeness='complete',unselected_source_required=False)
     witness_ids=[cid]
     if linked_R_witness:
         chunk=autoschema.chunks([needed],49152,4096)[0]
         claim=autoschema.graph_record(chunk,'entity_relation',dict(Head='단체',Relation='접수 조건',Tail=needed['text']),0)
         run['claims'].append(claim)
-        extra=meaning('needed-meaning',required_for_requirement=True)
+        extra=required_fact('needed-meaning')
         extra.update(statement=needed['text'],evidence=business_run.exact_evidence(
             [dict(block_id='needed',quote=needed['text'])],run['blocks']))
         source['meanings'].append(extra)

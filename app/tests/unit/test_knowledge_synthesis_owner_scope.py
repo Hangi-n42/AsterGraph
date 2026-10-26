@@ -104,9 +104,13 @@ def test_dependency_endpoints_and_omitted_null_empty_remain_distinct(monkeypatch
     compact = judgments(['m', 'other', 'normal'])
     compact['dependencies'][0]['premise_keys'] = ['normal']
     response = dict(synthesis(), candidate_challenges=[])
+    response['checks'] = [dict(meaning_key='m',status='unknown',claim_ids=[],reason='최종 확인 불가',
+        represented_content='',missing_content='',missing_evidence=[],revision_basis='new_evidence',
+        evidence=[dict(block_id='body',quote=captured['run']['blocks'][0]['text'])])]
     if premises != 'omitted':
         response['dependencies'] = [dict(meaning_key='m', premise_keys=premises)]
     captured['output_type'].model_validate(response)
+    response['checks'][0]['incorrect_claim_ids']=[]
     result, joined, _, errors = review.retain_synthesis(compact, response, {'m'}, set(), captured['run']['blocks'])
     assert joined and not errors
     assert result['dependencies'][0]['premise_keys'] == (['normal'] if premises == 'omitted' else premises)
