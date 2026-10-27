@@ -461,13 +461,15 @@ def remap_expression_keys(value, mapping):
     return value
 
 
-def reference_source_facts(context, views):
+def reference_source_facts(context, views, *, preserve_metadata=False):
     """Share only exact, already delivered E evidence; retain unmatched originals."""
     bindings = {}
     for fact in context.get('source_facts', []):
         original = deepcopy(fact.get('evidence', []))
         references = []
         for ref in original:
+            if preserve_metadata and {'evidence_ref','span'}.intersection(ref):
+                raise ValueError('application_evidence_reserved_key_collision')
             selected = None
             if all(k in ref for k in ('block_id', 'source_version_id', 'parse_run_id',
                                       'start_char', 'end_char', 'quote')) and all(
@@ -487,6 +489,9 @@ def reference_source_facts(context, views):
                         key, _ = min(candidates, key=lambda pair: len(pair[1]['text']))
                         selected = dict(evidence_ref=key, span=[ref['start_char'], ref['end_char']],
                             **({k: ref[k] for k in ('context_only',) if k in ref}))
+                        if preserve_metadata:
+                            selected.update({k:deepcopy(v) for k,v in ref.items() if k not in
+                                {'block_id','quote','source_version_id','parse_run_id','start_char','end_char'}})
                 except (ValueError, KeyError, TypeError):
                     pass  # A reference view cannot repair an invalid or undelivered address.
             references.append(selected if selected is not None else deepcopy(ref))
@@ -495,6 +500,70 @@ def reference_source_facts(context, views):
         fact['source_evidence_refs'] = references
     context['source_evidence_binding'] = autoschema.identifier('source_evidence', [bindings, views])
     return bindings
+
+
+APPLICATION_EVIDENCE_INPUT = 'application-evidence-block-refs-v2'
+APPLICATION_EVIDENCE_NOTICE = '''
+requirement_applications와 required_content_targets의 source_evidence_refs는 blocks의 evidence_ref와 절대 문자 span으로 원래 적용성 evidence를 나타낸다. block_id/quote가 남은 항목은 참조하지 않은 원형이다.
+각 요청 항목·대상의 소속과 이유를 유지해 읽는다. 이 입력 참조는 출력 evidence/missing_evidence의 기존 evidence_ref 선택 형식을 바꾸지 않는다.
+'''
+
+
+def application_evidence_rows(context):
+    rows = []
+    for i, meaning in enumerate(context.get('source', {}).get('meanings', [])):
+        rows.extend((f'm{i}:a{j}', [meaning['key'], application.get('item_id')], application)
+                    for j, application in enumerate(meaning.get('requirement_applications', [])))
+    for i, target in enumerate(context.get('required_content_targets', [])):
+        owner = [target['meaning_key'], target['scope_id']]
+        rows.append((f't{i}', owner, target))
+        rows.extend((f't{i}:a{j}', [*owner, application.get('item_id')], application)
+                    for j, application in enumerate(target.get('applications', [])))
+    return rows
+
+
+def reference_application_evidence(context, views):
+    """Only the new application evidence reuses delivered block addresses."""
+    rows = application_evidence_rows(context)
+    if any(k in context for k in ('application_evidence_contract', 'application_evidence_binding')) or any(
+            'source_evidence_refs' in row for _, _, row in rows):
+        raise ValueError('application_evidence_reference_collision')
+    selected = [(key, row) for key, _, row in rows if isinstance(row.get('evidence'), list) and row['evidence']]
+    if not selected:
+        return None
+    binding = autoschema.identifier(APPLICATION_EVIDENCE_INPUT, [rows, views])
+    facts = dict(source_facts=[dict(key=key, evidence=row['evidence']) for key, row in selected])
+    originals = reference_source_facts(facts, views, preserve_metadata=True)
+    for (_, row), fact in zip(selected, facts['source_facts']):
+        values = {('source_evidence_refs' if key == 'evidence' else key):
+                  fact['source_evidence_refs'] if key == 'evidence' else value for key, value in row.items()}
+        row.clear()
+        row.update(values)
+    context.update(application_evidence_contract=APPLICATION_EVIDENCE_INPUT, application_evidence_binding=binding)
+    return originals
+
+
+def restore_application_evidence(context, views, bindings):
+    """Reject changed references/owners; restore every original field and duplicate."""
+    result = deepcopy(context)
+    if result.pop('application_evidence_contract', None) != APPLICATION_EVIDENCE_INPUT:
+        raise ValueError('application_evidence_contract_mismatch')
+    binding = result.pop('application_evidence_binding', None)
+    rows = [(key, row) for key, _, row in application_evidence_rows(result) if 'source_evidence_refs' in row]
+    if [key for key, _ in rows] != list(bindings):
+        raise ValueError('application_evidence_binding_rows_mismatch')
+    facts = dict(source_facts=[dict(key=key, evidence=bindings[key]) for key, _ in rows])
+    reference_source_facts(facts, views, preserve_metadata=True)
+    for (key, row), fact in zip(rows, facts['source_facts']):
+        if row['source_evidence_refs'] != fact['source_evidence_refs'] or 'evidence' in row:
+            raise ValueError('application_evidence_reference_mismatch')
+        values = {('evidence' if name == 'source_evidence_refs' else name):
+                  deepcopy(bindings[key]) if name == 'source_evidence_refs' else value for name, value in row.items()}
+        row.clear()
+        row.update(values)
+    if autoschema.identifier(APPLICATION_EVIDENCE_INPUT, [application_evidence_rows(result), views]) != binding:
+        raise ValueError('application_evidence_owner_or_source_mismatch')
+    return result
 
 
 def repair_input_references(context, mapping, schema):
@@ -603,6 +672,11 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
                 '기존 근거를 유지할 때도 evidence에 해당 ID를 명시적으로 선택한다. 진술·조건·예외·기간이 바뀌면 '
                 '바뀐 의미를 원문으로 다시 대조하여 지지/반박 근거를 선택한다. supported/refuted에는 근거가 필요하며, '
                 '확인할 수 없으면 unknown과 구체 미확정 사유를 반환한다. 빈 evidence는 근거 유지 지시가 아니다.\n')
+    application_bindings = None
+    if stage == 'requirement_representation' and 'required_content_targets' in context:
+        application_bindings = reference_application_evidence(context, evidence_views)
+        if application_bindings is not None:
+            instruction += APPLICATION_EVIDENCE_NOTICE
     mapping = dict(reference_map or {})
     if stage != 'direct_definitions':
         if 'blocks' in context:
@@ -640,7 +714,8 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
             'requirement_representation': 'representation_tokens'}.get(stage, '')),
-        **(dict(source_fact_evidence_bindings=source_fact_bindings) if source_only_public else {}))
+        **(dict(source_fact_evidence_bindings=source_fact_bindings) if source_only_public else {}),
+        **(dict(application_evidence_bindings=application_bindings) if application_bindings is not None else {}))
 
 
 def json_call(service, run, stage, instruction, context, output_type, *, reference_map=None):
@@ -654,6 +729,9 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         run['units'][-1]['evidence_reference_map'] = deepcopy(views)
         if 'source_fact_evidence_bindings' in request:
             run['units'][-1]['source_fact_evidence_bindings'] = deepcopy(request['source_fact_evidence_bindings'])
+        if 'application_evidence_bindings' in request:
+            run['units'][-1]['application_evidence_bindings'] = deepcopy(request['application_evidence_bindings'])
+            run['units'][-1]['application_evidence_contract'] = APPLICATION_EVIDENCE_INPUT
         save(service, run)
     if result is None:
         return None
