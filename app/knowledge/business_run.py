@@ -461,13 +461,15 @@ def remap_expression_keys(value, mapping):
     return value
 
 
-def reference_source_facts(context, views):
+def reference_source_facts(context, views, *, preserve_metadata=False):
     """Share only exact, already delivered E evidence; retain unmatched originals."""
     bindings = {}
     for fact in context.get('source_facts', []):
         original = deepcopy(fact.get('evidence', []))
         references = []
         for ref in original:
+            if preserve_metadata and {'evidence_ref','span'}.intersection(ref):
+                raise ValueError('application_evidence_reserved_key_collision')
             selected = None
             if all(k in ref for k in ('block_id', 'source_version_id', 'parse_run_id',
                                       'start_char', 'end_char', 'quote')) and all(
@@ -487,6 +489,9 @@ def reference_source_facts(context, views):
                         key, _ = min(candidates, key=lambda pair: len(pair[1]['text']))
                         selected = dict(evidence_ref=key, span=[ref['start_char'], ref['end_char']],
                             **({k: ref[k] for k in ('context_only',) if k in ref}))
+                        if preserve_metadata:
+                            selected.update({k:deepcopy(v) for k,v in ref.items() if k not in
+                                {'block_id','quote','source_version_id','parse_run_id','start_char','end_char'}})
                 except (ValueError, KeyError, TypeError):
                     pass  # A reference view cannot repair an invalid or undelivered address.
             references.append(selected if selected is not None else deepcopy(ref))
@@ -495,6 +500,70 @@ def reference_source_facts(context, views):
         fact['source_evidence_refs'] = references
     context['source_evidence_binding'] = autoschema.identifier('source_evidence', [bindings, views])
     return bindings
+
+
+APPLICATION_EVIDENCE_INPUT = 'application-evidence-block-refs-v2'
+APPLICATION_EVIDENCE_NOTICE = '''
+requirement_applications와 required_content_targets의 source_evidence_refs는 blocks의 evidence_ref와 절대 문자 span으로 원래 적용성 evidence를 나타낸다. block_id/quote가 남은 항목은 참조하지 않은 원형이다.
+각 요청 항목·대상의 소속과 이유를 유지해 읽는다. 이 입력 참조는 출력 evidence/missing_evidence의 기존 evidence_ref 선택 형식을 바꾸지 않는다.
+'''
+
+
+def application_evidence_rows(context):
+    rows = []
+    for i, meaning in enumerate(context.get('source', {}).get('meanings', [])):
+        rows.extend((f'm{i}:a{j}', [meaning['key'], application.get('item_id')], application)
+                    for j, application in enumerate(meaning.get('requirement_applications', [])))
+    for i, target in enumerate(context.get('required_content_targets', [])):
+        owner = [target['meaning_key'], target['scope_id']]
+        rows.append((f't{i}', owner, target))
+        rows.extend((f't{i}:a{j}', [*owner, application.get('item_id')], application)
+                    for j, application in enumerate(target.get('applications', [])))
+    return rows
+
+
+def reference_application_evidence(context, views):
+    """Only the new application evidence reuses delivered block addresses."""
+    rows = application_evidence_rows(context)
+    if any(k in context for k in ('application_evidence_contract', 'application_evidence_binding')) or any(
+            'source_evidence_refs' in row for _, _, row in rows):
+        raise ValueError('application_evidence_reference_collision')
+    selected = [(key, row) for key, _, row in rows if isinstance(row.get('evidence'), list) and row['evidence']]
+    if not selected:
+        return None
+    binding = autoschema.identifier(APPLICATION_EVIDENCE_INPUT, [rows, views])
+    facts = dict(source_facts=[dict(key=key, evidence=row['evidence']) for key, row in selected])
+    originals = reference_source_facts(facts, views, preserve_metadata=True)
+    for (_, row), fact in zip(selected, facts['source_facts']):
+        values = {('source_evidence_refs' if key == 'evidence' else key):
+                  fact['source_evidence_refs'] if key == 'evidence' else value for key, value in row.items()}
+        row.clear()
+        row.update(values)
+    context.update(application_evidence_contract=APPLICATION_EVIDENCE_INPUT, application_evidence_binding=binding)
+    return originals
+
+
+def restore_application_evidence(context, views, bindings):
+    """Reject changed references/owners; restore every original field and duplicate."""
+    result = deepcopy(context)
+    if result.pop('application_evidence_contract', None) != APPLICATION_EVIDENCE_INPUT:
+        raise ValueError('application_evidence_contract_mismatch')
+    binding = result.pop('application_evidence_binding', None)
+    rows = [(key, row) for key, _, row in application_evidence_rows(result) if 'source_evidence_refs' in row]
+    if [key for key, _ in rows] != list(bindings):
+        raise ValueError('application_evidence_binding_rows_mismatch')
+    facts = dict(source_facts=[dict(key=key, evidence=bindings[key]) for key, _ in rows])
+    reference_source_facts(facts, views, preserve_metadata=True)
+    for (key, row), fact in zip(rows, facts['source_facts']):
+        if row['source_evidence_refs'] != fact['source_evidence_refs'] or 'evidence' in row:
+            raise ValueError('application_evidence_reference_mismatch')
+        values = {('evidence' if name == 'source_evidence_refs' else name):
+                  deepcopy(bindings[key]) if name == 'source_evidence_refs' else value for name, value in row.items()}
+        row.clear()
+        row.update(values)
+    if autoschema.identifier(APPLICATION_EVIDENCE_INPUT, [application_evidence_rows(result), views]) != binding:
+        raise ValueError('application_evidence_owner_or_source_mismatch')
+    return result
 
 
 def repair_input_references(context, mapping, schema):
@@ -544,9 +613,122 @@ absent는 원래 미검증 해석의 값이며 새 조건 부재 판단이나 �
 '''
 
 
+EXPRESSION_REFERENCE_CONTRACT = 'whole-stored-expression-field-refs-v1'
+
+
+def referenced_expression_fields(claim):
+    raw = claim.get('raw') or {}
+    allowed = {'raw.' + key for key in ('Head', 'Relation', 'Tail', 'Event')}
+    allowed.update('raw.Entity.' + str(i) for i, value in enumerate(raw.get('Entity', [])) if isinstance(value, str))
+    allowed.update('raw.fields.' + key for key, value in (raw.get('fields') or {}).items() if isinstance(value, str))
+    for name in ('conditions', 'exceptions', 'period', 'references'):
+        value = claim.get(name)
+        if isinstance(value, str):
+            allowed.add(name)
+        elif isinstance(value, list):
+            allowed.update(name + '.' + str(i) for i, item in enumerate(value) if isinstance(item, str))
+        elif isinstance(value, dict) and value.get('state') == 'present':
+            allowed.add(name + '.text')
+    return {field:value for field,value in business_review.expression_fields(claim).items()
+        if field.startswith('interpretation.meanings.') or field in allowed}
+
+
+def expression_reference_type(output_type, references):
+    rows = {}
+    for name, row in evidence_fields(output_type).items():
+        if 'expression_quotes' not in row.model_fields:
+            continue
+        selection = list[Literal[tuple(references)]] if references else list[str]
+        selected = create_model('Referenced' + row.__name__, __base__=row,
+            expression_quotes=(selection, Field(default_factory=list, max_length=len(references))))
+        rows[name] = (list[selected], deepcopy(output_type.model_fields[name]))
+    return create_model('Referenced' + output_type.__name__, __base__=output_type, **rows) if rows else output_type
+
+
+def expression_references(run, context, output_type):
+    if (not context.get('required_content_targets')
+            or not issubclass(output_type, (ExpressionReviewCheck, RequirementSynthesisCheck))):
+        return None
+    if not any('expression_quotes' in row.model_fields for row in evidence_fields(output_type).values()):
+        return None
+    originals = {c['id']: c for c in run.get('claims', [])}
+    claims = context.get('claims', [])
+    if len({c['id'] for c in claims}) != len(claims):
+        raise ValueError('duplicate_expression_candidate')
+    references = {}
+    for provided in claims:
+        claim = originals.get(provided['id'])
+        if claim is None or provided not in (claim, compact_claim(claim)):
+            raise ValueError('expression_candidate_version_mismatch')
+        delivered = business_review.expression_fields(provided)
+        for field, value in referenced_expression_fields(claim).items():
+            if delivered.get(field) != value:
+                continue  # A server-only field is not a model-visible location.
+            references['xf' + str(len(references) + 1)] = dict(claim_id=claim['id'],
+                claim_version=autoschema.identifier('claim', claim), field=field, quote=value, span=[0, len(value)])
+    return references
+
+
+def restore_expression_references(parsed, output_type, references, claims):
+    """Restore whole fields; an invalid location invalidates its row, not its siblings."""
+    if not isinstance(parsed, dict):
+        raise ValueError('expression_output_not_object')
+    originals = {c['id']: c for c in claims}
+    diagnostics = {}
+    for name, row_type in evidence_fields(output_type).items():
+        if 'expression_quotes' not in row_type.model_fields:
+            continue
+        rows = parsed.get(name, [])
+        if not isinstance(rows, list):
+            continue  # The existing output schema still owns unrelated shape errors.
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            selected = row.get('expression_quotes', [])
+            quotes, errors, seen = [], [], set()
+            for ref in selected if isinstance(selected, list) else [selected]:
+                try:
+                    if not isinstance(ref, str) or ref not in references:
+                        raise ValueError('unknown_expression_reference_or_legacy_quote')
+                    if ref in seen:
+                        raise ValueError('duplicate_expression_reference')
+                    seen.add(ref)
+                    location = references[ref]
+                    claim = originals.get(location['claim_id'])
+                    if claim is None or not isinstance(row.get('claim_ids'), list) or location['claim_id'] not in row['claim_ids']:
+                        raise ValueError('expression_reference_owner_mismatch')
+                    if autoschema.identifier('claim', claim) != location['claim_version']:
+                        raise ValueError('expression_reference_version_mismatch')
+                    if sum(c['id'] == location['claim_id'] for c in claims) != 1:
+                        raise ValueError('expression_reference_owner_ambiguous')
+                    value = referenced_expression_fields(claim).get(location['field'])
+                    if value != location['quote'] or not value or location['span'] != [0, len(value)]:
+                        raise ValueError('expression_reference_field_value_or_span_mismatch')
+                    quotes.append({k:deepcopy(location[k]) for k in ('claim_id', 'field', 'quote')})
+                except (ValueError, KeyError) as exc:
+                    errors.append(str(exc))
+            diagnostics[(name, index)] = dict(expression_reference_contract=EXPRESSION_REFERENCE_CONTRACT,
+                expression_reference_precision='whole_field_not_semantic_support', expression_reference_errors=errors,
+                model_expression_status=row.get('status'))
+            row['expression_quotes'] = quotes
+            if errors:
+                row['status'] = 'unknown'
+    return diagnostics
+
+
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .source_meanings import remap
     context = deepcopy(context)
+    expression_views = expression_references(run, context, output_type)
+    if expression_views is not None:
+        context['expression_fields'] = [dict(expression_ref=ref,
+            **{k:location[k] for k in ('claim_id', 'field')}) for ref, location in expression_views.items()]
+        output_type = expression_reference_type(output_type, expression_views)
+        instruction += '''\nexpression_quotes에는 expression_fields의 expression_ref ID만 선택한다. claim_id/field/quote를 재작성하지 않는다.
+각 ID는 이미 제공된 claims의 해당 전체 필드 위치다. 부분 구절 인용이나 그 필드 전체의 의미 지지가 아니다.
+raw와 interpretation 및 원래 조건·오류·미확정 상태를 별도로 읽는다. Entity를 행위 주체로 승인하지 않는다.
+represented_content/missing_content/reason/status의 의미 판단은 그대로 수행하며, 위치 존재만으로 충족을 선언하지 않는다.
+'''
     if context.get('repair_context') and 'preservation_checks' in output_type.model_fields:
         ids = tuple(c['id'] for c in context.get('claims', []) if not c.get('superseded_by'))
         row = get_args(output_type.model_fields['preservation_checks'].annotation)[0]
@@ -603,6 +785,11 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
                 '기존 근거를 유지할 때도 evidence에 해당 ID를 명시적으로 선택한다. 진술·조건·예외·기간이 바뀌면 '
                 '바뀐 의미를 원문으로 다시 대조하여 지지/반박 근거를 선택한다. supported/refuted에는 근거가 필요하며, '
                 '확인할 수 없으면 unknown과 구체 미확정 사유를 반환한다. 빈 evidence는 근거 유지 지시가 아니다.\n')
+    application_bindings = None
+    if stage == 'requirement_representation' and 'required_content_targets' in context:
+        application_bindings = reference_application_evidence(context, evidence_views)
+        if application_bindings is not None:
+            instruction += APPLICATION_EVIDENCE_NOTICE
     mapping = dict(reference_map or {})
     if stage != 'direct_definitions':
         if 'blocks' in context:
@@ -629,6 +816,12 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         serialized = encode(context) + encode(output_type.model_json_schema())
         mapping = {key: value for key, value in mapping.items() if key in serialized}
     payload = remap_expression_keys(remap(context, mapping), mapping)
+    if expression_views is not None:
+        delivered = {c['id']:business_review.expression_fields(c) for c in payload.get('claims', [])}
+        expression_views = {ref:location for ref, location in expression_views.items()
+            if delivered.get(mapping.get(location['claim_id'], location['claim_id']), {}).get(location['field']) == location['quote']}
+        payload['expression_fields'] = [row for row in payload['expression_fields'] if row['expression_ref'] in expression_views]
+        output_type = expression_reference_type(output_type, expression_views)
     content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage in {'requirement_representation', 'requirement_repair'} or source_only_public else encode(payload)
     from . import answer_links
     schema = remap(output_type.model_json_schema(), mapping)
@@ -637,10 +830,12 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
+        expression_reference_map=expression_views,
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
             'requirement_representation': 'representation_tokens'}.get(stage, '')),
-        **(dict(source_fact_evidence_bindings=source_fact_bindings) if source_only_public else {}))
+        **(dict(source_fact_evidence_bindings=source_fact_bindings) if source_only_public else {}),
+        **(dict(application_evidence_bindings=application_bindings) if application_bindings is not None else {}))
 
 
 def json_call(service, run, stage, instruction, context, output_type, *, reference_map=None):
@@ -650,10 +845,18 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
     result = call(service, run, stage, request['messages'], request['schema'], review=True,
                   max_tokens=request['max_tokens'], reference_map=request['reference_map'])
     views = request['evidence_reference_map']
+    expression_views = request['expression_reference_map']
+    if expression_views is not None:
+        run['units'][-1].update(expression_reference_map=deepcopy(expression_views),
+            expression_reference_contract=EXPRESSION_REFERENCE_CONTRACT)
+        save(service, run)
     if views is not None:
         run['units'][-1]['evidence_reference_map'] = deepcopy(views)
         if 'source_fact_evidence_bindings' in request:
             run['units'][-1]['source_fact_evidence_bindings'] = deepcopy(request['source_fact_evidence_bindings'])
+        if 'application_evidence_bindings' in request:
+            run['units'][-1]['application_evidence_bindings'] = deepcopy(request['application_evidence_bindings'])
+            run['units'][-1]['application_evidence_contract'] = APPLICATION_EVIDENCE_INPUT
         save(service, run)
     if result is None:
         return None
@@ -666,6 +869,8 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
             normalized['_answer_link_metadata'] = metadata
             return normalized
         parsed = remap_expression_keys(remap(result['parsed'], reverse), reverse)
+        expression_diagnostics = restore_expression_references(parsed, output_type, expression_views,
+            run.get('claims', [])) if expression_views is not None else {}
         if views is None:
             return output_type.model_validate(parsed).model_dump()
         selected = selected_evidence_type(output_type, views).model_validate(parsed).model_dump()
@@ -678,6 +883,8 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
                         row[name] = [exact_evidence([dict(block_id=views[ref]['id'], quote=views[ref]['text'])],
                                                    [views[ref]])[0] for ref in row[name]]
         normalized = output_type.model_validate(restored).model_dump()
+        for (field, index), metadata in expression_diagnostics.items():
+            normalized[field][index].update(metadata)
         for field in fields:
             for row, original in zip(normalized[field], restored[field]):
                 for name in ('evidence', 'error_evidence', 'missing_evidence'):

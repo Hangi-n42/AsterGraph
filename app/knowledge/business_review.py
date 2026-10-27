@@ -211,6 +211,8 @@ def bind_requirement_check(check, target, claims, blocks):
     result.update(expression_bindings=[], expression_errors=[], content_scope_bound=False)
     by_id = {c['id']:c for c in claims}
     try:
+        if check.get('expression_reference_errors'):
+            raise ValueError('required_contribution_expression_reference_unverified')
         if target is None or check.get('requirement_scope_id') != target['scope_id'] or check['meaning_key'] != target['meaning_key']:
             raise ValueError('required_content_scope_mismatch_or_unresolved')
         if not set(check['claim_ids']) <= by_id.keys():
