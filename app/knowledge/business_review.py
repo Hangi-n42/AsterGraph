@@ -211,6 +211,8 @@ def bind_requirement_check(check, target, claims, blocks):
     result.update(expression_bindings=[], expression_errors=[], content_scope_bound=False)
     by_id = {c['id']:c for c in claims}
     try:
+        if check.get('required_check_errors'):
+            raise ValueError('required_contribution_return_contract_unverified')
         if check.get('expression_reference_errors'):
             raise ValueError('required_contribution_expression_reference_unverified')
         if target is None or check.get('requirement_scope_id') != target['scope_id'] or check['meaning_key'] != target['meaning_key']:
@@ -3394,34 +3396,16 @@ def retain_public_item_checks(run, source, result, output, blocks):
         and result.get('satisfied') and result.get('conjunctions_satisfied') and source.get('completeness') == 'complete')
 
 
-def _represent(service, run, requirement, source, context, *, previous_scope=None, recheck_meaning_keys=None, previous_meanings=None):
-    """Bounded R batches, real missing-pool checks and a compact source-based join."""
+def local_review_inputs(run, requirement, source, context, *, previous_meanings=None):
+    """Use the product's full source for scopes and the same local packet for evaluation."""
     from . import business_run as execution
-    from .business_models import (LocalRepresentationCheck, RequirementJoinCheck, PreservationCheck,
-                                  ExpressionReviewCheck, RequirementSynthesisCheck, ContributionReviewCheck, ContributionSynthesisCheck,
-                                  ConjunctionReview, ChallengedContributionRevision)
-    from .source_index import FrozenIndex
     meanings = review_meanings(source)
-    public_source_only = source.get('public_scope', {}).get('input_contract') == PUBLIC_SOURCE_INPUT_CONTRACT
-    for finding in source.get('findings', []):
-        if finding['origin'] == 'qa':
-            finding['candidate_binding_valid'] = finding['candidate_pool_hash'] == pool_hash(run, requirement)
     split_roles = separated(run)
     split_candidates = separate_application(run) or bool(source.get('public_scope'))
     content_scoped = source.get('requirement_content_contract') == CONTENT_CONTRACT
     content_targets = {m['key']:requirement_content_target(source,m) for m in meanings} if content_scoped else {}
-    conjunctions = conjunction_candidates(service, run, requirement, source)
-    local_type = ContributionReviewCheck if split_candidates else ExpressionReviewCheck if split_roles else LocalRepresentationCheck
-    claims = candidate_pool(run, requirement)
-    direct_rows = {c['id']: ref for c in claims if (ref := execution.exact_direct_row(c, run['blocks']))}
-    all_ids = {c['id'] for c in claims}
-    documents = [dict(id=c['id'], text=json.dumps(execution.compact_claim(c), ensure_ascii=False),
-                      file_id=c['source_version_ids'][0], source_group=c['source_version_ids'][0]) for c in claims]
-    index = FrozenIndex(documents, preserve_numbers=True)
-    receipts, checked_ids, outputs, failures = [], set(), [], []
-    row_lookup = source.get('source_selection', {}).get('row_lookup', {})
-    bindings = row_lookup.get('bindings', {})
-    row_exclusions = {}
+    direct_rows = {c['id']: ref for c in candidate_pool(run,requirement)
+                   if (ref := execution.exact_direct_row(c,run['blocks']))}
     options = run['recipe']['options']
     source_chunks = autoschema.chunks(run['blocks'], options['context_tokens'], options['review_tokens'], 1000)
     instruction = (execution.EXPRESSION_PROMPT if split_roles else execution.LOCAL_REPRESENTATION_PROMPT) + '''
@@ -3494,6 +3478,38 @@ field는 raw 또는 interpretation.meanings의 실제 의미 값 경로다. sour
             blocks=blocks,
             claims=[execution.compact_claim(c) for c in batch], repair_context=[r for r in histories if r['changes']],
             **(dict(source_row_integrity=integrity) if integrity else {}))
+    return instruction, packet
+
+
+def _represent(service, run, requirement, source, context, *, previous_scope=None, recheck_meaning_keys=None, previous_meanings=None):
+    """Bounded R batches, real missing-pool checks and a compact source-based join."""
+    from . import business_run as execution
+    from .business_models import (LocalRepresentationCheck, RequirementJoinCheck, PreservationCheck,
+                                  ExpressionReviewCheck, RequirementSynthesisCheck, ContributionReviewCheck, ContributionSynthesisCheck,
+                                  ConjunctionReview, ChallengedContributionRevision)
+    from .source_index import FrozenIndex
+    meanings = review_meanings(source)
+    public_source_only = source.get('public_scope', {}).get('input_contract') == PUBLIC_SOURCE_INPUT_CONTRACT
+    for finding in source.get('findings', []):
+        if finding['origin'] == 'qa':
+            finding['candidate_binding_valid'] = finding['candidate_pool_hash'] == pool_hash(run, requirement)
+    split_roles = separated(run)
+    split_candidates = separate_application(run) or bool(source.get('public_scope'))
+    content_scoped = source.get('requirement_content_contract') == CONTENT_CONTRACT
+    content_targets = {m['key']:requirement_content_target(source,m) for m in meanings} if content_scoped else {}
+    conjunctions = conjunction_candidates(service, run, requirement, source)
+    local_type = ContributionReviewCheck if split_candidates else ExpressionReviewCheck if split_roles else LocalRepresentationCheck
+    claims = candidate_pool(run, requirement)
+    all_ids = {c['id'] for c in claims}
+    documents = [dict(id=c['id'], text=json.dumps(execution.compact_claim(c), ensure_ascii=False),
+                      file_id=c['source_version_ids'][0], source_group=c['source_version_ids'][0]) for c in claims]
+    index = FrozenIndex(documents, preserve_numbers=True)
+    receipts, checked_ids, outputs, failures = [], set(), [], []
+    row_lookup = source.get('source_selection', {}).get('row_lookup', {})
+    bindings = row_lookup.get('bindings', {})
+    row_exclusions = {}
+    options = run['recipe']['options']
+    instruction, packet = local_review_inputs(run,requirement,source,context,previous_meanings=previous_meanings)
     def packs(batch, active_meanings):
         request = execution.json_request(run, 'requirement_representation', instruction,
                                         packet(batch, active_meanings), local_type)

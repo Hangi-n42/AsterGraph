@@ -68,6 +68,9 @@ def test_invalid_reference_does_not_trigger_global_schema_loss(monkeypatch, inva
     old['requirement_checks'] = deepcopy(old['requirement_checks'])
     old['requirement_checks'][1] = deepcopy(old['requirement_checks'][1])
     old['requirement_checks'][1]['meaning_key'] = 'sibling'
+    old['requirement_checks'][1]['requirement_scope_id'] = 'synthetic-sibling-scope'
+    context['required_content_targets'].append(dict(context['required_content_targets'][0],
+        meaning_key='sibling',scope_id='synthetic-sibling-scope'))
     output, refs = wire(run, context, old)
     row = output['requirement_checks'][0]
     if invalid == 'unknown':

@@ -1,5 +1,6 @@
 """Source graph construction and requirement repair on the existing service worker."""
 import asyncio
+from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
@@ -614,6 +615,62 @@ absent는 원래 미검증 해석의 값이며 새 조건 부재 판단이나 �
 
 
 EXPRESSION_REFERENCE_CONTRACT = 'whole-stored-expression-field-refs-v1'
+REQUIRED_REVIEW_CONTRACT = 'required-content-review-completeness-v1'
+
+
+def required_review_targets(context, output_type):
+    targets = context.get('required_content_targets')
+    if not targets or 'requirement_checks' not in output_type.model_fields:
+        return None
+    if (not isinstance(targets,list) or any(not isinstance(t,dict)
+            or any(not isinstance(t.get(k),str) or not t[k].strip() for k in ('meaning_key','scope_id','content','source_version'))
+            or not t.get('evidence') for t in targets)):
+        return None
+    expected = {t['meaning_key']:t['scope_id'] for t in targets}
+    if len(expected) != len(targets) or len(set(expected.values())) != len(targets):
+        raise ValueError('duplicate_required_review_targets')
+    return expected
+
+
+def required_review_type(output_type, targets):
+    row = get_args(output_type.model_fields['requirement_checks'].annotation)[0]
+    selected = create_model('Required' + row.__name__, __base__=row,
+        meaning_key=(Literal[tuple(targets)], ...), requirement_scope_id=(Literal[tuple(targets.values())], ...),
+        reason=(str, Field(min_length=1)))
+    return create_model('Complete' + output_type.__name__, __base__=output_type,
+        requirement_checks=(list[selected], Field(min_length=len(targets),max_length=len(targets))))
+
+
+def validate_required_reviews(parsed, targets):
+    """Keep normal siblings; completeness errors never supply a missing semantic verdict."""
+    rows = parsed.get('requirement_checks', [])
+    if not isinstance(rows,list):
+        return None  # The existing schema owns unrelated JSON shape errors.
+    keys = Counter(r.get('meaning_key') for r in rows if isinstance(r,dict) and isinstance(r.get('meaning_key'),str))
+    diagnostics, valid = [], set()
+    for index, row in enumerate(rows):
+        if not isinstance(row,dict):
+            continue
+        key, scope = row.get('meaning_key'), row.get('requirement_scope_id')
+        if not isinstance(key,str) or not isinstance(scope,str):
+            continue  # These fields were already required by the original row schema.
+        errors = []
+        if key not in targets or targets.get(key) != scope:
+            errors.append('required_check_outside_target_or_scope_mismatch')
+        if keys[key] != 1:
+            errors.append('required_check_duplicate')
+        if isinstance(row.get('reason'),str) and not row['reason'].strip():
+            errors.append('required_check_reason_missing')
+        diagnostics.append(dict(index=index,meaning_key=key,requirement_scope_id=scope,
+            model_status=row.get('status'),errors=errors))
+        if errors:
+            row['status'] = 'unknown'
+        else:
+            valid.add(key)
+    missing = [key for key in targets if not keys[key]]
+    invalid = [key for key in targets if keys[key] and key not in valid]
+    return dict(contract=REQUIRED_REVIEW_CONTRACT,expected_targets=targets,missing=missing,invalid=invalid,rows=diagnostics,
+        complete=len(rows)==len(targets) and not missing and not invalid and not any(r['errors'] for r in diagnostics))
 
 
 def referenced_expression_fields(claim):
@@ -719,6 +776,9 @@ def restore_expression_references(parsed, output_type, references, claims):
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .source_meanings import remap
     context = deepcopy(context)
+    required_targets = required_review_targets(context,output_type) if stage == 'requirement_representation' else None
+    if required_targets is not None:
+        instruction += '\nrequirement_checks는 각 required_content_target의 meaning_key와 scope_id마다 정확히 한 행을 반환한다. 미확정도 unknown과 이유를 쓰며 생략하거나 중복하지 않는다.\n'
     expression_views = expression_references(run, context, output_type)
     if expression_views is not None:
         context['expression_fields'] = [dict(expression_ref=ref,
@@ -824,6 +884,8 @@ represented_content/missing_content/reason/status의 의미 판단은 그대로 
         output_type = expression_reference_type(output_type, expression_views)
     content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage in {'requirement_representation', 'requirement_repair'} or source_only_public else encode(payload)
     from . import answer_links
+    if required_targets is not None:
+        output_type = required_review_type(output_type,required_targets)
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
         schema = answer_links.generation_schema(schema)
@@ -831,6 +893,7 @@ represented_content/missing_content/reason/status의 의미 판단은 그대로 
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
         expression_reference_map=expression_views,
+        **(dict(required_review_targets=required_targets) if required_targets is not None else {}),
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
             'requirement_representation': 'representation_tokens'}.get(stage, '')),
@@ -846,6 +909,9 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
                   max_tokens=request['max_tokens'], reference_map=request['reference_map'])
     views = request['evidence_reference_map']
     expression_views = request['expression_reference_map']
+    required_targets = request.get('required_review_targets')
+    if required_targets is not None:
+        run['units'][-1]['required_review_contract'] = REQUIRED_REVIEW_CONTRACT
     if expression_views is not None:
         run['units'][-1].update(expression_reference_map=deepcopy(expression_views),
             expression_reference_contract=EXPRESSION_REFERENCE_CONTRACT)
@@ -871,6 +937,7 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         parsed = remap_expression_keys(remap(result['parsed'], reverse), reverse)
         expression_diagnostics = restore_expression_references(parsed, output_type, expression_views,
             run.get('claims', [])) if expression_views is not None else {}
+        required_validation = validate_required_reviews(parsed,required_targets) if required_targets is not None else None
         if views is None:
             return output_type.model_validate(parsed).model_dump()
         selected = selected_evidence_type(output_type, views).model_validate(parsed).model_dump()
@@ -885,6 +952,13 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         normalized = output_type.model_validate(restored).model_dump()
         for (field, index), metadata in expression_diagnostics.items():
             normalized[field][index].update(metadata)
+        if required_validation is not None:
+            normalized['required_review_validation'] = deepcopy(required_validation)
+            run['units'][-1]['required_review_validation'] = deepcopy(required_validation)
+            for row in required_validation['rows']:
+                normalized['requirement_checks'][row['index']]['required_check_errors'] = row['errors']
+            if not required_validation['complete']:
+                run['units'][-1].update(status='failed',error='required_review_incomplete')
         for field in fields:
             for row, original in zip(normalized[field], restored[field]):
                 for name in ('evidence', 'error_evidence', 'missing_evidence'):
