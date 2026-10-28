@@ -2333,8 +2333,25 @@ def summarize_local(meanings, outputs, *, source_owned=False, source=None):
                 if row['premise_keys'] is None:
                     next(d for d in result['dependencies'] if d['meaning_key'] == row['meaning_key'])['premise_keys'] = None
     if source and source.get('requirement_content_contract') == CONTENT_CONTRACT:
-        question = summarize_local(meanings,[dict(checks=o.get('requirement_checks', []),
-            source_checks=o.get('source_checks', []),review_unit_id=o.get('review_unit_id')) for o in outputs])
+        targets = {m['key']:requirement_content_target(source,m) for m in meanings}
+        required_outputs = []
+        for output in outputs:
+            checks = deepcopy(output.get('requirement_checks', []))
+            for check in checks:
+                target = targets.get(check['meaning_key'])
+                if (target and check.get('requirement_scope_id') == target['scope_id']
+                        and check.get('content_scope_bound') is True and check['status'] == 'missing'
+                        and check.get('claim_ids') == [] and check.get('expression_quotes') == []
+                        and check.get('represented_content') == '' and not check.get('incorrect_claim_ids')
+                        and not check.get('expression_bindings')
+                        and (check.get('missing_content') or '').strip() and check.get('missing_evidence')
+                        and not any(check.get(k) for k in ('expression_errors','expression_reference_errors',
+                            'required_check_errors','contract_errors'))):
+                    # Whole-target absence reuses its fixed scope; model wording stays in the batch history.
+                    check.update(missing_content=target['content'],missing_evidence=deepcopy(target['evidence']))
+            required_outputs.append(dict(checks=checks,source_checks=output.get('source_checks', []),
+                review_unit_id=output.get('review_unit_id')))
+        question = summarize_local(meanings,required_outputs)
         result['requirement_checks'] = question['checks']
         result = question_representation(source,result)
     return result
