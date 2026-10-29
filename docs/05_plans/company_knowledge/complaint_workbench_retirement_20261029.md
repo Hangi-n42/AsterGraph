@@ -7,7 +7,7 @@ AsterGraph의 현재 범위는 기업 지식 워크벤치다. 민원 화면만 �
 - 기준 main: `f7548838f6e3d58698d986339bbc26ef9a07e2f3` (PR #675)
 - 작업 브랜치: `codex/retire-complaint-workbench`
 - 독립 민원 저장소: `/Users/hyeongi/projects/Civil-Complaints-Workbench`
-- 독립 저장소 커밋: `ac4f56526851491828ef57c74f27194f26480592`
+- 독립 저장소 커밋: `de59357c33b13b6868848aca1477e4127a7f0985`
 - 독립 저장소 기준 태그: `split-base/astergraph-f7548838`
 - 상세 삭제·원본 blob 대응: [파일 목록](complaint_workbench_retired_files_20261029.json)
 
@@ -31,7 +31,7 @@ AsterGraph의 현재 범위는 기업 지식 워크벤치다. 민원 화면만 �
 | 그래프 점수 | 기존 RRF·기본 타입·공용 평가 도구 유지. 점수식·순서·한도 변경 없음. 사용자가 없어진 민원 평가셋 어댑터만 제거 |
 | 설정 | 지식·공용 설정 유지. `STRUCTURING_MODEL`은 지식 구축에 쓰이는 기존 이름이므로 보존. 민원 scheduler/Chroma/PII/운영 QA 설정 제거 |
 
-삭제된 민원 전용 직접 의존성: Python `altair`, `blinker`, `chroma-hnswlib`, `chromadb`, `ko-pii`, `kss`, `pydeck`, `plotly`, `streamlit`; FE `leaflet`, `react-leaflet`, `@types/leaflet`. 공유 설치 환경을 uninstall하지 않았다. 남은 전이 의존성의 전면 재고정이나 모델 버전 변경은 수행하지 않았다.
+삭제된 민원 전용 직접 의존성: Python `altair`, `blinker`, `chroma-hnswlib`, `chromadb`, `ko-pii`, `kss`, `pydeck`, `plotly`, `streamlit`; FE `leaflet`, `react-leaflet`, `@types/leaflet`. npm 갱신 과정에서 발생한 무관한 플랫폼 잠금 메타데이터 변경과 추가 항목은 원형으로 복원했고, 양쪽 저장소에서 최종 npm ci를 확인했다. 공유 설치 환경을 uninstall하지 않았다. 남은 전이 의존성의 전면 재고정이나 모델 버전 변경은 수행하지 않았다.
 
 ## 검증
 
