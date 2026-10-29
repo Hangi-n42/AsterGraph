@@ -434,9 +434,16 @@ def selected_evidence_type(output_type, references):
     """Reuse server source addresses instead of asking a reviewer to rewrite quotes."""
     selection = list[Literal[tuple(references)]] if references else list[str]
     overrides = {}
+    if any('missing_evidence' in row.model_fields for row in evidence_fields(output_type).values()):
+        remainder = create_model('SelectedMissingEvidence', __config__={'extra': 'forbid'},
+            evidence_ref=(Literal[tuple(references)] if references else str, ...),
+            span=(list[int], Field(min_length=2, max_length=2)), quote=(str, Field(min_length=1)))
     for field, row_type in evidence_fields(output_type).items():
         selected = {name: (selection, Field(max_length=len(references)))
                     for name in ('evidence', 'error_evidence', 'missing_evidence') if name in row_type.model_fields}
+        if 'missing_evidence' in selected:
+            selected['missing_evidence'] = (list[(Literal[tuple(references)] if references else str) | remainder],
+                Field(max_length=len(references)))
         row = create_model('Selected' + row_type.__name__, __base__=row_type, **selected)
         if issubclass(output_type, (GroundingCheck, LocalSourceCheck)):
             unresolved = create_model('Unresolved' + row_type.__name__, __base__=row,
@@ -637,9 +644,11 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         has_missing_evidence = any('missing_evidence' in row.model_fields for row in evidence_fields(output_type).values())
         output_type = selected_evidence_type(output_type, evidence_views)
         fields = 'evidence와 error_evidence' if issubclass(output_type, (ExpressionReviewCheck, RequirementSynthesisCheck, CandidateSourceReview)) else 'evidence'
-        if has_missing_evidence:
-            fields += ', missing_evidence'
         instruction += '\n' + fields + '에는 blocks의 evidence_ref ID만 선택한다. 여러 구간은 별도 ID로 반환한다. 문장을 재작성하지 않는다. 참조가 있다는 이유만으로 의미 지지/해소를 선언하지 않는다.\n'
+        if has_missing_evidence:
+            instruction += ('missing_evidence의 부분범위는 {evidence_ref,span:[시작,끝],quote}로 반환한다. '
+                'span은 제공 block의 절대 문자 위치이며 끝은 제외한다. quote는 그 구간의 원문 그대로다. '
+                '블록 전체를 선택할 때는 기존 evidence_ref ID도 허용한다.\n')
         if issubclass(output_type, SelectedRequirementSourceCheck):
             # Provenance remains server-side. Historical keys are not new local
             # premise IDs, and saved quotations cannot substitute for this read.
@@ -745,8 +754,21 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
                 for row in restored[field]:
                     for name in ('evidence', 'error_evidence', 'missing_evidence'):
                         if name in row_type.model_fields:
-                            row[name] = [exact_evidence([dict(block_id=views[ref]['id'], quote=views[ref]['text'])],
-                                                       [views[ref]])[0] for ref in row[name]]
+                            refs = []
+                            for ref in row[name]:
+                                view = views[ref['evidence_ref'] if isinstance(ref, dict) else ref]
+                                item = dict(block_id=view['id'], quote=view['text'])
+                                if isinstance(ref, dict):
+                                    item.update(quote=ref['quote'], start_char=ref['span'][0], end_char=ref['span'][1],
+                                        source_version_id=view['source_version_id'],
+                                        parse_run_id=view.get('parse_run_id') or view.get('run_id'))
+                                refs.extend(exact_evidence([item], [view]))
+                            if name == 'missing_evidence':
+                                addresses = [tuple(e[k] for k in ('source_version_id', 'parse_run_id', 'block_id',
+                                    'start_char', 'end_char')) for e in refs]
+                                if len(addresses) != len(set(addresses)):
+                                    raise ValueError('duplicate_missing_evidence_address')
+                            row[name] = refs
             normalized = output_type.model_validate(restored).model_dump()
             for field in fields:
                 for row, original in zip(normalized[field], restored[field]):
