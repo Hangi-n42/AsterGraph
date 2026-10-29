@@ -6,19 +6,9 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 
 from app.api.error_utils import error_response, make_request_id
-from app.complaint_intelligence import get_complaint_intelligence_scheduler
 from app.core.config import settings
 from app.core.logging import api_logger
 from app.api.routers.knowledge import router as knowledge_router, shutdown_knowledge_service
-from app.api.routers import (
-    admin_router,
-    chroma_debug_router,
-    complaint_intelligence_router,
-    generation_router,
-    retrieval_router,
-    structuring_router,
-    ui_router,
-)
 
 
 @asynccontextmanager
@@ -27,15 +17,9 @@ async def lifespan(app: FastAPI):
     # 시작
     api_logger.info("API 서버 시작")
     api_logger.info(f"Ollama: {settings.OLLAMA_BASE_URL}")
-    api_logger.info(f"ChromaDB: {settings.CHROMA_DB_PATH}")
-    scheduler = get_complaint_intelligence_scheduler()
-    scheduler_started = scheduler.start()
-    if scheduler_started:
-        api_logger.info("Complaint Intelligence scheduler started")
     try:
         yield
     finally:
-        scheduler.stop()
         shutdown_knowledge_service()
     # 종료
     api_logger.info("API 서버 종료")
@@ -59,37 +43,12 @@ app.add_middleware(
 )
 
 # API 라우터 등록
-app.include_router(retrieval_router)
-app.include_router(structuring_router)
-app.include_router(generation_router)
-app.include_router(chroma_debug_router)
-app.include_router(ui_router)
-app.include_router(complaint_intelligence_router)
-app.include_router(admin_router)
 app.include_router(knowledge_router, prefix="/api/v1")
 
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_exception_handler(request, exc: RequestValidationError):
-    """FastAPI 기본 422를 Week2 표준 에러 래퍼로 통일한다."""
-    is_search_filter_error = str(request.url.path) == "/api/v1/search" and any(
-        isinstance(err.get("loc"), (list, tuple)) and "filters" in err.get("loc", ())
-        for err in exc.errors()
-    )
-
-    if is_search_filter_error:
-        return error_response(
-            request_id=make_request_id(),
-            error_code="FILTER_INVALID",
-            message="검색 필터 형식 또는 값이 올바르지 않습니다.",
-            status_code=400,
-            retryable=False,
-            details={
-                "path": str(request.url.path),
-                "errors": exc.errors(),
-            },
-        )
-
+    """FastAPI 기본 422를 공통 에러 래퍼로 통일한다."""
     return error_response(
         request_id=make_request_id(),
         error_code="VALIDATION_ERROR",
@@ -133,32 +92,7 @@ async def root():
         "endpoints": {
             "health": "/api/v1/health",
             "health_legacy": "/health",
-            "ingest": "/api/v1/ingest",
-            "structure": "/api/v1/structure",
-            "index": "/api/v1/index",
-            "search": "/api/v1/search",
-            "qa": "/api/v1/qa",
-            "qa_stream": "/api/v1/qa/stream",
-            "ui_cases": "/api/v1/ui/cases",
-            "complaint_issue_alerts": "/complaint-intelligence/issue-alerts",
-            "complaint_public_insights": "/complaint-intelligence/public-insights",
-            "complaint_dashboard": "/complaint-intelligence/dashboard",
-            "complaint_run_analysis": "/complaint-intelligence/run-analysis",
-            "complaint_analysis_runs": "/complaint-intelligence/analysis-runs",
-            "complaint_scheduler_status": "/complaint-intelligence/scheduler/status",
-            "complaint_scheduler_run_once": "/complaint-intelligence/scheduler/run-once",
-            "complaint_collector_status": "/complaint-intelligence/collector/status",
-            "complaint_collector_poll_once": "/complaint-intelligence/collector/poll-once",
-            "complaint_llm_observability": "/complaint-intelligence/public-insights/llm-observability",
-            "complaint_dashboard_run_analysis": "/complaint-intelligence/dashboard/run-analysis",
-            "complaint_public_insight_run_analysis": "/complaint-intelligence/public-insights/run-analysis",
-            "duplicate_groups_run_analysis": "/complaint-intelligence/duplicate-groups/run-analysis",
-            "duplicate_groups": "/complaint-intelligence/duplicate-groups",
-            "duplicate_group_confirm": "/complaint-intelligence/duplicate-groups/{merge_id}/confirm",
-            "duplicate_group_split": "/complaint-intelligence/duplicate-groups/{merge_id}/split",
-            "duplicate_group_reject": "/complaint-intelligence/duplicate-groups/{merge_id}/reject",
-            "duplicate_group_draft_reply": "/complaint-intelligence/duplicate-groups/{merge_id}/draft-reply",
-            "duplicate_group_reply_draft": "/complaint-intelligence/duplicate-groups/{merge_id}/reply-draft",
+            "knowledge": "/api/v1/knowledge",
         },
     }
 

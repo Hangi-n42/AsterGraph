@@ -137,54 +137,6 @@ def load_qrels_tsv(path: str | Path) -> list[QrelRecord]:
     return qrels
 
 
-def load_legacy_evaluation_set(path: str | Path, sample_size: int = 0) -> RetrievalEvalDataset:
-    with Path(path).open("r", encoding="utf-8") as handle:
-        payload = json.load(handle)
-    if not isinstance(payload, list):
-        raise ValueError("legacy evaluation_set은 list 형식이어야 합니다")
-
-    queries: list[EvalQuery] = []
-    qrels: list[QrelRecord] = []
-    for case in payload:
-        if not isinstance(case, dict):
-            continue
-        qid = str(case.get("case_id") or case.get("qid") or "").strip()
-        text = str(case.get("query") or case.get("text") or "").strip()
-        if not qid or not text:
-            continue
-        queries.append(EvalQuery(qid=qid, text=text, metadata=_case_metadata(case)))
-        for ctx in case.get("context") or []:
-            if not isinstance(ctx, dict):
-                continue
-            chunk_id = str(ctx.get("chunk_id") or ctx.get("docid") or "").strip()
-            if chunk_id:
-                qrels.append(QrelRecord(qid=qid, docid=chunk_id, relevance=int(ctx.get("relevance") or 1)))
-
-    if sample_size > 0:
-        queries = queries[:sample_size]
-        allowed = {query.qid for query in queries}
-        qrels = [qrel for qrel in qrels if qrel.qid in allowed]
-
-    return RetrievalEvalDataset(
-        corpus=[],
-        queries=queries,
-        qrels=qrels,
-        eval_dir=Path(path).parent,
-        eval_set_hash=sha256_file(Path(path)),
-    )
-
-
-def _case_metadata(case: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "scenario_type": str(case.get("scenario_type") or "unknown").lower(),
-        "risk_level": str(case.get("risk_level") or "unknown").lower(),
-        "topic_type": str(case.get("topic_type") or case.get("category") or "general").lower(),
-        "complexity_level": str(case.get("complexity_level") or "medium").lower(),
-        "requires_multi_request": str(bool(case.get("requires_multi_request", False))).lower(),
-        "time_sensitivity": str(case.get("time_sensitivity") or "unknown").lower(),
-    }
-
-
 def _iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         for line_number, raw_line in enumerate(handle, start=1):

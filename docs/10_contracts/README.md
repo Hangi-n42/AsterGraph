@@ -1,48 +1,5 @@
-# 계약 문서
+# 현재 계약
 
-- 문서 상태: canonical
-- 문서 버전: v2.0
-- 문서 분류·링크 정리일: 2026-09-26
-- 하위 문서 전체의 구현 일치 여부를 이번에 재검증한 것은 아님
-- 기준 코드:
-  - `app/api/routers/retrieval.py`
-  - `app/api/routers/generation.py`
-  - `app/api/routers/complaint_intelligence.py`
-  - `app/api/schemas/`
-  - `app/complaint_intelligence/schemas.py`
-  - `app/complaint_intelligence/duplicate_merger/schemas.py`
-  - `frontend/lib/api.ts`
-- 관련 문서:
-  - `docs/60_specs/api_interface_spec.md`
-  - `docs/60_specs/data_schema_spec.md`
-  - `docs/60_specs/ui_workbench_spec.md`
+[API](api/current_api_contract.md) · [데이터](data/current_data_contract.md) · [화면](frontend/current_fe_contract.md)
 
-## 디렉터리 역할
-
-`docs/10_contracts`는 현재 살아있는 API, 데이터, FE-BE 계약의 기준 위치입니다. FE 담당자는 이 디렉터리를 먼저 보고 endpoint, 상태, 필드 계약을 확인합니다. BE 담당자는 Pydantic schema와 서비스 정책이 외부에 어떤 형태로 노출되는지 확인합니다.
-
-## 권장 읽는 순서
-
-1. `api/current_api_contract.md`
-2. `data/current_data_contract.md`
-3. `frontend/current_fe_contract.md`
-4. `frontend/intelligence_fe_contract.md`
-
-## canonical 문서
-
-- `docs/10_contracts/api/current_api_contract.md`
-- `docs/10_contracts/data/current_data_contract.md`
-- `docs/10_contracts/frontend/current_fe_contract.md`
-- `docs/10_contracts/frontend/intelligence_fe_contract.md`
-
-## historical 문서 처리
-
-`interfaces/week*`, `api/old_api_spec.md`, `schema/old_schema_contract.md`는 주차별 또는 과거 기준 계약입니다. 새 구현 판단의 기준으로 쓰지 말고, 변경 배경을 확인하는 historical 자료로 봅니다.
-
-## `60_specs`와의 관계
-
-`docs/60_specs`의 API, 데이터, UI 사양 중 현재 코드와 맞는 내용은 이 디렉터리로 흡수했습니다. `60_specs`는 source-spec으로 보존합니다.
-
-## 신규 제품과의 관계
-
-이 디렉터리는 기존 민원 기능의 참고 기준이다. 신규 회사 지식 제품은 [문서 지도](../../docs/README.md)를 통해 PRD·설계·구현·마일스톤을 확인한다. 과거 평가 결과는 [모듈별 실험](../../experiments/README.md)에 보관한다.
+민원 전용 코드·자료·문서는 별도 민원 워크벤치 저장소로 분리했습니다. 회사 지식 연구/실패 기록과 원본 DB는 유지합니다. 과거 기록은 현재 제품 범위 또는 검증 완료의 증거로 자동 간주하지 않습니다.

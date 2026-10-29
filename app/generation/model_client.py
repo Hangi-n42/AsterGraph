@@ -44,7 +44,7 @@ class ModelClient:
             raise ValueError('Unsupported generation adapter')
         self.endpoint = self.config['endpoint'].rstrip('/')
         if self.provider == 'ollama':
-            from .service import local_ollama_url
+            from .endpoint import local_ollama_url
             self.endpoint = local_ollama_url(self.endpoint)
         elif not self.endpoint.startswith(('http://', 'https://')):
             raise ValueError('An HTTP(S) API endpoint is required')

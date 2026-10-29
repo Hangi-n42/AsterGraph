@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type ActiveMenu = "queue" | "workbench" | "admin" | "intelligence" | "knowledge";
+type ActiveMenu = "knowledge";
 
 interface AppSidebarProps {
   activeMenu: ActiveMenu;
@@ -25,10 +25,6 @@ export default function AppSidebar({ activeMenu }: AppSidebarProps) {
 
   const navigationItems: Array<{ key: ActiveMenu; label: string; path: string; className?: string }> = [
     { key: "knowledge", label: "회사 지식 자료", path: "/knowledge" },
-    { key: "queue", label: "민원 선택", path: "/" },
-    { key: "workbench", label: "처리 워크벤치", path: "/workbench", className: "mt-1" },
-    { key: "admin", label: "관리자 통계", path: "/admin", className: "mt-1" },
-    { key: "intelligence", label: "민원 인텔리전스", path: "/intelligence", className: "mt-1" },
   ];
 
   return (
@@ -40,7 +36,7 @@ export default function AppSidebar({ activeMenu }: AppSidebarProps) {
         }`}
       >
         <div className="flex items-center justify-between border-b border-slate-300 px-4 py-4 text-xl font-black tracking-tight text-slate-900">
-          <span>CRM AI</span>
+          <span>AsterGraph</span>
           <button
             type="button"
             aria-label={collapsed ? "열기" : "접기"}
@@ -64,7 +60,7 @@ export default function AppSidebar({ activeMenu }: AppSidebarProps) {
           ))}
         </div>
 
-        <div className="border-t border-slate-300 px-3 py-4 text-[10px] text-slate-500">© CRM AI System</div>
+        <div className="border-t border-slate-300 px-3 py-4 text-[10px] text-slate-500">© AsterGraph System</div>
       </aside>
 
       {/* Small visible handle when collapsed */}

@@ -5,7 +5,6 @@
 """
 
 import os
-from typing import Optional
 from pathlib import Path
 
 # 기본 경로
@@ -25,262 +24,34 @@ except Exception:
 
 
 class Settings:
-    """애플리케이션 설정"""
-
-    # API 설정
-    API_TITLE: str = "AI Civil Affairs System API"
+    """회사 지식 런타임 설정. 기존 모델·검색 기본값은 유지한다."""
+    API_TITLE: str = "AsterGraph Knowledge API"
     API_VERSION: str = "0.1.0"
-    API_DESCRIPTION: str = "온디바이스 AI 기반 민원 데이터 심층 분석 및 검색 시스템"
+    API_DESCRIPTION: str = "출처 기반 기업 지식 구축·검수·갱신 및 검색 API"
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
     API_PORT: int = int(os.getenv("API_PORT", 8000))
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
-
-    # 회사 지식 파일럿은 기존 민원 저장소와 분리한다.
     KNOWLEDGE_ENABLED: bool = os.getenv("KNOWLEDGE_ENABLED", "false").lower() == "true"
     KNOWLEDGE_DB_PATH: str = str(PROJECT_ROOT / os.getenv("KNOWLEDGE_DB_PATH", "data/knowledge/knowledge.db"))
-    KNOWLEDGE_SEARCH_MODEL: str = os.getenv("KNOWLEDGE_SEARCH_MODEL", "")  # 빈 값이면 OLLAMA_MODEL
+    KNOWLEDGE_SEARCH_MODEL: str = os.getenv("KNOWLEDGE_SEARCH_MODEL", "")
     KNOWLEDGE_REVIEW_MODEL: str = os.getenv("KNOWLEDGE_REVIEW_MODEL", "qwen3.8:27b-q4_K_M")
     KNOWLEDGE_GENERATION_PROVIDER: str = os.getenv("KNOWLEDGE_GENERATION_PROVIDER", "ollama")
     KNOWLEDGE_GENERATION_ENDPOINT: str = os.getenv("KNOWLEDGE_GENERATION_ENDPOINT", "")
     KNOWLEDGE_GENERATION_AUTH_ENV: str = os.getenv("KNOWLEDGE_GENERATION_AUTH_ENV", "KNOWLEDGE_API_KEY")
     KNOWLEDGE_GENERATION_CONTEXT_LENGTH: int = int(os.getenv("KNOWLEDGE_GENERATION_CONTEXT_LENGTH", "49152"))
-
-    # Ollama 설정
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma4:31b-it-q4_K_M")
     OLLAMA_TIMEOUT: int = int(os.getenv("OLLAMA_TIMEOUT", 180))
-    GENERATION_NUM_PREDICT: int = int(os.getenv("GENERATION_NUM_PREDICT", 1536))
-    GENERATION_NUM_CTX: int = int(os.getenv("GENERATION_NUM_CTX", 8192))
-
-    # ChromaDB 설정
-    CHROMA_DB_PATH: str = os.getenv("CHROMA_DB_PATH", str(DATA_DIR / "chroma_db"))
-    CHROMA_PERSIST_DIRECTORY: Optional[str] = CHROMA_DB_PATH
-    DEFAULT_CHROMA_COLLECTION: str = os.getenv("DEFAULT_CHROMA_COLLECTION", "civil_cases_v3")
-
-    # 임베딩 설정
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
     EMBEDDING_DEVICE: str = os.getenv("EMBEDDING_DEVICE", "cpu")
-
-    # 검색 전략 (교정 평가 #273: Hybrid이 전 지표 1위 → 기본값 hybrid)
-    RETRIEVAL_STRATEGY: str = os.getenv("RETRIEVAL_STRATEGY", "hybrid")  # "hybrid" | "dense"
-    RRF_K: int = int(os.getenv("RRF_K", 60))
-    HYBRID_FANOUT: int = int(os.getenv("HYBRID_FANOUT", 50))
-
-    # RAG grounding LLM 관련성 필터 (#305): 유사 민원 검색에서 해로운(rel0) 선례 차단.
-    # 기본 OFF → 호출부가 search(grounding_filter=True)를 명시하거나 env로 켬.
-    GROUNDING_FILTER_ENABLED: bool = os.getenv("GROUNDING_FILTER_ENABLED", "false").lower() == "true"
-    GROUNDING_FILTER_MODEL: str = os.getenv("GROUNDING_FILTER_MODEL", "")  # 빈값이면 OLLAMA_MODEL
-    GROUNDING_FILTER_MIN_SCORE: int = int(os.getenv("GROUNDING_FILTER_MIN_SCORE", 1))
-    GROUNDING_FILTER_POOL: int = int(os.getenv("GROUNDING_FILTER_POOL", 10))
-    GROUNDING_FILTER_MAX_CONCURRENCY: int = int(os.getenv("GROUNDING_FILTER_MAX_CONCURRENCY", 5))
-
-    # 데이터 경로
-    RAW_DATA_PATH: str = str(DATA_DIR / "raw")
-    INTERIM_DATA_PATH: str = str(DATA_DIR / "interim")
-    PROCESSED_DATA_PATH: str = str(DATA_DIR / "processed")
-    SAMPLES_DATA_PATH: str = str(DATA_DIR / "samples")
-
-    # 로깅 설정
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     API_LOG_FILE: str = str(LOGS_DIR / "api" / "app.log")
     PIPELINE_LOG_FILE: str = str(LOGS_DIR / "pipeline" / "pipeline.log")
     EVALUATION_LOG_FILE: str = str(LOGS_DIR / "evaluation" / "evaluation.log")
 
-    # 성능 설정
-    MAX_WORKERS: int = int(os.getenv("MAX_WORKERS", 4))
-    REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT", 60))
-    BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", 32))
-
-    # 검증 설정
-    MIN_CONFIDENCE_SCORE: float = float(os.getenv("MIN_CONFIDENCE_SCORE", 0.5))
-    MAX_RETRY_COUNT: int = int(os.getenv("MAX_RETRY_COUNT", 3))
-    # PII 마스킹 정책. 기본값은 운영 안전을 위해 fail_closed 이며,
-    # MVP 색인량 우선 실험은 build_index.py --pii-policy mask-only 로 명시한다.
-    PII_SANITIZATION_POLICY: str = os.getenv("PII_SANITIZATION_POLICY", "fail_closed").strip().lower()
-
-    # 구조화 전용 Ollama 설정 (QA 생성 모델과 분리)
+    # 지식 구축 모델의 기존 환경변수 이름. 민원 엔진과 무관하게 호환 유지.
     STRUCTURING_MODEL: str = os.getenv("STRUCTURING_MODEL", "gemma4:31b-it-q4_K_M")
-    CIVIL_STRUCTURING_MODEL: str = os.getenv("CIVIL_STRUCTURING_MODEL", "gemma4:31b-it-q4_K_M")  # 활성 제약 구조화 전용; 빈 값이면 STRUCTURING_MODEL
-    STRUCTURING_TIMEOUT: float = float(os.getenv("STRUCTURING_TIMEOUT", "90.0"))
-    STRUCTURING_MAX_TEXT_LEN: int = int(os.getenv("STRUCTURING_MAX_TEXT_LEN", "2000"))
-
-    # responsible_unit 도출 (요청 #3) — bge-m3/Chroma 인덱스 필요. 기본 off.
-    # 인덱스 빌드(build_index) 후 true 로 켤 것. true 라도 인프라 미가용 시 빈 리스트로 폴백.
-    ENABLE_RESPONSIBLE_UNIT: bool = os.getenv("ENABLE_RESPONSIBLE_UNIT", "false").lower() == "true"
-    RESPONSIBLE_UNIT_USE_LLM: bool = os.getenv("RESPONSIBLE_UNIT_USE_LLM", "false").lower() == "true"
-    # Dense+BM25+RRF 하이브리드 후보 검색. 100건 평가에서 Phase 1-A dense 기본값보다
-    # 낮아져 기본 OFF. 재실험/튜닝 시에만 true 로 켠다.
-    RESPONSIBLE_UNIT_USE_HYBRID: bool = os.getenv("RESPONSIBLE_UNIT_USE_HYBRID", "false").lower() == "true"
-    # CrossEncoder 기반 task 리랭킹. Phase 3 실험용이며, 100건 평가로 채택 여부를
-    # 확인하기 전까지 기본 OFF를 유지한다.
-    RESPONSIBLE_UNIT_USE_RERANKER: bool = os.getenv("RESPONSIBLE_UNIT_USE_RERANKER", "false").lower() == "true"
-    RESPONSIBLE_UNIT_RERANKER_MODEL: str = os.getenv("RESPONSIBLE_UNIT_RERANKER_MODEL", "BAAI/bge-reranker-v2-m3")
-    RESPONSIBLE_UNIT_RERANKER_DEVICE: str = os.getenv("RESPONSIBLE_UNIT_RERANKER_DEVICE", EMBEDDING_DEVICE)
-    RESPONSIBLE_UNIT_RERANKER_BATCH_SIZE: int = int(os.getenv("RESPONSIBLE_UNIT_RERANKER_BATCH_SIZE", "16"))
-    # responsible_unit 신뢰도 하한(soft 후보 억제). 정답셋 없어 미보정 휴리스틱.
-    # 기본 0.0: bge-m3 raw cosine 이 0.5~0.65 좁은 띠에 뭉쳐 단일 하한으로 정답/오답을
-    # 분리할 수 없음이 확인됨(오답 0.63 > 정답 0.57). 하한 대신 BE2 soft-rerank 에 위임.
-    # (랭킹/신뢰도 개선은 별도 리팩토링 — docs/60_specs 참조). env 로 조정 가능.
-    RESPONSIBLE_UNIT_MIN_CONFIDENCE: float = float(os.getenv("RESPONSIBLE_UNIT_MIN_CONFIDENCE", "0.0"))
-
-    # 구조화 고도화(Track A): ① 제약 디코딩 / ② 자기검증 (기본 off, 점진 전환)
-    # 제약 디코딩은 스키마 안정화 이득이 크고 실패 시 기존 fallback으로 내려가므로 기본으로 사용한다.
-    STRUCTURING_CONSTRAINED: bool = os.getenv("STRUCTURING_CONSTRAINED", "true").lower() == "true"
-    # 자기검증은 추가 LLM 호출로 지연/비용 리스크가 있어 운영자가 명시적으로 켤 때만 사용한다.
-    ENABLE_SELF_VERIFY: bool = os.getenv("ENABLE_SELF_VERIFY", "false").lower() == "true"
-
-    # BE3 법령 조문 인용 그라운딩(Phase B). 인덱스/모델 미가용 시 자동 무동작.
-    ENABLE_LEGAL_CITATIONS: bool = os.getenv("ENABLE_LEGAL_CITATIONS", "true").lower() == "true"
-
-    # Complaint Intelligence Layer 설정(sidecar). 기존 RAG/라우팅 흐름을 바꾸지 않고
-    # 분석 API에서만 사용하는 임계값과 가중치다.
-    CI_RECENT_HOURS: int = int(os.getenv("CI_RECENT_HOURS", "3"))
-    CI_BASELINE_DAYS: int = int(os.getenv("CI_BASELINE_DAYS", "7"))
-    CI_MIN_RECENT_COUNT: int = int(os.getenv("CI_MIN_RECENT_COUNT", "3"))
-    CI_MIN_SURGE_RATIO: float = float(os.getenv("CI_MIN_SURGE_RATIO", "2.5"))
-    CI_SEMANTIC_THRESHOLD: float = float(os.getenv("CI_SEMANTIC_THRESHOLD", "0.78"))
-    CI_MERGE_THRESHOLD: float = float(os.getenv("CI_MERGE_THRESHOLD", "0.84"))
-    CI_WATCH_THRESHOLD: float = float(os.getenv("CI_WATCH_THRESHOLD", "0.50"))
-    CI_WARNING_THRESHOLD: float = float(os.getenv("CI_WARNING_THRESHOLD", "0.70"))
-    CI_CRITICAL_THRESHOLD: float = float(os.getenv("CI_CRITICAL_THRESHOLD", "0.85"))
-    CI_INSIGHT_DAYS: int = int(os.getenv("CI_INSIGHT_DAYS", "30"))
-    CI_MIN_AFFECTED_COUNT: int = int(os.getenv("CI_MIN_AFFECTED_COUNT", "5"))
-    CI_RECURRING_DAYS: int = int(os.getenv("CI_RECURRING_DAYS", "30"))
-    CI_MIN_RECURRING_COUNT: int = int(os.getenv("CI_MIN_RECURRING_COUNT", "5"))
-    CI_REGIONAL_GAP_MIN_COUNT: int = int(os.getenv("CI_REGIONAL_GAP_MIN_COUNT", "5"))
-    CI_DEPARTMENT_BOTTLENECK_MIN_COUNT: int = int(os.getenv("CI_DEPARTMENT_BOTTLENECK_MIN_COUNT", "5"))
-    CI_PROCESS_DELAY_HOURS: float = float(os.getenv("CI_PROCESS_DELAY_HOURS", "72"))
-    CI_REPEAT_RISK_COUNT: int = int(os.getenv("CI_REPEAT_RISK_COUNT", "3"))
-    CI_NIGHT_START_HOUR: int = int(os.getenv("CI_NIGHT_START_HOUR", "20"))
-    CI_NIGHT_END_HOUR: int = int(os.getenv("CI_NIGHT_END_HOUR", "6"))
-    PUBLIC_INSIGHT_ENABLED: bool = os.getenv("PUBLIC_INSIGHT_ENABLED", "true").lower() == "true"
-    PUBLIC_INSIGHT_LLM_ENABLED: bool = os.getenv("PUBLIC_INSIGHT_LLM_ENABLED", "true").lower() == "true"
-    PUBLIC_INSIGHT_LLM_PROVIDER: str = os.getenv("PUBLIC_INSIGHT_LLM_PROVIDER", "fake")
-    PUBLIC_INSIGHT_LLM_BASE_URL: str = os.getenv("PUBLIC_INSIGHT_LLM_BASE_URL", "")
-    PUBLIC_INSIGHT_LLM_MODEL: str = os.getenv("PUBLIC_INSIGHT_LLM_MODEL", "")
-    PUBLIC_INSIGHT_LLM_TIMEOUT_SECONDS: float = float(os.getenv("PUBLIC_INSIGHT_LLM_TIMEOUT_SECONDS", "180"))
-    PUBLIC_INSIGHT_LLM_TEMPERATURE: float = float(os.getenv("PUBLIC_INSIGHT_LLM_TEMPERATURE", "0"))
-    PUBLIC_INSIGHT_LLM_NUM_CTX: int = int(os.getenv("PUBLIC_INSIGHT_LLM_NUM_CTX", "4096"))
-    PUBLIC_INSIGHT_LLM_NUM_PREDICT: int = int(os.getenv("PUBLIC_INSIGHT_LLM_NUM_PREDICT", "1536"))
-    # Ollama num_gpu=-1은 가능한 GPU 레이어 오프로딩을 요청한다. VRAM이 부족하면 Ollama가 CPU를 함께 사용한다.
-    PUBLIC_INSIGHT_LLM_NUM_GPU: int = int(os.getenv("PUBLIC_INSIGHT_LLM_NUM_GPU", "-1"))
-    PUBLIC_INSIGHT_LLM_KEEP_ALIVE: str = os.getenv("PUBLIC_INSIGHT_LLM_KEEP_ALIVE", "10m")
-    PUBLIC_INSIGHT_LLM_STREAM: bool = os.getenv("PUBLIC_INSIGHT_LLM_STREAM", "true").lower() == "true"
-    PUBLIC_INSIGHT_LLM_PROMPT_MODE: str = os.getenv("PUBLIC_INSIGHT_LLM_PROMPT_MODE", "default").lower()
-    PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE: bool = os.getenv("PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE", "false").lower() == "true"
-    PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE_DIR: str = os.getenv("PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE_DIR", "reports/llm_raw")
-    PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE_MAX_CHARS: int = int(os.getenv("PUBLIC_INSIGHT_LLM_DEBUG_RAW_RESPONSE_MAX_CHARS", "4000"))
-    PUBLIC_INSIGHT_LLM_ACTION_RETRY_ENABLED: bool = os.getenv("PUBLIC_INSIGHT_LLM_ACTION_RETRY_ENABLED", "false").lower() == "true"
-    PUBLIC_INSIGHT_MAX_REPRESENTATIVE_COMPLAINTS: int = int(os.getenv("PUBLIC_INSIGHT_MAX_REPRESENTATIVE_COMPLAINTS", "8"))
-    PUBLIC_INSIGHT_MAX_EVIDENCE_CHARS_PER_COMPLAINT: int = int(os.getenv("PUBLIC_INSIGHT_MAX_EVIDENCE_CHARS_PER_COMPLAINT", "500"))
-    PUBLIC_INSIGHT_MIN_CANDIDATE_COMPLAINT_COUNT: int = int(os.getenv("PUBLIC_INSIGHT_MIN_CANDIDATE_COMPLAINT_COUNT", "5"))
-    PUBLIC_INSIGHT_MIN_GROUNDING_SCORE: float = float(os.getenv("PUBLIC_INSIGHT_MIN_GROUNDING_SCORE", "0.65"))
-    PUBLIC_INSIGHT_MIN_CONFIDENCE: float = float(os.getenv("PUBLIC_INSIGHT_MIN_CONFIDENCE", "0.45"))
-    PUBLIC_INSIGHT_ANALYSIS_WINDOW_DAYS: int = int(os.getenv("PUBLIC_INSIGHT_ANALYSIS_WINDOW_DAYS", "30"))
-    PUBLIC_INSIGHT_RECENT_WINDOW_HOURS: int = int(os.getenv("PUBLIC_INSIGHT_RECENT_WINDOW_HOURS", "3"))
-    PUBLIC_INSIGHT_BASELINE_WINDOW_DAYS: int = int(os.getenv("PUBLIC_INSIGHT_BASELINE_WINDOW_DAYS", "7"))
-    PUBLIC_INSIGHT_HIGH_REPEAT_COUNT: int = int(os.getenv("PUBLIC_INSIGHT_HIGH_REPEAT_COUNT", "10"))
-    PUBLIC_INSIGHT_PROCESS_DELAY_MINUTES_THRESHOLD: int = int(os.getenv("PUBLIC_INSIGHT_PROCESS_DELAY_MINUTES_THRESHOLD", "1440"))
-    PUBLIC_INSIGHT_REOPEN_RATE_THRESHOLD: float = float(os.getenv("PUBLIC_INSIGHT_REOPEN_RATE_THRESHOLD", "0.20"))
-    PUBLIC_INSIGHT_REGIONAL_CONCENTRATION_THRESHOLD: float = float(os.getenv("PUBLIC_INSIGHT_REGIONAL_CONCENTRATION_THRESHOLD", "0.40"))
-    PUBLIC_INSIGHT_PRIORITY_HIGH_THRESHOLD: float = float(os.getenv("PUBLIC_INSIGHT_PRIORITY_HIGH_THRESHOLD", "0.70"))
-    PUBLIC_INSIGHT_PRIORITY_CRITICAL_THRESHOLD: float = float(os.getenv("PUBLIC_INSIGHT_PRIORITY_CRITICAL_THRESHOLD", "0.85"))
-    PUBLIC_INSIGHT_FALLBACK_ON_LLM_ERROR: bool = os.getenv("PUBLIC_INSIGHT_FALLBACK_ON_LLM_ERROR", "true").lower() == "true"
-    PUBLIC_INSIGHT_REQUIRE_HUMAN_REVIEW_FOR_POLICY: bool = os.getenv("PUBLIC_INSIGHT_REQUIRE_HUMAN_REVIEW_FOR_POLICY", "true").lower() == "true"
-    PUBLIC_INSIGHT_REQUIRE_HUMAN_REVIEW_FOR_SAFETY: bool = os.getenv("PUBLIC_INSIGHT_REQUIRE_HUMAN_REVIEW_FOR_SAFETY", "true").lower() == "true"
-    CI_SCORE_WEIGHT_COUNT: float = float(os.getenv("CI_SCORE_WEIGHT_COUNT", "0.30"))
-    CI_SCORE_WEIGHT_SURGE: float = float(os.getenv("CI_SCORE_WEIGHT_SURGE", "0.25"))
-    CI_SCORE_WEIGHT_COHESION: float = float(os.getenv("CI_SCORE_WEIGHT_COHESION", "0.20"))
-    CI_SCORE_WEIGHT_SPATIAL: float = float(os.getenv("CI_SCORE_WEIGHT_SPATIAL", "0.15"))
-    CI_SCORE_WEIGHT_RISK: float = float(os.getenv("CI_SCORE_WEIGHT_RISK", "0.10"))
-    # Complaint Intelligence read-model 저장소. 데모는 SQLite, 단위 테스트/장애 fallback은 memory를 사용한다.
-    COMPLAINT_INTELLIGENCE_REPOSITORY: str = os.getenv("COMPLAINT_INTELLIGENCE_REPOSITORY", "sqlite").lower()
-    COMPLAINT_INTELLIGENCE_DB_PATH: str = os.getenv(
-        "COMPLAINT_INTELLIGENCE_DB_PATH",
-        str(DATA_DIR / "complaint_intelligence" / "complaint_intelligence.db"),
-    )
-    COMPLAINT_INTELLIGENCE_DEFAULT_MODE: str = os.getenv("COMPLAINT_INTELLIGENCE_DEFAULT_MODE", "realtime").lower()
-    COMPLAINT_INTELLIGENCE_RETENTION_DAYS: int = int(os.getenv("COMPLAINT_INTELLIGENCE_RETENTION_DAYS", "90"))
-    COMPLAINT_INTELLIGENCE_AUTO_CREATE_DB: bool = os.getenv("COMPLAINT_INTELLIGENCE_AUTO_CREATE_DB", "true").lower() == "true"
-    COMPLAINT_INTELLIGENCE_SCHEDULER_ENABLED: bool = os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_ENABLED", "false").lower() == "true"
-    COMPLAINT_INTELLIGENCE_SCHEDULER_INTERVAL_SECONDS: float = float(os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_INTERVAL_SECONDS", "300"))
-    COMPLAINT_INTELLIGENCE_SCHEDULER_BATCH_SIZE: int = int(os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_BATCH_SIZE", "500"))
-    COMPLAINT_INTELLIGENCE_SCHEDULER_MIN_EVENTS: int = int(os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_MIN_EVENTS", "1"))
-    COMPLAINT_INTELLIGENCE_SCHEDULER_SOURCE_NAME: str = os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_SOURCE_NAME", "repository_realtime")
-    COMPLAINT_INTELLIGENCE_SCHEDULER_MODE: str = os.getenv("COMPLAINT_INTELLIGENCE_SCHEDULER_MODE", "realtime").lower()
-    COMPLAINT_INTELLIGENCE_COLLECTOR: str = os.getenv("COMPLAINT_INTELLIGENCE_COLLECTOR", "repository_replay").lower()
-    COMPLAINT_INTELLIGENCE_COLLECTOR_LIMIT: int = int(os.getenv("COMPLAINT_INTELLIGENCE_COLLECTOR_LIMIT", "500"))
-    COMPLAINT_INTELLIGENCE_COLLECTOR_SOURCE_NAME: str = os.getenv("COMPLAINT_INTELLIGENCE_COLLECTOR_SOURCE_NAME", "repository_replay")
-    COMPLAINT_INTELLIGENCE_CHECKPOINT_ENABLED: bool = os.getenv("COMPLAINT_INTELLIGENCE_CHECKPOINT_ENABLED", "true").lower() == "true"
-    PUBLIC_INSIGHT_LLM_SLOW_MS: float = float(os.getenv("PUBLIC_INSIGHT_LLM_SLOW_MS", "180000"))
-
-    # request_segments LLM hybrid fallback. 기본 off로 기존 규칙 기반 라우팅을 유지한다.
-    # mode: off(무동작), shadow(LLM 후보 검증만 trace 기록), assist(검증 통과 시 segment 교체).
-    REQUEST_SEGMENT_LLM_MODE: str = os.getenv("REQUEST_SEGMENT_LLM_MODE", "off").lower()
-    REQUEST_SEGMENT_LLM_PROVIDER: str = os.getenv("REQUEST_SEGMENT_LLM_PROVIDER", "none").lower()
-    REQUEST_SEGMENT_LLM_MODEL: str = os.getenv("REQUEST_SEGMENT_LLM_MODEL", STRUCTURING_MODEL)
-    REQUEST_SEGMENT_LLM_BASE_URL: str = os.getenv("REQUEST_SEGMENT_LLM_BASE_URL", OLLAMA_BASE_URL)
-    REQUEST_SEGMENT_LLM_TIMEOUT: float = float(os.getenv("REQUEST_SEGMENT_LLM_TIMEOUT", "30.0"))
-    REQUEST_SEGMENT_LLM_MIN_CONFIDENCE: float = float(os.getenv("REQUEST_SEGMENT_LLM_MIN_CONFIDENCE", "0.65"))
-    REQUEST_SEGMENT_LLM_PROMPT_STYLE: str = os.getenv("REQUEST_SEGMENT_LLM_PROMPT_STYLE", "text").lower()
-    # assist 정책은 기본 none으로 둔다. v2_strict는 내부 제한 실험에서만 사용한다.
-    REQUEST_SEGMENT_LLM_ASSIST_POLICY: str = os.getenv("REQUEST_SEGMENT_LLM_ASSIST_POLICY", "none").lower()
-    REQUEST_SEGMENT_LLM_SOURCE_BLOCK_LIMIT: int = int(os.getenv("REQUEST_SEGMENT_LLM_SOURCE_BLOCK_LIMIT", "30"))
-    REQUEST_SEGMENT_LLM_NUM_PREDICT: int = int(os.getenv("REQUEST_SEGMENT_LLM_NUM_PREDICT", "512"))
-    REQUEST_SEGMENT_LLM_BLOCK_NUM_PREDICT: int = int(os.getenv("REQUEST_SEGMENT_LLM_BLOCK_NUM_PREDICT", "256"))
-
-    # Civil Complaint LLM-Rubric vNext: QA 초안 생성 직후 운영 응답에 평가 리포트를 붙인다.
-    ENABLE_CIVIL_LLM_RUBRIC: bool = os.getenv("ENABLE_CIVIL_LLM_RUBRIC", "true").lower() == "true"
-    CIVIL_LLM_RUBRIC_USE_LLM_JUDGE: bool = os.getenv("CIVIL_LLM_RUBRIC_USE_LLM_JUDGE", "true").lower() == "true"
-    CIVIL_LLM_RUBRIC_VERSION: str = os.getenv(
-        "CIVIL_LLM_RUBRIC_VERSION",
-        "civil_llm_rubric_q0_q7_v1.0",
-    )
-    CIVIL_LLM_RUBRIC_JUDGE_PROMPT_VERSION: str = os.getenv(
-        "CIVIL_LLM_RUBRIC_JUDGE_PROMPT_VERSION",
-        "judge_prompt_2026_09_29_citation_claims",
-    )
-    CIVIL_LLM_RUBRIC_MODEL: str = os.getenv("CIVIL_LLM_RUBRIC_MODEL", "gemma4:31b-it-q4_K_M")
-    CIVIL_LLM_RUBRIC_MAX_CONTEXTS: int = int(os.getenv("CIVIL_LLM_RUBRIC_MAX_CONTEXTS", "5"))
-    CIVIL_LLM_RUBRIC_TEMPERATURE: float = float(os.getenv("CIVIL_LLM_RUBRIC_TEMPERATURE", "0.0"))
-    ENABLE_PROMETHEUS_RUBRIC_FEEDBACK: bool = os.getenv(
-        "ENABLE_PROMETHEUS_RUBRIC_FEEDBACK",
-        "true",
-    ).lower() == "true"
-    PROMETHEUS_RUBRIC_TRIGGER_MAX_CHOICE: float = float(
-        os.getenv("PROMETHEUS_RUBRIC_TRIGGER_MAX_CHOICE", "2.0")
-    )
-    PROMETHEUS_RUBRIC_MAX_REGENERATION_ATTEMPTS: int = int(
-        os.getenv("PROMETHEUS_RUBRIC_MAX_REGENERATION_ATTEMPTS", "1")
-    )
-    PROMETHEUS_RUBRIC_TEMPERATURE: float = float(
-        os.getenv("PROMETHEUS_RUBRIC_TEMPERATURE", "0.0")
-    )
-    # 빈 값이면 생성 모델 사용. 피드백·재작성을 별도로 유지할 때 지정한다.
-    PROMETHEUS_FEEDBACK_MODEL: str = os.getenv("PROMETHEUS_FEEDBACK_MODEL", "qwen3.8:27b-q4_K_M")
-    PROMETHEUS_REVISION_MODEL: str = os.getenv("PROMETHEUS_REVISION_MODEL", "")
 
 
-def _resolve_project_path(value: str) -> str:
-    path = Path(str(value))
-    if path.is_absolute():
-        return str(path)
-    return str((PROJECT_ROOT / path).resolve())
-
-
-def _normalize_settings_paths(value: Settings) -> Settings:
-    value.CHROMA_DB_PATH = _resolve_project_path(value.CHROMA_DB_PATH)
-    value.CHROMA_PERSIST_DIRECTORY = value.CHROMA_DB_PATH
-    value.RAW_DATA_PATH = _resolve_project_path(value.RAW_DATA_PATH)
-    value.INTERIM_DATA_PATH = _resolve_project_path(value.INTERIM_DATA_PATH)
-    value.PROCESSED_DATA_PATH = _resolve_project_path(value.PROCESSED_DATA_PATH)
-    value.SAMPLES_DATA_PATH = _resolve_project_path(value.SAMPLES_DATA_PATH)
-
-    raw_data_dir = DATA_DIR / "raw_data"
-    if not Path(value.RAW_DATA_PATH).exists() and raw_data_dir.exists():
-        value.RAW_DATA_PATH = str(raw_data_dir)
-    return value
-
-
-settings = _normalize_settings_paths(Settings())
+settings = Settings()

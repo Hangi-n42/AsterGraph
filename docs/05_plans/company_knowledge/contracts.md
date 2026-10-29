@@ -1,5 +1,7 @@
 # 회사 지식 P0 최소 데이터·API 계약
 
+> **2026-10-29 범위 경계:** 민원 제품 코드·화면·API는 독립 저장소로 분리했습니다. 이 문서의 과거 민원 연계 계획은 현재 인도 요구가 아닙니다. [현재 경계](complaint_workbench_retirement_20261029.md).
+
 - 버전: v1.5 · 2026-09-28
 - 상태: K2~K5 자료·온톨로지·사실 검토·스냅샷·활성화/사용 상태·기본 조회 구현. K6 이후는 계획이다. [K5 실행 결과](../../30_manuals/knowledge_k5_runbook.md).
 - 기준: [PRD](../../00_overview/company_knowledge_prd.md), [구현 계획](implementation.md), [아키텍처](architecture.md).

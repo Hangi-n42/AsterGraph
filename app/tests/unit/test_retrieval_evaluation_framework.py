@@ -8,9 +8,6 @@ from app.evaluation.artifacts import write_trec_run
 from app.evaluation.datasets import QrelRecord, load_eval_dataset
 from app.evaluation.metrics import RunRecord, evaluate_run
 from app.evaluation.slices import evaluate_slices
-from app.retrieval.pipeline.base import StageInput
-from app.retrieval.pipeline.runner import load_pipeline_spec
-from app.retrieval.pipeline.stages.chroma_dense import ChromaDenseStage
 
 
 def test_beir_compatible_eval_dataset_loader(tmp_path):
@@ -60,29 +57,6 @@ def test_trec_run_artifact_format(tmp_path):
     assert path.read_text(encoding="utf-8").strip() == "Q1 Q0 D1 1 2.50000000 test"
 
 
-def test_declarative_pipeline_spec_hash(tmp_path):
-    spec_path = tmp_path / "pipeline.yaml"
-    spec_path.write_text(
-        """
-pipeline_id: baseline_dense
-seed: 42
-stages:
-  - name: dense_retriever
-    type: chroma_dense
-    params:
-      collection: civil_cases_v1
-      top_k: 10
-final:
-  take_top_k: 5
-""",
-        encoding="utf-8",
-    )
-
-    spec = load_pipeline_spec(spec_path)
-
-    assert spec.pipeline_id == "baseline_dense"
-    assert spec.final_top_k == 5
-    assert spec.pipeline_hash.startswith("sha256:")
 
 
 def test_slice_metrics_are_grouped_by_query_metadata():
@@ -100,40 +74,9 @@ def test_slice_metrics_are_grouped_by_query_metadata():
     assert slices["complexity_level"]["high"]["count"] == 1
 
 
-@pytest.mark.asyncio
-async def test_chroma_dense_stage_uses_retrieval_service_adapter():
-    service = _FakeRetrievalService()
-    stage = ChromaDenseStage(name="dense_retriever", collection="civil_cases_v1", top_k=1, service=service)
-    query = _query("Q1", {"topic_type": "traffic"})
-
-    output = await stage.run(StageInput(query=query))
-
-    assert output.stage_name == "dense_retriever"
-    # #202 이후 평가 정답셋이 case 단위 → docid는 case_id 우선 (chunk_id 아님)
-    assert output.candidates[0].docid == "C1"
-    assert output.candidates[0].rank == 1
-    assert service.calls[0]["query"] == "BRT 언제"
 
 
 def _query(qid, metadata):
     from app.evaluation.datasets import EvalQuery
 
     return EvalQuery(qid=qid, text="BRT 언제", metadata=metadata)
-
-
-class _FakeRetrievalService:
-    def __init__(self):
-        self.calls = []
-
-    async def search(self, **kwargs):
-        self.calls.append(kwargs)
-        return [
-            {
-                "chunk_id": "D1",
-                "score": 0.9,
-                "rank": 1,
-                "case_id": "C1",
-                "metadata": {"source": "test"},
-            }
-        ]
-
