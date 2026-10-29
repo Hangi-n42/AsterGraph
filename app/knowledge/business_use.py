@@ -87,8 +87,8 @@ def eligibility(run):
             if assessment['errors'] or not assessment['representation'] or assessment['representation']['source_challenges']:
                 continue
             blocked_keys = set()
-        nonessential = {c['meaning_key'] for c in representation.get('source_checks', [])
-                        if not c['required_for_requirement']}
+        nonessential = {key for key,state in business_review.requirement_states(assessment.get('source') or {},representation).items()
+                        if state is not True}
         supported = {m['key'] for m in assessment['source']['meanings'] if m['key'] not in nonessential | blocked_keys and m['source_status'] == 'supported'
                      and m['availability'] == 'provided' and m['evidence'] and not m.get('record_error')}
         if business_review.separated(run):
@@ -520,8 +520,8 @@ def bind_answer_items(request, requirements):
 
 
 def required_answer_meaning_keys(snapshot, requirement_ids):
-    keys = {rid: {row['meaning_key'] for row in (snapshot['assessments'][rid].get('representation') or {}).get('source_checks', [])
-                  if row['required_for_requirement']} for rid in requirement_ids}
+    keys = {rid: {key for key,state in business_review.requirement_states(snapshot['assessments'][rid].get('source') or {},
+        snapshot['assessments'][rid].get('representation') or {}).items() if state is not False} for rid in requirement_ids}
     for review in snapshot.get('explicit_meaning_reviews', []):
         if review['requirement_id'] in keys and review['meaning'].get('required_for_requirement'):
             keys[review['requirement_id']].add(review['meaning']['key'])
@@ -1318,8 +1318,8 @@ def query(service, request, *, context_mode='graph'):
                 for cid in e['claim_ids'])
             for rid in requirement_ids:
                 representation = snapshot['assessments'][rid].get('representation') or {}
-                keys = {row['meaning_key'] for row in representation.get('source_checks', [])
-                        if row['required_for_requirement']}
+                keys = {key for key,state in business_review.requirement_states(snapshot['assessments'][rid].get('source') or {},
+                    representation).items() if state is not False}
                 required_ids.update(cid for row in representation.get('checks', [])
                     if row['meaning_key'] in keys and row['status'] == 'represented' for cid in row['claim_ids'])
             required_ids.intersection_update(c['id'] for c in snapshot['claims'])

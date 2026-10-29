@@ -105,15 +105,14 @@ def test_assess_uses_same_pool_before_any_review_call(monkeypatch):
 def test_public_scope_candidates_reviews_and_versions_share_source_scope(monkeypatch):
     from app.tests.unit.test_knowledge_business_public_scope import setup, mock_scope
     run, requirement, source, cid = setup(monkeypatch)
-    background = add_background(run)
+    add_background(run)
     requirement['source_ids'] = ['s']
-    own = deepcopy(review.current_candidate_reviews(run)[cid])
-    monkeypatch.setattr(review, 'current_candidate_reviews', lambda _run: {cid: own, background['id']: own})
+    # Keep setup's completed reviews for both owned candidates and the outside one.
     captured = []
     mock_scope(monkeypatch, run, cid, captured=captured)
     result = review.public_requirement_scope(None, run, requirement, source)
     assert {c['id'] for c in captured[0]['candidates']} == {c['id'] for c in run['claims'][:2]}
-    assert {r['claim_id'] for r in captured[0]['candidate_source_reviews']} == {cid}
+    assert {r['claim_id'] for r in captured[0]['candidate_source_reviews']} == {c['id'] for c in run['claims'][:2]}
     assert set(result['public_scope']['candidate_versions']) == {c['id'] for c in run['claims'][:2]}
     assert result['public_scope']['public_requirement']['source_ids'] == ['s']
 

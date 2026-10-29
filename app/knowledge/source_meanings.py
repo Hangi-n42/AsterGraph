@@ -47,5 +47,7 @@ def remap(value, mapping):
         return [remap(v, mapping) for v in value]
     if isinstance(value, dict):
         literal = {'endpoint_labels'} | ({'subject','object'} if value.get('endpoint_mode')=='source_text' and not value.get('source_relation') else set())
+        if {'claim_id','field','quote'} <= value.keys():
+            literal |= {'field','quote'}
         return {k: deepcopy(v) if k in literal else remap(v, mapping) for k,v in value.items()}
     return mapping.get(value, value) if isinstance(value, str) else value

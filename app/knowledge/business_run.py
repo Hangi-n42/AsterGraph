@@ -1,5 +1,6 @@
 """Source graph construction and requirement repair on the existing service worker."""
 import asyncio
+from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
@@ -406,6 +407,8 @@ def evidence_fields(output_type):
     from .business_models import PublicScopeCheck
     if issubclass(output_type, (RequirementApplicationCheck, PublicScopeCheck)):
         names = ['meaning_challenges']
+        if issubclass(output_type, RequirementApplicationCheck):
+            names.append('links')
     elif issubclass(output_type, CandidateSourceReview):
         names = ['checks']
     elif issubclass(output_type, SelectedRequirementSourceCheck):
@@ -418,6 +421,8 @@ def evidence_fields(output_type):
             names.extend(['checks', 'meaning_challenges'])
             if 'candidate_challenges' in output_type.model_fields:
                 names.append('candidate_challenges')
+            if 'requirement_checks' in output_type.model_fields:
+                names.append('requirement_checks')
         if 'conjunction_reviews' in output_type.model_fields:
             names.append('conjunction_reviews')
     if 'public_item_checks' in output_type.model_fields:
@@ -493,9 +498,115 @@ def reference_source_facts(context, views):
     return bindings
 
 
+def repair_input_references(context, mapping, schema):
+    """Shorten identifiers and share exact repeated field values only in repair input."""
+    if 'shared_interpretation_fields' in context:
+        raise ValueError('repair_input_reference_name_collision')
+    meanings = [m for c in context.get('reuse_candidates', [])
+                for m in (c.get('interpretation') or {}).get('meanings', [])]
+    defined = {m['id'] for m in meanings if isinstance(m.get('id'), str) and m['id'].startswith('interpretation_')}
+    counts = {}
+    for meaning in meanings:
+        for value in [meaning.get('id'), *meaning.get('premise_ids', []),
+                      *[ref for p in meaning.get('participants', []) for ref in p.get('meaning_refs', [])]]:
+            if value in defined:
+                counts[value] = counts.get(value, 0) + 1
+    serialized = encode(context) + encode(schema)
+    next_ids = {}
+    def fresh(prefix):
+        index = next_ids.get(prefix, 0)
+        while True:
+            index += 1
+            alias = prefix + str(index)
+            if encode(alias) not in serialized and alias not in mapping and alias not in mapping.values():
+                next_ids[prefix] = index
+                return alias
+    for identity, count in counts.items():
+        # A literal quotation/value equal to an identifier must remain literal.
+        if identity not in mapping and serialized.count(encode(identity)) == count:
+            mapping[identity] = fresh('i')
+    shared = {}
+    fields = ('conditions', 'exceptions', 'time', 'local_negation', 'references', 'premises')
+    for value in (dict(state='absent', text=None), dict(state='absent', meaning_indices=[])):
+        locations = [(meaning, field) for meaning in meanings for field in fields if meaning.get(field) == value]
+        if len(locations) < 2:
+            continue
+        alias = fresh('sf')
+        shared[alias] = value
+        for meaning, field in locations:
+            meaning[field] = alias
+    if not shared:
+        return ''
+    context['shared_interpretation_fields'] = shared
+    return '''
+reuse_candidates의 interpretation.meanings에서 conditions/exceptions/time/local_negation/references/premises가 sf ID이면 shared_interpretation_fields의 같은 ID 객체를 그대로 읽는다.
+각 원래 필드의 동일 값 참조이며 다른 후보에 조건을 공통 적용하거나 후보를 병합하지 않는다. state/null/배열/소속과 원래 미검증·미확정·오류 상태는 그대로다.
+absent는 원래 미검증 해석의 값이며 새 조건 부재 판단이나 원문 지지·승인이 아니다.
+'''
+
+
+REQUIRED_REVIEW_CONTRACT = 'required-content-review-completeness-v1'
+
+
+def required_review_targets(context, output_type):
+    targets = context.get('required_content_targets')
+    if not targets or 'requirement_checks' not in output_type.model_fields:
+        return None
+    if (not isinstance(targets,list) or any(not isinstance(t,dict)
+            or any(not isinstance(t.get(k),str) or not t[k].strip() for k in ('meaning_key','scope_id','content','source_version'))
+            or not t.get('evidence') for t in targets)):
+        return None
+    expected = {t['meaning_key']:t['scope_id'] for t in targets}
+    if len(expected) != len(targets) or len(set(expected.values())) != len(targets):
+        raise ValueError('duplicate_required_review_targets')
+    return expected
+
+def required_review_type(output_type, targets):
+    row = get_args(output_type.model_fields['requirement_checks'].annotation)[0]
+    selected = create_model('Required' + row.__name__, __base__=row,
+        meaning_key=(Literal[tuple(targets)], ...), requirement_scope_id=(Literal[tuple(targets.values())], ...),
+        reason=(str, Field(min_length=1)))
+    return create_model('Complete' + output_type.__name__, __base__=output_type,
+        requirement_checks=(list[selected], Field(min_length=len(targets),max_length=len(targets))))
+
+def validate_required_reviews(parsed, targets):
+    """Keep normal siblings; completeness errors never supply a missing semantic verdict."""
+    rows = parsed.get('requirement_checks', [])
+    if not isinstance(rows,list):
+        return None  # The existing schema owns unrelated JSON shape errors.
+    keys = Counter(r.get('meaning_key') for r in rows if isinstance(r,dict) and isinstance(r.get('meaning_key'),str))
+    diagnostics, valid = [], set()
+    for index, row in enumerate(rows):
+        if not isinstance(row,dict):
+            continue
+        key, scope = row.get('meaning_key'), row.get('requirement_scope_id')
+        if not isinstance(key,str) or not isinstance(scope,str):
+            continue  # These fields were already required by the original row schema.
+        errors = []
+        if key not in targets or targets.get(key) != scope:
+            errors.append('required_check_outside_target_or_scope_mismatch')
+        if keys[key] != 1:
+            errors.append('required_check_duplicate')
+        if isinstance(row.get('reason'),str) and not row['reason'].strip():
+            errors.append('required_check_reason_missing')
+        diagnostics.append(dict(index=index,meaning_key=key,requirement_scope_id=scope,
+            model_status=row.get('status'),errors=errors))
+        if errors:
+            row['status'] = 'unknown'
+        else:
+            valid.add(key)
+    missing = [key for key in targets if not keys[key]]
+    invalid = [key for key in targets if keys[key] and key not in valid]
+    return dict(contract=REQUIRED_REVIEW_CONTRACT,expected_targets=targets,missing=missing,invalid=invalid,rows=diagnostics,
+        complete=len(rows)==len(targets) and not missing and not invalid and not any(r['errors'] for r in diagnostics))
+
+
 def json_request(run, stage, instruction, context, output_type, *, reference_map=None):
     from .source_meanings import remap
     context = deepcopy(context)
+    required_targets = required_review_targets(context,output_type) if stage == 'requirement_representation' else None
+    if required_targets is not None:
+        instruction += '\nrequirement_checks는 각 required_content_target의 meaning_key와 scope_id마다 정확히 한 행을 반환한다. 미확정도 unknown과 이유를 쓰며 생략하거나 중복하지 않는다.\n'
     if context.get('repair_context') and 'preservation_checks' in output_type.model_fields:
         ids = tuple(c['id'] for c in context.get('claims', []) if not c.get('superseded_by'))
         row = get_args(output_type.model_fields['preservation_checks'].annotation)[0]
@@ -570,20 +681,25 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         for prefix, values in [('b', run.get('blocks', [])), ('c', run.get('claims', []))]:
             mapping.update({v['id']: prefix + str(n + 1) for n, v in enumerate(values)})
         mapping.update({v: 'v' + str(n + 1) for n, v in enumerate(run.get('sources', {}))})
+    if stage == 'requirement_repair':
+        instruction += repair_input_references(context, mapping, output_type.model_json_schema())
     if business_review.separated(run):
         # Unused IDs are not model input. Adding an unrelated candidate must not
         # invalidate an otherwise exact, unchanged local request.
         serialized = encode(context) + encode(output_type.model_json_schema())
         mapping = {key: value for key, value in mapping.items() if key in serialized}
     payload = remap_expression_keys(remap(context, mapping), mapping)
-    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage == 'requirement_representation' or source_only_public else encode(payload)
+    content = json.dumps(payload, ensure_ascii=False, separators=(',', ':')) if stage in {'requirement_representation', 'requirement_repair'} or source_only_public else encode(payload)
     from . import answer_links
+    if required_targets is not None:
+        output_type = required_review_type(output_type,required_targets)
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
         schema = answer_links.generation_schema(schema)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
+        **(dict(required_review_targets=required_targets) if required_targets is not None else {}),
         max_tokens=run['recipe']['options'].get({'requirement_source': 'source_tokens',
             'source_reassessment': 'source_reassessment_tokens',
             'requirement_representation': 'representation_tokens'}.get(stage, '')),
@@ -597,6 +713,9 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
     result = call(service, run, stage, request['messages'], request['schema'], review=True,
                   max_tokens=request['max_tokens'], reference_map=request['reference_map'])
     views = request['evidence_reference_map']
+    required_targets = request.get('required_review_targets')
+    if required_targets is not None:
+        run['units'][-1]['required_review_contract'] = REQUIRED_REVIEW_CONTRACT
     if views is not None:
         run['units'][-1]['evidence_reference_map'] = deepcopy(views)
         if 'source_fact_evidence_bindings' in request:
@@ -613,23 +732,34 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
             normalized['_answer_link_metadata'] = metadata
             return normalized
         parsed = remap_expression_keys(remap(result['parsed'], reverse), reverse)
-        if views is None:
+        required_validation = validate_required_reviews(parsed,required_targets) if required_targets is not None else None
+        if views is None and required_validation is None:
             return output_type.model_validate(parsed).model_dump()
-        selected = selected_evidence_type(output_type, views).model_validate(parsed).model_dump()
-        fields = evidence_fields(output_type)
-        restored = deepcopy(selected)
-        for field, row_type in fields.items():
-            for row in restored[field]:
-                for name in ('evidence', 'error_evidence', 'missing_evidence'):
-                    if name in row_type.model_fields:
-                        row[name] = [exact_evidence([dict(block_id=views[ref]['id'], quote=views[ref]['text'])],
-                                                   [views[ref]])[0] for ref in row[name]]
-        normalized = output_type.model_validate(restored).model_dump()
-        for field in fields:
-            for row, original in zip(normalized[field], restored[field]):
-                for name in ('evidence', 'error_evidence', 'missing_evidence'):
-                    if name in original:
-                        row[name] = original[name]
+        if views is None:
+            normalized = output_type.model_validate(parsed).model_dump()
+        else:
+            selected = selected_evidence_type(output_type, views).model_validate(parsed).model_dump()
+            fields = evidence_fields(output_type)
+            restored = deepcopy(selected)
+            for field, row_type in fields.items():
+                for row in restored[field]:
+                    for name in ('evidence', 'error_evidence', 'missing_evidence'):
+                        if name in row_type.model_fields:
+                            row[name] = [exact_evidence([dict(block_id=views[ref]['id'], quote=views[ref]['text'])],
+                                                       [views[ref]])[0] for ref in row[name]]
+            normalized = output_type.model_validate(restored).model_dump()
+            for field in fields:
+                for row, original in zip(normalized[field], restored[field]):
+                    for name in ('evidence', 'error_evidence', 'missing_evidence'):
+                        if name in original:
+                            row[name] = original[name]
+        if required_validation is not None:
+            normalized['required_review_validation'] = deepcopy(required_validation)
+            run['units'][-1]['required_review_validation'] = deepcopy(required_validation)
+            for row in required_validation['rows']:
+                normalized['requirement_checks'][row['index']]['required_check_errors'] = row['errors']
+            if not required_validation['complete']:
+                run['units'][-1].update(status='failed',error='required_review_incomplete')
         run['units'][-1]['restored_evidence_output'] = deepcopy(normalized)
         save(service, run)
         return normalized
@@ -761,27 +891,52 @@ def assessment_fingerprint(run, requirement, source, scope=None):
     return autoschema.identifier('assessment_input', value if scope is None else [*value, inventory])
 
 
-COMPLETION_CONTRACT = 'required-meaning-completion-v2-applicability'
+COMPLETION_CONTRACT = 'required-meaning-completion-v3-read-application'
 
 
 def requirement_completion(assessment, accepted_ids=None, *, claims=None):
     source = assessment.get('source') or {}
-    representation = assessment.get('representation') or {}
-    required = {c['meaning_key'] for c in representation.get('source_checks', []) if c['required_for_requirement']}
+    representation = business_review.question_representation(source,assessment.get('representation') or {})
+    states = business_review.requirement_states(source, representation)
+    required = {key for key, state in states.items() if state is True}
+    unresolved = {key for key, state in states.items() if state is None}
+    public = source.get('public_scope') or {}
+    scoped = public.get('input_contract') in business_review.PUBLIC_APPLICATION_INPUTS
+    meanings = business_review.review_meanings(source)
+    if scoped:
+        unresolved.update(m['key'] for m in meanings if any(business_review.application_required(a) is None
+            for a in m.get('requirement_applications', [])))
+    completion_meanings = [m for m in meanings if not scoped or states.get(m['key']) is not False]
+    blocked, global_blocks = business_review.blocked(assessment)
+    relevant = business_review.question_check_keys(representation,states)
     checks = representation.get('checks', [])
     required_ids = {cid for c in checks if c['meaning_key'] in required for cid in c['claim_ids']}
+    used_ids = {cid for c in checks if c['meaning_key'] in required | unresolved for cid in c['claim_ids']}
+    # Independent gaps/faults stay recorded. Errors in actual answer claims or
+    # required dependencies still block this question.
+    hard_errors = any(c.get('meaning_key') in relevant for c in [*assessment.get('issues', []),*representation.get('meaning_challenges', [])]) or any(
+        m['source_status'] == 'refuted' or any(j['status'] == 'refuted' for j in m.get('field_judgments', {}).values())
+        for m in meanings if m['key'] in relevant)
+    hard_errors = hard_errors or any((c['status'] == 'incorrect' and used_ids.intersection(c['claim_ids']))
+        or used_ids.intersection(c.get('error_fields', {})) or any(cid in used_ids and state in {'unknown','incorrect'}
+            for cid,state in c.get('claim_support', {}).items()) for c in checks)
+    source_complete = (representation.get('source_completeness') == 'complete'
+        and representation.get('unselected_source_required') is False) if scoped else (
+        source.get('completeness') == 'complete' and not source.get('gaps') and not source.get('meaning_gaps'))
     complete = (not source.get('processing_scope', {}).get('pending_meaning_keys')
-        and source.get('completeness') == 'complete' and not source.get('gaps') and not source.get('meaning_gaps')
-        and bool(business_review.review_meanings(source)) and bool(required)
+        and source_complete and not unresolved
+        and bool(meanings) and bool(required)
         and not business_review.answer_scope_issues(source)
-        and all(m['source_status'] == 'supported' and m['availability'] == 'provided' for m in business_review.review_meanings(source))
-        and all(not business_review.unresolved_source_fields(m) for m in business_review.review_meanings(source))
+        and all(m['source_status'] == 'supported' and m['availability'] == 'provided' for m in completion_meanings)
+        and all(not business_review.unresolved_source_fields(m) for m in completion_meanings)
         and all((m.get('requirement_link') or {}).get('applicability') != 'unresolved'
-                for m in business_review.review_meanings(source))
-        and all(not c.get('incorrect_claim_ids') and ((c['status'] == 'represented' and c['claim_ids']) or
-                (c['status'] == 'missing' and c['meaning_key'] not in required)) for c in checks)
+                for m in completion_meanings)
+        and all(not (used_ids.intersection(c.get('incorrect_claim_ids', [])) if scoped else c.get('incorrect_claim_ids'))
+                and ((c['status'] == 'represented' and c['claim_ids']) or
+                (states.get(c['meaning_key']) is False and (scoped or c['status'] == 'missing'))) for c in checks)
         and representation.get('satisfied') and representation.get('conjunctions_satisfied')
-        and not representation.get('source_challenges') and not any(business_review.blocked(assessment)) and not assessment['errors']
+        and not representation.get('source_challenges') and not global_blocks and (not scoped or not hard_errors)
+        and not (blocked & (required | unresolved) if scoped else blocked) and (scoped or not assessment['errors'])
         and assessment.get('preservation_complete', False)
         and (claims is None or all(business_review.preservation_valid(p, claims)
             for p in representation.get('preservation_checks', [])))
@@ -791,14 +946,13 @@ def requirement_completion(assessment, accepted_ids=None, *, claims=None):
             any(c.get('claim_support', {}).get(cid) == 'supported' for c in checks)
             and not any(c.get('claim_support', {}).get(cid) in {'unknown', 'incorrect'} for c in checks)
             for cid in required_ids)
-    public = source.get('public_scope') or {}
     if public.get('input_contract') == business_review.PUBLIC_SOURCE_INPUT_CONTRACT:
         expected = {item['id'] for item in public.get('public_items', [])}
         complete = complete and bool(expected) and not public.get('errors') and not representation.get('public_item_check_errors') and (
             set(representation.get('valid_public_item_ids', [])) == expected) and all(
                 row['status'] == 'represented' for row in representation.get('public_item_checks', []))
     return dict(status='satisfied' if complete else 'partial' if representation else 'unknown',
-                required_claim_ids=sorted(required_ids), completion_contract=COMPLETION_CONTRACT)
+                required_claim_ids=sorted(required_ids), unresolved_requirement_keys=sorted(unresolved), completion_contract=COMPLETION_CONTRACT)
 
 
 def apply_source_corrections(run, requirement, source):
@@ -891,6 +1045,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 source, dict(unselected_source_required=False)):
             source = business_review.source(service, run, requirement, previous=source)
     if source:
+        if source.get('public_scope', {}).get('input_contract') in business_review.PUBLIC_APPLICATION_INPUTS:
+            source['requirement_content_contract'] = business_review.CONTENT_CONTRACT
         source = apply_source_corrections(run, requirement, source)
         source.pop('processing_scope', None)
         if focus_meaning_keys is not None:
@@ -907,6 +1063,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 scope_selection_is_historical=True, whole_requirement_complete=False)
         elif public_request:
             source = business_review.public_requirement_scope(service, run, requirement, source)
+        source = business_review.public_requirement_application(service, run, requirement, source)
     assessment = dict(id=uuid4().hex, requirement_id=requirement['id'], revision=requirement['revision'],
                       phase=phase, source=source, representation=None, status='unknown', claim_ids=[], actions=[], errors=[],
                       source_record_challenges=[], issues=[])
@@ -976,6 +1133,7 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                 dict(requirement=requirement, blocks=blocks, source=source, claims=[compact_claim(c) for c in run['claims']],
                      repair_context=repair_context), RequirementCheck)
         assessment['input_fingerprint'] = assessment_fingerprint(run, requirement, source, assessment.get('review_scope'))
+        representation = business_review.question_representation(source,representation) if representation else representation
         assessment['representation'] = representation
         if representation:
             reused_preservation = business_review.valid_preservation_reuses(run, requirement, business_review.review_meanings(source),
@@ -1005,7 +1163,8 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
             claim_ids = {c['id'] for c in run['claims']}
             checks = representation['checks']
             source_checks = representation.get('source_checks', [])
-            required_keys = {c['meaning_key'] for c in source_checks if c['required_for_requirement']}
+            requirement_states = business_review.requirement_states(source, representation)
+            required_keys = {key for key, state in requirement_states.items() if state is True}
             if len(source_checks) != len(keys) or {c['meaning_key'] for c in source_checks} != keys:
                 business_review.issue(assessment, '원문 의미의 필드별 검수 누락/중복/범위 오류')
             for check in source_checks:
@@ -1046,16 +1205,24 @@ def assess(service, run, requirement, *, source=None, phase='initial', previous_
                     action = 'correct'
                 if action == 'recover' and check['meaning_key'] not in required_keys:
                     action = 'hold'
+                hold_reason = check.get('recovery_hold_reason', '') if action == 'hold' else ''
+                if action == 'hold' and requirement_states.get(check['meaning_key']) is None:
+                    hold_reason = 'requirement_application_unresolved; ' + hold_reason
                 if action == 'maintain' and not check['claim_ids']:
                     business_review.issue(assessment, '실제 표현 위치 없는 유지 판정', check['meaning_key'])
                     action = 'hold'
                 remainder = action == 'recover' and check['status'] == 'partial'
+                required_recovery = action == 'recover' and source.get('requirement_content_contract') == business_review.CONTENT_CONTRACT
+                recovery_target = business_review.requirement_content_target(source,meaning) if required_recovery else None
                 assessment['actions'].append(dict(meaning_key=meaning['key'], action=action,
                     claim_ids=[] if remainder else check['claim_ids'],
-                    reason=check['reason'], review_unit_ids=check.get('review_unit_ids', []),
+                    reason=check['reason'] + ('; ' + hold_reason if hold_reason else ''), review_unit_ids=check.get('review_unit_ids', []),
                     **(dict(contributing_claim_ids=list(check['claim_ids']),
                         represented_content=check['represented_content'], missing_content=check['missing_content'],
-                        missing_evidence=deepcopy(check['missing_evidence'])) if remainder else {}),
+                        missing_evidence=deepcopy(check['missing_evidence'])) if remainder or required_recovery else {}),
+                    **(dict(requirement_scope_id=recovery_target['scope_id'],required_content=recovery_target['content'],
+                        required_evidence=deepcopy(recovery_target['evidence']),requirement_applications=deepcopy(recovery_target['applications']))
+                       if recovery_target else {}),
                     error_fields=deepcopy(check.get('error_fields', {})), error_evidence=deepcopy(check.get('error_evidence', []))))
                 if (check.get('incorrect_claim_ids') and check['status'] in {'represented', 'partial'}
                         and meaning['source_status'] == 'supported' and meaning['availability'] == 'provided'):
@@ -1148,7 +1315,7 @@ def missing_tabular_rows(run, requirement, assessment, targets):
         return [], []
     representation = assessment['representation']
     pool = business_review.candidate_pool(run, requirement) if requirement.get('source_ids') else run['claims']
-    required = {c['meaning_key'] for c in representation.get('source_checks', []) if c['required_for_requirement']}
+    required = {key for key, state in business_review.requirement_states(source, representation).items() if state is True}
     missing = {c['meaning_key'] for c in representation.get('checks', [])
                if c['status'] == 'missing' and not c['claim_ids'] and not c.get('incorrect_claim_ids')}
     address = ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char')
@@ -1375,6 +1542,38 @@ def event_meaning_edit(service, run, task, old, blocks):
 
 def repair(service, run, requirement, assessment, *, replay_unit=None, proposals=None):
     targets = [a for a in assessment['actions'] if a['action'] in {'recover', 'correct'}]
+    states = business_review.requirement_states(assessment.get('source') or {}, assessment.get('representation') or {})
+    targets = [t for t in targets if t['action'] != 'recover' or states.get(t['meaning_key']) is True]
+    source = assessment.get('source') or {}
+    content_scoped = source.get('requirement_content_contract') == business_review.CONTENT_CONTRACT
+    if content_scoped or source.get('public_scope', {}).get('input_contract') in business_review.PUBLIC_APPLICATION_INPUTS:
+        selected = []
+        checks = {c['meaning_key']:c for c in business_review.question_representation(source,assessment.get('representation') or {})['checks']}
+        for target in targets:
+            if target['action'] != 'recover':
+                selected.append(target)
+                continue
+            meaning = next((m for m in source['meanings'] if m['key'] == target['meaning_key']), {})
+            scope = business_review.requirement_content_target(source,meaning) if content_scoped else None
+            check = checks.get(target['meaning_key'], {})
+            reason = 'required_recovery_scope_or_remainder_unverified'
+            matches = []
+            if (scope and target.get('requirement_scope_id') == scope['scope_id'] == check.get('requirement_scope_id')
+                    and check.get('content_scope_bound') and check.get('status') in {'partial','missing'}
+                    and all(target.get(k) == check.get(k) for k in ('represented_content','missing_content','missing_evidence'))):
+                matches = business_review.stored_remainder_matches(run,scope,target['missing_content'],
+                    assessment.get('review_scope', {}).get('batches', []))
+                if not matches:
+                    selected.append(target)
+                    continue
+                reason = 'stored_remainder_position_requires_recheck'
+            hold = dict(meaning_key=target['meaning_key'],reason=reason,matching_claim_ids=matches,
+                        requirement_scope_id=target.get('requirement_scope_id'))
+            if hold not in assessment.setdefault('recovery_holds', []):
+                assessment['recovery_holds'].append(hold)
+        targets = selected
+        if assessment.get('recovery_holds') and service is not None:
+            save(service,run)
     protected_claims = set()
     direct = business_review.current_candidate_reviews(run) if (business_review.separate_application(run)
         or (assessment.get('source') or {}).get('public_scope')) else {}
@@ -1398,10 +1597,16 @@ def repair(service, run, requirement, assessment, *, replay_unit=None, proposals
     for target in targets:
         scope = assessment.get('review_scope', {})
         batches = [b for b in scope.get('batches', []) if target['meaning_key'] in b['meaning_keys']]
+        required_recovery = content_scoped and target['action'] == 'recover'
+        contribution_ids = set(target.get('contributing_claim_ids', [])) if required_recovery else set(target['claim_ids'])
         target['review_records'] = [dict(unit_id=batch['unit_id'], check=deepcopy(check),
             provided_block_ids=batch['provided_block_ids']) for batch in batches if not batch['error']
-            for check in batch['output']['checks'] if check['meaning_key'] == target['meaning_key']
-            and set(target['claim_ids']).intersection(check['claim_ids'] + check.get('incorrect_claim_ids', []))]
+            for check in batch['output'].get('requirement_checks' if required_recovery else 'checks', [])
+            if check['meaning_key'] == target['meaning_key']
+            and (check.get('requirement_scope_id') == target.get('requirement_scope_id') and check.get('content_scope_bound')
+                 if required_recovery else True)
+            and (contribution_ids.intersection(check['claim_ids'] + check.get('incorrect_claim_ids', []))
+                 or required_recovery and not contribution_ids and check['status'] == 'missing')]
         if target.get('candidate_review_id'):
             reviewed = direct[target['claim_ids'][0]]
             target['review_records'] = [dict(unit_id=reviewed['unit_id'], candidate_review_id=reviewed['receipt_id'],
@@ -1475,6 +1680,8 @@ def repair(service, run, requirement, assessment, *, replay_unit=None, proposals
 recover의 contributing_claim_ids는 원문에 맞는 기존 부분 표현이며 교정/삭제 대상이 아니다.
 missing_content가 있으면 원문과 missing_evidence를 확인하여 그 나머지를 새 후보로 보완한다.
 대상·조건·시점을 보존하고 원문이 지지하지 않는 결합이나 배타 규칙을 만들지 않는다.
+requirement_scope_id가 있는 recover는 required_content/required_evidence/requirement_applications의 요청상 필요한 부족함만 보완한다. source의 전체 복합 의미나 참고 잔여를 보강 대상으로 넓히지 않는다.
+이 recover의 review_records는 같은 scope의 필수부분 기여이며 원문 전체 판정·자기원문 정확성의 대체 정답이 아니다.
 ''' + ('''\n
 candidate_review_id가 있는 correct는 후보 자체의 원문 오류 판정이다. meaning_key는 귀속 ID이며 검증된 원문 의미가 아니다.
 그 review_records의 실제 오류 필드·근거를 원문과 대조하여 고친다. source 의미의 누락/실패는 이 판정의 대체 정답이 아니다.
