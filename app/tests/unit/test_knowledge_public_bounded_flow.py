@@ -10,9 +10,9 @@ from app.tests.unit.test_knowledge_business_local_review import local_run, meani
 
 @pytest.fixture(autouse=True)
 def boundary_only(monkeypatch):
-    from app.retrieval.pipeline.stages import bm25_retriever
+    from app.retrieval import tokenization
     # Deliberately not a morphology/retrieval-quality test.
-    monkeypatch.setattr(bm25_retriever, '_tokenize_korean',
+    monkeypatch.setattr(tokenization, '_tokenize_korean',
         lambda texts: [[text[i:i + 2] for i in range(len(text) - 1)] for text in texts])
     monkeypatch.setattr(business_run, 'cancelled', lambda *a: False)
     monkeypatch.setattr(business_run, 'save', lambda *a: None)

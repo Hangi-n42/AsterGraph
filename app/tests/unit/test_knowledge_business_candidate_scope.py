@@ -10,8 +10,8 @@ from app.tests.unit.test_knowledge_business_local_review import local_run, meani
 @pytest.fixture(autouse=True)
 def scope_only_tokenizer(monkeypatch):
     # These tests check source boundaries, not Korean morphology or search quality.
-    from app.retrieval.pipeline.stages import bm25_retriever
-    monkeypatch.setattr(bm25_retriever, '_tokenize_korean',
+    from app.retrieval import tokenization
+    monkeypatch.setattr(tokenization, '_tokenize_korean',
         lambda texts: [[text[i:i + 2] for i in range(len(text) - 1)] for text in texts])
 
 

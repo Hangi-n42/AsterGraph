@@ -1,0 +1,3522 @@
+{
+  "base": "f7548838f6e3d58698d986339bbc26ef9a07e2f3",
+  "independent_clone_commit": "ac4f56526851491828ef57c74f27194f26480592",
+  "files": [
+    {
+      "path": "app/api/routers/admin.py",
+      "original_blob": "ffb44166639e17a6f382243d2017bb20d05b677f"
+    },
+    {
+      "path": "app/api/routers/chroma_debug.py",
+      "original_blob": "82e0e0dc4b37d22561d9bc3130a7f5754af0d837"
+    },
+    {
+      "path": "app/api/routers/complaint_intelligence.py",
+      "original_blob": "1b28d4f10bac14584522b96fa62df1b8eeddf1d3"
+    },
+    {
+      "path": "app/api/routers/generation.py",
+      "original_blob": "2e60e2e381d0eb272da70415bf9753d3f4b46bef"
+    },
+    {
+      "path": "app/api/routers/retrieval.py",
+      "original_blob": "74aaafd6ab1dd498e125a8c29146b183c2969cad"
+    },
+    {
+      "path": "app/api/routers/structuring.py",
+      "original_blob": "8575730cc8e5be3f76225c0df7f7df8186a55009"
+    },
+    {
+      "path": "app/api/routers/ui.py",
+      "original_blob": "dc2616fb814afdc6e2136d80550b268de74aa318"
+    },
+    {
+      "path": "app/api/schemas/__init__.py",
+      "original_blob": "d39a5c8677118dcc9347a6c7a76ad05bd22be2f9"
+    },
+    {
+      "path": "app/api/schemas/generation.py",
+      "original_blob": "20f00daff1a10931bb96683fdd10b9e2e0323c58"
+    },
+    {
+      "path": "app/api/schemas/retrieval.py",
+      "original_blob": "ba6322e6dbb066b9bbffb652f58f910e3ab5c980"
+    },
+    {
+      "path": "app/api/schemas/structuring.py",
+      "original_blob": "711fb187dbd0ad43c117cda0e2fe6ffd088aa175"
+    },
+    {
+      "path": "app/complaint_intelligence/__init__.py",
+      "original_blob": "ab31efefe3bf110a370b853ecf3148d39dc349ac"
+    },
+    {
+      "path": "app/complaint_intelligence/collector.py",
+      "original_blob": "153677d5b577b9c14839fee1445c10c2e8f10818"
+    },
+    {
+      "path": "app/complaint_intelligence/config.py",
+      "original_blob": "77f8fbdefdd6c64f51b5cd0aaba313d8488cfc37"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/__init__.py",
+      "original_blob": "f649a6ac9c331392f1692c750f57ad31bc7fe476"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/candidate_generator.py",
+      "original_blob": "23cd3079c91e71241c2bfdf01b9556595493babe"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/draft_payload.py",
+      "original_blob": "1d66dc4238dfa937b441eb3d013cb4428bbc0f6d"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/merge_verifier.py",
+      "original_blob": "2ebd5e577342aa58dcfe40a82427d92b15dd3f6b"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/reply_context.py",
+      "original_blob": "47a1833c3d45de161084862927622bd0615d801d"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/reply_safety.py",
+      "original_blob": "76024c94cdf2953c52c430cc235db0eb0a3859ef"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/representative_selector.py",
+      "original_blob": "68e898679406384aeeaf388365b7c8b9fc4b1a67"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/schemas.py",
+      "original_blob": "d709c7a6b1e648dbc86d095274b079f52ecc3f2e"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/scoring.py",
+      "original_blob": "cabeb92dec34712bb4d20bd2eb1920d14714b29e"
+    },
+    {
+      "path": "app/complaint_intelligence/duplicate_merger/service.py",
+      "original_blob": "5bf02091c06c6cd4999ef75638213ac58db7ab9d"
+    },
+    {
+      "path": "app/complaint_intelligence/embedding.py",
+      "original_blob": "08a2f7a9500999050269821703b7d43fafee3e8c"
+    },
+    {
+      "path": "app/complaint_intelligence/issue_detection/__init__.py",
+      "original_blob": "af3a50cc03c74121297281ad6497178eb78198b9"
+    },
+    {
+      "path": "app/complaint_intelligence/issue_detection/engine.py",
+      "original_blob": "6caefd8ee904dd042e9b1885fcdaacfa1009237c"
+    },
+    {
+      "path": "app/complaint_intelligence/pii.py",
+      "original_blob": "30001780cd13d50f0d0b39088b7067d844ac48c0"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/__init__.py",
+      "original_blob": "096da8ced29733821bda5e90e62f03099408b363"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/action_catalog.py",
+      "original_blob": "2f739a1c877f61fe786207f86fdd2d6ee402183d"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/action_repair.py",
+      "original_blob": "48da47639a350c6eb399e757bbdf131a37f35b83"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/action_rubric.py",
+      "original_blob": "e865cfec0bc8cf259a8d0be45bcce66c0c3b4901"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/aspect_extractor.py",
+      "original_blob": "67acc3849362e001d9c9769e67e4d78e3f4e8435"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/candidate_generator.py",
+      "original_blob": "68e6e4cb2ce9c79b7252c4814932b6ca0ad86c89"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/engine.py",
+      "original_blob": "f47b4eb3e7aee47c4c2d3b10f5a6a90f553b00cf"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/evidence_pack.py",
+      "original_blob": "dcfe202c185e935d58a5903f62c7e8deed392d48"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/fallback_templates.py",
+      "original_blob": "dc901ae3d30980a5de6cc91493c779dc9042de92"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/grounding_verifier.py",
+      "original_blob": "e39fa1691adc0a1df98ec98ae497441c934ab743"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/insight_ranker.py",
+      "original_blob": "907e11180aa397c3e6dfdf3a71b0cdf6ec37b894"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/llm_observability.py",
+      "original_blob": "fca13fe5c6531cd19db2d8d67e2ff9afa6e625d8"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/llm_provider.py",
+      "original_blob": "1ac7b38645e4af8d194b0ba3802b8922c8af11da"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/llm_synthesizer.py",
+      "original_blob": "37dd747ce69e297285a4141a08749d50f092501e"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/quality_gate.py",
+      "original_blob": "902fe17c56ece51bd5c7d581ba9a86493c1bff15"
+    },
+    {
+      "path": "app/complaint_intelligence/public_insights/service.py",
+      "original_blob": "8159f59983018b57cdcb00d72ef33adb02c07e6e"
+    },
+    {
+      "path": "app/complaint_intelligence/repository.py",
+      "original_blob": "9d4f639f5fe93626f9819ab2b0cf7e34919984f6"
+    },
+    {
+      "path": "app/complaint_intelligence/scheduler.py",
+      "original_blob": "d8ac66c3f62e034213580fcbe47aeda902a2a01d"
+    },
+    {
+      "path": "app/complaint_intelligence/schemas.py",
+      "original_blob": "3df0a73a4d4e2618295d221040a835e0c3e96937"
+    },
+    {
+      "path": "app/complaint_intelligence/service.py",
+      "original_blob": "31f5187fefe3e742c6be937a063b4c4e13a2ae24"
+    },
+    {
+      "path": "app/complaint_intelligence/sqlite_repository.py",
+      "original_blob": "a6800b68e8af0a9aeda432cf8e8dd4453a78a722"
+    },
+    {
+      "path": "app/core/title_builder.py",
+      "original_blob": "2f432181ccb1bc41dfb1cfef44ed99e5d7bc1015"
+    },
+    {
+      "path": "app/evaluation/ares_lite/__init__.py",
+      "original_blob": "0a17f59ef573681a3ccd9aa6155c1cc5fc7d6a0b"
+    },
+    {
+      "path": "app/evaluation/ares_lite/evaluator.py",
+      "original_blob": "007c527b2b9ffde43a1eb95fae0ddbc31287671f"
+    },
+    {
+      "path": "app/evaluation/ares_lite/prompts.py",
+      "original_blob": "e8531da402bec5dad1962d27d0f8a8938fef2e9d"
+    },
+    {
+      "path": "app/evaluation/ares_lite/report_builder.py",
+      "original_blob": "d207ae97091b33ab9220905b015205fc2fcc3a92"
+    },
+    {
+      "path": "app/evaluation/ares_lite/schemas.py",
+      "original_blob": "b9f73234ae125d98aef997899ff16f807f0888b3"
+    },
+    {
+      "path": "app/evaluation/civil_llm_rubric.py",
+      "original_blob": "872e372b34a645abf83e80e466b27c1d671c7d7c"
+    },
+    {
+      "path": "app/evaluation/prometheus_feedback.py",
+      "original_blob": "14cdb68849873d4e525f431117987a7290a5f147"
+    },
+    {
+      "path": "app/generation/citation/__init__.py",
+      "original_blob": "de802a442bcc45b877618ebb615a4445ae9723a2"
+    },
+    {
+      "path": "app/generation/citation/citation_mapper.py",
+      "original_blob": "f6427642d0025206470c20c37e83d8e5f39d870b"
+    },
+    {
+      "path": "app/generation/citation/legal_citation.py",
+      "original_blob": "94b519e3c9adcb26a6f6eedccdbce824949f330c"
+    },
+    {
+      "path": "app/generation/context_mapper.py",
+      "original_blob": "a12a2c45374e2da2d3a587809ff88d379fc2b99c"
+    },
+    {
+      "path": "app/generation/grounding_quality.py",
+      "original_blob": "c272ac5ac08d640e316e5cbdd6d16a32593a3384"
+    },
+    {
+      "path": "app/generation/llm/__init__.py",
+      "original_blob": "d45372e7b3af585da596a9919ac32b07657e903b"
+    },
+    {
+      "path": "app/generation/normalization/__init__.py",
+      "original_blob": "324a0d37faf1d8a09e95cf1a63c3e833976603c4"
+    },
+    {
+      "path": "app/generation/normalization/response_normalizer.py",
+      "original_blob": "44305914f6d8d3928dc5f13f75fcf68e645f285f"
+    },
+    {
+      "path": "app/generation/parsing/__init__.py",
+      "original_blob": "9f4bf5c30d0e489d56795be38356128998eb54d6"
+    },
+    {
+      "path": "app/generation/parsing/json_utils.py",
+      "original_blob": "a5ca36b5d029e7ec9bdbc551e493bc4de2c42fa4"
+    },
+    {
+      "path": "app/generation/prompts/__init__.py",
+      "original_blob": "026cd4b9faf8b14eecbc70c32a1e17e227323cdc"
+    },
+    {
+      "path": "app/generation/prompts/prompt_factory.py",
+      "original_blob": "568a72f0c1da4598baa9f78931b2c25195bca68a"
+    },
+    {
+      "path": "app/generation/service.py",
+      "original_blob": "c8d2b759284d8c8fbe376db302405450dcf33a53"
+    },
+    {
+      "path": "app/generation/validators/__init__.py",
+      "original_blob": "890d995f37be7c4d74c4080d77ea31f9b14abda4"
+    },
+    {
+      "path": "app/generation/validators/qa_response_validator.py",
+      "original_blob": "4027f6fe999b17c0135174a34980cb55ca923c96"
+    },
+    {
+      "path": "app/ingestion/__init__.py",
+      "original_blob": "1534e88997c304461c66d9320b1b2bec641a6398"
+    },
+    {
+      "path": "app/ingestion/loaders/__init__.py",
+      "original_blob": "213975f700c5b1cf488feb3a528629eb1b50845f"
+    },
+    {
+      "path": "app/ingestion/preprocess/__init__.py",
+      "original_blob": "9ea805d84dec2fe0b771baa97262f7abdea5de07"
+    },
+    {
+      "path": "app/ingestion/service.py",
+      "original_blob": "5a97f5b74cfd58674d0c3b6930a84d769192d879"
+    },
+    {
+      "path": "app/retrieval/analyzers/__init__.py",
+      "original_blob": "e50ff235e91426f30b75e78ef81ccd1e4df38ae8"
+    },
+    {
+      "path": "app/retrieval/analyzers/complexity_analyzer.py",
+      "original_blob": "d07a5f4af53e621580e0ea37740176c9efd25db0"
+    },
+    {
+      "path": "app/retrieval/analyzers/request_segment_analysis.py",
+      "original_blob": "ae597efafde6c2a3b143f1552342052b1fe66ddc"
+    },
+    {
+      "path": "app/retrieval/analyzers/request_segment_hybrid.py",
+      "original_blob": "dcebc843d93186b7481112c6348e277442975796"
+    },
+    {
+      "path": "app/retrieval/analyzers/topic_analyzer.py",
+      "original_blob": "936a68adb400d60b446c70608d774052abfed493"
+    },
+    {
+      "path": "app/retrieval/embeddings/__init__.py",
+      "original_blob": "c8957f383ed510f65fb2c053f82fb1117548909b"
+    },
+    {
+      "path": "app/retrieval/entity_labels.py",
+      "original_blob": "00d20a09a8ab21f51241d76a07a5b32560565087"
+    },
+    {
+      "path": "app/retrieval/grounding_filter.py",
+      "original_blob": "5e8be2bfc22719f77693f3699213775aa9835ee6"
+    },
+    {
+      "path": "app/retrieval/law_article_store.py",
+      "original_blob": "11885e5ab99e108e80d54a509d1630efd3d33d3c"
+    },
+    {
+      "path": "app/retrieval/pipeline/runner.py",
+      "original_blob": "cd73df7239d38ec354eb0ffc285592b46207e108"
+    },
+    {
+      "path": "app/retrieval/pipeline/stages/bm25_retriever.py",
+      "original_blob": "170e34011865a5902bd24bf567cdcae8ffffcbb4"
+    },
+    {
+      "path": "app/retrieval/pipeline/stages/chroma_dense.py",
+      "original_blob": "9194d7978644ba871554bf010dc2085dd00e03f5"
+    },
+    {
+      "path": "app/retrieval/pipeline/stages/cross_encoder_rerank.py",
+      "original_blob": "33fd565fead9f8fc533620ca9fdca90990b216cd"
+    },
+    {
+      "path": "app/retrieval/pipeline/stages/llm_relevance_filter.py",
+      "original_blob": "b89afdfcc92baf8bca6372a965c1e08048928973"
+    },
+    {
+      "path": "app/retrieval/router/__init__.py",
+      "original_blob": "328094908375e592d23e30e1d5c5cbb1ef2df7a3"
+    },
+    {
+      "path": "app/retrieval/router/adaptive_router.py",
+      "original_blob": "758917a92ff98e12c1ac25a6754dcb59ea53627f"
+    },
+    {
+      "path": "app/retrieval/search/__init__.py",
+      "original_blob": "db4ce82236cec1225c8b6baf352f997432e3f93b"
+    },
+    {
+      "path": "app/retrieval/search/hybrid.py",
+      "original_blob": "7e163d89c78bc09196ecd0133124095eeb9e5037"
+    },
+    {
+      "path": "app/retrieval/service.py",
+      "original_blob": "661249fb78730c9f78e9063ca3146cb14370353a"
+    },
+    {
+      "path": "app/retrieval/vectorstores/__init__.py",
+      "original_blob": "47e646dc4aa78256c5c49bd5b34ebb592a4cdca9"
+    },
+    {
+      "path": "app/retrieval/vectorstores/chroma_store.py",
+      "original_blob": "75d393ec903073454ddc3ca3b7af1369d3ac351f"
+    },
+    {
+      "path": "app/retrieval/vectorstores/chroma_validation.py",
+      "original_blob": "e0c1a21ea8f6fa13fe0d12efe5e86eb1e6adeac2"
+    },
+    {
+      "path": "app/structuring/__init__.py",
+      "original_blob": "f4a18f0ab2d7fb0662157422fdf8933a43561584"
+    },
+    {
+      "path": "app/structuring/civil_category.py",
+      "original_blob": "45a57c0086a2e785bbf91341281d44d7e219da64"
+    },
+    {
+      "path": "app/structuring/department_assigner.py",
+      "original_blob": "59d88f45d10d27584583ae2e638901ad01f3ad59"
+    },
+    {
+      "path": "app/structuring/enrichment.py",
+      "original_blob": "ca5cd54d8e80dc616ef8b12f8540da213102e52d"
+    },
+    {
+      "path": "app/structuring/extractors/__init__.py",
+      "original_blob": "92e0584883023c8925a1ff84b8fd1785d9fc6055"
+    },
+    {
+      "path": "app/structuring/law_corpus.py",
+      "original_blob": "420cf545c063c149f7e1530fcfdc4437a2a736f9"
+    },
+    {
+      "path": "app/structuring/legal_dictionary.py",
+      "original_blob": "5ce1e385ea7bf1eedeaf695bd83c7eb991cd7ff2"
+    },
+    {
+      "path": "app/structuring/llm_extractor.py",
+      "original_blob": "ef6d686f439a8ef7cbed1f4e38803fb3cca3a514"
+    },
+    {
+      "path": "app/structuring/merger.py",
+      "original_blob": "ffead8fb59ae3669aef94d2bae24c1da4c944a08"
+    },
+    {
+      "path": "app/structuring/pii/__init__.py",
+      "original_blob": "176d5ddc46b667ee3bb6b28e2abdf87362394d76"
+    },
+    {
+      "path": "app/structuring/pii/ko_pii_adapter.py",
+      "original_blob": "42648c01628bb3bb9644ceb93bda855805bc5162"
+    },
+    {
+      "path": "app/structuring/pii/pipeline.py",
+      "original_blob": "74a13d7db62344bc131f568bd277babde982d06a"
+    },
+    {
+      "path": "app/structuring/pii/postcheck.py",
+      "original_blob": "d83e9f8be927fb8b6e66e09471916cc061987860"
+    },
+    {
+      "path": "app/structuring/pii/risk_policy.py",
+      "original_blob": "548112f1569f25ed0c4fa4ee31e7654cd13d0b91"
+    },
+    {
+      "path": "app/structuring/preprocessing.py",
+      "original_blob": "4c9e1e2d9af68b3b0153eb4d26814160158031d2"
+    },
+    {
+      "path": "app/structuring/schemas.py",
+      "original_blob": "017e1a93713e3e974be9d0cae5dbe4bb1a08f0d3"
+    },
+    {
+      "path": "app/structuring/service.py",
+      "original_blob": "0900e0eba6212020a19ef14ea1633afc0b6797fa"
+    },
+    {
+      "path": "app/structuring/structured_extractor.py",
+      "original_blob": "91de80f7b589bcf72fe043124fd63a73dae2ff32"
+    },
+    {
+      "path": "app/structuring/structured_merge.py",
+      "original_blob": "2f97096f5896b686a4bdcd5f2e2f3eff9530c1e3"
+    },
+    {
+      "path": "app/structuring/urgency/__init__.py",
+      "original_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "app/structuring/urgency/classifier.py",
+      "original_blob": "916537ddabb885aab1fa533ef73a5bf3ffb126bd"
+    },
+    {
+      "path": "app/structuring/urgency/dataset.py",
+      "original_blob": "cfdaa1f385dfea4f93a24e68c1cc8ffa7f93c0ed"
+    },
+    {
+      "path": "app/structuring/urgency/features.py",
+      "original_blob": "73a95057efe97f9099d3ee6f3ee46b54dfa9cffa"
+    },
+    {
+      "path": "app/structuring/urgency/safety_rules.py",
+      "original_blob": "f9be80fa1a172ccb6a8978515230312346bf9f1f"
+    },
+    {
+      "path": "app/structuring/urgency/scorer.py",
+      "original_blob": "a662244eab605406fcf58e4513f4c1627a991e09"
+    },
+    {
+      "path": "app/structuring/validators/__init__.py",
+      "original_blob": "b2df44eba84c128902cf5ff53d95dbe02a5d48f4"
+    },
+    {
+      "path": "app/structuring/verifier.py",
+      "original_blob": "080f03c075ff64f0be3af4aa02597dcd6faf69df"
+    },
+    {
+      "path": "app/tests/integration/test_week6_search_to_qa_e2e_sample10.py",
+      "original_blob": "a609193a5ef5f05899be50269c7bed823033fab1"
+    },
+    {
+      "path": "app/tests/unit/test_adaptive_router.py",
+      "original_blob": "9344bf6df68271438b6e773f6b82b72eb92316a6"
+    },
+    {
+      "path": "app/tests/unit/test_admin_category_stats.py",
+      "original_blob": "549ebcf9c8317393e8de83982fd3502f3c77e954"
+    },
+    {
+      "path": "app/tests/unit/test_ares_lite_evaluator.py",
+      "original_blob": "be994dbee2e715dc2346a979b7f8303d84882084"
+    },
+    {
+      "path": "app/tests/unit/test_be1_query_signals_e2e.py",
+      "original_blob": "4abbb3c93f34e1061689cd8897c101be1b4cc8cf"
+    },
+    {
+      "path": "app/tests/unit/test_be1_week2_tasks.py",
+      "original_blob": "f3cc3e35e154998759654929ee51ed49eb541689"
+    },
+    {
+      "path": "app/tests/unit/test_be2_week4_fe_e2e_regression.py",
+      "original_blob": "a2c6770d7d533f68af110ef18be7af1d8fb26a69"
+    },
+    {
+      "path": "app/tests/unit/test_build_index_contract.py",
+      "original_blob": "a316d611dfb32934b4ff82e8410ce19f6298c971"
+    },
+    {
+      "path": "app/tests/unit/test_build_retrieval_eval_set_v1.py",
+      "original_blob": "ad4bcca71fee1a7adea697b01985246ff2ee5bd7"
+    },
+    {
+      "path": "app/tests/unit/test_build_version_neutral_queryset.py",
+      "original_blob": "cd293a6dd59c45389de6cc24fc9e2892673a6461"
+    },
+    {
+      "path": "app/tests/unit/test_check_chromadb_search_signal_coverage.py",
+      "original_blob": "2c5b45884b5bb8c1b60a7922f0ac973d57ec927a"
+    },
+    {
+      "path": "app/tests/unit/test_chromadb_filter_validation.py",
+      "original_blob": "6087475b4796f9f880587520eea0b7d98c5126f3"
+    },
+    {
+      "path": "app/tests/unit/test_civil_category.py",
+      "original_blob": "83d8b2daa566e58193882adbb659fa3fddc21c46"
+    },
+    {
+      "path": "app/tests/unit/test_civil_llm_rubric_runtime.py",
+      "original_blob": "b01f4501b09e3f8a53bf61f82a8be4d3cbcded2e"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence.py",
+      "original_blob": "608160a939a88d33953a0e5adef6f381d1f45ba2"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_checkpoint.py",
+      "original_blob": "212357dd37de599456f6d5772cd02146ae3b5379"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_collector.py",
+      "original_blob": "2479942d6b17298b09f21f25356b8a2b0153b733"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_demo_seed.py",
+      "original_blob": "a2d0eb35d68204d44b0dd1c030497da05b2a41aa"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_evaluation.py",
+      "original_blob": "34241792f06d0005f067e3f04f3d156d80bc2666"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_issue_detection_quality.py",
+      "original_blob": "dd76c363c49467508e08d705ed13ac057b8bf0fe"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_repository.py",
+      "original_blob": "64e80577f0ddb7c48f2b799240a03b599c224866"
+    },
+    {
+      "path": "app/tests/unit/test_complaint_intelligence_scheduler.py",
+      "original_blob": "38f67a047cf0d136a2333487a169e6a0201e4033"
+    },
+    {
+      "path": "app/tests/unit/test_complexity_analyzer.py",
+      "original_blob": "ef1b9fdea684cf5acd993f4e3b4c18eef0edf1a7"
+    },
+    {
+      "path": "app/tests/unit/test_department_assigner.py",
+      "original_blob": "5ee896d5716d26be2990503b32e87ba35a201ff2"
+    },
+    {
+      "path": "app/tests/unit/test_department_master_filter.py",
+      "original_blob": "6499bdffebd9ea0243a4dff1552c69f63c5ee84e"
+    },
+    {
+      "path": "app/tests/unit/test_duplicate_merge_demo_seed.py",
+      "original_blob": "2e0119f4653b17cc3e03ed7c5388b7d5912ea7f4"
+    },
+    {
+      "path": "app/tests/unit/test_duplicate_merger.py",
+      "original_blob": "ccc7fed6ce1147acf0e6d245bd55571c3718885d"
+    },
+    {
+      "path": "app/tests/unit/test_duplicate_merger_evaluation_matrix.py",
+      "original_blob": "176599a49c0071b03afd6dd3aa2eb8118092506d"
+    },
+    {
+      "path": "app/tests/unit/test_duplicate_merger_quality_hardening.py",
+      "original_blob": "e3e4507230f655a8152b1ff9173a62c93379e17c"
+    },
+    {
+      "path": "app/tests/unit/test_duplicate_merger_real_holdout.py",
+      "original_blob": "b6dc5bbf210d4c97ebc1ef31cac8874e98f7fd06"
+    },
+    {
+      "path": "app/tests/unit/test_enrichment.py",
+      "original_blob": "ecbcd94d393964b63c655e1115ee7dae5150a218"
+    },
+    {
+      "path": "app/tests/unit/test_entity_label_contract.py",
+      "original_blob": "f55e1a3da94291b2e1d70011077d51b63127c598"
+    },
+    {
+      "path": "app/tests/unit/test_eval_responsible_unit.py",
+      "original_blob": "2d29bedf81f000c46ddef5f7d64bbfe67a408b56"
+    },
+    {
+      "path": "app/tests/unit/test_generation_common_utils.py",
+      "original_blob": "b408a1ce5ae45eeeb7b3abdf2460ab5e41b2f030"
+    },
+    {
+      "path": "app/tests/unit/test_generation_context_mapper.py",
+      "original_blob": "7aa18dfc2f90d4e59e513a8c2db89cee5c72b82f"
+    },
+    {
+      "path": "app/tests/unit/test_generation_fallback_metadata.py",
+      "original_blob": "04e9f029f02936444676af6fdf5a13305efe6fe6"
+    },
+    {
+      "path": "app/tests/unit/test_generation_grounding_quality.py",
+      "original_blob": "7e2ce0c8994c5b797f1a5ba6d6cbccd087e354dc"
+    },
+    {
+      "path": "app/tests/unit/test_generation_legal_signals.py",
+      "original_blob": "4ebd45b677fd61de87a87e756a5084918b0dbf34"
+    },
+    {
+      "path": "app/tests/unit/test_generation_ollama_metadata.py",
+      "original_blob": "34f1e6ae86b89215e2d33568006aea99a2269dad"
+    },
+    {
+      "path": "app/tests/unit/test_generation_week5_contract.py",
+      "original_blob": "5a4984582356aa00d6e5528b973964102b0e26fb"
+    },
+    {
+      "path": "app/tests/unit/test_generation_week6_prompt_normalize.py",
+      "original_blob": "e1c5186d6e27a7bc469399d749497a239aac6eb1"
+    },
+    {
+      "path": "app/tests/unit/test_grounding_filter.py",
+      "original_blob": "a59955f911a27ff21423fb3260ce2588294ce3fa"
+    },
+    {
+      "path": "app/tests/unit/test_ingestion_text_policy.py",
+      "original_blob": "e26ad92753a8ab7909c2f0664f855bd94678ef81"
+    },
+    {
+      "path": "app/tests/unit/test_law_article_store.py",
+      "original_blob": "ff679ccb5cf11edf436067a79aa9f7aa7da95806"
+    },
+    {
+      "path": "app/tests/unit/test_law_corpus.py",
+      "original_blob": "0ba2be35ea02bf732d7968ef09290c7c6b84b6dd"
+    },
+    {
+      "path": "app/tests/unit/test_legal_citation.py",
+      "original_blob": "bf20fb907bfb96b78d150a278985b04cfc7003d2"
+    },
+    {
+      "path": "app/tests/unit/test_legal_dictionary.py",
+      "original_blob": "1aa4fbb455ae325e546161858f2c23798d9bc062"
+    },
+    {
+      "path": "app/tests/unit/test_llm_relevance_filter.py",
+      "original_blob": "8a7d841e713f5bc372cef0da088f1f04ca98daa7"
+    },
+    {
+      "path": "app/tests/unit/test_llm_rubric_civil_replies.py",
+      "original_blob": "cb7a3f0acc04fc1141851ca5cb51b303d839d6fd"
+    },
+    {
+      "path": "app/tests/unit/test_metadata_soft_rerank.py",
+      "original_blob": "5e2fbdb455c1a3949d3d0356d8a62c752d8fda7f"
+    },
+    {
+      "path": "app/tests/unit/test_pii_masking.py",
+      "original_blob": "354740bd2aecd5811e21c7d3316f33778e6f9378"
+    },
+    {
+      "path": "app/tests/unit/test_prepare_processed_append_inputs.py",
+      "original_blob": "49bd594876ea26927764504e68fc2e5e24ed9318"
+    },
+    {
+      "path": "app/tests/unit/test_preprocess_civil_policy_qna.py",
+      "original_blob": "1769c11221f2eef56a9c0ed9185923615c7966f9"
+    },
+    {
+      "path": "app/tests/unit/test_preprocessing_adapter.py",
+      "original_blob": "78615ff8c390b765fef6681fbc045e0edd7eb44e"
+    },
+    {
+      "path": "app/tests/unit/test_public_insight_action_repair.py",
+      "original_blob": "35549c93161b08a189fee693f03f160acdb9edcd"
+    },
+    {
+      "path": "app/tests/unit/test_public_insight_action_rubric.py",
+      "original_blob": "272c9236553a122e1ed2ce18e55f9dd829232b5e"
+    },
+    {
+      "path": "app/tests/unit/test_public_insight_golden_e2e.py",
+      "original_blob": "613b5d3b595f61044c2d66c7e05b6f4366c6ad21"
+    },
+    {
+      "path": "app/tests/unit/test_public_insight_llm_local_stability.py",
+      "original_blob": "aabe1a082c0abe8a613ddf64993ff58a9dd6608c"
+    },
+    {
+      "path": "app/tests/unit/test_public_insight_llm_observability.py",
+      "original_blob": "579c810210758bd0fa2dcfebaf4fa8ab3b887c93"
+    },
+    {
+      "path": "app/tests/unit/test_qa_retrieval_done_signal.py",
+      "original_blob": "d77d569dd8b33e2c54277739d377f2f13027f6a2"
+    },
+    {
+      "path": "app/tests/unit/test_qa_stream.py",
+      "original_blob": "5eeb81eb46bcb7d8a040543190b052620ff8493a"
+    },
+    {
+      "path": "app/tests/unit/test_rebuild_be1_restructured_index.py",
+      "original_blob": "0da577c9089abd6941b03847451701b759e8769c"
+    },
+    {
+      "path": "app/tests/unit/test_request_segment_hybrid.py",
+      "original_blob": "45b435b9a67fb72a32097bb1d573d2f8edc62876"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_chroma_runtime.py",
+      "original_blob": "9f313468b4860fef223f281bb28d20eb264f7695"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_metadata_filters.py",
+      "original_blob": "33b821dfa2020eb4ba34d747af2b8b546adaf867"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_router_contract.py",
+      "original_blob": "7518089b37e4136fef2dbdae511da684e9b11a52"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_search_signal_metadata.py",
+      "original_blob": "ad84b4f375a8427d84024d13cde77a4e6d981db1"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_topic_policy.py",
+      "original_blob": "298149bf33b0b7a0d1029893e3992ce8d109307e"
+    },
+    {
+      "path": "app/tests/unit/test_retrieval_week2_adapter.py",
+      "original_blob": "13122c75ca61b3147ef08cff8aafb4a333535d81"
+    },
+    {
+      "path": "app/tests/unit/test_safety_rules.py",
+      "original_blob": "454a4a34bc9bcd0b07a2a1045785e3685d4b74d9"
+    },
+    {
+      "path": "app/tests/unit/test_shared_formatting_regression.py",
+      "original_blob": "1a4a47b5bb79e2521ef6b7308744a41b7b2bdd01"
+    },
+    {
+      "path": "app/tests/unit/test_structured_extractor.py",
+      "original_blob": "64ffb32b0d6d32deb98db88e791b65643eb3b45c"
+    },
+    {
+      "path": "app/tests/unit/test_structured_merge.py",
+      "original_blob": "f02f3ca3ca3378dff07699612a8a352a9cf39dbe"
+    },
+    {
+      "path": "app/tests/unit/test_structuring_router_contract.py",
+      "original_blob": "4dbf212096fa9276ebaafe3898595dd8d1dfa373"
+    },
+    {
+      "path": "app/tests/unit/test_title_builder.py",
+      "original_blob": "1965f9cd55402a9c31d61a4b36f2108979351507"
+    },
+    {
+      "path": "app/tests/unit/test_ui_cases_demo_queue.py",
+      "original_blob": "e3aca103ffc2f41f26ff3e21b7182a02de950d28"
+    },
+    {
+      "path": "app/tests/unit/test_ui_qa_query_signals.py",
+      "original_blob": "4a2688a44c98c2c2bbe071607bf2869958ac4522"
+    },
+    {
+      "path": "app/tests/unit/test_ui_retrieval_parser.py",
+      "original_blob": "18cea371252a266696e506fe18d314639dff3974"
+    },
+    {
+      "path": "app/tests/unit/test_urgency_scorer.py",
+      "original_blob": "7114ad9552faea63bab2da422809417c0a3315f0"
+    },
+    {
+      "path": "app/tests/unit/test_verifier.py",
+      "original_blob": "a20e54e23a56c44ab01feeb5e8f569488f2819e1"
+    },
+    {
+      "path": "app/tests/unit/test_week2_script_input_contract.py",
+      "original_blob": "673b4c5a093ce0b27c852c2e232448766c236a6b"
+    },
+    {
+      "path": "app/tests/unit/test_week6_benchmark_legal_grounding.py",
+      "original_blob": "4915718eaadea7555b3131c4b7d92ffe7a9b050c"
+    },
+    {
+      "path": "app/tests/unit/test_week6_benchmark_revision_gate.py",
+      "original_blob": "27e9478c6b865a623c0b4d30bf7361ef80af305f"
+    },
+    {
+      "path": "app/ui/Home.py",
+      "original_blob": "e5c041231ca0d85a6584889743a5b3a2e19390c0"
+    },
+    {
+      "path": "app/ui/__init__.py",
+      "original_blob": "dd1bed9ca6b70828b2b06bcb80cc26ecfd9558f9"
+    },
+    {
+      "path": "app/ui/components/__init__.py",
+      "original_blob": "a341f06bfdb15c25aaead5cda03e52cad22a63b9"
+    },
+    {
+      "path": "app/ui/components/search_ui.py",
+      "original_blob": "bde4b2fe9a5d3be1996a2c43f454277522c25ce4"
+    },
+    {
+      "path": "app/ui/pages/__init__.py",
+      "original_blob": "d5f56174e9e9da537219cf5e24c920f34d8e18aa"
+    },
+    {
+      "path": "app/ui/services/__init__.py",
+      "original_blob": "232a79fc6ea284ca1aea044d2894675fa3857ba9"
+    },
+    {
+      "path": "app/ui/services/retrieval_parser.py",
+      "original_blob": "214d482ea492a2ba0dd1bedd3e5b3218e3898a57"
+    },
+    {
+      "path": "app/ui/services/search_service.py",
+      "original_blob": "016adad96cab47d3c2c11d24a71d0fdf99885203"
+    },
+    {
+      "path": "app/ui/services/ui_case_adapter.py",
+      "original_blob": "1075f935c63c8d6df4a1cdc38665c8a1ae3e2a9e"
+    },
+    {
+      "path": "configs/CATEGORY_ENUM.yaml",
+      "original_blob": "262a4ba83920a6c9b3fd7c1e92ca8f0b78dcb868"
+    },
+    {
+      "path": "configs/REGION_MAPPING.yaml",
+      "original_blob": "ecdf7b1395683a9ab875e606db3f1f097e65b50b"
+    },
+    {
+      "path": "configs/retrieval_pipelines/baseline_dense.yaml",
+      "original_blob": "507416011f8129879007e0fd827602fea5730a34"
+    },
+    {
+      "path": "configs/retrieval_pipelines/dense_reranked.yaml",
+      "original_blob": "a7b289ce91cf3d9274eaf8803ed2f8e500ab94e6"
+    },
+    {
+      "path": "configs/retrieval_pipelines/dense_reranked_noself.yaml",
+      "original_blob": "6eb1f2cb3f094127497aa361dee5bcadaa0a020b"
+    },
+    {
+      "path": "configs/retrieval_pipelines/hybrid_bm25_dense_rrf.yaml",
+      "original_blob": "175c254c04ae516885754f62cba696e162eaa81f"
+    },
+    {
+      "path": "configs/retrieval_pipelines/hybrid_bm25_dense_rrf_llmfilter.yaml",
+      "original_blob": "5bee510b86bf2edc10aa151f895f7b36cf94a86d"
+    },
+    {
+      "path": "configs/retrieval_pipelines/hybrid_bm25_dense_rrf_reranked.yaml",
+      "original_blob": "83b3ccd0567a1a023a72fedb77fb33a89728fea7"
+    },
+    {
+      "path": "configs/retrieval_pipelines/hybrid_bm25korean_dense_rrf.yaml",
+      "original_blob": "a1f44541c14975fc72682fa646b6f59b0e526730"
+    },
+    {
+      "path": "configs/week3_model_benchmark.yaml",
+      "original_blob": "06ea4f9064cbcdab94543f6661b91ec592671826"
+    },
+    {
+      "path": "configs/week3_model_benchmark_ax4_tune_stage1_ctx1024.yaml",
+      "original_blob": "e03a3c76e1eae91733e3a8336032eebfa7632a04"
+    },
+    {
+      "path": "configs/week3_model_benchmark_ax4_tune_stage2_ctx2048.yaml",
+      "original_blob": "148a3763fc575430865259a6366cc516840bf570"
+    },
+    {
+      "path": "configs/week3_model_benchmark_exaone_tune_stage1_ctx1024.yaml",
+      "original_blob": "ec22622440e606598ea406941ba4dd1e049bf831"
+    },
+    {
+      "path": "configs/week3_model_benchmark_exaone_tune_stage2_ctx2048.yaml",
+      "original_blob": "0cbef48d76498039c731c7170fc585b0dea99300"
+    },
+    {
+      "path": "configs/week3_model_benchmark_gemma4_e4b_tune_stage1_ctx1024.yaml",
+      "original_blob": "924a7d7170513fceee84ae22d365f431d11e4eb1"
+    },
+    {
+      "path": "configs/week3_model_benchmark_gemma4_tune_stage1_ctx1024.yaml",
+      "original_blob": "5dbb711044819055454c3275d1bb7226351cbd34"
+    },
+    {
+      "path": "configs/week3_model_benchmark_gemma_tune_stage1_ctx1024.yaml",
+      "original_blob": "746e61870279bb8f66d9d4eac13b66b8d57c82e5"
+    },
+    {
+      "path": "configs/week3_model_benchmark_gemma_tune_stage2_ctx2048.yaml",
+      "original_blob": "6b35d60bbffe4ae2a635e38871d3548a6150f01e"
+    },
+    {
+      "path": "configs/week3_model_benchmark_phi4_tune_stage1.yaml",
+      "original_blob": "8b0e635bb7003a43d2b5b6f67644a26eefaca595"
+    },
+    {
+      "path": "configs/week3_model_benchmark_phi4_tune_stage2_ctx2048.yaml",
+      "original_blob": "523adc325defa6a885769fb97f0216e3d0d705ad"
+    },
+    {
+      "path": "configs/week3_model_benchmark_stage2_ab.yaml",
+      "original_blob": "24b642f82754cc04855bb4c7754775c4ece3b422"
+    },
+    {
+      "path": "configs/week3_model_benchmark_stage3_ab.yaml",
+      "original_blob": "15c4640b21a1dcf03ca2a5412412481d236e7dbb"
+    },
+    {
+      "path": "configs/week3_model_benchmark_transformers.yaml",
+      "original_blob": "dffc5e985e2cc1a8a41225e735f7d67b44729a2d"
+    },
+    {
+      "path": "configs/week6_Be3_model_benchmark.yaml",
+      "original_blob": "fe30be9874e7c7b330033fedaf5943cd69f07dd9"
+    },
+    {
+      "path": "data/complaint_intelligence/complaint_intelligence_real_replay_events.json",
+      "original_blob": "34d60e723c305d357ede9ab1aa2f483f0f4d1519"
+    },
+    {
+      "path": "data/complaint_intelligence/duplicate_merge_demo_events.json",
+      "original_blob": "cc874611c3ca8b46aa6900385661b278c8d7da89"
+    },
+    {
+      "path": "data/demo/complaint_intelligence_demo_events.json",
+      "original_blob": "f52fcfda921014452c0e43813a2cc907b83fa95a"
+    },
+    {
+      "path": "data/demo/pending_cases_8.json",
+      "original_blob": "f6a33da22f9a98b5038f72eb76bbcb6d07e33ea2"
+    },
+    {
+      "path": "data/departments/busan_departments_master.json",
+      "original_blob": "caa40032ead0cef5f8ad17aa56613c21554f997a"
+    },
+    {
+      "path": "data/departments/busan_departments_master.stats.json",
+      "original_blob": "4ce4a3c0f51ef76c28defe613e34b8327b9895ea"
+    },
+    {
+      "path": "data/departments/busan_departments_tasks.json",
+      "original_blob": "7cdb9d508670baa2b12783f8c3d4c342cc56ddfc"
+    },
+    {
+      "path": "data/departments/eval/responsible_unit_eval.jsonl",
+      "original_blob": "2bfa83141d41e411c7817df870452184527300ae"
+    },
+    {
+      "path": "data/departments/eval/responsible_unit_eval.seed.jsonl",
+      "original_blob": "fdc828d11fec0919c3f6b4de8578f4a417f2998f"
+    },
+    {
+      "path": "data/departments/eval/responsible_unit_holdout1000.auto.jsonl",
+      "original_blob": "9f7a204465ffd26b55120370928d9a64a33ae130"
+    },
+    {
+      "path": "data/departments/eval/responsible_unit_holdout1000.content_aware.jsonl",
+      "original_blob": "be40045ba2fc6af4505e5aa3bca676c33d61cbd7"
+    },
+    {
+      "path": "data/departments/eval/responsible_unit_holdout1000.content_aware.review.jsonl",
+      "original_blob": "f69206a8e62985608111df63f29e3dcaa29fb130"
+    },
+    {
+      "path": "data/evaluation/complaint_intelligence_eval_scenarios.json",
+      "original_blob": "e28a0f97d3d25373f66f9253102915c065b73008"
+    },
+    {
+      "path": "data/evaluation/complaint_intelligence_holdout_50.json",
+      "original_blob": "4a763dfeec15a6252497a87778589adff9762eb7"
+    },
+    {
+      "path": "data/evaluation/duplicate_merge_labeled_pairs.json",
+      "original_blob": "6d49141df8d6c66a12f9082368e23d426414ddf9"
+    },
+    {
+      "path": "data/evaluation/duplicate_merge_real_holdout_batch_1000.json",
+      "original_blob": "24ada7d97603b5410bb4778726f6db8c86eb0ed7"
+    },
+    {
+      "path": "data/evaluation/duplicate_merge_real_holdout_batch_500.json",
+      "original_blob": "89a7016cb2a4b79c149668932a0676c922840648"
+    },
+    {
+      "path": "data/evaluation/duplicate_merge_real_holdout_events.json",
+      "original_blob": "e1cea969ccce04ec7929a5d980b6c48d306f45ff"
+    },
+    {
+      "path": "data/evaluation/duplicate_merge_real_holdout_pairs.json",
+      "original_blob": "d13aeba7c8766e6256385b7d8a41b7d062b386f4"
+    },
+    {
+      "path": "data/evaluation/v3/README.md",
+      "original_blob": "0f773a6534c3a022c6c9a70aeef02b414a2c1760"
+    },
+    {
+      "path": "data/evaluation/v3/archive/qrels_100.tsv",
+      "original_blob": "212b7c574caaa6a1a5e4b71d410acdc4c95a648e"
+    },
+    {
+      "path": "data/evaluation/v3/archive/qrels_112.tsv",
+      "original_blob": "fbfdf8f6f8deaa72882e6f2e6c42307c4de261f9"
+    },
+    {
+      "path": "data/evaluation/v3/archive/qrels_original.tsv",
+      "original_blob": "317c88dc5d4ed25ebfc9081fc9fcf374f098eeba"
+    },
+    {
+      "path": "data/evaluation/v3/archive/queries_112.jsonl",
+      "original_blob": "74fcf26c7f501e1e1912fc077b1c7170e9a661ad"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/ax4-light-local_latest.json",
+      "original_blob": "068abf0d9c6e6b220aeca4482da7ac6b0384230a"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/exaone3.5_7.8b.json",
+      "original_blob": "14aaaec183a0dbd9de0d8ecc4f2d21cdcaa6ed9d"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/exaone3_7.8b-instruct.json",
+      "original_blob": "6a8439f8e268e80a6ba14df4199abb88c48dc99d"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/fair_pool.json",
+      "original_blob": "c1260d5d1fea818cb84278ffad6de658fe1f2c9b"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/fair_pool_ax4.json",
+      "original_blob": "256440d5290be8cdba46deb2ba4de974a8445c2d"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/fair_pool_qwen.json",
+      "original_blob": "e946a9b29d623739a38bf32ad96af4e7c5835d5e"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/full_scan.json",
+      "original_blob": "5398e637e2a7d826c6fef5dc99e9d4e02814d58e"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/gemma3_12b.json",
+      "original_blob": "a0ceb19b2bdb54d565aacd2f43dd642c1af6f538"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/llm_rerank_full.json",
+      "original_blob": "0750b683d9049fe052e34964e24264dc289c10d3"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/scanner_validation_scan.json",
+      "original_blob": "d9ea9b7bd42b1e2f0feefbf571e02e3a8460b3c0"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/verify_audit.json",
+      "original_blob": "947e3a52b8fcaee7e19f3540c490e5e2957803c9"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/verify_confirm.json",
+      "original_blob": "3bc0b29c30c0dd19efc541eaea71592e910a3bff"
+    },
+    {
+      "path": "data/evaluation/v3/checkpoints/verify_filter_pipeline.json",
+      "original_blob": "ba987937894b1dd0d82f5277a14eeec7d14c1d61"
+    },
+    {
+      "path": "data/evaluation/v3/corpus_meta.json",
+      "original_blob": "e5abb90e3ce814832a34806efad26db75e9d4704"
+    },
+    {
+      "path": "data/evaluation/v3/fair_pool_3judge_report.json",
+      "original_blob": "2cfc7801c372ba609485280b38e91bf3c5d501b4"
+    },
+    {
+      "path": "data/evaluation/v3/fair_pool_validity_report.json",
+      "original_blob": "27e91f9415c19243378a566604d9ea0d43bb883c"
+    },
+    {
+      "path": "data/evaluation/v3/full_scan_incompleteness.json",
+      "original_blob": "069cd375ee888c2cd64b9a04d2c2beb0fa5952ee"
+    },
+    {
+      "path": "data/evaluation/v3/human_review_priority.csv",
+      "original_blob": "39987747a9d336d33e2ea60412857c4ebf80c25e"
+    },
+    {
+      "path": "data/evaluation/v3/local_conflict_report_gemma3.csv",
+      "original_blob": "b46f788fe00e78acd8bddfee823c3f8578932321"
+    },
+    {
+      "path": "data/evaluation/v3/local_cv_results_gemma3.csv",
+      "original_blob": "3e0bbfb76864d60c86cb6f8db50aec0e3ba79a56"
+    },
+    {
+      "path": "data/evaluation/v3/local_validity_report_gemma3.json",
+      "original_blob": "9818f2654da263dd55c3fd8583c17bb3eb0e8265"
+    },
+    {
+      "path": "data/evaluation/v3/new_queries_validity_report.json",
+      "original_blob": "d59a09ea5d80bc37e303668080fe83a5d4580058"
+    },
+    {
+      "path": "data/evaluation/v3/pool_to_judge.tsv",
+      "original_blob": "fc5e6ca452c892aead360fefc9019f7cf0a0357d"
+    },
+    {
+      "path": "data/evaluation/v3/qrels.tsv",
+      "original_blob": "9b80e0a95b4872edc3eb46faa15c023c43e88f4d"
+    },
+    {
+      "path": "data/evaluation/v3/qrels_final.tsv",
+      "original_blob": "933fb608e386bf0cd6b60fd26056a2bd390bacc9"
+    },
+    {
+      "path": "data/evaluation/v3/qrels_original_llm.tsv",
+      "original_blob": "d66764953628001972321c29a4565d61be863bfd"
+    },
+    {
+      "path": "data/evaluation/v3/qrels_pooled.tsv",
+      "original_blob": "147005c1f0d60ccb676c9cc7a9a7d789bb9567a2"
+    },
+    {
+      "path": "data/evaluation/v3/qrels_pooled_3judge.tsv",
+      "original_blob": "485373cb99a38b86909c4406be49dc5934ac6c0f"
+    },
+    {
+      "path": "data/evaluation/v3/queries.jsonl",
+      "original_blob": "118b197733eacc0a0af1498fe9558a0b6bf54f0b"
+    },
+    {
+      "path": "data/evaluation/v3/relabel_checkpoint.json",
+      "original_blob": "3d53cc0009c52fba318f82556e87f3e694042cdf"
+    },
+    {
+      "path": "data/evaluation/v3/relabel_checkpoint_old.json",
+      "original_blob": "f754d9dd48b322b7f0b8505f5df50a12a3cffacc"
+    },
+    {
+      "path": "data/evaluation/v3/relabel_validity_report.json",
+      "original_blob": "334eab2f40039f230a73b79031b63aa54cc69d1e"
+    },
+    {
+      "path": "data/evaluation/v3/reranker_pool_checkpoint.json",
+      "original_blob": "ee8caf2502d5186d229f2fa38b5cec08b71ba2d0"
+    },
+    {
+      "path": "data/evaluation/v3/scanner_validation_report.json",
+      "original_blob": "4889662aa612a300a3fa394939085a3206af6d53"
+    },
+    {
+      "path": "data/evaluation/v3/spotcheck_audit_report.json",
+      "original_blob": "9d628d95595d044eea2e09793198aff7d08f73b4"
+    },
+    {
+      "path": "data/evaluation/v3/spotcheck_confirm_report.json",
+      "original_blob": "50c263ddee67b7f0fc5ddfc08c9864574bba2f33"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/false_friend_current_filter.jsonl",
+      "original_blob": "6e0b217379f90676eac83a41d278b9f0749f9ee6"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/false_friend_hardset.jsonl",
+      "original_blob": "2bf2dbe9eadd75a9759d83bbbeeae35cacb84599"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/false_friend_opposite_aware.jsonl",
+      "original_blob": "07e6284e7cdb37600d36c88f2a0194f29c16095d"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/false_friend_risk_aware.jsonl",
+      "original_blob": "beefdeac2274554f7256b16d8c8c197846ff215e"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/judge_input_morph.jsonl",
+      "original_blob": "0358ba50587c2f7775989d691e81410c5e0a9d03"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/pool.json",
+      "original_blob": "25b79ec1f7cc2f66fc4b014772b98c5bf675b918"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/qrels_raw_codex.jsonl",
+      "original_blob": "66d76426c585782bdda51bcafe7dac3e901491c0"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/qrels_raw_codex_morph.jsonl",
+      "original_blob": "5124b822d17bdba4f34fb7ca46ccfdfd615d8d12"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/qrels_raw_exaone.jsonl",
+      "original_blob": "cf2d9e77036b357aa9bbb71768690f8832214dcb"
+    },
+    {
+      "path": "data/evaluation/v3_rebuild/queries.jsonl",
+      "original_blob": "26362e4759640691a7e7f5675e688e62dbc33b0f"
+    },
+    {
+      "path": "data/evaluation/version_neutral/queries.jsonl",
+      "original_blob": "7d989884f27783231410d8685943186d5963ba0e"
+    },
+    {
+      "path": "data/finetune/reranker/split_meta.json",
+      "original_blob": "755e3487eb697d4c7b9cbf803ac88acce1f72da7"
+    },
+    {
+      "path": "data/finetune/reranker/test_qids.txt",
+      "original_blob": "af6642c8f1a12f26ffb13ba2ef98b2a4acc0d2dd"
+    },
+    {
+      "path": "data/finetune/reranker/train.jsonl",
+      "original_blob": "e1271ed24a814bc22ad31ac9ec8b42828fff12c2"
+    },
+    {
+      "path": "data/finetune/reranker/train_qids.txt",
+      "original_blob": "9f2ce06682f9fd74f73cc726d84f606eecaa7686"
+    },
+    {
+      "path": "data/laws/_debug_ordin_2160706.json",
+      "original_blob": "4751c8be62f7db39fc3a10ecf2fff9a729015e41"
+    },
+    {
+      "path": "data/laws/busan_ordinances.json",
+      "original_blob": "66f1e31a601196515dd29ac9651acd588163e06d"
+    },
+    {
+      "path": "data/laws/law_articles.json",
+      "original_blob": "e3a8f0920166eda7c48f9542803ba30592436615"
+    },
+    {
+      "path": "data/laws/law_dictionary.json",
+      "original_blob": "0500fdc87017ea75e9d4264d894ec184dac50bb1"
+    },
+    {
+      "path": "data/urgency/labels.jsonl",
+      "original_blob": "5403b23e0d2950d62daec3cf72b3291a491ea211"
+    },
+    {
+      "path": "data/urgency/model.joblib",
+      "original_blob": "c6192abe59cafba50f38f3ebf6c57a10b5ce633b"
+    },
+    {
+      "path": "docs/00_overview/complaint_system_architecture.md",
+      "original_blob": "38e0309452849403aa35678714be4d50ed5dfe57"
+    },
+    {
+      "path": "docs/00_overview/complaint_system_prd.md",
+      "original_blob": "f21e20dafe9307a945e8043eaadbfdec070ba0da"
+    },
+    {
+      "path": "docs/10_contracts/api/old_api_spec.md",
+      "original_blob": "8536bbcd3ff8d8afe23027d6bd7b5e0048f561eb"
+    },
+    {
+      "path": "docs/10_contracts/frontend/intelligence_fe_contract.md",
+      "original_blob": "d4fba2a036c794c345a2529c69aeb2649d369315"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/README.md",
+      "original_blob": "2d3c6f946f6b13132d70b4da9a5a60eb43190303"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week1/README.md",
+      "original_blob": "c438a0429523efd24119a2283f71e40a9142d31c"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week1/be1_be2_interface.md",
+      "original_blob": "72b52ebf3f21c98a12e372b6b9cb16facdcfbedb"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week1/be2_be3_compromise_contract_week1.md",
+      "original_blob": "3893e6256bc456130cf4b8ccf16db125b87abfaf"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week1/be2_be3_interface.md",
+      "original_blob": "ec35cd04dc2264d2c47915ef0778a8e19aa47532"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week1/be3_fe_be2_unified_spec.md",
+      "original_blob": "2cc52e6e4748cc17e7d9814dfc2e0f6b8d78a5e9"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/README.md",
+      "original_blob": "c2d6f54b45d9257b85a85b1dc9f116afddcb26cd"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/week2_be1_interface.md",
+      "original_blob": "a26501af81d6c1fd030783181ca1e95c78afa0f1"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/week2_be2_interface.md",
+      "original_blob": "be81948c974884015f059cdff2a9e94792716320"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/week2_be3_interface.md",
+      "original_blob": "d6e73d92134f215b21f36cf3be8067d3a46edeac"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/week2_common_interface.md",
+      "original_blob": "531b26b49257872772b88c957382e3289e5d9bc1"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week2/week2_fe_interface.md",
+      "original_blob": "5c44190ad8fe742b3d0b3e27b1a8682a229492a7"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/README.md",
+      "original_blob": "8416a0ad53955488c26c4d5ed274afb2e88692cc"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/week3_be1_interface.md",
+      "original_blob": "b6e4cc5a2e041d3383d7eb54d79f1074893df7eb"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/week3_be2_interface.md",
+      "original_blob": "78f976a8766f51c6a949b8c30ab93480748fd18c"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/week3_be3_interface.md",
+      "original_blob": "d62ff05bd9d9fcc9b4ce1d1213cbb4b8f79ade15"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/week3_common_interface.md",
+      "original_blob": "0d78209c1fff9d5685d15b0d6c5d50ccfb375624"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week3/week3_fe_interface.md",
+      "original_blob": "013abcb99dc42e0f513f168d69cdeddc6ff5dbf1"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/README.md",
+      "original_blob": "9528d85bb4fa29ab2879dc3e376e2dc726bda2fb"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/week4_be1_interface.md",
+      "original_blob": "69fa9bf46fbb5a1bed9d9521c9734ae800d69d4a"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/week4_be2_interface.md",
+      "original_blob": "63290ee89e63d00454a06ac8d826482b9c8e4b0a"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/week4_be3_interface.md",
+      "original_blob": "31e3b0ee0ebafdb8f098d5a629ef40964ba981c2"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/week4_common_interface.md",
+      "original_blob": "120f2d4301d9193f1f06566f0664dfa4674dbc0d"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week4/week4_fe_interface.md",
+      "original_blob": "bf146613e5831b09226d000f4c1dd54f4ba70bc9"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week5/README.md",
+      "original_blob": "5ee47d6b260e223e784615274a50994e4a1fc3b5"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week5/week5_be1_interface.md",
+      "original_blob": "9dddb808be62e89e0d16636000aa41121c30428a"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week5/week5_be2_interface.md",
+      "original_blob": "39111fa3e6692aa79af9735c101e5af08e17bef9"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week5/week5_be3_interface.md",
+      "original_blob": "870a2bcdc588759d4df5c39f9305fa77ef37cfe3"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week5/week5_fe_interface.md",
+      "original_blob": "8fd83ffcaeaed87b25e8c9b926e5f06d54943293"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/README.md",
+      "original_blob": "beb14ce4f7dc6f946f5b0b03e91fcd465e4606ac"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/week6_be1_interface.md",
+      "original_blob": "fed7cfe21a625c861dbe635716b5a8023ad37cd8"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/week6_be2_interface.md",
+      "original_blob": "5627e88b4f3840261b162be75a0887665be7ecb6"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/week6_be3_interface.md",
+      "original_blob": "1de76d477996827259c7eaedefe9b005c49271e6"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/week6_be3_search_qa_e2e_sample10.md",
+      "original_blob": "b422507dc17ad8431feff6a582ccf57835d35fb4"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week6/week6_fe_interface.md",
+      "original_blob": "21f912b8d4f369ccefc3ad88531b66d44938542e"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week7/README.md",
+      "original_blob": "338846660dcfbdf73be9b8f772543e372fc793f6"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week7/week7_be1_interface.md",
+      "original_blob": "6a62aa5b8e23fd189577447ccb590a42c2a59e68"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week7/week7_be2_interface.md",
+      "original_blob": "468853478ae2b80f4b070a2c35daf952b26f65ea"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week7/week7_be3_interface.md",
+      "original_blob": "571893f6cacebfa495fb93f46aabf9292d0c8597"
+    },
+    {
+      "path": "docs/10_contracts/interfaces/week7/week7_fe_interface.md",
+      "original_blob": "0c76f0f8d9c9bfb8c71018bd740a861bf87bde04"
+    },
+    {
+      "path": "docs/10_contracts/real_data_fields.md",
+      "original_blob": "13a7e60fe2b3da09a8f4bbfa2079cf4c2df06e71"
+    },
+    {
+      "path": "docs/10_contracts/schema/old_schema_contract.md",
+      "original_blob": "15b4e2dc45d5bd3fd45535ab7a23381ce604fc4b"
+    },
+    {
+      "path": "docs/20_domains/complaint_intelligence/README.md",
+      "original_blob": "ac1d81fbb47ccc89081ed18e34d3f710fbf348be"
+    },
+    {
+      "path": "docs/20_domains/complaint_intelligence/duplicate_merge_policy.md",
+      "original_blob": "8f101421dc8416833da4c3ab970405b2e518c268"
+    },
+    {
+      "path": "docs/20_domains/complaint_intelligence/issue_detection_policy.md",
+      "original_blob": "2f1acdb36b628fcb48487ea8ce472fea61158c79"
+    },
+    {
+      "path": "docs/20_domains/complaint_intelligence/pii_safety_policy.md",
+      "original_blob": "e7e207fb7f7cfa9c4acb0fc2e45e64a441c60815"
+    },
+    {
+      "path": "docs/20_domains/complaint_intelligence/public_insight_policy.md",
+      "original_blob": "9a5512983f2d64f8c507f5683c211a97f7f74158"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_error_codes.md",
+      "original_blob": "5b9bcef6893f1ae1e7eba810e6bcae06c3e3aaec"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_json_parse_failures.md",
+      "original_blob": "1805bbfbac01bf0b3c008bba7b920fe3203dd9c1"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_json_retry_strategy.md",
+      "original_blob": "f477d70d15d12c7629fdfbc12eb560cb2b0e9470"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_perf_oom_baseline.md",
+      "original_blob": "13fc47853650e7a27dd588cfd1d45dece4291a38"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_validation_format.md",
+      "original_blob": "7a7c864eba8d62fa70d02cf16858484995becdd2"
+    },
+    {
+      "path": "docs/20_domains/generation/be3_validation_rules.md",
+      "original_blob": "5889a93505a2f0bed31a538ff91d16bc76580a19"
+    },
+    {
+      "path": "docs/20_domains/ingestion_structuring/README.md",
+      "original_blob": "5c58c637804b17a67c7b14aa27e335c3b7260a82"
+    },
+    {
+      "path": "docs/20_domains/ingestion_structuring/rule.md",
+      "original_blob": "2a7cc9b075134bee126857cffb4da0a2a7a1e6e1"
+    },
+    {
+      "path": "docs/20_domains/retrieval/be1_query_signals_e2e.md",
+      "original_blob": "31f7b7a0b12a71642f8b12766dd14b79b54e026a"
+    },
+    {
+      "path": "docs/20_domains/retrieval/chunk_schema.md",
+      "original_blob": "6f17d7a3b3928c3ce3260df7c0aeea10bb2fa04d"
+    },
+    {
+      "path": "docs/20_domains/retrieval/embedding_comparison.md",
+      "original_blob": "d2d7f9624270819a6cd226df7db44ead15c6329f"
+    },
+    {
+      "path": "docs/20_domains/retrieval/evalset_v1_build.md",
+      "original_blob": "bdc9719dc8fdf8b79c86ec1d67757780681aa6a4"
+    },
+    {
+      "path": "docs/20_domains/retrieval/evaluation_metric_reliability.md",
+      "original_blob": "c576a9899802fa47495898053b46ce0558eba312"
+    },
+    {
+      "path": "docs/20_domains/retrieval/grounding_precision.md",
+      "original_blob": "d7bd52a431d8b47587643521d60fd34b89a71acf"
+    },
+    {
+      "path": "docs/20_domains/retrieval/indexing_plan.md",
+      "original_blob": "7b443f48691881575b78c1e9aa6bfef92c3364fc"
+    },
+    {
+      "path": "docs/20_domains/retrieval/metadata_schema.md",
+      "original_blob": "1f554291e44873f3f6ad1ce5909b98a23a009b3d"
+    },
+    {
+      "path": "docs/20_domains/retrieval/ollama_setup_note.md",
+      "original_blob": "470dd95cc97b1847ccc2f4ddbbd2c764cd2e84f8"
+    },
+    {
+      "path": "docs/20_domains/retrieval/retrieval_strategy.md",
+      "original_blob": "4591ba0089af8308c6cd8f3f7461ab92c221bfe4"
+    },
+    {
+      "path": "docs/20_domains/retrieval/vectordb_comparison.md",
+      "original_blob": "524d5c605ccd3f66f267667d61476a6c71f857c1"
+    },
+    {
+      "path": "docs/20_domains/structuring/structuring_improvement.md",
+      "original_blob": "6ca11a8bfb261cf82afc5d84c84029d00c2a8bb1"
+    },
+    {
+      "path": "docs/30_manuals/chromadb_lfs_policy.md",
+      "original_blob": "721bdb2c9896b736b262be02e3f8721ffca272e0"
+    },
+    {
+      "path": "docs/30_manuals/complaint_intelligence_demo_replay.md",
+      "original_blob": "e202eddff5196d1faba041a746547392ca0beea7"
+    },
+    {
+      "path": "docs/30_manuals/duplicate_merge_demo_flow.md",
+      "original_blob": "31543dc143cc2d87d1e29b31f37e0a66fe990e34"
+    },
+    {
+      "path": "docs/30_manuals/evaluation_runbook.md",
+      "original_blob": "c9db70841ccfcfa04f4a11e1459456eb108f3155"
+    },
+    {
+      "path": "docs/30_manuals/llm_rubric_civil_reply_evaluation.md",
+      "original_blob": "5c734c72a7456486e91b3490ee42183a5384457a"
+    },
+    {
+      "path": "docs/30_manuals/local_chromadb_indexing.md",
+      "original_blob": "8dd0ad29b77443672b1db1f67a05c96518958e82"
+    },
+    {
+      "path": "docs/30_manuals/manual.md",
+      "original_blob": "60355c9887b7445eddea1484c83aceead336c1b3"
+    },
+    {
+      "path": "docs/30_manuals/prompt_factory_evaluation.md",
+      "original_blob": "904a157bfae53f140c713e678ab5ea9221ca8947"
+    },
+    {
+      "path": "docs/40_delivery/BE2_fixed_hybrid_search_answer_adaptive_handoff.md",
+      "original_blob": "b3b921a5f0c1360c18529bb33aa6f439b40477f7"
+    },
+    {
+      "path": "docs/40_delivery/BE2_structuring_handoff.md",
+      "original_blob": "1652983f8016b1519d7a82f6653810604b636ea3"
+    },
+    {
+      "path": "docs/40_delivery/BE3_handoff.md",
+      "original_blob": "c421597d69adc0649dd68cd04cbff6e6f22fc1ee"
+    },
+    {
+      "path": "docs/40_delivery/BE3_law_grounding_fast_fallback_handoff.md",
+      "original_blob": "20931a700634ce57ab7a866e9f0c3417bacbc385"
+    },
+    {
+      "path": "docs/40_delivery/BE3_legal_citation_handoff.md",
+      "original_blob": "32d44f84d84833d01b6b6a1284f707dc0821cda8"
+    },
+    {
+      "path": "docs/40_delivery/FE_handoff.md",
+      "original_blob": "22d8bb471e757ca3feb3c68706b8c4126e81180f"
+    },
+    {
+      "path": "docs/40_delivery/be3_eval_driven_code_improvement_issues.md",
+      "original_blob": "9443bf7b52ee14bc130aa259665a15e87a0051b1"
+    },
+    {
+      "path": "docs/40_delivery/llm_rubric_evidence_and_baseline_review.md",
+      "original_blob": "22a1028e1f4ca1b9626fe42d51d376496a3c8514"
+    },
+    {
+      "path": "docs/40_delivery/week11/be3_core_feature_concepts_qa_guide.md",
+      "original_blob": "dbad933b6c3a8851fe0fc7f270b3146a54aaa5fa"
+    },
+    {
+      "path": "docs/40_delivery/week11/llm_evaluation/Civil_Complaint_LLM_Rubric.md",
+      "original_blob": "425ffe9246e3b4be388143226794254d7054bc5a"
+    },
+    {
+      "path": "docs/40_delivery/week11/llm_evaluation/Prometheus.md",
+      "original_blob": "23e8b39f7eda4e2f08429ef686fd9a6624c2f4b3"
+    },
+    {
+      "path": "docs/40_delivery/week11/llm_evaluation/ares.md",
+      "original_blob": "d1c978355d40bc46ba487f39f33e6e42ec601baa"
+    },
+    {
+      "path": "docs/40_delivery/week11/multi-agent routing plan/multi_agent_routing_design_plan.md",
+      "original_blob": "b95dc392553e8925f11791c7e64c9399cc80e991"
+    },
+    {
+      "path": "docs/40_delivery/week13/complaint_intelligence_fe_handoff.md",
+      "original_blob": "20292097ee66efd859f4c78c81622f3e601695be"
+    },
+    {
+      "path": "docs/40_delivery/week13/complaint_intelligence_layer_status.md",
+      "original_blob": "d46193fc6f34230c23efb8f923d87d8d410ec837"
+    },
+    {
+      "path": "docs/40_delivery/week6/WEEK6_BE3_DOC_RESPONSE_DIFF_CHECKLIST.md",
+      "original_blob": "2dee1ba1a9563e9fa47c2a961e7b8f822bc9dac7"
+    },
+    {
+      "path": "docs/40_delivery/week6/WEEK6_BE3_SPEC_SYNC_CHANGELOG_FOR_TEAM.md",
+      "original_blob": "9e529d755893abf9d176ae01fa9c18e974401cb1"
+    },
+    {
+      "path": "docs/40_delivery/week6/be3_single_rag_full_apply_checklist.md",
+      "original_blob": "454661dfc7a42b94778b363186819672877af0c5"
+    },
+    {
+      "path": "docs/40_delivery/week8/WEEK8_BE3_STATUS_REPORT.md",
+      "original_blob": "e77dd38beeaf1076c8ac8638a217818590c51393"
+    },
+    {
+      "path": "docs/50_issues/complaint_intelligence_demo_seed.md",
+      "original_blob": "351238778d571702a3622e5f648cc7273cee2c3c"
+    },
+    {
+      "path": "docs/50_issues/complaint_intelligence_fe_handoff.md",
+      "original_blob": "d80d7fecd36fb60b2cc90f2637741718eb1efc04"
+    },
+    {
+      "path": "docs/50_issues/complaint_intelligence_local_llm_operations.md",
+      "original_blob": "3cb32de9354a0eaa2b8c091a3dea271b6be528ca"
+    },
+    {
+      "path": "docs/50_issues/duplicate_merge_recommendation_fe_handoff.md",
+      "original_blob": "bed0819f96a8b50e095e1a9c1bbe9158b6553d4b"
+    },
+    {
+      "path": "docs/50_issues/duplicate_merge_reply_draft_fe_handoff.md",
+      "original_blob": "ddce6d906ea7609d10abf0363bacd51178528e5d"
+    },
+    {
+      "path": "docs/50_issues/duplicate_merge_ui_ux_fe_handoff.md",
+      "original_blob": "317fc3ee3720aaeea8f25beb9f9a94501d3f1db2"
+    },
+    {
+      "path": "docs/50_issues/ponytail_cleanup_2026-09-17.md",
+      "original_blob": "e4c198edd07e67a27c266490275874d2b6149b8d"
+    },
+    {
+      "path": "docs/50_issues/retrieval_evaluation_accuracy_plan.md",
+      "original_blob": "87f016ee9ceaa7fc9d48dcd850db4a4628d5c195"
+    },
+    {
+      "path": "docs/50_issues/week5/task_01_fe_length_routing_ui.md",
+      "original_blob": "9992e12bf63963ad83baacfa8edda45d223c056e"
+    },
+    {
+      "path": "docs/50_issues/week5/task_02_be1_length_analyzer.md",
+      "original_blob": "2eb34983727e808d99ce6ca9186de201efa45d83"
+    },
+    {
+      "path": "docs/50_issues/week5/task_03_be2_adaptive_router.md",
+      "original_blob": "4077cb79b70bd7d445ebebb67a8881f3aa2670e9"
+    },
+    {
+      "path": "docs/50_issues/week5/task_04_be3_search_trace.md",
+      "original_blob": "8f6d348b1f6cab4c03dd1a70d22a24c27aed4079"
+    },
+    {
+      "path": "docs/50_issues/week5_6_adaptive_rag_core_action_plan.md",
+      "original_blob": "14e554516af948daa05896093034f8bab7d66970"
+    },
+    {
+      "path": "docs/50_issues/week6/task_01_fe_multi_topic_ui.md",
+      "original_blob": "7833e71f038a605664f9672e70b0447d6ff5c42a"
+    },
+    {
+      "path": "docs/50_issues/week6/task_02_be1_topic_complexity_analyzer.md",
+      "original_blob": "0be9ff8bbbd4cdc17fa028bfb403d256b323c779"
+    },
+    {
+      "path": "docs/50_issues/week6/task_03_be2_topic_multi_router.md",
+      "original_blob": "c9c822a1f923c2ff0b39ae93fa3167fcfd65bf2f"
+    },
+    {
+      "path": "docs/50_issues/week6/task_04_be3_prompt_normalize_unified_output.md",
+      "original_blob": "9e70b18e531485851e1a7f9db2917863f1af86f3"
+    },
+    {
+      "path": "docs/50_issues/week7/README.md",
+      "original_blob": "5f84b39dba59a6fc87fa5186c477b5865e4d5d8d"
+    },
+    {
+      "path": "docs/50_issues/week7/task_01_fe_workbench_e2e_ui.md",
+      "original_blob": "070928f5f768eb9ce05e526ff67121dd761cc9b3"
+    },
+    {
+      "path": "docs/50_issues/week7/task_02_be1_workbench_summary_fields.md",
+      "original_blob": "5c3860245312303d28334fc05c0f6c715546e9ab"
+    },
+    {
+      "path": "docs/50_issues/week7/task_03_be2_similar_complaint_panel.md",
+      "original_blob": "7d040dc4f74ae3b40f23db691252b997b72f35af"
+    },
+    {
+      "path": "docs/50_issues/week7/task_04_be3_editable_draft_schema.md",
+      "original_blob": "435806d2de24a76e1b5eeb2394b82ff2198bae22"
+    },
+    {
+      "path": "docs/50_issues/week7/task_05_retrieval_evalset_human_review_checklist.md",
+      "original_blob": "2d77f7103947a6f26bb03d107139f55dbde06ecd"
+    },
+    {
+      "path": "docs/50_issues/week8/be1/structure.md",
+      "original_blob": "4b67900c5de572b05857df3a717cf26179d65283"
+    },
+    {
+      "path": "docs/50_issues/week8/be1/topic.md",
+      "original_blob": "860baaaaa477b0b1f3f5a709dd6590f0f0eae5a2"
+    },
+    {
+      "path": "docs/50_issues/week8/check.md",
+      "original_blob": "66ef259fa90e13feae9561df7004f15dc61187e9"
+    },
+    {
+      "path": "docs/50_issues/week9/structured_problem.md",
+      "original_blob": "5d38572db49289379765b98e3e16fd549bbfc42a"
+    },
+    {
+      "path": "docs/60_specs/api_interface_spec.md",
+      "original_blob": "7297f8a711f789888978a76d502fbe09c76d38b1"
+    },
+    {
+      "path": "docs/60_specs/be1_to_be2_structuring_indexing_guide.md",
+      "original_blob": "a6ecd7f59e7a413b483779ae23f07922a10307e2"
+    },
+    {
+      "path": "docs/60_specs/data_schema_spec.md",
+      "original_blob": "c3c616a875c46195a8cc053e54b1f74faf4d402b"
+    },
+    {
+      "path": "docs/60_specs/department_category_routing.md",
+      "original_blob": "26976e7456b122f6eea8993186a280963ce1f5ff"
+    },
+    {
+      "path": "docs/60_specs/legal_corpus_phase_b.md",
+      "original_blob": "44d7fc8383add06d16485f779257357134359aa7"
+    },
+    {
+      "path": "docs/60_specs/responsible_unit_assigner.md",
+      "original_blob": "462026a023d19e3cb9ff560cc737cbd6d4f7255a"
+    },
+    {
+      "path": "docs/60_specs/responsible_unit_v2_refactor.md",
+      "original_blob": "86190576653ac23bade6c37af7ede6844754d95b"
+    },
+    {
+      "path": "docs/60_specs/retrieval_relevance_definition.md",
+      "original_blob": "79f28015b9875a4505a8912e9f12ae4c80cc0458"
+    },
+    {
+      "path": "docs/60_specs/structuring_urgency_upgrade_plan.md",
+      "original_blob": "3c805c993837769a047a955063faff8234deb8b0"
+    },
+    {
+      "path": "docs/60_specs/ui_workbench_spec.md",
+      "original_blob": "534f2cc7b37170c6814a04fee7dd88f1a3925471"
+    },
+    {
+      "path": "docs/90_archive/complaint_system/adaptive_rag_workbench_user_scenario.md",
+      "original_blob": "b5320b6f1826dfb3ed9ea8179aa7e858370d8be5"
+    },
+    {
+      "path": "docs/90_archive/complaint_system/adr_architecture_decision_record_v2.2.md",
+      "original_blob": "3c712af346d137e876a7543aa5e5fef3fd7db48f"
+    },
+    {
+      "path": "docs/90_archive/complaint_system/be2_retrieval_tech_stack.md",
+      "original_blob": "6cb675b9c5d2515707da668aa5a3ebc881fe71b1"
+    },
+    {
+      "path": "docs/90_archive/complaint_system/mvp_scope.md",
+      "original_blob": "a6ee8c4666dc607c55551d9d282583fd2f67264f"
+    },
+    {
+      "path": "docs/90_archive/complaint_system/wbs_8weeks_v2_updated.md",
+      "original_blob": "0056c13fe731f2046a8bf951f60c9ef56fca71b0"
+    },
+    {
+      "path": "experiments/complaint_intelligence/docs/50_issues/pr466_intelligence_fe_check_verification.md",
+      "original_blob": "24d495a73793df8cfdc33a78c4b9e6c5de5a45a4"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_comparison_fake.md",
+      "original_blob": "87e6478d53ae21a634d78e19ece1863fcf75a120"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report.md",
+      "original_blob": "7158015502e075dc1624985043c64534e8f8b482"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_after_fake.md",
+      "original_blob": "856ceda91580ebb682ce6097cb6efbb80106183f"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_baseline_fake.md",
+      "original_blob": "f3960b58d4081a43b678a2ff2f980f3f3c5ff4d0"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_final_fake.md",
+      "original_blob": "bc9de6abad6e1c4be4607ed1c045ff90a2e62f08"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_final_local.md",
+      "original_blob": "ca03ea6b30bff1ba5092657b49d3d333c494e443"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_local.md",
+      "original_blob": "65bdd6d4fdfa438c835312f477c765351396fef0"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_local_action_rubric.md",
+      "original_blob": "25313c4b6e6c8ec1d2a37447557693895016414d"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_local_compact.md",
+      "original_blob": "7591b087f7ce81175051775fcefa2ea6abc952d3"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_eval_report_local_full.md",
+      "original_blob": "2904c085a7d64313b8bdd1b66ac61cb16c1341cb"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_final_improvement_comparison.md",
+      "original_blob": "8a9472d1dbb9ae35d16323aff84683a01be8215d"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_holdout_eval_report.md",
+      "original_blob": "e42f5cb72e4d09e87bded0cc49576a6b79021f51"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_local_llm_action_rubric_samples.md",
+      "original_blob": "fb8687caf8c1002c39215ad8ba42a06b88b5a0ad"
+    },
+    {
+      "path": "experiments/complaint_intelligence/reports/complaint_intelligence_local_llm_insight_samples.md",
+      "original_blob": "efc07a54fd7ae32cff94a47f9f84468d669e9fd8"
+    },
+    {
+      "path": "experiments/duplicate_merge/reports/duplicate_merge_batch_performance_report.md",
+      "original_blob": "8a6ba2abb31916d172a95d3c626d0601e4347ba8"
+    },
+    {
+      "path": "experiments/duplicate_merge/reports/duplicate_merge_evaluation_report.md",
+      "original_blob": "21318b029cafade41edc7d1241744b53f5b9cd3d"
+    },
+    {
+      "path": "experiments/duplicate_merge/reports/duplicate_merge_followup_hardening_report.md",
+      "original_blob": "d05bdd1d124d569254467ceda0033574d8e848fa"
+    },
+    {
+      "path": "experiments/duplicate_merge/reports/duplicate_merge_labeled_eval_report.md",
+      "original_blob": "dab17862a97f7260418686b7166f51daf942bb2f"
+    },
+    {
+      "path": "experiments/duplicate_merge/reports/duplicate_merge_real_holdout_eval_report.md",
+      "original_blob": "e52aa0af1c8fd3696548e738c08d90511218fbda"
+    },
+    {
+      "path": "experiments/evaluation/docs/40_delivery/issue387_llm_rubric_completion_review.md",
+      "original_blob": "780b2c23e80462dc6f4a8bf7527327525c7438e2"
+    },
+    {
+      "path": "experiments/evaluation/docs/40_delivery/rubric_summary.md",
+      "original_blob": "356849690956cb224ad0149f3c931b0bf71ab790"
+    },
+    {
+      "path": "experiments/evaluation/docs/40_delivery/week11/benchmark_report/answer_score_transition_report_Fir.md",
+      "original_blob": "e09786f2f9198dadf6b809c3af2e73ff6b127b4d"
+    },
+    {
+      "path": "experiments/evaluation/docs/40_delivery/week11/benchmark_report/answer_score_transition_report_Sec.md",
+      "original_blob": "6cc6cce7d7ff7d0897781c579e6d5e9b2ada1915"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week11/benchmark_report/rand100_final_benchmark_comparison_report.md",
+      "original_blob": "f38d451faab26937e37e114254d2fbe27796dff1"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week4/WEEK4_BE3_AX4_SAMPLE10_LEGACY_VS_NEW_SCRIPT_REPORT.md",
+      "original_blob": "65b31873998e0ad2ccbd133864c5b4724132b822"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week5/WEEK5_BE3_4_MODEL_SAMPLE50_COMPARISON_REPORT.md",
+      "original_blob": "5a2046e5f879422822eaf065a3f23f8a3a8e711c"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week5/WEEK5_BE3_WEEK4_VS_WEEK5_SAMPLE50_COMPARISON_REPORT.md",
+      "original_blob": "d91b15f38d96b517e581bdf5af4c2ed851e2afe9"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week6/WEEK6_BE3_PPT_ONE_PAGE_SUMMARY.md",
+      "original_blob": "758bafad8e6c6fdddec0c34ff8e648585411300f"
+    },
+    {
+      "path": "experiments/generation/docs/40_delivery/week6/api_4model_comparison_same_condition.md",
+      "original_blob": "a79794f97b26505ece38dd774450a9d4cfe1825c"
+    },
+    {
+      "path": "experiments/retrieval/docs/20_domains/retrieval/eval_overhaul_summary.md",
+      "original_blob": "d230848ca7e07dfc4b76272c515e2fae5ff74194"
+    },
+    {
+      "path": "experiments/retrieval/docs/40_delivery/BE2_adaptive_rag_comparison.md",
+      "original_blob": "c458e80afd2010b8ef306df9f5963a66aa69459f"
+    },
+    {
+      "path": "experiments/retrieval/docs/40_delivery/BE2_final_completion_report.md",
+      "original_blob": "2e0b41b4afc4a2e1fc0807fb95a64bb328e536f1"
+    },
+    {
+      "path": "experiments/retrieval/docs/40_delivery/BE2_final_kpi_snapshot.md",
+      "original_blob": "790922c52db5ffb9f1c831a72ade29f8e024d811"
+    },
+    {
+      "path": "experiments/retrieval/docs/50_issues/adaptive_router_decision.md",
+      "original_blob": "c5292d40cf7c570464df73e5b916f3f6e7385571"
+    },
+    {
+      "path": "experiments/retrieval/docs/50_issues/reranker_diagnosis.md",
+      "original_blob": "450e82b825078a0061b266efbc1ffdb55de9f3a8"
+    },
+    {
+      "path": "experiments/retrieval/docs/50_issues/risk2_pool_bias_decision.md",
+      "original_blob": "517da6538694ac4e07334cafb69f4137588d25db"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_source_pilot10_coverage.md",
+      "original_blob": "27a3829a74516b17f7f0d7dc638017f916766291"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_source_pilot10_search_smoke.md",
+      "original_blob": "2deae409dc00a4d4f0fd17008c0f12ae09d18540"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_source_pilot10_summary.md",
+      "original_blob": "8b7c71058be596f7a8b6813d9d75e943e99c05b3"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_collection_ab.md",
+      "original_blob": "1e6c0f0e386a16cf194f53551e6aad96fabc5db1"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_coverage.md",
+      "original_blob": "08853930c96bbded82f0a3eb96971384af27d84e"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_local_coverage.md",
+      "original_blob": "42a0eaa6df65adb4c5cd2953f5dc320b8e10bc94"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_local_search_smoke.md",
+      "original_blob": "9a87d508800d1f40e1fca87396d3c4111c19ffa2"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_search_smoke.md",
+      "original_blob": "0f17fc31689dc0c3e654dbe8ebd0a1e982133fe0"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be1_restructured_v1_summary.md",
+      "original_blob": "da3698146671f2dd5b976d39514b083fed8bbade"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be2_operational_smoke_check.md",
+      "original_blob": "64cb1041165f73b7d1ac62415935b55b23579e6d"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be2_readiness_audit.md",
+      "original_blob": "e82528551f5f8585a6e274768a5b1a4a008b49ac"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/be3_handoff_e2e_summary.md",
+      "original_blob": "566e7c80f67aaf8787e937781a4be0826d610627"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/chromadb_search_signal_metadata_coverage.md",
+      "original_blob": "f03971ea896d4d703d987bad6717fd8890b42188"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_build.md",
+      "original_blob": "dc6476b43baec9bb7f9ed00e73dcf93d19bc46a8"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_collection_ab.md",
+      "original_blob": "b55eafe878bc55d83fe075f1e921572ee64cf12d"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_coverage.md",
+      "original_blob": "13cc3bacbb9467fb6c256f11e25fb7f5dc3fb4cc"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_local_build.md",
+      "original_blob": "c2bc5d8f9c2b98cb6164e627af6f27ac41ededec"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_local_coverage.md",
+      "original_blob": "3fec5d518a2668190e2e6f7c100fea7fe8a8edf4"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_search_smoke.md",
+      "original_blob": "2e1c18e765d87597afaa95649ef58b465f6a1863"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_soft_rerank_eval.md",
+      "original_blob": "921ea19f836f2976e9f8edd590ac8818f1694a8e"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_soft_rerank_pilot10.md",
+      "original_blob": "9ba12fc337d2278978df436f78db5203db93b1fe"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_summary.md",
+      "original_blob": "285133408cc6d95e2f0e90f61f0842eb1b14f732"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/dept_definitive_v3.md",
+      "original_blob": "70404bdca531e62b442144ce021603a151685440"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/grounding_filter_completion_check.md",
+      "original_blob": "88e947673e4ca38ec38b2a8b6bf965203d4c0646"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/law_articles_index_check.md",
+      "original_blob": "2ccc46fec24bb39282acc1cfd60cd238acc5aee9"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/law_grounding_qa_e2e_recheck.md",
+      "original_blob": "81710630115f33aba3702efecc3420385d8e3de7"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/metadata_soft_rerank_summary.md",
+      "original_blob": "6d7cdad7c20b4084dc4776186d56894ba06f9e63"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/ndcg_eval_civil.md",
+      "original_blob": "e15a965a13595ed76c50919c86adf305c0abb878"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/query_restructure_v1_v3.md",
+      "original_blob": "ae3f32a121a7fba7713e336a1eac135366ee5cba"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_boost_weight_tuning.md",
+      "original_blob": "6c993644a94c0a1e075e715fe43e7de101a82659"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_condensed_eval.md",
+      "original_blob": "09dbc97d2efb019d9b224a6ff3b8777c0e375063"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_eval_pipeline_audit.md",
+      "original_blob": "9dd232bccf5fe8536dfff10e60f901c729042a4a"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_freshdoc_simulation.md",
+      "original_blob": "04ae4b544edf76279c78e89701f3209dd78c574b"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_llm_judge_eval.md",
+      "original_blob": "9828f40328a5ba415e833574d81d32ef5711e198"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_unit_query_signal_ab.md",
+      "original_blob": "1ee60668c88902ec9c04aa0b534de82807439055"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/responsible_units_source_audit.md",
+      "original_blob": "950eba2174c4268a46469fb4caabf2a0fc465220"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/v1_v3_fair_comparison.md",
+      "original_blob": "93735bc496a6a62a91921e511277a10b2b3c60c1"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/v3/v1_v3_version_neutral.md",
+      "original_blob": "58ac669164185943d3e1ca00cd2df2d7eba14b17"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/version_neutral/pooling_corrected.md",
+      "original_blob": "91808d039e829a9686f81bf2ddcc32c20a29577c"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/version_neutral/rebuild_prereqs_check.md",
+      "original_blob": "be5feef6089bfafb2ec07d991a1a4e2f43bad671"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/version_neutral/rubric_v3_pilot.md",
+      "original_blob": "bb09b9f61040df29dc7ead1116f8a21b0651a821"
+    },
+    {
+      "path": "experiments/retrieval/reports/retrieval/version_neutral/v1_vs_v3.md",
+      "original_blob": "cc7954acbee554395bae3c92a53be4d0ff312e9a"
+    },
+    {
+      "path": "experiments/structuring/docs/40_delivery/week9/test_structured.md",
+      "original_blob": "94f70f5952f1529391da0fdb91c3bb4db37aae1d"
+    },
+    {
+      "path": "experiments/structuring/docs/40_delivery/week9/test_structured2.md",
+      "original_blob": "92ce7a13a95c528ee304a3de5220d761a838aefd"
+    },
+    {
+      "path": "experiments/structuring/reports/WEEK2_FIXES_SUMMARY.md",
+      "original_blob": "199e37d2c182c7e0236fa4c2476a6fcc9bf97a46"
+    },
+    {
+      "path": "experiments/structuring/reports/civil_policy_qna_category_inference_report.md",
+      "original_blob": "b35d0979c7bcf009b4da0e2a28485519b7759f5d"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_assist_limited_v2_replay.md",
+      "original_blob": "21af967b650f3df74c42f1c17de309a950c7c387"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_assist_limited_optimization_report.md",
+      "original_blob": "b26c4e1f805606f842f8cc962152fc6ccc7ce692"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_condition_b_shadow_100_human_review_summary.md",
+      "original_blob": "78df668f73bb772550d06fef42f9f782414ba7d8"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_condition_b_shadow_100_report.md",
+      "original_blob": "aa07980a439e2b709b4303c77b0aeaba5919deea"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_condition_b_shadow_100_review.md",
+      "original_blob": "1892785d6559313050606e0bef4f9781b2b1bcce"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_hybrid_loop_report.md",
+      "original_blob": "1a2b393cc26d9f0b0f649218fc04a0f2657dfd86"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_pregate_postprocess_shadow_eval.md",
+      "original_blob": "d19619b7a521b9132a1b637e2cac4c4241c9a72c"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_pregate_shadow_eval.md",
+      "original_blob": "cd9772c8e7723263f547cc2e351f83cf5b7ccc84"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_pregate_shadow_eval_smoke.md",
+      "original_blob": "7e230c0ef061fb3faa7c148cf10dee0cbb9a9881"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_shadow_ab_eval_exaone.md",
+      "original_blob": "65eaf9c6b9ac0c035d7737d053ec94146e6955e6"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_llm_shadow_eval_exaone_20260625.md",
+      "original_blob": "73d1f66ef864b41dee542f546f66a1696f1eaaf6"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_strict_allow_500_collection_report.md",
+      "original_blob": "c8ddb474efa58b527e59f32e0af3cbd7654d91e0"
+    },
+    {
+      "path": "experiments/structuring/reports/request_segment_strict_allow_500_human_review_summary.md",
+      "original_blob": "9b7f43806104fa9e3ee293a521fcf8cba832b849"
+    },
+    {
+      "path": "experiments/structuring/reports/responsible_unit_content_aware_final_report.md",
+      "original_blob": "806a0e1d5277996914cd4c83f3e7de1a467bf61b"
+    },
+    {
+      "path": "experiments/structuring/reports/responsible_unit_holdout1000_content_aware_labeling_report.md",
+      "original_blob": "e239066149e744dddffe08737683ad2b21d5d979"
+    },
+    {
+      "path": "experiments/structuring/reports/responsible_unit_task_expansion_summary.md",
+      "original_blob": "02ba406e6adb4894e2445939dc70dbbf97a85fb4"
+    },
+    {
+      "path": "frontend/WORKBENCH_E2E_DEMO.md",
+      "original_blob": "d6293c1b1be54477bac84f81028182f7c1bd4d49"
+    },
+    {
+      "path": "frontend/__tests__/api.test.ts",
+      "original_blob": "3c6bc064c43fc1e9d5aea2d88109711d898dba60"
+    },
+    {
+      "path": "frontend/__tests__/caseStatus.test.ts",
+      "original_blob": "9c086a90e4c8be964be0364b8a815fdb48905b16"
+    },
+    {
+      "path": "frontend/__tests__/draft.test.ts",
+      "original_blob": "766f616ecf11f0119b14669bfed29d2978ee8252"
+    },
+    {
+      "path": "frontend/__tests__/duplicateMerge.test.ts",
+      "original_blob": "e977f43f44bb99e30ff63570b50d0a0df2462574"
+    },
+    {
+      "path": "frontend/__tests__/duplicateQueueContext.test.ts",
+      "original_blob": "228d1b3aa80d5c30592c210c1ceca2f579fe1242"
+    },
+    {
+      "path": "frontend/__tests__/fixtures/build_fixtures.py",
+      "original_blob": "449caf96963d43ed33ce57f988497068c650e4a9"
+    },
+    {
+      "path": "frontend/__tests__/fixtures/qa_demo_fixtures.json",
+      "original_blob": "b13c0a768f58e74e81ed1aa848629271202a8cc9"
+    },
+    {
+      "path": "frontend/__tests__/hotspotMap.test.ts",
+      "original_blob": "0d5e6436e4157adda95c2786229b340f1a2d1e13"
+    },
+    {
+      "path": "frontend/__tests__/intelInsight.test.ts",
+      "original_blob": "46e8005b783a9551897249d3f4b77953e4b8139e"
+    },
+    {
+      "path": "frontend/__tests__/intelLinks.test.ts",
+      "original_blob": "3fabcc969f5b782af0a69120dd0030d9d4da784f"
+    },
+    {
+      "path": "frontend/__tests__/intelSeverity.test.ts",
+      "original_blob": "81bee53643d1e0a8647d470669f82d9570f0d312"
+    },
+    {
+      "path": "frontend/__tests__/issueAlertTrend.test.ts",
+      "original_blob": "9ed1aaef93dadbd254bf580cfa386937fcdb4525"
+    },
+    {
+      "path": "frontend/__tests__/responsibleUnit.test.ts",
+      "original_blob": "143ea4bc0a98a2c94beaa3222c3b1809db8c7a67"
+    },
+    {
+      "path": "frontend/__tests__/segmentAnswers.test.ts",
+      "original_blob": "cebf0b9c0db0e8db6b4cab88f4e0306481bf6b9c"
+    },
+    {
+      "path": "frontend/__tests__/sseParse.test.ts",
+      "original_blob": "efce890f9ad7924b2cbac85d8352b1c0b9ede845"
+    },
+    {
+      "path": "frontend/app/admin/page.tsx",
+      "original_blob": "a2a38f9dec0aa97e7f2c0f34a0fdc4fa0feabf97"
+    },
+    {
+      "path": "frontend/app/intelligence/page.tsx",
+      "original_blob": "203c9455414bca532fd95ec6ccc9bcd81364edfb"
+    },
+    {
+      "path": "frontend/app/workbench/page.tsx",
+      "original_blob": "11ee721b2d9c15c7c15d16e9ff582d9c9d8ecc3c"
+    },
+    {
+      "path": "frontend/components/SearchUI.tsx",
+      "original_blob": "2ac77900dd9da75fca45b90fdca145340955da06"
+    },
+    {
+      "path": "frontend/components/intelligence/DuplicateGroupTriage.tsx",
+      "original_blob": "776bf70b944b4b2db30ac2e9b1e9e7cc5fb1c2d6"
+    },
+    {
+      "path": "frontend/components/intelligence/DuplicateReplyDraftPanel.tsx",
+      "original_blob": "efd5f97d64564309e5efde7c0fcfff033992254a"
+    },
+    {
+      "path": "frontend/components/intelligence/EvidencePackDrawer.tsx",
+      "original_blob": "6de88c0da9a1627d117dd6637643be23253af0d5"
+    },
+    {
+      "path": "frontend/components/intelligence/HotspotMap.tsx",
+      "original_blob": "f50e31fd1640f82ba829513477859cfd62b01811"
+    },
+    {
+      "path": "frontend/components/intelligence/InsightDetailPanel.tsx",
+      "original_blob": "28de353d9cb5cf71735f3c20352dd0fad78b0b16"
+    },
+    {
+      "path": "frontend/components/intelligence/InsightPriorityBadge.tsx",
+      "original_blob": "b7ac88b06fbdb295797e2a2de9a1bd8f77d6b588"
+    },
+    {
+      "path": "frontend/components/intelligence/IssueAlertCard.tsx",
+      "original_blob": "a18890efa7c9cd2e13d8cc1d34dc993021a6917a"
+    },
+    {
+      "path": "frontend/components/intelligence/IssueAlertList.tsx",
+      "original_blob": "fbf31b2030a656ecfae504016fd54d813d3f172d"
+    },
+    {
+      "path": "frontend/components/intelligence/LeafletHotspotMap.tsx",
+      "original_blob": "190ff9796b1f2a74f7e5706ac99aa701b0a338ce"
+    },
+    {
+      "path": "frontend/components/intelligence/PublicInsightCard.tsx",
+      "original_blob": "1161b7cb5caa9efe4ce4e9c5887cfc92ef32ff74"
+    },
+    {
+      "path": "frontend/components/intelligence/PublicInsightList.tsx",
+      "original_blob": "caa35d00444962453c266cfff66bd6dec791c3a8"
+    },
+    {
+      "path": "frontend/components/intelligence/SeverityBadge.tsx",
+      "original_blob": "60c36e924852c6c0b98a0dda9bdd101d381af0ab"
+    },
+    {
+      "path": "frontend/components/intelligence/duplicateMerge.ts",
+      "original_blob": "daeff699399fe6faf7006d5102951aa07ad3d62e"
+    },
+    {
+      "path": "frontend/components/intelligence/hotspotMapUtils.ts",
+      "original_blob": "9b54f6adf321a44a97e7e6ccb0bd9233dfb840d9"
+    },
+    {
+      "path": "frontend/components/intelligence/insight.ts",
+      "original_blob": "948097723478fbfba748a519cec90f8dc3031d6a"
+    },
+    {
+      "path": "frontend/components/intelligence/links.ts",
+      "original_blob": "d8fdc56af049f4915cf7c28e2c2131c4eb343e0c"
+    },
+    {
+      "path": "frontend/components/intelligence/severity.ts",
+      "original_blob": "82c9d1a22b1a92fbf63910cad904b4c29101f470"
+    },
+    {
+      "path": "frontend/lib/caseStatus.ts",
+      "original_blob": "17a5a95b54139d2b4f26b5db6a8db1777677fd8e"
+    },
+    {
+      "path": "frontend/lib/draft.ts",
+      "original_blob": "be9d46ca3bcd88b26ba8b8711bcfa593bf9fdb34"
+    },
+    {
+      "path": "frontend/lib/mockData.ts",
+      "original_blob": "2c63ac4af5c74465d44e5642a5a9d75e29a9e0f6"
+    },
+    {
+      "path": "frontend/lib/responsibleUnit.ts",
+      "original_blob": "c8630d840a2a69aaf5d31c22f196b0568d66a9df"
+    },
+    {
+      "path": "frontend/lib/safe-data.ts",
+      "original_blob": "f1f1c09fbdb8840333b577d47c693943813aae6d"
+    },
+    {
+      "path": "frontend/scripts/prepareComplaintIntelligenceReplay.mjs",
+      "original_blob": "64243a4643cf549967f28eea823d7d7cdf14ff9d"
+    },
+    {
+      "path": "reports/complaint_intelligence_demo_seed_build_report.json",
+      "original_blob": "b39e8242e666fd5f037b4fb0c62132757b541c6a"
+    },
+    {
+      "path": "reports/complaint_intelligence_demo_seed_run_report.json",
+      "original_blob": "293abcb9133f6fc8c51cc39d0d643a8b9d528767"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_comparison_fake.json",
+      "original_blob": "683ea5fe64e98c328f9f64f79227f547ba4ecd7b"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report.json",
+      "original_blob": "b73cf1b1736c326e538c9a897a6e88890a84b469"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_after_fake.json",
+      "original_blob": "ad2acc4dd1de6fbeb5a11cd4cd41d7d0fe3074ea"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_baseline_fake.json",
+      "original_blob": "0684e12a35eb261b9eba8b13940297698c498151"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_final_fake.json",
+      "original_blob": "ff138546c333fe074ef70b54e68e0eba81eda0fa"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_final_local.json",
+      "original_blob": "d135a4752fa6e9967826fb52a36be81d70e207f4"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_local.json",
+      "original_blob": "3ad634045adb5937a86e4c371f2209ae2692e6ac"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_local_action_rubric.json",
+      "original_blob": "3a23543d256ecf13e1d63ba86617a5c69857bb45"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_local_compact.json",
+      "original_blob": "f887d35c8cd2a8d738e1f8276e1c09a0105af3a8"
+    },
+    {
+      "path": "reports/complaint_intelligence_eval_report_local_full.json",
+      "original_blob": "8b0df5baef90f9ba8cebd5f1d570c4b58be7ffab"
+    },
+    {
+      "path": "reports/complaint_intelligence_holdout_build_report.json",
+      "original_blob": "9067c87dde7f54fd0af0652dc965b7e65ffd7edc"
+    },
+    {
+      "path": "reports/complaint_intelligence_holdout_eval_report.json",
+      "original_blob": "2bf0e641678ef34cd390679405cc5399565e54df"
+    },
+    {
+      "path": "reports/complaint_intelligence_local_llm_action_rubric_samples.json",
+      "original_blob": "1be4bde8ec6219b82fe9beb2d5ddd347421f54ad"
+    },
+    {
+      "path": "reports/complaint_intelligence_local_llm_insight_samples.json",
+      "original_blob": "1be4bde8ec6219b82fe9beb2d5ddd347421f54ad"
+    },
+    {
+      "path": "reports/complaint_intelligence_real_replay_seed_build_report.json",
+      "original_blob": "638a99069e2ceae9bd01a5674e253eabace98a32"
+    },
+    {
+      "path": "reports/complaint_intelligence_real_replay_seed_run_report.json",
+      "original_blob": "ba36e57e6fd922315eb054c66c79f0f99fec6a67"
+    },
+    {
+      "path": "reports/duplicate_merge_demo_seed_report.json",
+      "original_blob": "7cb4322353c1d04f7ea38cd6d25e58d791847f07"
+    },
+    {
+      "path": "reports/duplicate_merge_labeled_eval_report.json",
+      "original_blob": "a75ff1b661f263d4bd2558f5ad110b7665d6de74"
+    },
+    {
+      "path": "reports/duplicate_merge_real_holdout_eval_report.json",
+      "original_blob": "d5624a0af848937cec1e7a5df85d1ac659e75ab1"
+    },
+    {
+      "path": "reports/intelligence_duplicate_tab_leaflet.png",
+      "original_blob": "c1db5cedbe34e26044e701c28215dc5c7d144012"
+    },
+    {
+      "path": "reports/intelligence_hotspot_map_desktop.png",
+      "original_blob": "954d891c98099c1178c43bec1d3673122206d8ea"
+    },
+    {
+      "path": "reports/intelligence_hotspot_map_mobile.png",
+      "original_blob": "1e466ebfa7dfedb7a203c08bb366f97708ae1aff"
+    },
+    {
+      "path": "reports/intelligence_leaflet_desktop.png",
+      "original_blob": "1652961edb55cbebbae2a567706bea8a86b772a3"
+    },
+    {
+      "path": "reports/public_insight_exaone3_5_local.json",
+      "original_blob": "943e0882336484d262317542e6c34597455b7a5e"
+    },
+    {
+      "path": "reports/request_segment_assist_limited_v2_replay.json",
+      "original_blob": "48be769efa1c9bf3a5ce4684f2fbda86869acb74"
+    },
+    {
+      "path": "reports/request_segment_assist_limited_v2_runtime_policy.md",
+      "original_blob": "3144de7951a09691bb5ef0c3912223b23edcfdf0"
+    },
+    {
+      "path": "reports/request_segment_assist_v2_strict_activation_guide.md",
+      "original_blob": "a1b7f4d36e9114a65341464d79006f02de4c0d52"
+    },
+    {
+      "path": "reports/request_segment_llm_condition_b_shadow_100.json",
+      "original_blob": "707b65a632b9adeab2b98f3f25b7ddfedea1531f"
+    },
+    {
+      "path": "reports/request_segment_llm_condition_b_shadow_100_candidates.json",
+      "original_blob": "6f8e18f0563495942a9872703f819764499302b7"
+    },
+    {
+      "path": "reports/request_segment_llm_condition_b_shadow_100_human_review_counts.json",
+      "original_blob": "dd688874d762c470608b23ba1ee4de7729f1827f"
+    },
+    {
+      "path": "reports/request_segment_llm_condition_b_shadow_100_human_reviewed.jsonl",
+      "original_blob": "214ff89ff7d103f9a6a5b2bb301aabe41fe60712"
+    },
+    {
+      "path": "reports/request_segment_llm_condition_b_shadow_100_review.jsonl",
+      "original_blob": "cc89ec75e95873c0bce05c9e227e65aefc2f82f5"
+    },
+    {
+      "path": "reports/request_segment_llm_pregate_postprocess_shadow_eval.json",
+      "original_blob": "d60e9f952dac70930a90cc095a18f494cadb37f7"
+    },
+    {
+      "path": "reports/request_segment_llm_pregate_shadow_eval.json",
+      "original_blob": "f0a9170b721796606535b30e91aae51043a39363"
+    },
+    {
+      "path": "reports/request_segment_llm_pregate_shadow_eval_smoke.json",
+      "original_blob": "a7d612d936dfbdf3a9adcb4e40e765a91c2ff0ff"
+    },
+    {
+      "path": "reports/request_segment_llm_shadow_ab_eval_exaone.json",
+      "original_blob": "9c3ac76755ce42ae28be79ea6d8513c7aca4f009"
+    },
+    {
+      "path": "reports/request_segment_llm_shadow_eval_exaone_20260625.json",
+      "original_blob": "5341415e87b9753a345d891ae0d108161c066704"
+    },
+    {
+      "path": "reports/request_segment_strict_allow_500_candidates.json",
+      "original_blob": "1660a9e67f1e98d9ed9140deb8fe366c67d0feb7"
+    },
+    {
+      "path": "reports/request_segment_strict_allow_500_human_review_counts.json",
+      "original_blob": "a758987fbe66ac90394898f7c2517321dd5f42c9"
+    },
+    {
+      "path": "reports/request_segment_strict_allow_500_human_reviewed.jsonl",
+      "original_blob": "0bab68ae88ea6b8674fda11212b6cd500bc359e8"
+    },
+    {
+      "path": "reports/request_segment_strict_allow_500_raw_responses.jsonl",
+      "original_blob": "263563f66cb286ec14817e4e8edd91affb248092"
+    },
+    {
+      "path": "reports/request_segment_strict_allow_500_review.jsonl",
+      "original_blob": "36967fe77ba6e03626efb6d17e575934facab4ce"
+    },
+    {
+      "path": "reports/responsible_unit_content_aware_final_report.json",
+      "original_blob": "02f75eaf62db57520ca52482fe2a6fb2f1e45a9b"
+    },
+    {
+      "path": "reports/responsible_unit_eval_query_after_task_expansion.json",
+      "original_blob": "99a867b466cadb0915900f275598f7d8e77cc7f7"
+    },
+    {
+      "path": "reports/responsible_unit_holdout1000_content_aware_doc_metadata_eval.json",
+      "original_blob": "258b119d9fe4a13f097000d61bfba8254cabd228"
+    },
+    {
+      "path": "reports/responsible_unit_holdout1000_content_aware_query_eval.json",
+      "original_blob": "fb3495d314ef11a7d7659f29b76062da0fc4b748"
+    },
+    {
+      "path": "reports/responsible_unit_holdout1000_doc_metadata_eval.json",
+      "original_blob": "722e918a774345eeca7dd45ffd1872738d12b762"
+    },
+    {
+      "path": "reports/responsible_unit_holdout1000_query_eval_after_task_expansion.json",
+      "original_blob": "b059eb51f7b0b4f6da4f81168f62b2dca9272ca6"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_source_pilot10_coverage.json",
+      "original_blob": "41e3e2353419008bb5d844855d9f954fc07f8917"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_source_pilot10_search_smoke.json",
+      "original_blob": "02142aa87df077ce02b8a0a01039f1c3207813bf"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_v1_collection_ab.json",
+      "original_blob": "c6692c8b3121c004c9746234da3adbc5db434083"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_v1_coverage.json",
+      "original_blob": "0fb0ed1522f30be66977f61b29c6f159b487a4c2"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_v1_local_coverage.json",
+      "original_blob": "ef8b31964c4436bb7d8c8ec1617469062175e3d1"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_v1_local_search_smoke.json",
+      "original_blob": "0844ca0071a45b2053ea602b5ed7cad0ee520d63"
+    },
+    {
+      "path": "reports/retrieval/v3/be1_restructured_v1_search_smoke.json",
+      "original_blob": "74432acc1b68b5ad0352cba76efd65b75d75a047"
+    },
+    {
+      "path": "reports/retrieval/v3/be2_operational_smoke_check_runbook.md",
+      "original_blob": "51123642a13ce67c531cfa3ed59d3d4d7602f930"
+    },
+    {
+      "path": "reports/retrieval/v3/be3_handoff_e2e_summary.json",
+      "original_blob": "2a79dd8c1ccca911c3be0bf49779692526608f81"
+    },
+    {
+      "path": "reports/retrieval/v3/chromadb_search_signal_backfill.json",
+      "original_blob": "990118db52532ff2ca86ab513c6a087b4486eda4"
+    },
+    {
+      "path": "reports/retrieval/v3/chromadb_search_signal_metadata_coverage.json",
+      "original_blob": "bb34b3814268bda8ecfea5e11d6e761b11f21cae"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_build.json",
+      "original_blob": "a19a0fd3ad6a183f5d4f71f442b1a911a0bdcee5"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_collection_ab.json",
+      "original_blob": "1323be091373db9356e70fe60d8ef4f631875397"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_coverage.json",
+      "original_blob": "ef1b9eb7cd3af3b684f8b2063f45f8196e41bf17"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_local_build.json",
+      "original_blob": "107c185b2aefc931998c04358f5f2951d452d0fc"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_local_coverage.json",
+      "original_blob": "a7e8ca014ab7efa9093ea3464bd2279aafd8dd50"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_search_smoke.json",
+      "original_blob": "81441970e9c0a6ab00178cbf5baf1ffbd4b0a7a7"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_soft_rerank_eval.json",
+      "original_blob": "a7c315545aabf08eb8be3ef056437e5bbbe3bef8"
+    },
+    {
+      "path": "reports/retrieval/v3/civil_cases_v1_be1_metadata_v1_soft_rerank_pilot10.json",
+      "original_blob": "64625dc5a7fb06a4e0ba12b87485b538b8d18abc"
+    },
+    {
+      "path": "reports/retrieval/v3/codex_judge_prompt.md",
+      "original_blob": "bec27af5ed8819c8b64a868ee0a4794f0efbc049"
+    },
+    {
+      "path": "reports/retrieval/v3/comparison_20260525T070302Z.json",
+      "original_blob": "c56063c3c07c9459f69318b2dc4caaed1f679302"
+    },
+    {
+      "path": "reports/retrieval/v3/comparison_20260526T062817Z.json",
+      "original_blob": "8b1c8d5903d76b17567f9a505b3beba9ef98e2a9"
+    },
+    {
+      "path": "reports/retrieval/v3/corpus_snapshot.json",
+      "original_blob": "c93f2f6c14d665d74ad8f7ceca75e851f87a1ae2"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_hybrid_noself.json",
+      "original_blob": "be59c59007b43b09525ac63673bb0007c3a62318"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_hybrid_reranked_noself.json",
+      "original_blob": "07e80267715c39c339e57bc8e7c6a0c2d0f647e1"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_llm_reranker.json",
+      "original_blob": "3fdcc4dc749d7c672868a0a4adaebd5848a46d43"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_llm_reranker_full.json",
+      "original_blob": "b6e90e485cdfcf4b8a4df8984625a096fa235e96"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_noself.json",
+      "original_blob": "49d3985d66d972928ecfde05a069e66164ce4dc3"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_noself_oldreranker.json",
+      "original_blob": "c96bc374b69e3197624ea36e0247169444e695fe"
+    },
+    {
+      "path": "reports/retrieval/v3/eval_protocol.md",
+      "original_blob": "fd421aef1785dd8e73224b693428acd31f3190d2"
+    },
+    {
+      "path": "reports/retrieval/v3/figures/fig1_pooling_bias.png",
+      "original_blob": "18373f3eaea0bc8d9f76adc43225c0ceefd8a9b6"
+    },
+    {
+      "path": "reports/retrieval/v3/figures/fig2_self_reference.png",
+      "original_blob": "d6ae4cc0a56a9dbb5553402efbdfc83b3d87beb0"
+    },
+    {
+      "path": "reports/retrieval/v3/figures/fig3_final_ranking.png",
+      "original_blob": "56af3cd8d76abb1b0b9c52c7bbf65988127c705e"
+    },
+    {
+      "path": "reports/retrieval/v3/figures/fig4_judge_agreement.png",
+      "original_blob": "51e15cd06e4a24f1d18c399c598a7bcd064fefd2"
+    },
+    {
+      "path": "reports/retrieval/v3/figures/fig5_all_methods.png",
+      "original_blob": "fe8b81b5ff71a86ed83480423d4814f846f540f7"
+    },
+    {
+      "path": "reports/retrieval/v3/grounding_filter_completion_check.json",
+      "original_blob": "73e044bdab33c115a898e48de8a9d95b1db9a7cb"
+    },
+    {
+      "path": "reports/retrieval/v3/grounding_filter_effect.json",
+      "original_blob": "a4d7e90b8062bf30653861270af0b6aeae03a951"
+    },
+    {
+      "path": "reports/retrieval/v3/grounding_topk_breakdown.json",
+      "original_blob": "debb764186a90c9ffd2e274e5f2ded1d8b9b1c42"
+    },
+    {
+      "path": "reports/retrieval/v3/latest.json",
+      "original_blob": "8b1c8d5903d76b17567f9a505b3beba9ef98e2a9"
+    },
+    {
+      "path": "reports/retrieval/v3/metadata_soft_rerank_eval.json",
+      "original_blob": "25b4053e47a3a925634198feb7aea49df2c671ba"
+    },
+    {
+      "path": "reports/retrieval/v3/reranker_condensed_eval.json",
+      "original_blob": "268338f5d823a04318998b3d952572226e6adff7"
+    },
+    {
+      "path": "reports/retrieval/v3/reranker_condensed_eval_prepool.json",
+      "original_blob": "615237a7d4303e201b54f30be13f693bd37da736"
+    },
+    {
+      "path": "reports/retrieval/v3/reranker_diagnosis.json",
+      "original_blob": "c0fd1426b0aa926ea3a500a05e9c6f75ad880c94"
+    },
+    {
+      "path": "reports/retrieval/v3/reranker_unjudged_worklist.csv",
+      "original_blob": "358d030acf18f68f8ba8a99e2eeae6874b59f47e"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_boost_weight_tuning.json",
+      "original_blob": "d745006c19480f548bfbb2abf3cf0870d3ac613b"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_condensed_eval.json",
+      "original_blob": "6b24f8094b30eeb1291e8bf99a85ebed0ffe36a9"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_eval_pipeline_audit.json",
+      "original_blob": "ee0de8ad1abcc1ec2ac289336eb57c42b8ba9267"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_freshdoc_simulation.json",
+      "original_blob": "022c4433df508de322f301f66b19010face4216e"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_llm_judge_eval.json",
+      "original_blob": "a6de6c32e0817a399c7e85093dd9bab6d292ef04"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_unit_query_signal_ab.json",
+      "original_blob": "afc3d08897a834a575c51b34227eb1ed00682574"
+    },
+    {
+      "path": "reports/retrieval/v3/responsible_units_source_audit.json",
+      "original_blob": "0da011de56761359c9db7cfb7ac4f7d0c34c1d83"
+    },
+    {
+      "path": "reports/retrieval/v3/risk264_raw_ab.json",
+      "original_blob": "46c7fa5b51baf767299844d6421d431a857d4031"
+    },
+    {
+      "path": "reports/retrieval/v3/risk265_null_impact.json",
+      "original_blob": "66cd2e4282391ca13d8b3d1f5b4abe436782b9da"
+    },
+    {
+      "path": "reports/retrieval/v3/risk2_pool_bias_analysis.json",
+      "original_blob": "b052aeacd848e1578d8ba402b8d22fdcf265dd95"
+    },
+    {
+      "path": "reports/retrieval/v3/risk3c_lightweight_adaptive.json",
+      "original_blob": "744905f3dcaf27806bd433e212a8fcdf8e0818ce"
+    },
+    {
+      "path": "reports/retrieval/v3/risk3c_policy_boost_impact.json",
+      "original_blob": "dfefa7ac36e0d8e3c715027461318333dd1a764a"
+    },
+    {
+      "path": "reports/retrieval/v3/runs/dense.trec",
+      "original_blob": "980a6f9ff372c9878589bee56abc7b86673df17b"
+    },
+    {
+      "path": "reports/retrieval/v3/runs/reranker.trec",
+      "original_blob": "0f4b07dd7454b84670d18a4daee4400f8964ade7"
+    },
+    {
+      "path": "reports/retrieval/v3/split_analysis_20260526T153427Z.json",
+      "original_blob": "3dd113f06046d3c559a1504524ae2d41983e3808"
+    },
+    {
+      "path": "reports/retrieval/v3/split_analysis_20260527T132309Z.json",
+      "original_blob": "cb14136f3f7d365faa2ac3c457df907bc3408cd8"
+    },
+    {
+      "path": "reports/retrieval/v3/split_analysis_20260527T172700Z.json",
+      "original_blob": "67082e5989cc9f766c1696ab0df4db11e67a59d5"
+    },
+    {
+      "path": "reports/retrieval/v3/split_analysis_latest.json",
+      "original_blob": "67082e5989cc9f766c1696ab0df4db11e67a59d5"
+    },
+    {
+      "path": "reports/retrieval/v3/spotcheck_reeval.json",
+      "original_blob": "34bbb82d5e4708afdd8b6432bbcf99b869ef3fd5"
+    },
+    {
+      "path": "reports/retrieval/v3/v1_v3_fair_comparison.json",
+      "original_blob": "ea4034b0fd9df755a0b201664b7cd12cf56dcb5f"
+    },
+    {
+      "path": "reports/retrieval/v3/verify_filter_pipeline.json",
+      "original_blob": "70d59c810e1c884ee81fa074f8421715ba12a4ae"
+    },
+    {
+      "path": "reports/retrieval/version_neutral/pooling_corrected.json",
+      "original_blob": "a97e65b3412b7a9d7f820d47e476a70ce8edaed0"
+    },
+    {
+      "path": "reports/retrieval/version_neutral/relevance_rubric_v3.md",
+      "original_blob": "1f47cbcfff8ed77f15c46908509fe1787b09a52b"
+    },
+    {
+      "path": "reports/retrieval/version_neutral/rubric_v3_pilot_scores.json",
+      "original_blob": "73326cf6386b63d44aa9b16c780cf3458360279f"
+    },
+    {
+      "path": "reports/retrieval/version_neutral/v1_vs_v3.json",
+      "original_blob": "9a7656f5dbcdbf4e634aacf09b76727643e44ff6"
+    },
+    {
+      "path": "reports/week2_entity_audit/week2_entities_label_distribution_10.json",
+      "original_blob": "d2b14a92f5bb15a63bc35301cc45c120d603428e"
+    },
+    {
+      "path": "reports/week2_entity_audit/week2_nonstandard_label_cases_3.json",
+      "original_blob": "a611462eec79c1e530dbfe71dbb4016872264d62"
+    },
+    {
+      "path": "reports/week2_entity_audit/week2_structured_sample_10.json",
+      "original_blob": "4e7220d647af8ba18922439e75c2d8877abeb732"
+    },
+    {
+      "path": "scripts/Be3_run_week6_model_benchmark.py",
+      "original_blob": "1be7b7294cecb24586b327a59474a6476b31fb08"
+    },
+    {
+      "path": "scripts/_smoke_test_week6_reply.py",
+      "original_blob": "4d0eba59cbd1febe69dbe90dd6f89d5115a6f234"
+    },
+    {
+      "path": "scripts/analyze_evaluation_followup.py",
+      "original_blob": "9cf49166fd6613ab9f5f8bdaa3228a6165b33405"
+    },
+    {
+      "path": "scripts/audit_responsible_unit_eval_pipeline.py",
+      "original_blob": "82c8a12aad6cbd9cfb7c678e1acf4bda69676955"
+    },
+    {
+      "path": "scripts/backfill_chromadb_search_signals.py",
+      "original_blob": "615ab186828b56ebf3ada5421a7f1352d44a7dea"
+    },
+    {
+      "path": "scripts/backfill_demo_responsible_unit.py",
+      "original_blob": "b352682e76cba21548dbea536edd6ff925edd86d"
+    },
+    {
+      "path": "scripts/be1_run_week3_model_benchmark.py",
+      "original_blob": "d701d7f66d516d23b43476dde8565f9bbc3f92e3"
+    },
+    {
+      "path": "scripts/build_be1_metadata_overlay_collection.py",
+      "original_blob": "2bfe99e6ced7cc7de418359a82fd75fa18fce3c3"
+    },
+    {
+      "path": "scripts/build_complaint_intelligence_demo_seed.py",
+      "original_blob": "b18f959fb244fdcb58273b7fc3a4a39d2bcebfe8"
+    },
+    {
+      "path": "scripts/build_complaint_intelligence_holdout.py",
+      "original_blob": "e2041cff34604bbd8e671f4cc0e51c096cffc59c"
+    },
+    {
+      "path": "scripts/build_department_master.py",
+      "original_blob": "5d61db2603f347b8454cb1210b619bfbbede23c2"
+    },
+    {
+      "path": "scripts/build_fair_pool_qrels.py",
+      "original_blob": "62da7a3c450cd24116ef8264b22ceb94b0e90528"
+    },
+    {
+      "path": "scripts/build_false_friend_hardset.py",
+      "original_blob": "0d31b08be0c4d842f665fc4ee978ecb538a65432"
+    },
+    {
+      "path": "scripts/build_index.py",
+      "original_blob": "4dabf5904277a7415eeb2c969375262224e4a975"
+    },
+    {
+      "path": "scripts/build_judge_input.py",
+      "original_blob": "c972099d0fee15bc1300e62ea8625c9fb5d47ae7"
+    },
+    {
+      "path": "scripts/build_law_corpus.py",
+      "original_blob": "03fb786495108fe4ea3683758bc5be56dec2c511"
+    },
+    {
+      "path": "scripts/build_law_dictionary.py",
+      "original_blob": "820739656df6f7be000180cc645dce42da324e87"
+    },
+    {
+      "path": "scripts/build_morph_rejudge_input.py",
+      "original_blob": "c737ee158dc94ffc7b4f3406d6e5b44a332fb1a3"
+    },
+    {
+      "path": "scripts/build_pool.py",
+      "original_blob": "e9450f214e3c7edf02e9e531b48d7535d1f60989"
+    },
+    {
+      "path": "scripts/build_rebuild_queryset.py",
+      "original_blob": "6ecc27228e477ea25e80065e7bf4fb8ede36298c"
+    },
+    {
+      "path": "scripts/build_reranker_finetune_data.py",
+      "original_blob": "56875c3112f2523e2aa0adf5812243825e756301"
+    },
+    {
+      "path": "scripts/build_responsible_unit_content_aware_holdout.py",
+      "original_blob": "e1a70c2b3ec6d22f49ddc3bd4f61d51877bc12e5"
+    },
+    {
+      "path": "scripts/build_retrieval_eval_set_v1.py",
+      "original_blob": "3543a9c37cf64f2e3b1605b4e0598b48d1b40c30"
+    },
+    {
+      "path": "scripts/build_retrieval_eval_v2_pool.py",
+      "original_blob": "45ab8f406c6a4cbffa15df0f5e8b8636c6ff5bd1"
+    },
+    {
+      "path": "scripts/build_retrieval_eval_v3_pool.py",
+      "original_blob": "13d4d8806c481882c4124800c0d0662882941fe0"
+    },
+    {
+      "path": "scripts/build_rubric_v3_pilot_pairs.py",
+      "original_blob": "5e29fb596ab9888636566910ce81c602b13cc638"
+    },
+    {
+      "path": "scripts/build_version_neutral_queryset.py",
+      "original_blob": "84b0c160df8a25a8d9337ac7814930eee12de09b"
+    },
+    {
+      "path": "scripts/check_be2_operational_readiness.py",
+      "original_blob": "62e9e8dfefb56aa368bb042b8da16a736331e560"
+    },
+    {
+      "path": "scripts/check_chromadb_filters.py",
+      "original_blob": "1448280e50967045720bcc3c40c6aca9af739ff7"
+    },
+    {
+      "path": "scripts/check_chromadb_search_signal_coverage.py",
+      "original_blob": "dde9101e6a0c567e03264cb9b86dc859eb97036c"
+    },
+    {
+      "path": "scripts/check_grounding_filter_completion.py",
+      "original_blob": "dfb7ae8b0ffc3704afa8b4419f007af5aa2b1aa6"
+    },
+    {
+      "path": "scripts/check_law_index.py",
+      "original_blob": "ed09f86977f229081667c8f821461ce6c1e50d8a"
+    },
+    {
+      "path": "scripts/cleanup_chromadb_case_duplicates.py",
+      "original_blob": "975349b9b19d33ce0487c7d5098a539a13786459"
+    },
+    {
+      "path": "scripts/collect_request_segment_strict_allow.py",
+      "original_blob": "34f82ede04597804cce9e447dcbb8997dded1908"
+    },
+    {
+      "path": "scripts/compare_ares_llm_reassessment.py",
+      "original_blob": "0f166a0fc639d4e52997214d79011a9a990f2408"
+    },
+    {
+      "path": "scripts/compare_chroma_collections_v3.py",
+      "original_blob": "396ef0d74d480ac63e5689a3853c64b649baedc3"
+    },
+    {
+      "path": "scripts/cross_validate_qrels_v3_local.py",
+      "original_blob": "5c921726b18e7b73f615452122b0c7c012fb9749"
+    },
+    {
+      "path": "scripts/crossval_answers.py",
+      "original_blob": "65aab49d2c5e6df539e1b855457ef194a93e2135"
+    },
+    {
+      "path": "scripts/debug_law_response.py",
+      "original_blob": "9833a57369996cea2ce066b7dc979e90a4291905"
+    },
+    {
+      "path": "scripts/diag_self_retrieval.py",
+      "original_blob": "93292e5eb8cc27266ef7c8641130192fd88d6c00"
+    },
+    {
+      "path": "scripts/e2e_api_search_qa.py",
+      "original_blob": "a391ee6c2c3b7794291a51d1a93d5eb6ee080926"
+    },
+    {
+      "path": "scripts/e2e_be1_query_signals_search_qa.py",
+      "original_blob": "02b6c3dfabd72f2e009ee5683c06d905ef6be847"
+    },
+    {
+      "path": "scripts/eval_be1_metadata_overlay_soft_rerank.py",
+      "original_blob": "7583096c4f7fd27ce61c3910284ae2dbcaa4292d"
+    },
+    {
+      "path": "scripts/eval_bm25_morph.py",
+      "original_blob": "5d498b1662e501890db8a285aad228609abc86f5"
+    },
+    {
+      "path": "scripts/eval_dept_definitive_v3.py",
+      "original_blob": "5d4fc15dd3f253ad68441130247dfd3eb74f6047"
+    },
+    {
+      "path": "scripts/eval_hybrid_noself.py",
+      "original_blob": "52c92e93063c1dd9a6bd733911e43261ec28f8d8"
+    },
+    {
+      "path": "scripts/eval_hybrid_reranked_noself.py",
+      "original_blob": "991719083ab46eb78cc53f21d0ba0ca10dc87490"
+    },
+    {
+      "path": "scripts/eval_llm_reranker.py",
+      "original_blob": "4d9cbc4a610954446ff5b391d9ed3904eae80a93"
+    },
+    {
+      "path": "scripts/eval_metadata_soft_rerank.py",
+      "original_blob": "77bb60681db3121330efb6774d75ef81cfa84fbf"
+    },
+    {
+      "path": "scripts/eval_morph_final.py",
+      "original_blob": "072dad450c3b4349b930440e70f5e2ebbebafbaf"
+    },
+    {
+      "path": "scripts/eval_ndcg.py",
+      "original_blob": "6623d4c09d06f80232b4b11a5cbcee0cfb40bc4b"
+    },
+    {
+      "path": "scripts/eval_noself.py",
+      "original_blob": "0b2cc4400aee05a20c9349450fa9c5220227d8e7"
+    },
+    {
+      "path": "scripts/eval_query_restructure_v1_v3.py",
+      "original_blob": "06ad58419f9da91e3f1ed712622b729d30e7809d"
+    },
+    {
+      "path": "scripts/eval_responsible_unit.py",
+      "original_blob": "cdf813eac37d5056d3b62c28f10927edd7956257"
+    },
+    {
+      "path": "scripts/eval_responsible_unit_condensed.py",
+      "original_blob": "2ad6fef5dc1b4b0de60ccaf7ec77ff521d8aa134"
+    },
+    {
+      "path": "scripts/eval_responsible_unit_doc_metadata.py",
+      "original_blob": "3067402d5ab61c43c93ff2c27af49ec40a5e7a6b"
+    },
+    {
+      "path": "scripts/eval_responsible_unit_freshdoc_simulation.py",
+      "original_blob": "525060088a441ae806cf3a42995fc115f265b09f"
+    },
+    {
+      "path": "scripts/eval_responsible_unit_llm_judge.py",
+      "original_blob": "fa4b29aa14b9ee630df43cdd046a5c8898c9906a"
+    },
+    {
+      "path": "scripts/eval_responsible_unit_query_signal_ab.py",
+      "original_blob": "b8264ba250e39d614d9c353451e288441009c1d4"
+    },
+    {
+      "path": "scripts/eval_topk_validity.py",
+      "original_blob": "17908c3e266b05bc7a11c45632c1260cda22f58f"
+    },
+    {
+      "path": "scripts/eval_v1_v3_fair_comparison.py",
+      "original_blob": "c78700ab372ffc906335fb7d278f8fba774cd002"
+    },
+    {
+      "path": "scripts/eval_v1_v3_version_neutral.py",
+      "original_blob": "22851cfff89efffcaa627ad381bd4bda120ecdfa"
+    },
+    {
+      "path": "scripts/eval_version_neutral_v1_v3.py",
+      "original_blob": "e12a358eb8cef7537d7049b7eb0aee09d6e7be65"
+    },
+    {
+      "path": "scripts/evaluate_ares_lite_civil_replies.py",
+      "original_blob": "87e08f02a9b2292acf4fcf67d210be30381cd53f"
+    },
+    {
+      "path": "scripts/evaluate_complaint_intelligence_holdout.py",
+      "original_blob": "ba46a0c09177d3a4fe6b796f835a878262249a8e"
+    },
+    {
+      "path": "scripts/evaluate_complaint_intelligence_scenarios.py",
+      "original_blob": "bc49ae238067267580b3f7eeae09f88e465114c7"
+    },
+    {
+      "path": "scripts/evaluate_duplicate_merge_labeled_pairs.py",
+      "original_blob": "1bfb4743a2e7a091f6cf1f2f9b7c79bdc5026b3c"
+    },
+    {
+      "path": "scripts/evaluate_duplicate_merge_real_holdout.py",
+      "original_blob": "3f9b62d915f5c0cc4b4c7726aa6115b0095ccde3"
+    },
+    {
+      "path": "scripts/evaluate_llm_rubric_civil_replies.py",
+      "original_blob": "a3a18ae88ed7541a455ccc0976822c7cde74d69b"
+    },
+    {
+      "path": "scripts/evaluate_public_insight_llm.py",
+      "original_blob": "fd77f5961f041b091781c019798d2d680a4d1fa1"
+    },
+    {
+      "path": "scripts/evaluate_qa.py",
+      "original_blob": "5ad2c9bb2551c6a542deb3393f704e1e0daf801f"
+    },
+    {
+      "path": "scripts/evaluate_request_segment_pregate_shadow.py",
+      "original_blob": "904631848f508aeeecd4e46bf63bcc2cf937b7c9"
+    },
+    {
+      "path": "scripts/evaluate_retrieval.py",
+      "original_blob": "a03f55fd43aad68629c85eaf79741bbb5a99fe76"
+    },
+    {
+      "path": "scripts/evaluate_structuring.py",
+      "original_blob": "aac12e8020356849b1cb14f45e212171d941082e"
+    },
+    {
+      "path": "scripts/expand_qrels_from_reranker.py",
+      "original_blob": "1bdc4ffca0278575172c02c4e8ba9d6a2a3c304c"
+    },
+    {
+      "path": "scripts/expand_v3_queries.py",
+      "original_blob": "9002e1985cc79f73afb5cf203779f84d997c0b85"
+    },
+    {
+      "path": "scripts/export_chroma_collection.py",
+      "original_blob": "9e85091292a76090b792828659be338516443f9d"
+    },
+    {
+      "path": "scripts/export_labeling_sheet.py",
+      "original_blob": "2ccade4ddc28e53416a3e3a3a9ddf6be09e830f3"
+    },
+    {
+      "path": "scripts/export_labeling_sheet_v3.py",
+      "original_blob": "8e93050b1c8572caa8cc3fda84af38b61c09363e"
+    },
+    {
+      "path": "scripts/finalize_evaluation_followup_report.py",
+      "original_blob": "a672485a0ecbc786a4529ab12cae9acf37442b78"
+    },
+    {
+      "path": "scripts/generate_be2_entity_label_evidence.py",
+      "original_blob": "3f2b5f28be08e29854f930d30361a86969d5faa6"
+    },
+    {
+      "path": "scripts/generate_manual_sample_list.py",
+      "original_blob": "224cb4eb86224dcbbfbffb5853b6bed62397daab"
+    },
+    {
+      "path": "scripts/generate_week2_delivery_samples.py",
+      "original_blob": "b8614522425046279c400450bca8a7f497906892"
+    },
+    {
+      "path": "scripts/generate_week3_benchmark_cases_500.py",
+      "original_blob": "be9577419e921aa9c84a9d2624c5797f28124935"
+    },
+    {
+      "path": "scripts/generate_week3_unified_benchmark_report.py",
+      "original_blob": "8a595e6f52401d1fcc27d527a76925ddcf9c6b93"
+    },
+    {
+      "path": "scripts/grounding_filter_effect.py",
+      "original_blob": "c1822edf6c5b4a699949001beab6144f3f11fafd"
+    },
+    {
+      "path": "scripts/grounding_topk_breakdown.py",
+      "original_blob": "665601d0b7892b8ad56f64553ae9323a9e12a694"
+    },
+    {
+      "path": "scripts/import_chroma_collection.py",
+      "original_blob": "7c249421bf00eae27eeabb444b36f3d731bb03be"
+    },
+    {
+      "path": "scripts/inspect_chromadb.py",
+      "original_blob": "319d1a6120250dc0d6e3989d4d6ce797547dd29b"
+    },
+    {
+      "path": "scripts/judge_exaone.py",
+      "original_blob": "67e7f647d3fdb3426b09aa5d79a3160bb32613be"
+    },
+    {
+      "path": "scripts/judge_fair_pool.py",
+      "original_blob": "2896e7023e2c85adc75afecf4221244bb3e13d91"
+    },
+    {
+      "path": "scripts/judge_neutral_pooling.py",
+      "original_blob": "d6fd7ea1f5d1c66e898da9e712e54707a5dc50b5"
+    },
+    {
+      "path": "scripts/judge_pool_qwen.py",
+      "original_blob": "139a902d9aac00598bf0382bfa673ac715a37996"
+    },
+    {
+      "path": "scripts/measure_current_filter.py",
+      "original_blob": "bd0af33203c3fe1a2bb93f646024ad6a38bc9a5c"
+    },
+    {
+      "path": "scripts/measure_opposite_aware.py",
+      "original_blob": "2cfc7d2258a0516c5e0ad01cab2bb0f4d4fbf25a"
+    },
+    {
+      "path": "scripts/measure_over_rejection.py",
+      "original_blob": "88360817574080b04de386840889e40888633e16"
+    },
+    {
+      "path": "scripts/measure_risk_aware_filter.py",
+      "original_blob": "27b25e785e8bedfb503d97be0fb0e6e614946477"
+    },
+    {
+      "path": "scripts/merge_llm_qrels.py",
+      "original_blob": "09615a9440a2dda8223a3dcb753485e3f5c2b164"
+    },
+    {
+      "path": "scripts/merge_llm_qrels_v3.py",
+      "original_blob": "46bd69e9f3942fb40cfc05e38810776977579447"
+    },
+    {
+      "path": "scripts/parse_consulting_data.py",
+      "original_blob": "2181a092eb370f1ea1c72413d5167e88b242124b"
+    },
+    {
+      "path": "scripts/patches/hyperclovax_think_eog.patch",
+      "original_blob": "ea025ffc3eee713f479e7c1b9332445e4e6d32ea"
+    },
+    {
+      "path": "scripts/plot_eval_overhaul.py",
+      "original_blob": "ad0e47772b3034c75ed71737d3abe7dd10b7a9a6"
+    },
+    {
+      "path": "scripts/prepare_complaint_intelligence_real_replay.py",
+      "original_blob": "6850f5a4bbc08558513d6d2376372ae9997382ba"
+    },
+    {
+      "path": "scripts/prepare_processed_append_inputs.py",
+      "original_blob": "3df66259831dac380e41ba7abbf65da66413200a"
+    },
+    {
+      "path": "scripts/preprocess_civil_policy_qna.py",
+      "original_blob": "da00c7552cb85910c44c86ad18e84ae7242034bf"
+    },
+    {
+      "path": "scripts/rebuild_be1_restructured_index.py",
+      "original_blob": "416aec93144caead1b2a28f26160a2165268a869"
+    },
+    {
+      "path": "scripts/rebuild_eval_chunks.py",
+      "original_blob": "4dc4e50edd4f4b469f416a3a498e3be7cb2bd142"
+    },
+    {
+      "path": "scripts/rebuild_eval_queries.py",
+      "original_blob": "f8044d0ac5a5d5580e7b47ab2bd256e906e437fe"
+    },
+    {
+      "path": "scripts/reindex_be1_direct.py",
+      "original_blob": "cab06fabb0ca0b18649220fca5357d9a35efb720"
+    },
+    {
+      "path": "scripts/relabel_new_qrels_v3.py",
+      "original_blob": "eb597054ccbc7b93fb519f8bebde844ab6f1a4d7"
+    },
+    {
+      "path": "scripts/remap_qrels_to_caseid.py",
+      "original_blob": "9a5c1cb87fafeb439ca57f7e3a8057db3841259a"
+    },
+    {
+      "path": "scripts/repair_chromadb_hnsw.py",
+      "original_blob": "e269837e2b53941c38f923e6986b0961e996b98d"
+    },
+    {
+      "path": "scripts/reranker_condensed_eval.py",
+      "original_blob": "a270b2b6956fef9527de1f86d1655670b7e2cdbf"
+    },
+    {
+      "path": "scripts/reranker_diagnosis.py",
+      "original_blob": "b4a84867e28095a882a7c7ce8d021628dd906b8e"
+    },
+    {
+      "path": "scripts/review_request_segment_strict_allow.py",
+      "original_blob": "b15c94dcff514850bab8c208a705c0f5adc0af7f"
+    },
+    {
+      "path": "scripts/risk264_raw_ab.py",
+      "original_blob": "c13bfe9c3c679a8c0e2c781ad50319c443f9d8eb"
+    },
+    {
+      "path": "scripts/risk264_raw_ab_portable.py",
+      "original_blob": "486c6a05ef98959a5b0ff28ff6e1544d625923f7"
+    },
+    {
+      "path": "scripts/risk265_null_impact.py",
+      "original_blob": "8a3bbfb99cf4642dcd73a0f8f819bc5cbd5dc189"
+    },
+    {
+      "path": "scripts/risk2_pool_bias_analysis.py",
+      "original_blob": "a157b4ffcd55c266c42cdffdaebed810fc7bea86"
+    },
+    {
+      "path": "scripts/risk3c_lightweight_adaptive_verify.py",
+      "original_blob": "8bf80c5ea773fab615757eeaa66620b792cf6431"
+    },
+    {
+      "path": "scripts/risk3c_policy_boost_impact.py",
+      "original_blob": "64a196d6890c8ca4983c2074f3d15b506ddf90be"
+    },
+    {
+      "path": "scripts/run_issue_101_3.py",
+      "original_blob": "4c97affe8b1e57c749d82c5ac9478ef58139c4fc"
+    },
+    {
+      "path": "scripts/run_issue_102.py",
+      "original_blob": "c3f3f5a42d90ef23030c59a7cf1fd9b363910f56"
+    },
+    {
+      "path": "scripts/run_issue_103.py",
+      "original_blob": "dadcf3ca5e7c04597f047c226920ff25ebd05fdb"
+    },
+    {
+      "path": "scripts/run_issue_136.py",
+      "original_blob": "40d1c4fa26b576e4b863c3592f436dbb572d6601"
+    },
+    {
+      "path": "scripts/run_raw_dataset_qa.py",
+      "original_blob": "7ea51e2f34877149ac3370f9d8156ad3efcde4c9"
+    },
+    {
+      "path": "scripts/run_ui.py",
+      "original_blob": "f39d0265f2185cca10757d706872eb50cb89a285"
+    },
+    {
+      "path": "scripts/run_v2_evaluation.py",
+      "original_blob": "6b387c2df1e1d4b8bd220e928c636b765fbab99f"
+    },
+    {
+      "path": "scripts/run_v3_evaluation.py",
+      "original_blob": "5f0703dde7201bc61b5a2939f825256776932f31"
+    },
+    {
+      "path": "scripts/run_v3_split_analysis.py",
+      "original_blob": "6313ad7adaed642c2c7725329fe4afcbbc544995"
+    },
+    {
+      "path": "scripts/run_week2_be1_e2e.py",
+      "original_blob": "c8f30591b8f9cdda0a9502ea936a7503ebdee4dc"
+    },
+    {
+      "path": "scripts/run_week3_model_benchmark.py",
+      "original_blob": "68b428e5eb0ccc24d44a2e7037100c18388524f7"
+    },
+    {
+      "path": "scripts/sample_raw_data.py",
+      "original_blob": "4e78023953dd1ef1c5ac3ee22932a6335d65b4a6"
+    },
+    {
+      "path": "scripts/seed_complaint_intelligence_demo.py",
+      "original_blob": "4407e456b8ade82cd215aa013712aadaa29efae8"
+    },
+    {
+      "path": "scripts/seed_duplicate_merge_demo.py",
+      "original_blob": "d7342cf0290617c377a9a478eb975ae3e8a3bbeb"
+    },
+    {
+      "path": "scripts/spotcheck_3judge_verify.py",
+      "original_blob": "7a9afa6ef4714ce806b14b04c95803c4affb35e4"
+    },
+    {
+      "path": "scripts/spotcheck_full_scan.py",
+      "original_blob": "d571d0ee48a223bd7675500e7896ffb4f592576c"
+    },
+    {
+      "path": "scripts/spotcheck_reeval.py",
+      "original_blob": "bcbbd95687b5988d98b253f9b1ce0b1bf74ae29c"
+    },
+    {
+      "path": "scripts/spotcheck_scanner_validation.py",
+      "original_blob": "d05f36bde2111756cab3e568d1130fa9d12c0907"
+    },
+    {
+      "path": "scripts/test_pii_fail_closed.py",
+      "original_blob": "1969a2f579acf7156f7b7b2e2250aa33c7dd0fcd"
+    },
+    {
+      "path": "scripts/test_pii_ko_pii_adapter.py",
+      "original_blob": "93f942c02889a8a5df788dc0d74713f243ff5955"
+    },
+    {
+      "path": "scripts/test_pii_postcheck.py",
+      "original_blob": "211e801bf1d9b1a3d7c2a52fd3efdd57febcc9b8"
+    },
+    {
+      "path": "scripts/train_urgency_classifier.py",
+      "original_blob": "c571d61fd3081b880243a71eed898ece110c83a8"
+    },
+    {
+      "path": "scripts/tune_hybrid_weights.py",
+      "original_blob": "76ad6899c3cb5fbe21764826ef0525735eea970f"
+    },
+    {
+      "path": "scripts/tune_responsible_unit_boost_weight.py",
+      "original_blob": "99b0c0fb2e4027d526a1a427f2aa99ab3c40147e"
+    },
+    {
+      "path": "scripts/validate_fair_pool_3model.py",
+      "original_blob": "c3ff31aa34b2feb3921409579351ba24e01b9197"
+    },
+    {
+      "path": "scripts/validate_metadata_normalization.py",
+      "original_blob": "a9a1a960f732b29acf4d20cc08702e7e749f34f5"
+    },
+    {
+      "path": "scripts/validate_new_qrels.py",
+      "original_blob": "2e737048d725edf29fc7ddfd03b668d572c71799"
+    },
+    {
+      "path": "scripts/verify_263_impl.py",
+      "original_blob": "50b0ca5e64ad3208bf15f339c84b2fc5e5106320"
+    },
+    {
+      "path": "scripts/verify_be1_restructured_collection.py",
+      "original_blob": "a5069716690f1c0adefb097e83f76e7cb3cc4611"
+    },
+    {
+      "path": "scripts/verify_filter_pipeline.py",
+      "original_blob": "a059177df5cc39a7d12526183e4791179e2c946a"
+    },
+    {
+      "path": "scripts/verify_rebuild_prereqs.py",
+      "original_blob": "b68c3b8daab9f97aa038b7add5d2c1bde3186a0a"
+    },
+    {
+      "path": "scripts/wait_and_benchmark_ax4.py",
+      "original_blob": "6582f2eeb50972f47ecdb2de55e285c14b1e6330"
+    }
+  ]
+}

@@ -1,13 +1,5 @@
-# 과거 실험 보고서
+# 실험 기록
 
-- 문서 버전: v2.0
-- 기준일: 2026-09-26
+회사 지식 연구는 `company_knowledge/`와 `docs/70_research/company_knowledge/`에 보존합니다.
 
-과거 보고서 99개를 모듈별로 보관한다. 원문 수치·결론은 당시 조건의 기록이며 현재 품질 검증 결과가 아니다. JSON·JSONL·캐시·이미지는 스크립트 호환을 위해 기존 `reports/` 경로에 남겼다. 연결된 JSON은 재실행으로 바뀔 수 있으므로 동일 실행의 불변 증거로 간주하지 않는다.
-
-- [complaint_intelligence](complaint_intelligence/README.md): 15개
-- [duplicate_merge](duplicate_merge/README.md): 5개
-- [evaluation](evaluation/README.md): 4개
-- [generation](generation/README.md): 6개
-- [retrieval](retrieval/README.md): 49개
-- [structuring](structuring/README.md): 20개
+민원 전용 코드·자료·문서는 별도 민원 워크벤치 저장소로 분리했습니다. 회사 지식 연구/실패 기록과 원본 DB는 유지합니다. 과거 기록은 현재 제품 범위 또는 검증 완료의 증거로 자동 간주하지 않습니다.

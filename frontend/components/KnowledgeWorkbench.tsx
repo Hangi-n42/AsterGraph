@@ -141,7 +141,7 @@ export default function KnowledgeWorkbench() {
 
   return <div className={styles.shell} data-focus={focusMode && area === "explore" && graphMode}>
     <AppSidebar activeMenu="knowledge" />
-    <main className={styles.main} data-graph={area === "explore" && graphMode}><details className={styles.mobileMenu}><summary>전체 메뉴</summary><nav aria-label="전체 메뉴"><Link href="/">민원 선택</Link><Link href="/workbench">처리 워크벤치</Link><Link href="/admin">관리자 통계</Link><Link href="/intelligence">민원 인텔리전스</Link></nav></details>
+    <main className={styles.main} data-graph={area === "explore" && graphMode}><details className={styles.mobileMenu}><summary>전체 메뉴</summary><nav aria-label="전체 메뉴"><Link href="/knowledge">회사 지식</Link></nav></details>
       <header className={styles.header}><div><h1 ref={heading} tabIndex={-1}>회사 지식</h1></div><button className={styles.secondary} onClick={() => { setLoading(true); setReload(v => v + 1); }}>새로고침</button></header>
       <nav aria-label="회사 지식 작업" className={styles.navigation}>{areas.map(([id, name]) => <button key={id} aria-current={area === id ? "page" : undefined} onClick={() => navigate(id)}>{name}</button>)}</nav>
       <section className={styles.scopeBar} aria-label="현재 탐색 범위">

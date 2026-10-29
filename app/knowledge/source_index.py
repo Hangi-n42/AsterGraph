@@ -7,7 +7,7 @@ class FrozenIndex:
     """One in-memory index per execution; only ranking utilities from K6 are reused."""
     def __init__(self, blocks, *, preserve_numbers=False):
         import bm25s
-        from app.retrieval.pipeline.stages.bm25_retriever import _tokenize_korean, _to_bm25s_tokens
+        from app.retrieval.tokenization import _tokenize_korean, _to_bm25s_tokens
         self.blocks = blocks
         def tokenize(texts):
             tokens = _tokenize_korean(texts)

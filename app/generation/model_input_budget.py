@@ -130,7 +130,7 @@ def count(config, model, identity, messages, schema, think, *, transport=None):
         prompt = render(messages, think)
         if config.get('provider') != 'ollama':
             raise ValueError('unsupported_provider')
-        from .service import local_ollama_url
+        from .endpoint import local_ollama_url
         endpoint = local_ollama_url(config.get('endpoint', ''))
         expected = identity.get('digest') if isinstance(identity, dict) else None
         if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected):

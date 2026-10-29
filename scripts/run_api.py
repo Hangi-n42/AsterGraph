@@ -20,7 +20,7 @@ if __name__ == "__main__":
     print(f"   Host: {settings.API_HOST}")
     print(f"   Port: {settings.API_PORT}")
     print(f"   Model: {settings.OLLAMA_MODEL}")
-    print(f"   ChromaDB: {settings.CHROMA_DB_PATH}")
+    print(f"   Knowledge DB: {settings.KNOWLEDGE_DB_PATH}")
 
     uvicorn.run(
         "app.api.main:app",
