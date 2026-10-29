@@ -337,7 +337,9 @@ def test_required_missing_keeps_empty_contribution_and_exact_repair_target(monke
         a=business_run.assess(service,run,req,source=source)
         target=a['actions'][0]
         assert target['action']=='recover' and target['contributing_claim_ids']==[]
-        assert target['missing_content']=='등심 / 카레' and target['missing_evidence']
+        assert target['missing_content']==review.requirement_content_target(a['source'],a['source']['meanings'][0])['content']
+        assert target['missing_evidence']
+        assert a['review_scope']['batches'][0]['output']['requirement_checks'][0]['missing_content']=='등심 / 카레'
         packets=[]
         def capture(s,r,stage,instruction,packet,schema):
             assert stage=='requirement_repair';packets.append(deepcopy(packet));return None
