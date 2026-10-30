@@ -1035,6 +1035,11 @@ def reassess_challenges(service, run, requirement, assessment, *, focus_meaning_
 
 def assess(service, run, requirement, *, source=None, phase='initial', previous_run=None, recheck_meaning_keys=None,
            application_only_resume=False, focus_meaning_keys=None):
+    if run.get('role_review', {}).get('contract') == 'business-source-business-review-v1-experimental':
+        from . import business_role_review
+        if source is None or previous_run is not None or recheck_meaning_keys is not None:
+            raise ValueError('역할 분리 진단은 고정 원문 범위와 새 평가에서만 실행합니다.')
+        return business_role_review.assess(service, run, requirement, source)
     previous_scope = None
     previous_meanings = None
     if previous_run is not None:
