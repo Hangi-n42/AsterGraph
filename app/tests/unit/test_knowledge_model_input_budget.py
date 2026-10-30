@@ -109,6 +109,42 @@ def test_changed_manifest_gets_a_new_tokenizer_cache_entry(local):
     assert measure()[0] and state['verbose_reads']==2
 
 
+@pytest.fixture
+def original_manifest_wrapper(local):
+    state,measure,_,_,path=local
+    manifest=next((path.parent.parent/'manifests').iterdir());original=manifest.read_bytes()
+    source=path.parent/('sha256-'+state['digest']);source.write_bytes(original)
+    reference=dict(mediaType='application/vnd.docker.distribution.manifest.v2+json',
+                   digest='sha256:'+state['digest'],size=len(original))
+    wrapper=json.loads(original);wrapper['layers'].append(reference)
+    def save():manifest.write_text(json.dumps(wrapper))
+    save()
+    return measure,source,manifest,wrapper,reference,save
+
+
+def test_pulled_original_manifest_wrapper_keeps_exact_count(local,original_manifest_wrapper):
+    measure,_,manifest,_,_,_=original_manifest_wrapper
+    result,error=measure()
+    assert error is None and result['prompt_exact'] and result['content_addresses_verified']
+    assert result['local_manifest_digest']==local[0]['digest']
+    assert result['local_manifest_wrapper_digest']==sha256(manifest.read_bytes()).hexdigest()
+
+
+@pytest.mark.parametrize('change',['source_hash','source_size','reference_size','config','model_layer','duplicate_reference'])
+def test_original_manifest_wrapper_cannot_hide_changed_content(original_manifest_wrapper,change):
+    measure,source,_,wrapper,reference,save=original_manifest_wrapper
+    if change=='source_hash':source.write_bytes(b'['+source.read_bytes()[1:])
+    elif change=='source_size':source.write_bytes(source.read_bytes()+b' ')
+    elif change=='reference_size':reference['size']+=1
+    elif change=='config':wrapper['config']=dict(wrapper['config'],size=0)
+    elif change=='model_layer':wrapper['layers'][0]=dict(wrapper['layers'][0],size=0)
+    else:wrapper['layers'].append(deepcopy(reference))
+    save()
+    result,error=measure()
+    assert result is None
+    if change=='source_hash':assert error=='local_blob_digest_mismatch'
+
+
 @pytest.mark.parametrize('endpoint',['https://127.0.0.1:11434','http://example.com',
     'http://user:secret@127.0.0.1:11434','http://127.0.0.1:11434/v1'])
 def test_nonlocal_or_different_transport_wrapper_falls_back(local,endpoint):

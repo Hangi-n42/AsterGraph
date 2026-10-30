@@ -73,6 +73,23 @@ def local_model(shown, digest):
     store = paths[0].parent.parent
     manifests = [p.read_bytes() for p in (store / 'manifests').rglob('*') if p.is_file()]
     manifest = next((json.loads(v) for v in manifests if sha256(v).hexdigest() == digest), None)
+    wrapper_digest = None
+    if manifest is None:
+        for raw in manifests:
+            wrapper = json.loads(raw)
+            refs = [l for l in wrapper['layers'] if
+                l['mediaType'] == 'application/vnd.docker.distribution.manifest.v2+json'
+                and l['digest'] == 'sha256:' + digest]
+            if len(refs) != 1:
+                continue
+            original = store / 'blobs' / ('sha256-' + digest)
+            if original.stat().st_size != refs[0]['size'] or blob(original) != digest:
+                raise ValueError('local_original_manifest_digest_mismatch')
+            manifest = json.loads(original.read_bytes())
+            if dict(wrapper, layers=[l for l in wrapper['layers'] if l != refs[0]]) != manifest:
+                raise ValueError('local_original_manifest_mismatch')
+            wrapper_digest = sha256(raw).hexdigest()
+            break
     if manifest is None:
         raise ValueError('local_manifest_digest_mismatch')
     allowed = {'model', 'projector', 'license', 'params'}
@@ -93,7 +110,8 @@ def local_model(shown, digest):
         if path.stat().st_size != layer['size'] or 'sha256:' + blob(path) != layer['digest']:
             raise ValueError('local_layer_digest_mismatch')
     return dict(local_manifest_digest=digest, local_configuration_digest=manifest['config']['digest'],
-                content_addresses_verified=True, renderer=config['renderer'])
+                content_addresses_verified=True, renderer=config['renderer'],
+                **(dict(local_manifest_wrapper_digest=wrapper_digest) if wrapper_digest else {}))
 
 
 @lru_cache(maxsize=2)
