@@ -38,3 +38,21 @@ it('does not render the old change record or error for a new scope', () => {
   expect(html).toContain('변경·재검토 기록을 확인');
   expect(html).not.toContain('old error');expect(html).not.toContain('변경된 원문 행');
 });
+
+it('shows rebuild execution failures, exact source text and separate use versions', () => {
+  const record = { id: 'rebuild', status: 'planned', before_version: { filename: 'source.md' }, after_version: { filename: 'SYNTHETIC_source-v2.md' },
+    action_counts: { preserve: 1, rebuild_source: 1 }, requirement_discovery: { candidate_ids: ['r'] },
+    source_comparison: { before: { status: 'available', blocks: [{ text: '용도: 카레' }] }, after: { status: 'unavailable', blocks: [], reason: '파싱 기록 미확인' } },
+    execution_scopes: [{ ...scope, kind: 'run', id: 'failed-run', status: 'failed' }], review_scopes: [], snapshots: [scope], unavailable_run_ids: ['missing'] };
+  hooks.seeds = [{ ...fixture('source_graph:new'), records: [], rebuild_plans: [record] }, null];
+  const html = renderToStaticMarkup(createElement(KnowledgeChanges, { scope, onOpenScope: vi.fn() }));
+  expect(html).toContain('부분 재구축 계획');
+  expect(html).toContain('계획에 기록된 처리 대상 수');
+  expect(html).toContain('용도: 카레');
+  expect(html).toContain('계획 당시 원문 확인 불가');
+  expect(html).toContain('실패');
+  expect(html).toContain('별도 확정한 사용 버전');
+  expect(html).toContain('연결을 확인할 수 없는 기록 1건');
+  expect(html).not.toContain('이 선택 범위에 연결된 원문 버전 비교·영향 결과나 부분 재구축 계획이 없습니다');
+  expect(html).not.toContain('재구축 완료');
+});
