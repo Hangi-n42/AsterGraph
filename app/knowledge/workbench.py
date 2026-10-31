@@ -200,11 +200,51 @@ def review_status(service, run_id):
                 recheck_status=repairs[-1].get('status') if repairs else None)
 
 
+def _rebuild_history(service, db, plan, scopes):
+    from . import business_rebuild, concept_work
+    comparison = {}
+    for side in ('before', 'after'):
+        basis = plan['basis'][side]
+        version = basis['version']
+        try:
+            blocks = service.parse_blocks(db, version['latest_parse_run_id'], version['id'])
+            if concept_work.digest(blocks) != basis['blocks_sha256']:
+                raise ValueError('계획 당시 파싱 원문의 해시와 다릅니다.')
+            comparison[side] = dict(status='available', blocks=blocks)
+        except (KeyError, ValueError) as exc:
+            comparison[side] = dict(status='unavailable', blocks=[], reason=str(exc))
+    linked, unavailable = {}, []
+    fingerprint = business_rebuild.fingerprint(plan)
+    run_scopes = {s['id']: s for s in scopes if s['kind'] == 'run'}
+    for phase in ('execution', 'review'):
+        linked[phase] = []
+        for rid in dict.fromkeys(plan.get(phase + '_run_ids', [])):
+            row = db.execute("""SELECT COALESCE(json_extract(payload,'$.source_rebuild'),
+                json_extract(payload,'$.source_rebuild_guard')) receipt FROM runs WHERE id=?""", (rid,)).fetchone()
+            receipt = json.loads(row['receipt'] or '{}') if row else {}
+            scope = run_scopes.get(rid)
+            if (not scope or receipt.get('plan_id') != plan['id'] or receipt.get('plan_fingerprint') != fingerprint
+                    or plan['request']['after_version_id'] not in scope['version_ids']):
+                unavailable.append(rid)
+                continue
+            linked[phase].append(scope)
+    linked_ids = {s['id'] for group in linked.values() for s in group}
+    return dict(id=plan['id'], status=plan['status'], created_at=plan.get('created_at'),
+        before_version=plan['basis']['before']['version'], after_version=plan['basis']['after']['version'],
+        source_comparison=comparison,
+        action_counts=dict(Counter(a['action'] for a in plan['actions'])),
+        requirement_discovery=deepcopy({k: v for k, v in plan.get('requirement_discovery', {}).items()
+            if k in {'candidate_ids', 'direct_dependency_ids', 'unselected_review_ids', 'automatic_meaning_impact', 'status'}}),
+        execution_scopes=linked['execution'], review_scopes=linked['review'], unavailable_run_ids=unavailable,
+        snapshots=[s for s in scopes if s['kind'] == 'source_graph' and s.get('run_id') in linked_ids
+                   and plan['request']['after_version_id'] in s.get('version_ids', [])])
+
+
 def changes(service, kind, scope_id):
     value, _, sources, versions = _scope(service, kind, scope_id)
     ids = set(value.get('input_version_ids') or value.get('source_versions') or [])
     source_ids = {versions[v]['source_id'] for v in ids if v in versions}
-    records, requirements = [], []
+    records, requirements, rebuild_plans = [], [], []
     scopes = catalog(service)['scopes']
     linked_ids = {r['id'] for r in value.get('requirements', [])}
     with service.repository.connect() as db:
@@ -220,12 +260,18 @@ def changes(service, kind, scope_id):
                 after_version={k: versions.get(run['request'].get('after_version_id'), {}).get(k) for k in ['id', 'filename', 'dates']},
                 diff=run.get('diff'), impacts=run.get('impacts', []),
                 after_scopes=[s for s in scopes if run['request'].get('after_version_id') in s.get('version_ids', [])]))
+        for row in db.execute("SELECT payload FROM runs WHERE json_extract(payload,'$.kind')='business_rebuild_plan' ORDER BY rowid DESC"):
+            plan = json.loads(row['payload'])
+            if not ids.intersection(plan.get('input_version_ids', [])):
+                continue
+            linked_ids.update(plan.get('requirement_discovery', {}).get('candidate_ids', []))
+            rebuild_plans.append(_rebuild_history(service, db, plan, scopes))
         for row in db.execute('SELECT payload FROM requirements'):
             requirement = json.loads(row['payload'])
             if requirement['id'] in linked_ids or source_ids.intersection(requirement.get('source_ids', [])):
                 requirements.append({k: requirement.get(k) for k in ['id', 'question', 'status', 'revision']})
     current_usage = usage(service, kind, scope_id)
-    return dict(records=records, requirements=requirements, edit_impact=value.get('edit_impact'),
+    return dict(records=records, rebuild_plans=rebuild_plans, requirements=requirements, edit_impact=value.get('edit_impact'),
                 snapshot_review_requirement_ids=sorted({rid for event in current_usage['invalidations'] for rid in event['requirement_ids']}),
                 versions=[dict(id=v, title=sources.get(versions[v]['source_id'], {}).get('title'),
                                supersedes_version_id=versions[v].get('supersedes_version_id')) for v in ids if v in versions])
