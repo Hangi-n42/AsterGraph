@@ -350,6 +350,59 @@ def test_changes_use_explicit_scope_and_impact_ids_when_source_ids_are_empty(ser
     assert result['records'][0]['impacts'][0]['status'] == 'unknown'
 
 
+@pytest.mark.parametrize('source_available, legacy_plan', [(True, False), (False, False), (True, True)])
+def test_changes_link_rebuild_plan_to_exact_execution_review_and_snapshot(service, monkeypatch, source_available, legacy_plan):
+    from app.knowledge import business_rebuild, concept_work
+    blocks = {'v1': [dict(id='old', text='용도: 카레')], 'v2': [dict(id='new', text='용도: 카레, 볶음')]}
+    plan = dict(id='rebuild', kind='business_rebuild_plan', contract='source-scoped-rebuild-v2', status='planned',
+        input_version_ids=['v1', 'v2'], request=dict(before_version_id='v1', after_version_id='v2',
+            parent_run_id='run1', base_snapshot_id=None, requirement_ids=['r1'], rebuild_scope='whole_source'),
+        basis={side: dict(version=dict(id=vid, source_id='s1', filename=vid+'.md', latest_parse_run_id='frozen-'+vid),
+                         blocks_sha256=concept_work.digest(blocks[vid])) for side, vid in [('before', 'v1'), ('after', 'v2')]},
+        actions=[dict(action='preserve', claim_id='normal'), dict(action='rebuild_source', claim_id='changed')], rows=[],
+        requirement_discovery=dict(candidate_ids=['r1'], unselected_review_ids=[], automatic_meaning_impact=False),
+        execution_run_ids=['run2', 'missing', 'wrong-plan'], review_run_ids=['review'])
+    if legacy_plan:
+        plan['request'].pop('rebuild_scope')
+    fingerprint = business_rebuild.fingerprint(plan)
+    calls = []
+    def parse(db, parse_id, version_id):
+        calls.append((parse_id, version_id))
+        return blocks[version_id] if source_available else [dict(id='wrong', text='다른 파싱 결과')]
+    monkeypatch.setattr(service, 'parse_blocks', parse)
+    with service.repository.connect() as db:
+        db.execute('INSERT INTO runs VALUES(?,?)', (plan['id'], json.dumps(plan)))
+        for rid, phase, status in [('run2', 'source_rebuild', 'failed'), ('review', 'source_rebuild_guard', 'partial'),
+                                    ('wrong-plan', 'source_rebuild', 'succeeded')]:
+            run = dict(id=rid, kind='business', status=status, input_version_ids=['v2'], claims=[], graph=dict(nodes=[], edges=[]))
+            run[phase] = dict(plan_id='another' if rid == 'wrong-plan' else plan['id'], plan_fingerprint=fingerprint)
+            db.execute('INSERT OR REPLACE INTO runs VALUES(?,?)', (rid, json.dumps(run)))
+        for sid, rid in [('linked', 'review'), ('unrelated', 'wrong-plan')]:
+            db.execute('INSERT INTO snapshots VALUES(?,?)', (sid, json.dumps(dict(id=sid, kind='source_graph', run_id=rid,
+                source_versions={'v2': {}}, activation='explicit_query_only', claims=[], blocks=[]))))
+        db.execute('INSERT INTO versions VALUES(?,?,?,?)', ('v2', 's1', 'hash2', json.dumps(dict(id='v2', source_id='s1', latest_parse_run_id='newer-parse'))))
+        db.execute('INSERT INTO requirements VALUES(?,?)', ('r1', json.dumps(dict(id='r1', question='용도 비교', source_ids=[], status='partial', revision=1))))
+        before = {t: [tuple(row) for row in db.execute(f'SELECT * FROM {t}')] for t in ['runs', 'snapshots', 'requirements', 'versions']}
+    view = workbench.changes(service, 'run', 'run1')
+    assert view['records'] == []
+    record, = view['rebuild_plans']
+    assert record['id'] == 'rebuild' and record['status'] == 'planned'
+    assert record['action_counts'] == {'preserve': 1, 'rebuild_source': 1}
+    assert [(s['id'], s['status']) for s in record['execution_scopes']] == [('run2', 'failed')]
+    assert [(s['id'], s['status']) for s in record['review_scopes']] == [('review', 'partial')]
+    assert [s['id'] for s in record['snapshots']] == ['linked']
+    assert record['unavailable_run_ids'] == ['missing', 'wrong-plan']
+    assert record['requirement_discovery']['automatic_meaning_impact'] is False
+    assert [r['id'] for r in view['requirements']] == ['r1']
+    assert calls == [('frozen-v1', 'v1'), ('frozen-v2', 'v2')]
+    for side, vid in [('before', 'v1'), ('after', 'v2')]:
+        source = record['source_comparison'][side]
+        assert source['status'] == ('available' if source_available else 'unavailable')
+        assert source['blocks'] == (blocks[vid] if source_available else [])
+    with service.repository.connect() as db:
+        assert before == {t: [tuple(row) for row in db.execute(f'SELECT * FROM {t}')] for t in before}
+
+
 def link_input_run():
     """Synthetic stored QA input, not model-quality evidence."""
     claims = [dict(id=f'c{i}', source_version_ids=['v1'], raw=dict(Event=f'생성 당시 본문 {i}')) for i in range(2)]
