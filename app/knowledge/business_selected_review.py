@@ -9,6 +9,7 @@ from . import business_bound_source_review as bound, business_role_review as rol
 from .source_meanings import remap
 
 CONTRACT = 'selected-source-final-requirement-review-v1-experimental'
+RELATION_CONTRACT = 'selected-source-final-requirement-review-v2-relations-experimental'
 PROMPT = '''선정과 원문·저장 대조를 마친 업무 요구의 최종 검수다. 각 public_answer_items의 요청에 필요한 지식이 확보됐는지 판단한다.
 question_inspections는 이미 정한 대상·속성·비교 구조다. selected_for와 request_uses는 기존 선정이며 다시 쓰거나 참고로 낮추지 않는다.
 source_observations는 원문 검수 결과다. represented는 그 대상·속성의 실제 저장 표현이 있다는 뜻이며 후보 전체의 의미 승인이나 최종 업무 충족이 아니다.
@@ -28,7 +29,19 @@ coverage=sufficient_in_scope로 판단한 요청은 selected_for의 필수 검�
 '''
 
 
-def packet(run, requirement, scope, blocks):
+def instruction(contract):
+    if contract == CONTRACT:
+        return PROMPT
+    if contract != RELATION_CONTRACT:
+        raise ValueError('final_review_contract_unknown')
+    return PROMPT + '''
+findings.statement에는 필요한 값과 함께 그 값의 조건·선택 관계를 명시한다. 개별 항목이 목록으로 나열되어 있어도 원문과 저장 문장이 대안 관계로 표현하면 그 관계를 그대로 쓴다.
+원문 검수의 represented_content나 개별 Entity 이름 목록만으로 AND/OR를 정하지 않는다. 해당 stored_candidates의 실제 문장과 condition_references를 함께 대조한다. 대안인 항목을 단순히 '과/와'로 열거하여 모두 필요한 것으로 읽히게 만들지 않는다.
+'''
+
+
+def packet(run, requirement, scope, blocks, *, contract=CONTRACT):
+    instruction(contract)
     claims, inventory = bound.selected_candidates(run, scope['targets'])
     records = run.get('bound_source_comparisons', [])
     if not records:
@@ -57,7 +70,7 @@ def packet(run, requirement, scope, blocks):
             'consumer_errors', 'represented_content', 'missing_content', 'evidence', 'missing_evidence',
             'expression_bindings', 'question_binding', 'condition_references', 'condition_state', 'request_uses')})
         for c in observed['checks']]
-    return dict(value, contract=CONTRACT, role='selected_final_business_requirement',
+    return dict(value, contract=contract, role='selected_final_business_requirement',
         public_answer_items=items, question_inspections=criteria, source_observations=observations,
         selected_for={i['id']: [t['key'] for t in scope['targets'] if any(
             u['item_id'] == i['id'] for u in t['required_for'])] for i in items},
@@ -83,6 +96,7 @@ def output_type(context):
 
 
 def consume(output, context):
+    instruction(context['contract'])
     output_type(context).model_validate(output)
     observations = {o['target_id']: o for o in context['source_observations']}
     rows = []
@@ -116,7 +130,7 @@ def consume(output, context):
     coverage = [r['effective_coverage'] for r in rows]
     overall = ('unknown' if 'unknown' in coverage else 'insufficient_in_scope' if 'insufficient_in_scope' in coverage
         else 'sufficient_in_scope')
-    return dict(contract=CONTRACT, diagnostic_only=True, model_output=deepcopy(output), items=rows,
+    return dict(contract=context['contract'], diagnostic_only=True, model_output=deepcopy(output), items=rows,
         scope='selected_facts_and_provided_source_review_only', overall=overall,
         source_review_unit_id=context['source_review_unit_id'], source_review_hash=context['source_review_hash'],
         candidate_scope=deepcopy(context['candidate_scope']), semantic_validation='not_assessed',
@@ -124,8 +138,8 @@ def consume(output, context):
 
 
 def assess(service, run, requirement, scope, blocks):
-    context = packet(run, requirement, scope, blocks)
-    output = execution.json_call(service, run, 'requirement_representation', PROMPT, context, output_type(context))
+    context = packet(run, requirement, scope, blocks, contract=RELATION_CONTRACT)
+    output = execution.json_call(service, run, 'requirement_representation', instruction(RELATION_CONTRACT), context, output_type(context))
     if output is None:
         return None
     result = consume(output, context)

@@ -12,14 +12,14 @@ from app.tests.unit.test_knowledge_selected_business_review import prepared, out
 from app.tests.unit.test_knowledge_evidence_preservation import data, fixture_service, no_network
 
 
-def fixture(case, monkeypatch):
+def fixture(case, monkeypatch, contract=final.CONTRACT):
     run, requirement, scope = prepared(case, monkeypatch)
-    context = final.packet(run, requirement, scope, run['blocks'])
+    context = final.packet(run, requirement, scope, run['blocks'], contract=contract)
     raw = output(context, 'sufficient_in_scope')
     result = final.consume(raw, context)
     result['review_unit_id'] = 'final-unit'
     run['selected_business_reviews'] = [result]
-    packet = execution.json_request(run, 'requirement_representation', final.PROMPT, context, final.output_type(context))
+    packet = execution.json_request(run, 'requirement_representation', final.instruction(contract), context, final.output_type(context))
     run['units'].append(dict(id='final-unit', status='succeeded',
         **{k:packet[k] for k in ('messages', 'schema', 'reference_map')},
         response=dict(request_id='final-unit', parsed=remap(raw, packet['reference_map'] or {}))))
@@ -30,8 +30,9 @@ def fixture(case, monkeypatch):
     return run, snapshot, query
 
 
-def test_exact_review_binds_only_existing_approved_claims_without_mutation(case, monkeypatch):
-    run, snapshot, query = fixture(case, monkeypatch)
+@pytest.mark.parametrize('contract', [final.CONTRACT, final.RELATION_CONTRACT])
+def test_exact_review_binds_only_existing_approved_claims_without_mutation(case, monkeypatch, contract):
+    run, snapshot, query = fixture(case, monkeypatch, contract)
     before = deepcopy((run, snapshot))
     value = handoff.bind(run, snapshot, query)
     assert value['required_claim_ids'] == ['c1']
@@ -42,7 +43,7 @@ def test_exact_review_binds_only_existing_approved_claims_without_mutation(case,
 
 
 @pytest.mark.parametrize('change', ['question', 'revision', 'raw', 'conditions', 'source_version',
-    'source_text', 'missing_claim', 'not_approved', 'final_output', 'final_request', 'final_result', 'source_result'])
+    'source_text', 'missing_claim', 'not_approved', 'final_output', 'final_request', 'final_result', 'source_result', 'contract'])
 def test_incompatible_version_or_tampered_review_is_rejected(case, monkeypatch, change):
     run, snapshot, query = fixture(case, monkeypatch)
     if change == 'question': query.question += '다른 질문'
@@ -56,6 +57,7 @@ def test_incompatible_version_or_tampered_review_is_rejected(case, monkeypatch, 
     elif change == 'final_output': next(iter(run['units'][-1]['response']['parsed']['items'].values()))['reason'] = 'edited'
     elif change == 'final_request': run['units'][-1]['messages'] = []
     elif change == 'final_result': run['selected_business_reviews'][0]['overall'] = 'unknown'
+    elif change == 'contract': run['selected_business_reviews'][0]['contract'] = final.RELATION_CONTRACT
     else: run['bound_source_comparisons'][-1]['checks'][0]['status'] = 'missing'
     with pytest.raises(ValueError): handoff.bind(run, snapshot, query)
 

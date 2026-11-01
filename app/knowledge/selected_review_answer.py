@@ -36,8 +36,8 @@ def bind(run, snapshot, request):
     scope = selection.bound_targets(run['selected_request_source'], receipt['source_property_catalog'])
     by_id = {b['id']: b for b in run['blocks']}
     blocks = [by_id[k] for k in run['request_reference_review']['block_ids']]
-    context = final.packet(run, requirement, scope, blocks)
-    expected = business_run.json_request(run, 'requirement_representation', final.PROMPT, context, final.output_type(context))
+    context = final.packet(run, requirement, scope, blocks, contract=saved['contract'])
+    expected = business_run.json_request(run, 'requirement_representation', final.instruction(saved['contract']), context, final.output_type(context))
     if any(unit.get(k) != expected[k] for k in ('messages', 'schema', 'reference_map')):
         raise ValueError('selected_review_request_changed')
     raw = remap(unit['response']['parsed'], {v: k for k, v in (unit.get('reference_map') or {}).items()})
