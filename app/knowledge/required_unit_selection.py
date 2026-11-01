@@ -219,7 +219,7 @@ def ground(service, run, requirement, source, blocks):
     if run.get('source_fact_grounding') is not None:
         raise ValueError('source_fact_grounding_requires_fresh_run')
     criteria = validate(run['question_inspection'], requirement, public_items(run, requirement))
-    meanings = business_review.review_meanings(source)
+    meanings = source['meanings']  # Fresh selection must not inherit an earlier request's selected subset.
     catalog = property_catalog(service, meanings, blocks)
     output = business_run.json_call(service, run, 'requirement_fact_grounding', GROUNDING_INSTRUCTION,
         grounding_packet(catalog, criteria, meanings, blocks), grounding_type(catalog, criteria, meanings))

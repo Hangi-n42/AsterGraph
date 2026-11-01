@@ -658,6 +658,12 @@ class StoredAfterConditions(BaseModel):
     unit_id: str = Field(min_length=1)
 
 
+class SelectedReviewReference(BaseModel):
+    model_config = {'extra': 'forbid'}
+    run_id: str = Field(min_length=1)
+    unit_id: str = Field(min_length=1)
+
+
 class BusinessQuery(BaseModel):
     question: str = Field(min_length=1)
     choices: list[str] = Field(default_factory=list)
@@ -680,9 +686,14 @@ class BusinessQuery(BaseModel):
     answer_items: list[PublicAnswerItem] = Field(default_factory=list)
     list_comparison: SourceListComparison | None = None
     stored_after_conditions: StoredAfterConditions | None = None
+    selected_review: SelectedReviewReference | None = None
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.selected_review and (not self.snapshot_id or self.source_run_id or self.requirement_ids
+                or self.retrieval != 'hipporag2' or self.graph_variant != 'full' or self.answer_mode != 'synthesis'
+                or 'evidence_union' in self.model_fields_set and not self.evidence_union):
+            raise ValueError('선정 검수 연결은 기존 snapshot의 hipporag2 종합 답변과 근거 보존 경로에서만 지원합니다.')
         if self.source_citation_contract and (self.source_run_id or self.answer_mode != 'synthesis'):
             raise ValueError('직접 원문 인용 계약은 snapshot synthesis에서만 지원합니다.')
         if self.answer_mode == 'stored_after_conditions':
