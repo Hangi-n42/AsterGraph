@@ -1,4 +1,4 @@
-"""Opt-in A/B diagnostic: immutable source slots, with no business or repair calls."""
+"""Opt-in source comparison and explicit selected review/repair handoffs."""
 from copy import deepcopy
 from typing import Literal, get_args
 
@@ -308,6 +308,16 @@ def assess_application(service, run, requirement, source, phase):
     if phase == 'selected_business_review':
         from . import business_selected_review
         return business_selected_review.assess(service, run, requirement, scope, blocks)
+    if phase == 'selected_repair_evidence':
+        from . import business_selected_repair_evidence
+        return business_selected_repair_evidence.complete(service, run, requirement, scope, blocks)
+    if phase in {'selected_repair', 'selected_repair_source_review', 'selected_repair_finalize'}:
+        from . import business_selected_repair
+        if phase == 'selected_repair_source_review':
+            return business_selected_repair.review_additions(service, run)
+        method = (business_selected_repair.recover if phase == 'selected_repair'
+            else business_selected_repair.finish)
+        return method(service, run, requirement, scope, blocks)
     inventory = None
     if phase == 'selected_source_review':
         chosen, inventory = selected_candidates(run, scope['targets'])

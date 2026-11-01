@@ -60,7 +60,10 @@ def test_fresh_grounding_keeps_source_facts_excluded_by_previous_selection(case,
     run, req, source, catalog, _ = setup_selection(case, monkeypatch)
     source[prior_scope] = {('review_meaning_keys' if prior_scope == 'public_scope' else 'requested_meaning_keys'): []}
     before = deepcopy(source)
-    expected = run.pop('source_fact_grounding')['model_output']
+    record = run.pop('source_fact_grounding')
+    expected = dict(rows=[dict(scope_id=s['scope_id'], state='complete', reason='합성 값 대응', values=[dict(
+        property_ref='p1', identity_refs=['p1'], condition_refs=[], condition_state='not_applicable')])
+        for s in record['scopes']])
     def generate(service, active, stage, prompt, packet, model):
         assert [m['key'] for m in packet['source_facts']] == ['t1']
         model.model_validate(expected)
@@ -494,3 +497,128 @@ def test_previous_flat_comparison_response_is_not_silently_reinterpreted(case):
     with pytest.raises(ValidationError): question.output_type(items).model_validate(raw)
     frame = question.bind(raw, req, items)
     assert not frame['ready'] and frame['model_output'] == raw == original
+
+
+def explicit_kind_output(run, req):
+    items, raw, _ = setup_frame(run, req)
+    for group in raw['groups']:
+        for inspection in group['inspections']:
+            subject = inspection.pop('comparison')['one_subject']
+            inspection.update(comparison_kind='single_target', subject_refs=[subject])
+    return items, raw
+
+
+@pytest.mark.parametrize('kind, count', [('single_target', 1), ('within_group', 1), ('between_targets', 2)])
+def test_explicit_kind_preserves_shared_attribute_and_canonical_quotes(case, kind, count):
+    run, req, *_ = case
+    items, raw = explicit_kind_output(run, req)
+    for group in raw['groups']:
+        inspection = group['inspections'][0]
+        inspection['comparison_kind'] = kind
+        inspection['subject_refs'] = [dict(field='question', quote=req['question']),
+                                     dict(field='criterion', quote=req['criterion'])][:count]
+    original = deepcopy(raw)
+    question.output_type(items, contract=question.DECISION_CONTRACT).model_validate(raw)
+    frame = question.bind(raw, req, items, contract=question.DECISION_CONTRACT)
+    assert frame['ready'] and frame['model_output'] == original == raw
+    for inspection in question.validate(frame, req, items):
+        assert inspection['comparison_kind'] == kind and len(inspection['bindings']) == count
+        assert all(b['attribute_ref'] == inspection['bindings'][0]['attribute_ref'] for b in inspection['bindings'])
+        question.validate_inspection(inspection, req)
+
+
+@pytest.mark.parametrize('bad', ['single_two', 'group_two', 'between_one', 'duplicate', 'nonliteral', 'per_subject_attribute'])
+def test_explicit_kind_does_not_repair_wrong_sides_or_subjects(case, bad):
+    run, req, *_ = case
+    items, raw = explicit_kind_output(run, req)
+    inspection = raw['groups'][0]['inspections'][0]
+    ref = deepcopy(inspection['subject_refs'][0])
+    if bad in {'single_two', 'group_two', 'duplicate'}: inspection['subject_refs'].append(ref)
+    if bad == 'group_two': inspection['comparison_kind'] = 'within_group'
+    elif bad in {'between_one', 'duplicate'}: inspection['comparison_kind'] = 'between_targets'
+    elif bad == 'nonliteral': inspection['subject_refs'][0]['quote'] = '질문에 없는 대상'
+    elif bad == 'per_subject_attribute': inspection['subject_refs'][0]['attribute_ref'] = ref
+    original = deepcopy(raw)
+    frame = question.bind(raw, req, items, contract=question.DECISION_CONTRACT)
+    assert not frame['ready'] and frame['model_output'] == original == raw
+    assert frame['criteria'] and frame['errors']
+
+
+def test_new_question_call_uses_explicit_kind_and_legacy_record_still_valid(case, monkeypatch):
+    run, req, *_ = case
+    items, _, legacy = setup_frame(run, req)
+    old = deepcopy(legacy)
+    question.validate(legacy, req, items)
+    items, raw = explicit_kind_output(run, req)
+    run.pop('question_inspection')
+    def generate(service, active, stage, prompt, payload, schema):
+        assert prompt == question.DECISION_PROMPT
+        assert stage == 'requirement_inspection'
+        assert all(value not in json.dumps(payload) for value in ['120g', '200g', 'SOURCE_TITLE_SHOULD_NOT_LEAK'])
+        schema.model_validate(raw)
+        with pytest.raises(ValidationError): schema.model_validate(old['model_output'])
+        active.setdefault('units', []).append(dict(id='new-native'))
+        return deepcopy(raw)
+    monkeypatch.setattr(execution, 'json_call', generate)
+    monkeypatch.setattr(execution, 'save', lambda *a: None)
+    result = question.assess(None, run, req)
+    assert result['contract'] == question.DECISION_CONTRACT and result['producer_unit_id'] == 'new-native'
+    question.validate(result, req, items)
+    assert legacy == old
+
+
+def test_scope_values_restore_parsed_quantity_owner_without_changing_native_output(case, monkeypatch):
+    run, req, source, catalog, _ = setup_selection(case, monkeypatch)
+    parent = catalog['properties'][0]
+    base = deepcopy(parent['source_reference'])
+    name = dict(parent, property_ref='name', kind='item_name', item_ref='row1', parent_ref='p1',
+        source_reference=dict(base, quote='돼지고기', start_char=3, end_char=7))
+    quantity = dict(parent, property_ref='amount', kind='item_quantity', item_ref='row1', parent_ref='p1',
+        source_reference=dict(base, quote='120g', start_char=8, end_char=12))
+    catalog['properties'].extend([name, quantity])
+    criteria = run['question_inspection']['criteria']
+    scopes = selection.inspection_scopes(criteria)
+    raw = dict(rows=[dict(scope_id=s['scope_id'], state='complete', reason='합성 값 대응', values=[dict(
+        property_ref='amount', identity_refs=[], condition_refs=[], condition_state='not_applicable')]) for s in scopes])
+    before = deepcopy(raw)
+    packet = selection.grounding_packet(catalog, criteria, source['meanings'], run['blocks'], contract=selection.VALUE_CONTRACT)
+    assert packet['source_property_catalog'][-1]['fixed_item_identity'] == dict(property_ref='name', source_value='돼지고기')
+    selection.grounding_type(catalog, criteria, source['meanings'], contract=selection.VALUE_CONTRACT).model_validate(raw)
+    record = selection.bind_facts(raw, catalog, criteria, source['meanings'], run['blocks'], contract=selection.VALUE_CONTRACT)
+    assert record['ready'] and raw == before == record['model_output']
+    assert all(f['identity_references'] == [name['source_reference']] for f in record['facts'])
+    assert all(f['source_reference'] == quantity['source_reference'] for f in record['facts'])
+    assert all(f['meaning_key'] == 't1' for f in record['facts'])
+    assert selection.validate_facts(record, catalog, criteria, source['meanings'], run['blocks']) == record['facts']
+    changed = deepcopy(catalog); changed['properties'][-2]['source_reference']['block_id'] = 'other'
+    with pytest.raises(ValueError, match='item_identity_unavailable'):
+        selection.validate_facts(record, changed, criteria, source['meanings'], run['blocks'])
+
+
+@pytest.mark.parametrize('bad', ['missing', 'duplicate', 'outside', 'unresolved'])
+def test_incomplete_scope_value_inventory_is_not_ready(case, monkeypatch, bad):
+    run, req, source, catalog, _ = setup_selection(case, monkeypatch)
+    criteria = run['question_inspection']['criteria']
+    raw = dict(rows=[dict(scope_id=s['scope_id'], state='complete', reason='합성 빈 값', values=[])
+                     for s in selection.inspection_scopes(criteria)])
+    if bad == 'missing': raw['rows'].pop()
+    elif bad == 'duplicate': raw['rows'].append(deepcopy(raw['rows'][0]))
+    elif bad == 'outside': raw['rows'][0]['scope_id'] = 'outside'
+    else: raw['rows'][0]['state'] = 'unresolved'
+    original = deepcopy(raw)
+    record = selection.bind_facts(raw, catalog, criteria, source['meanings'], run['blocks'], contract=selection.VALUE_CONTRACT)
+    assert not record['ready'] and record['errors'] and record['model_output'] == original == raw
+    with pytest.raises(ValueError, match='unresolved'):
+        selection.validate_facts(record, catalog, criteria, source['meanings'], run['blocks'])
+
+
+def test_context_menu_matches_existing_owner_guard_and_preserves_old_value_input(case, monkeypatch):
+    run, req, source, catalog, _ = setup_selection(case, monkeypatch)
+    other = dict(deepcopy(catalog['properties'][0]), property_ref='other', meaning_keys=['another-source-fact'])
+    catalog['properties'].append(other)
+    rows = selection.model_properties(catalog, contract=selection.VALUE_CONTRACT)
+    assert rows[0]['context_property_refs'] == ['p1']
+    assert rows[1]['context_property_refs'] == ['other']
+    old = selection.model_properties(catalog, contract='scope-property-value-grounding-v2-experimental')
+    assert all('context_property_refs' not in p for p in old)
+    assert all('fixed_item_identity' in p for p in old)

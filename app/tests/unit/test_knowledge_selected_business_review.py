@@ -121,5 +121,6 @@ def test_real_dispatch_calls_only_final_role_and_appends_separate_result(case, m
     monkeypatch.setattr(execution, 'json_call', generate)
     monkeypatch.setattr(execution, 'save', lambda *a: None)
     result = execution.assess(None, run, req, phase='selected_business_review')
-    assert calls == [('requirement_representation', final.PROMPT)]
+    assert calls == [('requirement_representation', final.instruction(final.RELATION_CONTRACT))]
+    assert result['contract'] == final.RELATION_CONTRACT
     assert run.pop('selected_business_reviews') == [result] and run == before
