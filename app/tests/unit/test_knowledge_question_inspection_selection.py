@@ -55,6 +55,38 @@ def setup_selection(case, monkeypatch, comparison=False):
     return run, req, source, catalog, raw
 
 
+@pytest.mark.parametrize('prior_scope', ['public_scope', 'processing_scope'])
+def test_fresh_grounding_keeps_source_facts_excluded_by_previous_selection(case, monkeypatch, prior_scope):
+    run, req, source, catalog, _ = setup_selection(case, monkeypatch)
+    source[prior_scope] = {('review_meaning_keys' if prior_scope == 'public_scope' else 'requested_meaning_keys'): []}
+    before = deepcopy(source)
+    expected = run.pop('source_fact_grounding')['model_output']
+    def generate(service, active, stage, prompt, packet, model):
+        assert [m['key'] for m in packet['source_facts']] == ['t1']
+        model.model_validate(expected)
+        return deepcopy(expected)
+    monkeypatch.setattr(execution, 'json_call', generate)
+    monkeypatch.setattr(execution, 'save', lambda *a: None)
+    result = selection.ground(None, run, req, source, run['blocks'])
+    assert result['ready'] and result['facts'] and source == before
+
+
+@pytest.mark.parametrize('prior_scope', ['public_scope', 'processing_scope'])
+def test_fresh_application_keeps_same_full_inventory_as_grounding(case, monkeypatch, prior_scope):
+    run, req, source, catalog, raw = setup_selection(case, monkeypatch)
+    source[prior_scope] = {('review_meaning_keys' if prior_scope == 'public_scope' else 'requested_meaning_keys'): []}
+    before = deepcopy(source)
+    run['request_reference_review'] = dict(contract=selection.CONTRACT, block_ids=['block1'])
+    monkeypatch.setattr(execution, 'save', lambda *a: None)
+    def generate(service, active, stage, prompt, packet, model):
+        assert [m['key'] for m in packet['source_facts']] == ['t1']
+        model.model_validate(raw)
+        return deepcopy(raw)
+    monkeypatch.setattr(execution, 'json_call', generate)
+    result = bound.assess_application(None, run, req, source, 'selection')
+    assert selection.bound_targets(result, catalog)['targets'] and source == before
+
+
 def apply(case, monkeypatch, comparison=False):
     run, req, source, catalog, raw = setup_selection(case, monkeypatch, comparison)
     selected = review.apply_requirement(None, run, req, source, run['blocks'])

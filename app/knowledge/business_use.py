@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, create_model, field_validator
 
-from . import business_run, business_review, answer_links
+from . import business_run, business_review, answer_links, selected_review_answer
 from .service import KnowledgeConflict, encode, utcnow
 
 ELIGIBILITY_CONTRACT = 'current-claim-local-dependencies-v8-applicability'
@@ -982,7 +982,7 @@ REVIEWED_MEANINGS_PROMPT = (
 )
 
 
-def graph_source_evidence(snapshot, recipe, selected, reviewed_meanings):
+def graph_source_evidence(snapshot, recipe, selected, reviewed_meanings, selected_review_context=None):
     source_evidence = {}
     blocks = {b['id']: b for b in snapshot['blocks']}
     review_chunks = business_run.autoschema.chunks(snapshot['blocks'], recipe['options']['context_tokens'],
@@ -1010,6 +1010,20 @@ def graph_source_evidence(snapshot, recipe, selected, reviewed_meanings):
                 locator=deepcopy(blocks.get(ref['block_id'], {}).get('locator', {})), claim_ids=[]))
             if claim['id'] not in row['claim_ids']:
                 row['claim_ids'].append(claim['id'])
+    for observation in (selected_review_context or {}).get('source_observations', []):
+        claim_ids = list(dict.fromkeys(b['claim_id'] for b in observation['expression_bindings']))
+        if not set(claim_ids) <= set(selected):
+            raise ValueError('selected_review_required_claim_not_delivered')
+        # A stored field may cite a different row than the reviewed source fact.
+        for ref in [*observation['evidence'], *observation.get('condition_references', [])]:
+            exact = business_run.exact_evidence([ref], snapshot['blocks'])[0]
+            if any(ref.get(k) != exact[k] for k in
+                    ('source_version_id', 'parse_run_id', 'block_id', 'start_char', 'end_char', 'quote')):
+                raise ValueError('selected_review_evidence_address_mismatch')
+            key = json.dumps(ref, ensure_ascii=False, sort_keys=True)
+            row = source_evidence.setdefault(key, dict(evidence=deepcopy(ref),
+                locator=deepcopy(blocks[ref['block_id']].get('locator', {})), claim_ids=[]))
+            row['claim_ids'] = list(dict.fromkeys([*row['claim_ids'], *claim_ids]))
     return list(source_evidence.values())
 
 
@@ -1072,7 +1086,7 @@ def answer_references(context, source_evidence, required_source_context=(), sour
     return context_answer, reference_map
 
 
-def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previous_order):
+def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previous_order, selected_review_context=None):
     selected = {h['block_id'] for h in hits}
     claims = {c['id']: c for c in snapshot['claims']}
     for cid in selected:
@@ -1087,7 +1101,8 @@ def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previo
                 raise ValueError('evidence_address_mismatch: ' + cid)
     context = [c for c in candidates if c['id'] in selected]
     meanings = reviewed_answer_meanings(snapshot, selected, [])
-    sources, order = source_evidence_views(graph_source_evidence(snapshot, recipe, selected, meanings), previous_order)
+    sources, order = source_evidence_views(
+        graph_source_evidence(snapshot, recipe, selected, meanings, selected_review_context), previous_order)
     state = dict(answer_scope_contract='reviewed-meanings-and-source-qualifications-v1',
         reviewed_meanings=deepcopy(meanings), reviewed_connections=reviewed_answer_connections(snapshot, original, []),
         source_reference_order=order)
@@ -1095,7 +1110,8 @@ def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previo
         for r, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
     body = dict(question=request.question, choices=request.choices, context=context,
         source_versions=snapshot['source_versions'], source_evidence=sources,
-        requirement_limitations=limitations, reviewed_meanings=meanings)
+        requirement_limitations=limitations, reviewed_meanings=meanings,
+        **selected_review_answer.answer_context(selected_review_context, selected))
     schema, references = answer_references(context, sources, source_citation_contract=request.source_citation_contract)
     return state, body, schema, references
 
@@ -1103,10 +1119,14 @@ def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previo
 def preserved_graph_hits(run, snapshot, original, request, candidates, baseline):
     """Preview one query in memory; commit only the last complete, admitted input."""
     retrieval = run['graph_retrieval']
-    factual = retrieval['selected_factual_claim_ids']
+    reviewed = run.get('selected_review_context')
+    factual = list(dict.fromkeys([*retrieval['selected_factual_claim_ids'],
+        *(reviewed['required_claim_ids'] if reviewed else [])]))
     trace = dict(contract=request.evidence_union, baseline_claim_ids=[h['block_id'] for h in baseline],
         selected_factual_claim_ids=deepcopy(factual), limit_semantics='baseline_claim_count',
         capacity_policy='mandatory_union_then_ranked_whole_claims_stop_at_first_excess', steps=[])
+    if reviewed:
+        trace['selected_review_required_claim_ids'] = deepcopy(reviewed['required_claim_ids'])
     run['evidence_assembly'] = trace
     ranked = {}
     for passage in retrieval['ranked_passages']:
@@ -1119,17 +1139,18 @@ def preserved_graph_hits(run, snapshot, original, request, candidates, baseline)
         and cid not in trace['baseline_claim_ids']]
     trace['mandatory_claim_ids'] = [h['block_id'] for h in mandatory]
     accepted, order, last = list(baseline), [], None
-    trials = [baseline]
-    if mandatory != baseline:
+    trials = [] if reviewed else [baseline]
+    if mandatory != baseline or reviewed:
         trials.append(mandatory)
     remainder = [h for cid, h in ranked.items() if cid not in trace['mandatory_claim_ids']]
     for index in range(len(trials) + len(remainder)):
         required = index < len(trials)
         proposed = trials[index] if required else accepted + [remainder[index - len(trials)]]
         state, body, schema, references = graph_qa_input(snapshot, original, run['recipe'], request,
-            candidates, proposed, order)
+            candidates, proposed, order, reviewed)
         packet = business_run.json_request(run, 'business_qa',
-            SYNTHESIS_PROMPT + REVIEWED_MEANINGS_PROMPT + source_citations_instruction(request.source_citation_contract),
+            SYNTHESIS_PROMPT + REVIEWED_MEANINGS_PROMPT + source_citations_instruction(request.source_citation_contract)
+                + (selected_review_answer.INSTRUCTION if reviewed else ''),
             body, schema, reference_map=references)
         budget = business_run.request_budget(run, packet['messages'], packet['schema'],
             run['recipe']['options']['review_tokens'])
@@ -1233,6 +1254,8 @@ def query(service, request, *, context_mode='graph'):
         raise ValueError(HYBRID_GRAPH_RETIRED)
     from .source_index import FrozenIndex
     request, defaulted = resolve_query_defaults(request, context_mode)
+    if request.selected_review and (context_mode != 'graph' or not request.evidence_union):
+        raise ValueError('선정 검수 연결에는 graph 근거 보존 경로가 필요합니다.')
     stored_after = request.answer_mode == 'stored_after_conditions'
     if request.answer_mode in {'source_list_comparison', 'stored_after_conditions'} and context_mode != 'graph':
         raise ValueError('목록 대조는 snapshot 경로에서만 지원합니다.')
@@ -1307,6 +1330,7 @@ def query(service, request, *, context_mode='graph'):
         if stale:
             return dict(status='needs_review', requirement_ids=stale, answer=None, snapshot_id=snapshot['id'])
         answer_items = bind_answer_items(request, requirements)
+        selected_review_context = selected_review_answer.load(service, db, request, snapshot)
         if context_mode == 'graph' and not snapshot['claims'] and not source_reader and not stored_after:
             return dict(status='no_reviewed_claims', answer=None, snapshot_id=snapshot['id'], model_called=False)
         if source_reader and not any(c.get('evidence') for c in snapshot['claims']) and not snapshot['blocks']:
@@ -1335,6 +1359,8 @@ def query(service, request, *, context_mode='graph'):
                    answer_contract=ANSWER_CONTRACT, required_context_ids=sorted(required_ids))
         if concept_view is not None:
             run['concept_view'] = concept_view
+        if selected_review_context:
+            run['selected_review_context'] = selected_review_context
         if request.answer_mode == 'reviewed_items':
             run['required_answer_meaning_keys'] = required_answer_meaning_keys(snapshot, requirement_ids)
         run['execution_boundary'] = dict(
@@ -1475,7 +1501,7 @@ def query(service, request, *, context_mode='graph'):
                 return dict(run_id=run['id'], status='input_capacity', answer=None,
                             error=run['error'], source_context_budget=run['source_context_budget'])
     source_evidence, source_order = source_evidence_views(
-        graph_source_evidence(snapshot, run['recipe'], selected, reviewed_meanings)
+        graph_source_evidence(snapshot, run['recipe'], selected, reviewed_meanings, selected_review_context)
         if context_mode == 'graph' and not source_reader else [],
         run.get('source_reference_order', []) if request.evidence_union else [])
     if request.evidence_union:
@@ -1517,13 +1543,15 @@ def query(service, request, *, context_mode='graph'):
             'context_id만 있는 문맥은 같은 context의 원문을 참조한다. 문맥 근거도 연결된 context id로 인용한다. '
             '검색에 사용한 그래프 연결은 미승인 추출일 수 있으며 그 존재가 의미 검증은 아니다. '
             '원문에 없는 조건이나 연결을 추론해서 채우지 않는다. 이 답변은 온톨로지 승인이나 업무 요구 전체 충족 판정이 아니다.'
-            if source_reader else '') + source_citations_instruction(request.source_citation_contract)
+            if source_reader else '') + source_citations_instruction(request.source_citation_contract) + (
+                selected_review_answer.INSTRUCTION if selected_review_context else '')
         answer_context = dict(question=request.question, choices=request.choices, **({} if structured_reader else dict(context=context)),
                  source_versions=snapshot['source_versions'], source_evidence=source_evidence,
                  **({'public_requirements': answer_requirements} if answer_requirements else {}),
                  requirement_limitations=limitations, **(reader_context if structured_reader else
                     {'source_context': required_source_context} if source_reader else
-                    {'reviewed_meanings': reviewed_meanings}))
+                    {'reviewed_meanings': reviewed_meanings}),
+                 **selected_review_answer.answer_context(selected_review_context, selected))
         if request.evidence_union:
             packet = business_run.json_request(run, 'business_qa', instruction, answer_context, context_answer,
                 reference_map=reference_map)
@@ -1559,8 +1587,15 @@ def finish_query(service, run, request, snapshot, requirements, output, hits, so
         status = 'unverified'
     with service.lock, service.repository.connect() as db:
         now = [service.repository.get(db, 'requirements', r['id']) for r in requirements]
+        if request.selected_review:
+            try:
+                current = service.repository.get(db, 'snapshots', snapshot['id'])
+                if selected_review_answer.load(service, db, request, current) != run['selected_review_context']:
+                    raise ValueError('selected_review_input_changed')
+            except (ValueError, KeyError, TypeError) as exc:
+                run['selected_review_error'] = str(exc)
         if restricted_sources(db, snapshot['source_versions']) or any(
-                n['revision'] != r['revision'] or n['status'] == 'needs_review' for n, r in zip(now, requirements)):
+                n['revision'] != r['revision'] or n['status'] == 'needs_review' for n, r in zip(now, requirements)) or run.get('selected_review_error'):
             status, output = 'needs_review', None
             run['answer_source_citations'] = dict(run['answer_source_citations'], status='needs_review', citations=[])
             answer_links.withhold(run)

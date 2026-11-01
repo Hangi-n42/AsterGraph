@@ -292,7 +292,7 @@ def assess_application(service, run, requirement, source, phase):
     if phase == 'selection':
         if source is None or run.get('selected_request_source') is not None:
             raise ValueError('request_selection_requires_fresh_source')
-        facts = deepcopy(source); facts['meanings'] = review.review_meanings(facts)
+        facts = deepcopy(source)
         run['required_unit_selection_experiment'] = selection.CONTRACT
         applied = review.apply_requirement(service, run, requirement, facts, blocks)
         run['selected_request_source'] = applied; execution.save(service, run)
