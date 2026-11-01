@@ -305,6 +305,9 @@ def assess_application(service, run, requirement, source, phase):
     scope = selection.bound_targets(selected, receipt['source_property_catalog'])
     if not scope['targets']:
         raise ValueError('no_valid_request_selection_targets')
+    if phase == 'selected_business_review':
+        from . import business_selected_review
+        return business_selected_review.assess(service, run, requirement, scope, blocks)
     inventory = None
     if phase == 'selected_source_review':
         chosen, inventory = selected_candidates(run, scope['targets'])
