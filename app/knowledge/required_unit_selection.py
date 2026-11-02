@@ -407,11 +407,27 @@ def bound_targets(source, catalog):
     # Rebuild from the recorded producer input; no model output is repaired here.
     validate_facts(grounding, catalog, criteria, grounding['basis']['source_facts'], grounding['basis']['blocks'])
     facts = {f['fact_id']: f for f in grounding['facts']}
+    from . import fixed_fact_application
+    projected = None
+    if receipt.get('fact_application_contract') == fixed_fact_application.CONTRACT:
+        projected, trace = fixed_fact_application.project(receipt['output'], list(facts.values()),
+            list(items.values()), source['meanings'], criteria)
+        if projected != receipt['projected_output'] or trace != receipt['task_group_projection']:
+            raise ValueError('fixed_fact_application_projection_changed')
     targets, blocked, references = {}, [], []
     for meaning in source['meanings']:
         for application in meaning.get('requirement_applications', []):
             owner = dict(meaning_key=meaning['key'], item_id=application['item_id'])
             record = application.get('selection_record', {})
+            if projected is not None:
+                rows = [r for r in projected['links'] if r['key'] == meaning['key'] and r['item_id'] == application['item_id']]
+                if len(rows) == 1:
+                    decision = deepcopy(rows[0])
+                    decision['requirement_link']['requested_fact'] = items[application['item_id']]['request_quote']
+                    expected = bind_selection(decision, meaning['key'], catalog, public,
+                        grounding['basis']['blocks'], criteria, application['item_id'], grounding)['selection_record']
+                    if record != expected:
+                        raise ValueError('fixed_fact_application_consumption_changed')
             references.extend(dict(owner, issue=deepcopy(i)) for i in record.get('issues', []) if not i['blocking'])
             blocked.extend(dict(owner, issue=deepcopy(i)) for i in record.get('issues', []) if i['blocking'])
             required = business_review.application_required(application)

@@ -10,11 +10,13 @@ from app.tests.unit.test_knowledge_business_role_review import case
 from app.tests.unit.test_knowledge_selected_repair import ready, proposal
 
 
-def failed_proposal(case, monkeypatch):
+def failed_proposal(case, monkeypatch, statement_contract=None):
     template = case[0]['blocks'][0]
     for bid, text, version in [('title', '제목: 조리', 'v1'), ('name', '음식명: 조리', 'v1'), ('other', '조리', 'v2')]:
         case[0]['blocks'].append(dict(template, id=bid, text=text, span=[0,len(text)], source_version_id=version))
     run, req, scope = ready(case, monkeypatch)
+    if statement_contract:
+        run['request_reference_review']['repair_statement_contract'] = statement_contract
     run['request_reference_review']['block_ids'] = [b['id'] for b in run['blocks']]
     run['recipe'].update(models=dict(review='fixture'), generation='fixture'); run['model_identity'] = dict(fixture=True)
     raw = proposal(repair.packet(run, req, scope, run['blocks']))
@@ -39,8 +41,9 @@ def choices(context, occurrence='o2'):
     return dict(choices={key:dict(occurrence_id=occurrence,reason='합성 근거 선택') for key in context['tasks']})
 
 
-def test_existing_proposition_stays_frozen_and_only_missing_evidence_is_selected(case, monkeypatch):
-    run, req, scope = failed_proposal(case, monkeypatch); before = deepcopy(run['claims']); unit = deepcopy(run['units'][-1])
+@pytest.mark.parametrize('statement_contract', [None, repair.CONDITIONAL_CONTRACT])
+def test_existing_proposition_stays_frozen_and_only_missing_evidence_is_selected(case, monkeypatch, statement_contract):
+    run, req, scope = failed_proposal(case, monkeypatch, statement_contract); before = deepcopy(run['claims']); unit = deepcopy(run['units'][-1])
     context, gaps = evidence.packet(run, req, scope, run['blocks'])
     assert len(context['tasks']) == 1
     task = next(iter(context['tasks'].values()))
@@ -78,3 +81,9 @@ def test_unknown_or_changed_basis_never_applies_new_claims(case, monkeypatch, ba
         assert result['status']=='unresolved' and result['errors'] and not result['changes'] and run['claims']==before
     else:
         with pytest.raises(ValueError):evidence.complete(None,run,req,scope,run['blocks'])
+
+
+def test_changed_statement_contract_cannot_relabel_old_proposal(case, monkeypatch):
+    run, req, scope = failed_proposal(case, monkeypatch)
+    run['request_reference_review']['repair_statement_contract'] = repair.CONDITIONAL_CONTRACT
+    with pytest.raises(ValueError): evidence.packet(run, req, scope, run['blocks'])

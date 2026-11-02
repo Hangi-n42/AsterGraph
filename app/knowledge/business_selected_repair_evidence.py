@@ -34,7 +34,7 @@ def packet(run, requirement, scope, blocks):
     options = dict(run['recipe']['options'], review_tokens=limits['max_tokens'],
         context_tokens=limits['context_tokens'], think=limits['think'])
     view = dict(run, recipe=dict(run['recipe'], options=options))
-    proposals = verified_proposals(view, repair.PROMPT, context, repair.output_type(context['missing_targets']), unit)
+    proposals = verified_proposals(view, repair.instruction(view), context, repair.output_type(context['missing_targets']), unit)
     if proposals != previous['patches']:
         raise ValueError('selected_evidence_original_output_changed')
     tasks = {}

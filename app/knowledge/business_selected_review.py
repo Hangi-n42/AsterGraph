@@ -10,6 +10,7 @@ from .source_meanings import remap
 
 CONTRACT = 'selected-source-final-requirement-review-v1-experimental'
 RELATION_CONTRACT = 'selected-source-final-requirement-review-v2-relations-experimental'
+STORED_CONTRACT = 'selected-source-final-requirement-review-v3-stored-coverage-experimental'
 PROMPT = '''선정과 원문·저장 대조를 마친 업무 요구의 최종 검수다. 각 public_answer_items의 요청에 필요한 지식이 확보됐는지 판단한다.
 question_inspections는 이미 정한 대상·속성·비교 구조다. selected_for와 request_uses는 기존 선정이며 다시 쓰거나 참고로 낮추지 않는다.
 source_observations는 원문 검수 결과다. represented는 그 대상·속성의 실제 저장 표현이 있다는 뜻이며 후보 전체의 의미 승인이나 최종 업무 충족이 아니다.
@@ -32,9 +33,19 @@ coverage=sufficient_in_scope로 판단한 요청은 selected_for의 필수 검�
 def instruction(contract):
     if contract == CONTRACT:
         return PROMPT
-    if contract != RELATION_CONTRACT:
+    if contract not in {RELATION_CONTRACT, STORED_CONTRACT}:
         raise ValueError('final_review_contract_unknown')
-    return PROMPT + '''
+    prompt = PROMPT
+    if contract == STORED_CONTRACT:
+        prompt = prompt.replace(
+            '확인되는 내용 confirmed와 자료만으로 확정할 수 없는 내용 undetermined를 구분한다.',
+            '실제 저장 표현이 뒷받침하는 사실·비교 결론 confirmed와 저장된 근거로 확정할 수 없는 내용 undetermined를 구분한다.')
+        prompt += '''
+이 역할의 coverage는 원문만 읽어 답할 수 있는지가 아니라, 선정된 업무 필수 지식이 저장되어 활용 가능한지의 판단이다.
+필수 사실이 원문에는 있지만 consumer_status=missing이면 그 원문을 stored_candidates 대신 사용해 충분하다고 하지 않는다. 해당 저장 부족을 missing_required_content에 적고 insufficient_in_scope로 판단한다.
+undetermined의 이유에서 원문 자체로 판단할 수 없는 한계와 원문에 있는 필수 사실의 저장 누락을 구분한다. 저장 누락을 원문 정보 부재로 바꾸지 않는다. partial은 정상 저장 기여와 실제 필수 부족을 각각 판단한다.
+'''
+    return prompt + '''
 findings.statement에는 필요한 값과 함께 그 값의 조건·선택 관계를 명시한다. 개별 항목이 목록으로 나열되어 있어도 원문과 저장 문장이 대안 관계로 표현하면 그 관계를 그대로 쓴다.
 원문 검수의 represented_content나 개별 Entity 이름 목록만으로 AND/OR를 정하지 않는다. 해당 stored_candidates의 실제 문장과 condition_references를 함께 대조한다. 대안인 항목을 단순히 '과/와'로 열거하여 모두 필요한 것으로 읽히게 만들지 않는다.
 '''
@@ -47,7 +58,8 @@ def packet(run, requirement, scope, blocks, *, contract=CONTRACT):
     if not records:
         raise ValueError('final_review_requires_source_review')
     observed = records[-1]
-    if (observed.get('contract') != bound.CONTRACT or observed.get('arm') != 'B'
+    source_contract = run.get('request_reference_review', {}).get('source_review_contract', bound.CONTRACT)
+    if (observed.get('contract') != source_contract or source_contract not in bound.CONTRACTS or observed.get('arm') != 'B'
             or observed.get('selection_scope') != scope or observed.get('candidate_scope') != inventory):
         raise ValueError('final_review_source_scope_changed')
     unit = next((u for u in run['units'] if review.response_unit_id(dict(units=[u])) == observed['review_unit_id']), None)
@@ -57,8 +69,8 @@ def packet(run, requirement, scope, blocks, *, contract=CONTRACT):
     if any(unit.get(k) != request[k] for k in ('messages', 'schema', 'reference_map')):
         raise ValueError('final_review_source_request_changed')
     raw = remap(unit['response']['parsed'], {v: k for k, v in (unit.get('reference_map') or {}).items()})
-    raw = bound.output_type('B', claims, scope['targets'], blocks).model_validate(raw).model_dump()
-    replay = bound.consume(raw, 'B', claims, scope['targets'], blocks)
+    raw = bound.output_type('B', claims, scope['targets'], blocks, contract=source_contract).model_validate(raw).model_dump()
+    replay = bound.consume(raw, 'B', claims, scope['targets'], blocks, contract=source_contract)
     if any(observed.get(k) != v for k, v in replay.items()):
         raise ValueError('final_review_source_result_changed')
     selected_ids = {cid for c in observed['checks'] for cid in c['claim_ids']}
@@ -138,8 +150,9 @@ def consume(output, context):
 
 
 def assess(service, run, requirement, scope, blocks):
-    context = packet(run, requirement, scope, blocks, contract=RELATION_CONTRACT)
-    output = execution.json_call(service, run, 'requirement_representation', instruction(RELATION_CONTRACT), context, output_type(context))
+    contract = run.get('request_reference_review', {}).get('final_review_contract', RELATION_CONTRACT)
+    context = packet(run, requirement, scope, blocks, contract=contract)
+    output = execution.json_call(service, run, 'requirement_representation', instruction(contract), context, output_type(context))
     if output is None:
         return None
     result = consume(output, context)

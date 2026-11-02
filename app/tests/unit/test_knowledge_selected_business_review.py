@@ -114,13 +114,17 @@ def test_output_cannot_reselect_facts_or_invent_reference_ids(case, monkeypatch)
     with pytest.raises(ValidationError): final.consume(raw, context)
 
 
-def test_real_dispatch_calls_only_final_role_and_appends_separate_result(case, monkeypatch):
-    run, req, scope = prepared(case, monkeypatch); before = deepcopy(run); calls = []
+@pytest.mark.parametrize('contract', [final.RELATION_CONTRACT, final.STORED_CONTRACT])
+def test_real_dispatch_calls_only_final_role_and_appends_separate_result(case, monkeypatch, contract):
+    run, req, scope = prepared(case, monkeypatch)
+    if contract == final.STORED_CONTRACT:
+        run['request_reference_review']['final_review_contract'] = contract
+    before = deepcopy(run); calls = []
     def generate(service, active, stage, prompt, context, schema):
         calls.append((stage, prompt)); value = output(context); schema.model_validate(value); return value
     monkeypatch.setattr(execution, 'json_call', generate)
     monkeypatch.setattr(execution, 'save', lambda *a: None)
     result = execution.assess(None, run, req, phase='selected_business_review')
-    assert calls == [('requirement_representation', final.instruction(final.RELATION_CONTRACT))]
-    assert result['contract'] == final.RELATION_CONTRACT
+    assert calls == [('requirement_representation', final.instruction(contract))]
+    assert result['contract'] == contract
     assert run.pop('selected_business_reviews') == [result] and run == before

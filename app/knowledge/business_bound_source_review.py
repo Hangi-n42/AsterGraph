@@ -8,6 +8,8 @@ from . import autoschema, business_role_review as roles, business_run as executi
 from .business_models import ExpressionQuote
 
 CONTRACT = 'bound-source-output-ab-v3-expression-contributions-experimental'
+QUOTE_CONTRACT = 'bound-source-output-v4-literal-quotes-experimental'
+CONTRACTS = {CONTRACT, QUOTE_CONTRACT}
 COMMON_PROMPT = '''고정 원문 대상과 실제 저장 표현을 대조한다. bound_targets의 키마다 checks의 같은 고정 자리에만 답한다.
 source_ref/quote/source_block/parent_blocks는 코드가 원문에서 정확히 조회한 범위와 문맥이다. 대상과 원문 연결을 재선택하거나 바꾸지 않는다.
 quote가 원문에 있다는 사실은 저장됐다는 뜻이 아니다. stored_candidates.fields만 실제 저장 표현이며 stored_interpretation과 state는 미승인 상태를 유지한다.
@@ -47,8 +49,12 @@ def missing_references(target, blocks):
     return references
 
 
-def missing_field(target, blocks):
+def missing_field(target, blocks, *, contract=CONTRACT):
     references = missing_references(target, blocks)
+    if contract == QUOTE_CONTRACT:
+        part = create_model('BoundMissingQuote_' + target['key'], __config__={'extra': 'forbid'},
+            evidence_ref=(Literal[tuple(references)], ...), quote=(str, Field(min_length=1)))
+        return list[Literal[tuple(references)] | part], Field(max_length=len(blocks))
     block_ids = [f'e{i + 1}' for i, b in enumerate(blocks) if b['id'] in
         {e['block_id'] for e in [target['ref'], *target.get('condition_references', [])]}]
     part = create_model('BoundMissingPart_' + target['key'], __config__={'extra': 'forbid'},
@@ -57,7 +63,9 @@ def missing_field(target, blocks):
     return list[Literal[tuple(references)] | part], Field(max_length=len(blocks))
 
 
-def packet(claims, targets, blocks):
+def packet(claims, targets, blocks, *, contract=CONTRACT):
+    if contract not in CONTRACTS:
+        raise ValueError('bound_source_contract_unknown')
     if len({c['id'] for c in claims}) != len(claims) or len({b['id'] for b in blocks}) != len(blocks):
         raise ValueError('duplicate_candidate_or_source_block')
     if not targets or len({t['key'] for t in targets}) != len(targets):
@@ -102,7 +110,7 @@ def packet(claims, targets, blocks):
                         raise ValueError('bound_fixed_fact_use_changed')
                 bound[target['key']]['request_uses'] = deepcopy(target['request_uses'])
                 bound[target['key']]['fact_ids'] = deepcopy(target['fact_ids'])
-    value = dict(role='bound_source_expression_comparison', contract=CONTRACT,
+    value = dict(role='bound_source_expression_comparison', contract=contract,
         scope='provided_candidates_only', bound_targets=bound,
         stored_candidates=roles.stored_candidates(claims), blocks=deepcopy(blocks),
         source_references={key: dict(block_id=b['id'], source_version_id=b['source_version_id'],
@@ -113,13 +121,13 @@ def packet(claims, targets, blocks):
     return value
 
 
-def output_type(arm, claims, targets, blocks):
+def output_type(arm, claims, targets, blocks, *, contract=CONTRACT):
     source_type, _ = roles.schemas(targets)
     selected = execution.selected_evidence_type(source_type, {f'e{i + 1}': b for i, b in enumerate(blocks)})
     wide_row = get_args(selected.model_fields['checks'].annotation)[0]
     if arm == 'A':
         rows = {t['key']: (create_model('Wide_' + t['key'], __base__=wide_row,
-                    meaning_key=(Literal[t['key']], ...), missing_evidence=missing_field(t, blocks)), ...) for t in targets}
+                    meaning_key=(Literal[t['key']], ...), missing_evidence=missing_field(t, blocks, contract=contract)), ...) for t in targets}
     elif arm == 'B':
         fields = roles.stored_candidates(claims)
         ids = Literal[tuple(c['id'] for c in claims)]
@@ -134,7 +142,7 @@ def output_type(arm, claims, targets, blocks):
             reason=(str, Field(max_length=160)),
             status=(Literal['represented', 'partial', 'missing', 'unknown'], ...))
         rows = {t['key']: (create_model('Compact_' + t['key'], __base__=row,
-                    missing_evidence=missing_field(t, blocks)), ...) for t in targets}
+                    missing_evidence=missing_field(t, blocks, contract=contract)), ...) for t in targets}
     else:
         raise ValueError('unknown_bound_output_arm')
     slots = create_model('BoundTargetSlots' + arm, __config__={'extra': 'forbid'}, **rows)
@@ -144,8 +152,17 @@ def output_type(arm, claims, targets, blocks):
     return create_model('BoundSourceOutput' + arm, __config__={'extra': 'forbid'}, **top)
 
 
-def instruction(arm, targets):
+def instruction(arm, targets, *, contract=CONTRACT):
+    if contract not in CONTRACTS:
+        raise ValueError('bound_source_contract_unknown')
     instruction = WIDE_PROMPT if arm == 'A' else COMPACT_PROMPT
+    if contract == QUOTE_CONTRACT:
+        instruction = instruction.replace(
+            '더 작은 범위는 {evidence_ref,span:[시작,끝],quote}로 반환한다.',
+            '더 작은 범위는 {evidence_ref,quote}로 반환한다. quote는 그 선택 범위 안에서 한 번만 나타나는 정확한 원문 구절이다.')
+        instruction = instruction.replace(
+            '부분범위의 evidence_ref는 해당 자리의 missing_references ID 또는 같은 block의 source_references ID다. span은 절대 문자 위치이고 끝은 제외한다.',
+            '부분범위의 evidence_ref는 해당 자리의 missing_references ID다. 문자 위치는 생성하지 않는다. 프로그램이 선택한 범위 안의 유일한 정확 일치를 확인한다. 반복 구절이면 대상·조건을 포함해 구별되는 원문 구절을 고르고, 확정할 수 없으면 unknown이다.')
     if any('criterion_reference' in t for t in targets):
         instruction = instruction.replace('부분 부족함은 고정 source_ref 안의 정확한 원문 구간이어야 한다.',
             '부분 부족함은 source_ref 또는 선택된 condition_references 안의 정확한 원문 구간이어야 한다.')
@@ -167,11 +184,30 @@ request_uses의 inspection은 이 사실을 사용하는 질문의 검사다. re
 
 
 def request(run, arm, claims, targets, blocks):
-    schema = output_type(arm, claims, targets, blocks)
-    return execution.json_request(run, 'requirement_representation', instruction(arm, targets), packet(claims, targets, blocks), schema)
+    contract = run.get('request_reference_review', {}).get('source_review_contract', CONTRACT)
+    schema = output_type(arm, claims, targets, blocks, contract=contract)
+    return execution.json_request(run, 'requirement_representation', instruction(arm, targets, contract=contract),
+        packet(claims, targets, blocks, contract=contract), schema)
 
 
-def consume(output, arm, claims, targets, blocks):
+def literal_missing_reference(ref, target, blocks):
+    if set(ref) != {'evidence_ref', 'quote'} or not isinstance(ref['quote'], str) or not ref['quote']:
+        raise ValueError('invalid_literal_reference_fields')
+    references = missing_references(target, blocks)
+    if ref['evidence_ref'] not in references:
+        raise ValueError('reference_outside_selected_target_or_source')
+    parent = references[ref['evidence_ref']]
+    at = parent['quote'].find(ref['quote'])
+    if at < 0 or parent['quote'].find(ref['quote'], at + 1) != -1:
+        raise ValueError('literal_missing_reference_not_unique_in_selected_scope')
+    start = parent['start_char'] + at
+    return execution.exact_evidence([dict(parent, quote=ref['quote'],
+        start_char=start, end_char=start + len(ref['quote']))], blocks)[0]
+
+
+def consume(output, arm, claims, targets, blocks, *, contract=CONTRACT):
+    if contract not in CONTRACTS:
+        raise ValueError('bound_source_contract_unknown')
     if set(output['checks']) != {t['key'] for t in targets}:
         raise ValueError('bound_target_slots_mismatch')
     views = {f'e{i + 1}': b for i, b in enumerate(blocks)}
@@ -200,7 +236,9 @@ def consume(output, arm, claims, targets, blocks):
             refs = []
             try:
                 for ref in row[name]:
-                    if isinstance(ref, dict) and 'block_id' in ref:
+                    if contract == QUOTE_CONTRACT and name == 'missing_evidence' and isinstance(ref, dict):
+                        item = literal_missing_reference(ref, target, blocks)
+                    elif isinstance(ref, dict) and 'block_id' in ref:
                         item = deepcopy(ref)
                     else:
                         if isinstance(ref, dict) and (set(ref) != {'evidence_ref', 'span', 'quote'} or len(ref['span']) != 2):
@@ -236,7 +274,7 @@ def consume(output, arm, claims, targets, blocks):
             check['consumer_errors'].append(reference_errors[check['meaning_key']])
             check.setdefault('unverified_incorrect_claim_ids', deepcopy(check['incorrect_claim_ids']))
             check.update(status='unknown', incorrect_claim_ids=[], error_fields={}, error_evidence=[])
-    return dict(contract=CONTRACT, diagnostic_only=True, arm=arm, scope='provided_candidates_only',
+    return dict(contract=contract, diagnostic_only=True, arm=arm, scope='provided_candidates_only',
         canonical_targets={t['key']: execution.exact_evidence([t['ref']], blocks)[0] for t in targets},
         model_output=deepcopy(output), checks=bound['checks'],
         source_identity_origin=('question_frozen_application_selection' if any('criterion_reference' in t for t in targets)
@@ -246,12 +284,13 @@ def consume(output, arm, claims, targets, blocks):
 
 
 def assess(service, run, arm, claims, targets, blocks):
-    schema = output_type(arm, claims, targets, blocks)
+    contract = run.get('request_reference_review', {}).get('source_review_contract', CONTRACT)
+    schema = output_type(arm, claims, targets, blocks, contract=contract)
     output = execution.json_call(service, run, 'requirement_representation',
-        instruction(arm, targets), packet(claims, targets, blocks), schema)
+        instruction(arm, targets, contract=contract), packet(claims, targets, blocks, contract=contract), schema)
     if output is None:
         return None
-    result = consume(output, arm, claims, targets, blocks)
+    result = consume(output, arm, claims, targets, blocks, contract=contract)
     run.setdefault('bound_source_comparisons', []).append(result)
     execution.save(service, run)
     return result
