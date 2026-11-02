@@ -367,6 +367,7 @@ def concept_read_view(service, db, parent, child_id):
                 or not isinstance(concept.get('concepts'), list) or not concept['concepts']
                 or not all(isinstance(t, str) and t.strip() for t in concept['concepts'])
                 or not concept_work.complete(unit) or unit.get('stage') != 'concept_' + target.get('kind', '')
+                or concept['concepts'] != concept_work.labels(unit)
                 or (unit.get('concept_work_input') or {}).get('version') != concept_work.VERSION):
             raise ValueError('현재 대상에 대응하는 완결·미검증 단독 개념 결과가 필요합니다.')
         binding = bindings[0]

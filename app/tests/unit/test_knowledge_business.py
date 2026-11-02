@@ -543,7 +543,7 @@ def test_requirement_revision_and_service_review_path(tmp_path, monkeypatch):
                 output = [dict(Head='기관', Relation='접수한다', Tail='본인 신청', Scope=scope)]
             elif request.stage in {'event_entity', 'event_relation'}: output = []
             elif request.stage == 'direct_definitions': output = {'definitions': []}
-            elif request.stage.startswith('concept_'): output = None
+            elif request.stage.startswith('concept_'): output = ['기관', '접수처'] if request.schema else None
             elif request.stage == 'requirement_source':
                 block = context['blocks'][0]
                 output = dict(examined_block_ids=[block['id']], meanings=[dict(key='accept', statement=block['text'],
@@ -1017,7 +1017,7 @@ def test_neighbor_arms_execute_new_calls_on_identical_stored_information(tmp_pat
         def __init__(self, *_): pass
         async def generate(self, request, cancelled):
             calls.append(request)
-            return dict(text='기관, 접수처', parsed=None, failure_kind=None, done=True, done_reason='stop', elapsed_s=.001)
+            return dict(text='["기관", "접수처"]' if request.schema else '기관, 접수처', parsed=None, failure_kind=None, done=True, done_reason='stop', elapsed_s=.001)
     monkeypatch.setattr(business_run, 'ModelClient', Client)
     service = KnowledgeService(tmp_path / 'knowledge.db')
     try:

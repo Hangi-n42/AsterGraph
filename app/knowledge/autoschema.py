@@ -427,11 +427,28 @@ def concept_targets(extracted):
     return targets + list(relations.values())
 
 
-def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_bytes=12000, *, source_context=None):
+CONCEPT_OUTPUT_CONTRACT = 'json-array-v1'
+
+
+def concept_schema(contract):
+    if contract is None:
+        return None  # Historical comma requests retain their original input and consumer.
+    if contract != CONCEPT_OUTPUT_CONTRACT:
+        raise ValueError('지원하지 않는 개념화 출력 계약입니다.')
+    return dict(type='array', minItems=1, items=dict(type='string', minLength=1))
+
+
+def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_bytes=12000, *, source_context=None,
+                     output_contract=None):
     # Template/token selection follows upstream generate_concept, preserving the
     # entity/event/relation distinction and independent target generations.
     kind = target['kind']
     template = CONCEPT_INSTRUCTIONS['en'][kind]
+    if concept_schema(output_contract) is not None:
+        template = template.replace('phrases1, phrases2, phrases3,...', '["phrase1", "phrase2", "phrase3", ...]')
+        # Convert only fixed prompt examples, before inserting any source or target text.
+        template = re.sub(r'(?m)^(\s*Your answer: )(.+)$',
+            lambda m: m[1] + json.dumps([v.strip() for v in m[2].split(',')]), template)
     prompt = template.replace('[' + kind.upper() + ']', target['label'])
     nodes = {n['id']: n for n in extracted['nodes']}
     linked = [e for e in extracted['edges'] if target['id'] in {e['head'], e['tail']}]
@@ -490,7 +507,9 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
             unique_packets.append(packet)
         if unique_packets:
             mandatory.append(json.dumps(unique_packets, ensure_ascii=False, separators=(',', ':')))
-    prompt += '\n한국어로 짧은 유형/관련 개념을 쉼표로 구분한다. 승인 유형·법적 포함을 판정하는 작업이 아니다.'
+    prompt += ('\n한국어로 짧은 유형/관련 개념을 JSON 문자열 배열 하나로만 반환한다. 설명·코드 블록을 붙이지 않는다.'
+               ' 승인 유형·법적 포함을 판정하는 작업이 아니다.' if output_contract else
+               '\n한국어로 짧은 유형/관련 개념을 쉼표로 구분한다. 승인 유형·법적 포함을 판정하는 작업이 아니다.')
     interpretations = {cid: compact_interpretation(extracted.get('interpretations', {})[cid]) for cid in target.get('claim_ids', [])
                        if cid in extracted.get('interpretations', {})}
     if interpretations:
@@ -510,7 +529,17 @@ def concept_messages(target, extracted, chunks_by_id, mode='plain', neighbor_byt
     return [dict(role='system', content='You are a helpful AI assistant.'), dict(role='user', content=prompt)], selection
 
 
-def concepts(text):
+def concepts(text, *, schema=None):
+    if schema is not None:
+        if schema != concept_schema(CONCEPT_OUTPUT_CONTRACT):
+            return []
+        try:
+            values = json.loads(text)
+        except (TypeError, ValueError):
+            return []
+        if not isinstance(values, list) or not values or not all(isinstance(v, str) and v.strip() for v in values):
+            return []
+        return list(dict.fromkeys(v.strip().lower() for v in values))
     # Upstream comma parsing, with order-preserving duplicate/empty removal.
     return list(dict.fromkeys(x.strip().lower() for x in text.split(',') if x.strip()))
 

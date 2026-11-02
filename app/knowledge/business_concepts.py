@@ -17,7 +17,7 @@ def plan(service, request):
     if not set(request.target_ids) <= targets.keys():
         raise ValueError('현재 그래프와 선택한 종류의 대상만 선택하세요.')
     return parent, prepare(parent, [targets[i] for i in dict.fromkeys(request.target_ids)], request.neighbor_mode,
-        service=service, source_context=request.concept_source_context)
+        service=service, source_context=request.concept_source_context, output_contract=autoschema.CONCEPT_OUTPUT_CONTRACT)
 
 
 def source_preservation(service, parent_run_id, *, request=None):
@@ -46,10 +46,11 @@ def source_preservation(service, parent_run_id, *, request=None):
         units = {u['id']: u for u in donor['units']}
         chunks = business_run.source_chunks(parent)
         retained, pending, proofs, bindings, works = [], [], [], [], {}
+        output_contract = parent['recipe'].get('concept_output_contract')
         for target in autoschema.concept_targets(parent['graph']):
             messages, selection = autoschema.concept_messages(target, parent['graph'], chunks,
-                parent['recipe']['options']['neighbor_mode'])
-            item = dict(target=target, messages=messages, selection=selection)
+                parent['recipe']['options']['neighbor_mode'], output_contract=output_contract)
+            item = dict(target=target, messages=messages, schema=autoschema.concept_schema(output_contract), selection=selection)
             item['work_input'] = concept_work.prepare(parent, item)
             matches = [c for c in donor['concepts'] if c['target'] == target]
             if len(matches) != 1:
@@ -70,10 +71,10 @@ def source_preservation(service, parent_run_id, *, request=None):
                 and unit.get('requested_limits') == unit.get('executed_limits') == original.get('requested_limits')
                 and not selection.get('relation_input_partition')
                 and unit.get('stage') == 'concept_' + target['kind'] and expected == old_input
-                and unit.get('messages') == messages and unit.get('schema') is None
+                and unit.get('messages') == messages and unit.get('schema') == item['schema']
                 and unit.get('reference_map') == selection['source_reference_map']
                 and concept['selection'] == selection and concept_work.same_input(unit, concept, item)
-                and concept['concepts'] == autoschema.concepts(unit['response']['text'])
+                and concept['concepts'] == concept_work.labels(unit)
                 and len(connected) == 1 and work.get('status') == 'complete'
                 and work.get('input') == original and work.get('fingerprint') == concept_work.digest(original)
                 and unit.get('concept_work_id') == concept.get('work_id'))
@@ -180,12 +181,14 @@ def materialize_view(service, parent_run_id, child_id, *, request=None):
             unit = child_units[concept['request_id']]
             work = unit['concept_work_input']
             concept_work.validate_request(work, unit)
-            messages, selection = autoschema.concept_messages(concept['target'], parent['graph'], chunks, options['neighbor_mode'])
-            item = dict(target=concept['target'], messages=messages, selection=selection)
+            output_contract = child['recipe'].get('concept_output_contract')
+            messages, selection = autoschema.concept_messages(concept['target'], parent['graph'], chunks,
+                options['neighbor_mode'], output_contract=output_contract)
+            item = dict(target=concept['target'], messages=messages, schema=autoschema.concept_schema(output_contract), selection=selection)
             expected = concept_work.prepare(parent, item)
             original = deepcopy(work); original.pop('runtime')
             expected.pop('runtime')
-            if (concept['concepts'] != autoschema.concepts(unit['response']['text'])
+            if (concept['concepts'] != concept_work.labels(unit)
                     or concept_work.unknown_fields(work) or unit.get('requested_limits') != unit.get('executed_limits')
                     or original != expected or unit['messages'] != messages or concept['selection'] != selection
                     or not concept_work.same_input(unit, concept, dict(item, work_input=work))):
@@ -250,7 +253,9 @@ def materialize_view(service, parent_run_id, child_id, *, request=None):
         return dict(result, run_id=identifier, status='partial', duplicate_request=False)
 
 
-def prepare(parent, targets, mode, *, service=None, source_context=None):
+def prepare(parent, targets, mode, *, service=None, source_context=None, output_contract=None):
+    output_contract = output_contract or parent['recipe'].get('concept_output_contract')
+    schema = autoschema.concept_schema(output_contract)
     policy = source_context or parent['recipe']['options'].get('concept_source_context') or 'whole'
     context = None
     if policy != 'whole' and targets:
@@ -270,17 +275,19 @@ def prepare(parent, targets, mode, *, service=None, source_context=None):
     planned = []
     options = parent['recipe']['options']
     for target in targets:
-        messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode, source_context=context)
-        estimate = business_run.request_budget(parent, messages, None, options['concept_tokens'], review=False)['estimate_tokens']
+        messages, selection = autoschema.concept_messages(target, parent['graph'], chunks, mode,
+            source_context=context, output_contract=output_contract)
+        estimate = business_run.request_budget(parent, messages, schema, options['concept_tokens'], review=False)['estimate_tokens']
         if target['kind'] != 'relation' or len(target['claim_ids']) < 2 or estimate <= options['context_tokens']:
-            planned.append(dict(target=target, messages=messages, selection=selection))
+            planned.append(dict(target=target, messages=messages, schema=schema, selection=selection))
             continue
         # Split at whole-claim boundaries; never truncate the required source or Scope.
         groups, pending = [], []
         for claim_id in target['claim_ids']:
             trial = dict(target, claim_ids=pending + [claim_id])
-            trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode, source_context=context)
-            if pending and business_run.request_budget(parent, trial_messages, None, options['concept_tokens'], review=False)['estimate_tokens'] > options['context_tokens']:
+            trial_messages, _ = autoschema.concept_messages(trial, parent['graph'], chunks, mode,
+                source_context=context, output_contract=output_contract)
+            if pending and business_run.request_budget(parent, trial_messages, schema, options['concept_tokens'], review=False)['estimate_tokens'] > options['context_tokens']:
                 groups.append(pending)
                 pending = []
             pending.append(claim_id)
@@ -288,11 +295,12 @@ def prepare(parent, targets, mode, *, service=None, source_context=None):
         for index, claim_ids in enumerate(groups):
             part = dict(target, id=autoschema.identifier('relation', [target['id'], claim_ids]),
                         claim_ids=claim_ids, partition_of=target['id'])
-            messages, selection = autoschema.concept_messages(part, parent['graph'], chunks, mode, source_context=context)
+            messages, selection = autoschema.concept_messages(part, parent['graph'], chunks, mode,
+                source_context=context, output_contract=output_contract)
             selection['relation_input_partition'] = dict(original_target_id=target['id'],
                 original_claim_ids=list(target['claim_ids']), original_estimated_tokens=estimate,
                 context_tokens=options['context_tokens'], index=index, parts=len(groups))
-            planned.append(dict(target=part, messages=messages, selection=selection))
+            planned.append(dict(target=part, messages=messages, schema=schema, selection=selection))
     for item in planned:
         item['work_input'] = concept_work.prepare(parent, item)
     return planned
@@ -341,11 +349,15 @@ def apply_selected_contract(service, run, item, *, refreshed=False):
     # Existing runs keep their recorded contract; reading old results does not opt in.
     if refreshed and any(c['status'] in {'unreviewed','accepted'} and c['target'] == item['target'] for c in run['concepts']):
         return
-    response = business_run.call(service, run, 'concept_' + item['target']['kind'], item['messages'],
+    response = business_run.call(service, run, 'concept_' + item['target']['kind'], item['messages'], item.get('schema'),
         max_tokens=run['recipe']['options']['concept_tokens'], reference_map=item['selection']['source_reference_map'])
+    unit = run['units'][-1]
+    valid = response is not None and (item.get('schema') is None or concept_work.complete(unit))
+    if response is not None and not valid:
+        unit.update(status='failed', error='invalid_concept_output')
     result = dict(id=uuid4().hex, target=item['target'], selection=item['selection'],
-        concepts=autoschema.concepts(response['text']) if response else [], status='unreviewed' if response else 'failed',
-        relation='has_concept', approved_is_a=False, request_id=run['units'][-1]['id'])
+        concepts=concept_work.labels(unit) if valid else [], status='unreviewed' if valid else 'failed',
+        relation='has_concept', approved_is_a=False, request_id=unit['id'])
     if refreshed: result['refreshed_after_claim_change'] = True
     run['concepts'].append(result)
     business_run.save(service, run)
@@ -389,15 +401,16 @@ def apply(service, run, item, *, refreshed=False):
         for binding in run.get('concept_bindings', []):
             if binding['concept_id'] == concept.get('id'):
                 binding.update(previous_status=binding['status'], status='needs_review')
-    response = business_run.call(service, run, expected['stage'], item['messages'],
+    response = business_run.call(service, run, expected['stage'], item['messages'], item.get('schema'),
         max_tokens=run['recipe']['options']['concept_tokens'], reference_map=item['selection']['source_reference_map'],
         concept_work_input=expected)
     unit = run['units'][-1]
     valid = response is not None and concept_work.complete(unit)
     if response is not None and not valid:
-        unit.update(status='failed', error='incomplete_concept_response')
+        unit.update(status='failed', error='invalid_concept_output' if item.get('schema') is not None
+                    and not concept_work.labels(unit) else 'incomplete_concept_response')
     concept = dict(id=uuid4().hex, target=deepcopy(item['target']), selection=deepcopy(item['selection']),
-        concepts=autoschema.concepts(response['text']) if valid else [], status='unreviewed' if valid else 'failed',
+        concepts=concept_work.labels(unit) if valid else [], status='unreviewed' if valid else 'failed',
         relation='has_concept', approved_is_a=False, request_id=unit['id'])
     if refreshed: concept['refreshed_after_claim_change'] = True
     run['concepts'].append(concept)
@@ -444,20 +457,21 @@ def start(service, request):
             raise ValueError('동일 원문 범위의 종료된 명시적 donor 실행이 필요합니다.')
     donor_inputs = []
     for item in planned:
-        donor_inputs.append((item['messages'], item['selection']['source_reference_map']))
+        donor_inputs.append((item['messages'], item.get('schema'), item['selection']['source_reference_map']))
     with service.lock, service.repository.connect() as db:
         if service.closed or service.repository.has_active_runs(db):
             raise KnowledgeConflict('기존 실행 종료 후 개념화를 시작하세요.')
         recipe = deepcopy(parent['recipe']); recipe['options']['neighbor_mode'] = request.neighbor_mode
         recipe['options']['concept_source_context'] = request.concept_source_context or recipe['options'].get('concept_source_context') or 'whole'
         recipe['concept_work_contract'] = concept_work.VERSION
+        recipe['concept_output_contract'] = autoschema.CONCEPT_OUTPUT_CONTRACT
         run = dict(id=uuid4().hex, kind='business_concept', status='running', parent_run_id=parent['id'],
             input_version_ids=parent['input_version_ids'], recipe=recipe, model_identity=parent['model_identity'],
             graph_fingerprint=autoschema.identifier('graph', parent['graph']), planned=planned, concepts=[], units=[],
             parent_recipe=deepcopy(donor['recipe']), parent_model_identity=deepcopy(donor['model_identity']),
             reuse_pool_parent_run_id=donor['id'],
             reusable_units=[deepcopy(u) for u in donor['units'] if any(u.get('messages') == messages
-                and u.get('reference_map') == reference_map for messages,reference_map in donor_inputs)],
+                and u.get('schema') == schema and u.get('reference_map') == reference_map for messages,schema,reference_map in donor_inputs)],
             started_at=utcnow(), finished_at=None, metrics=dict(llm_calls=0, model_total_s=0, elapsed_s=0))
         db.execute('INSERT INTO runs VALUES(?,?)', (run['id'], encode(run)))
     begin = monotonic()

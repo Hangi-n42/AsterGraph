@@ -153,6 +153,8 @@ def test_model_tag_digest_change_stops_before_generation(environment,monkeypatch
 
 def test_parent_donor_uses_same_product_start_and_keeps_parent_unchanged(environment):
     service, requests, parent, item = setup(environment)
+    parent['recipe']['concept_output_contract'] = business_run.autoschema.CONCEPT_OUTPUT_CONTRACT
+    item = plans(parent)[0]
     business_concepts.apply(service,parent,item)
     before=deepcopy(parent)
     request=ConceptRunRequest(parent_run_id=parent['id'],target_ids=[item['target']['id']],neighbor_mode='plain')

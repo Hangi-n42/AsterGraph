@@ -25,7 +25,7 @@ def concept_packets(run):
     packets = {}
     for target in autoschema.concept_targets(run['graph']):
         messages, selection = autoschema.concept_messages(target, run['graph'], chunks,
-                                                        run['recipe']['options']['neighbor_mode'])
+            run['recipe']['options']['neighbor_mode'], output_contract=run['recipe'].get('concept_output_contract'))
         packets[target['id']] = concept_work.digest(dict(target=target, messages=messages, selection=selection))
     return packets
 

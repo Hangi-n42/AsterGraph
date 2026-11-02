@@ -192,6 +192,7 @@ def start(service, request):
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
                    requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
                        parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
+                   concept_output_contract=parent['recipe'].get('concept_output_contract') if parent else autoschema.CONCEPT_OUTPUT_CONTRACT,
                    review_contract=review_contract, generation=config,
                    models=models, options=options), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],

@@ -3,6 +3,8 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 
+from . import autoschema
+
 VERSION = 'exact-original-concept-work-v1'
 
 
@@ -19,7 +21,7 @@ def prepare(run, item):
     return dict(input_complexity=dict(claims=len(target['claim_ids']), meanings=len(meanings),
         qualifier_chars=len(json.dumps(qualifiers, ensure_ascii=False, sort_keys=True))),
         version=VERSION, stage='concept_' + target['kind'], kind=target['kind'], label=target['label'],
-        messages_sha256=digest(item['messages']), schema_sha256=digest(None),
+        messages_sha256=digest(item['messages']), schema_sha256=digest(item.get('schema')),
         reference_map=deepcopy(selection['source_reference_map']), context_dependencies=dependencies,
         selection=deepcopy(selection),
         actual_neighbor_edge_ids=list(selection['selected_edge_ids']) if target['kind'] == 'entity' else [],
@@ -67,7 +69,12 @@ def complete(unit):
     return (unit.get('status') == 'succeeded' and not unit.get('error') and not unit.get('discarded')
             and not unit.get('superseded_by') and response.get('done') is True
             and response.get('done_reason') in {'stop','eos','end_turn'} and not response.get('failure_kind')
-            and any(x.strip() for x in response.get('text', '').split(',')))
+            and (bool(labels(unit)) if unit.get('stage', '').startswith('concept_') else
+                 any(x.strip() for x in response.get('text', '').split(','))))
+
+
+def labels(unit):
+    return autoschema.concepts((unit.get('response') or {}).get('text', ''), schema=unit.get('schema'))
 
 
 def reusable(service, run, unit, expected, donor_run_id):
@@ -105,6 +112,6 @@ def source_input_fingerprint(item):
 def same_input(unit, concept, item):
     if concept.get('source_input_fingerprint'):
         return concept['source_input_fingerprint'] == source_input_fingerprint(item)
-    return (unit.get('messages') == item['messages'] and unit.get('schema') is None
+    return (unit.get('messages') == item['messages'] and unit.get('schema') == item.get('schema')
             and concept.get('selection', {}).get('source_reference_map') == item['selection']['source_reference_map']
             and unit.get('reference_map') in (None, item['selection']['source_reference_map']))
