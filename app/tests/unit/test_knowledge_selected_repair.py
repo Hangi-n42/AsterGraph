@@ -50,7 +50,7 @@ def apply_addition(run, req, scope, monkeypatch):
     return repair.recover(None, run, req, scope, run['blocks']), raw
 
 
-@pytest.mark.parametrize('contract', [final.CONTRACT, final.RELATION_CONTRACT])
+@pytest.mark.parametrize('contract', [final.CONTRACT, final.RELATION_CONTRACT, final.STORED_CONTRACT])
 def test_actual_dispatch_appends_only_gap_preserves_originals_and_raw(case, monkeypatch, contract):
     run, req, scope = ready(case, monkeypatch, contract); before = deepcopy(run['claims'])
     context = repair.packet(run, req, scope, run['blocks']); raw = proposal(context); original = deepcopy(raw); calls = []

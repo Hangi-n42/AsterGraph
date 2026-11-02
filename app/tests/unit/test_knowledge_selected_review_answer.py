@@ -30,7 +30,7 @@ def fixture(case, monkeypatch, contract=final.CONTRACT):
     return run, snapshot, query
 
 
-@pytest.mark.parametrize('contract', [final.CONTRACT, final.RELATION_CONTRACT])
+@pytest.mark.parametrize('contract', [final.CONTRACT, final.RELATION_CONTRACT, final.STORED_CONTRACT])
 def test_exact_review_binds_only_existing_approved_claims_without_mutation(case, monkeypatch, contract):
     run, snapshot, query = fixture(case, monkeypatch, contract)
     before = deepcopy((run, snapshot))

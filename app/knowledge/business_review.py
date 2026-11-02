@@ -1812,7 +1812,7 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
         public_answer_items=items,
         application_context={k: v for k, v in requirement.items() if k not in {'question', 'criterion'}},
         source_facts=[application_fact(m) for m in content], application_tasks=tasks, blocks=blocks)
-    from . import required_unit_selection, question_inspection
+    from . import required_unit_selection, question_inspection, fixed_fact_application
     property_catalog = None
     if required_unit_selection.enabled(run):
         if resume:
@@ -1838,6 +1838,12 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
             question_inspections=criteria, fixed_source_facts=required_unit_selection.model_facts(fixed_facts),
             request_groups=[dict(item_id=i['id'], meaning_keys=[m['key'] for m in content]) for i in items])
         packet.pop('application_tasks')
+        if fixed_fact_application.enabled(run):
+            instruction = fixed_fact_application.PROMPT
+            output_type = fixed_fact_application.output_type(fixed_facts, items, criteria)
+            packet = fixed_fact_application.packet(dict(packet, application_tasks=tasks), fixed_facts, criteria)
+            packet.pop('source_property_catalog')
+            packet.pop('request_groups')
     request = execution.json_request(run, 'requirement_application', instruction, packet, output_type) if reuse else None
     fingerprint = autoschema.identifier('requirement_application', dict(request=request, requirement=requirement,
         recipe=run['recipe'],model_identity=run['model_identity'])) if reuse else None
@@ -1855,7 +1861,10 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
     output = execution.json_call(service, run, 'requirement_application', instruction, packet, output_type)
     producer_output = deepcopy(output)
     if property_catalog is not None:
-        output, projection = required_unit_selection.project_output(output, items, content)
+        if fixed_fact_application.enabled(run):
+            output, projection = fixed_fact_application.project(output, fixed_facts, items, content, criteria)
+        else:
+            output, projection = required_unit_selection.project_output(output, items, content)
     receipt = dict(contract=APPLICATION_CONTRACT, unit_id=response_unit_id(run), output=deepcopy(output), errors=[], request_quote_bindings=[],
         answer_request={k: requirement.get(k, '') for k in ('question', 'criterion')}, public_answer_items=deepcopy(items),
         application_context={k: deepcopy(v) for k, v in requirement.items() if k not in {'question', 'criterion'}})
@@ -1865,6 +1874,8 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
             source_fact_grounding=deepcopy(run['source_fact_grounding']),
             property_selection_contract=required_unit_selection.CONTRACT, source_property_catalog=deepcopy(property_catalog),
             provided_blocks_fingerprint=autoschema.identifier(required_unit_selection.CONTRACT, blocks))
+        if fixed_fact_application.enabled(run):
+            receipt['fact_application_contract'] = fixed_fact_application.CONTRACT
     if resume:
         receipt.update(reused_from=dict(run_id=resume['run_id'], unit_id=resume['unit']['id']),
                        reused_links=deepcopy(reused_links), application_tasks=deepcopy(tasks))
