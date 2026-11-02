@@ -148,10 +148,12 @@ def test_required_review_facts_are_not_dropped_on_capacity_failure(monkeypatch):
 
 
 @pytest.mark.parametrize('changed_during_call', [False, True])
-def test_api_new_answer_persists_snapshot_review_and_holds_changed_input(tmp_path, monkeypatch, changed_during_call):
+@pytest.mark.parametrize('contract', ['provided_source_quote_links_v1', 'provided_review_scope_links_v1'])
+def test_api_new_answer_persists_snapshot_review_and_holds_changed_input(tmp_path, monkeypatch, changed_during_call, contract):
     service, client, wires = fixture_service(tmp_path, monkeypatch)
     calls = []
-    context = dict(required_claim_ids=['c4'], snapshot_id='s', review_run_id='review', final_review_unit_id='u')
+    context = dict(required_claim_ids=['c4'], snapshot_id='s', review_run_id='review', final_review_unit_id='u',
+        findings={}, source_observations=[])
     def load(*a):
         calls.append(True)
         return dict(context, changed=True) if changed_during_call and len(calls)>1 else deepcopy(context)
@@ -160,7 +162,7 @@ def test_api_new_answer_persists_snapshot_review_and_holds_changed_input(tmp_pat
         with service.repository.connect() as db:
             before = [tuple(r) for r in db.execute('SELECT * FROM snapshots')]
         reply = client.post('/api/v1/knowledge/business/search', json=dict(question='Fixture question', snapshot_id='s',
-            selected_review=dict(run_id='review',unit_id='u')))
+                selected_review=dict(run_id='review',unit_id='u'), source_citation_contract=contract))
         assert reply.status_code == 200, reply.text
         value = reply.json()['data']
         assert value['snapshot_id']=='s' and len(wires)==2

@@ -676,7 +676,7 @@ class BusinessQuery(BaseModel):
         description='Experimental snapshot QA: limit preserves baseline claims; whole selected facts and ranked additions share the existing token budget.')
     candidate_contract: Literal['r2_g1_w1'] | None = Field(default=None,
         description='Experimental R2 source/Head ranking with G1 children and W1 review-work sharing; individual edge selection only.')
-    source_citation_contract: Literal['provided_source_quotes_v1', 'provided_source_quote_links_v1'] | None = Field(default=None,
+    source_citation_contract: Literal['provided_source_quotes_v1', 'provided_source_quote_links_v1', 'provided_review_scope_links_v1'] | None = Field(default=None,
         description='Opt-in source quotations and optional model-declared answer links; not semantic support.')
     retrieval: Literal['bm25', 'dense', 'hybrid', 'hipporag2', 'hybrid_graph', 'explicit_sources'] = 'hipporag2'
     source_context_tokens: int | None = Field(default=None, ge=1)
@@ -690,6 +690,8 @@ class BusinessQuery(BaseModel):
 
     @model_validator(mode='after')
     def one_source(self):
+        if self.source_citation_contract == 'provided_review_scope_links_v1' and not self.selected_review:
+            raise ValueError('검토 범위 연결에는 동일 질문·사용 버전의 selected_review가 필요합니다.')
         if self.selected_review and (not self.snapshot_id or self.source_run_id or self.requirement_ids
                 or self.retrieval != 'hipporag2' or self.graph_variant != 'full' or self.answer_mode != 'synthesis'
                 or 'evidence_union' in self.model_fields_set and not self.evidence_union):

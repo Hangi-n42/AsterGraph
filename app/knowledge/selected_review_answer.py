@@ -77,9 +77,39 @@ def load(service, db, request, snapshot):
     return bind(service.repository.get(db, 'runs', request.selected_review.run_id), snapshot, request)
 
 
-def answer_context(context, selected):
+def review_scope_refs(context):
+    if context is None:
+        return {}
+    return {f'rv_{item_id}_{index + 1}': dict(item_id=item_id, finding_index=index)
+        for item_id, item in context['findings'].items()
+        for index, finding in enumerate(item['findings']) if finding['status'] == 'undetermined'}
+
+
+def review_scopes(context, selected):
+    """Expose the recorded premises of a bounded judgment, never certify absence."""
+    if not context or not set(context['required_claim_ids']) <= set(selected):
+        return {}
+    observations = {o['target_id']: o for o in context['source_observations']}
+    scopes = {}
+    for ref, address in review_scope_refs(context).items():
+        finding = context['findings'][address['item_id']]['findings'][address['finding_index']]
+        ids = finding['source_result_ids']
+        if not ids or any(i not in observations for i in ids):
+            continue
+        scopes[ref] = dict(**address, **deepcopy(finding),
+            **{k: context[k] for k in ('snapshot_id', 'review_run_id', 'final_review_unit_id',
+                'source_review_unit_id', 'review_fingerprint', 'snapshot_fingerprint')},
+            scope='selected_source_observations_only', semantic_support='not_assessed',
+            premises=[{k: deepcopy(observations[i][k]) for k in ('target_id', 'represented_content',
+                'evidence', 'expression_bindings', 'condition_references', 'condition_state')} for i in ids])
+    return scopes
+
+
+def answer_context(context, selected, citation_contract=None):
     if context is None:
         return {}
     if not set(context['required_claim_ids']) <= set(selected):
         raise ValueError('selected_review_required_claim_not_delivered')
-    return dict(selected_requirement_review=deepcopy(context))
+    from .answer_links import REVIEW_CONTRACT
+    return dict(selected_requirement_review=deepcopy(context),
+        **(dict(review_scope_refs=review_scope_refs(context)) if citation_contract == REVIEW_CONTRACT else {}))

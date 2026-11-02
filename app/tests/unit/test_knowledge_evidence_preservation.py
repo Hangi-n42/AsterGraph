@@ -198,6 +198,8 @@ def fixture_service(tmp_path, monkeypatch):
                 output['source_citations'][0]['quote_id'] = 'sq_fixture'
                 output['answer_links'] = [dict(target='answer', anchor=output['answer'],
                     claim_refs=output['citations'], quote_refs=['sq_fixture'])]
+                if 'review_refs' in properties['answer_links']['items']['properties']:
+                    output['answer_links'][0]['review_refs'] = []
         return httpx.Response(200, json=dict(message=dict(content=json.dumps(output)), done=True, done_reason='stop'))
     init = ModelClient.__init__
     monkeypatch.setattr(ModelClient, '__init__', lambda self, config=None, **kw:

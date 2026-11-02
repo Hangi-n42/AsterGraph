@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import KnowledgeAnswerSources, { type AnswerSourceCitations } from "../components/KnowledgeAnswerSources";
+import KnowledgeAnswerSources, { type AnswerSourceCitations, type AnswerLinks } from "../components/KnowledgeAnswerSources";
 
 const base: AnswerSourceCitations = {
   status: "recorded", citations: [], duplicates_removed: 0, answer_binding: "global", semantic_support: "not_assessed",
@@ -104,4 +104,24 @@ it.each(["missing_parse","duplicate_id","invalid_span"])("keeps an invalid sourc
   const html=renderToStaticMarkup(createElement(KnowledgeAnswerSources,{record,links:inspection,claimBodies:inspectionBodies}));
   expect(html).toContain("저장된 원문 참조 연결을 확인할 수 없습니다");
   expect(html).toContain("별미 세 가지를 제안했다");
+});
+
+it("shows a bounded review separately from source quotations and hides invalid or stale references", () => {
+  const links: AnswerLinks = { ...inspection, links: [{ status: "resolved", declaration: {
+    target: "limitations", anchor: "이 비교만으로 적합성을 확정할 수 없음", claim_refs: [], quote_refs: [], review_refs: ["rv_item_1"],
+  } }], review_scopes: { rv_item_1: { scope: "selected_source_observations_only", status: "undetermined",
+    statement: "확정 불가 판단", reason: "비교 전제에 한정", snapshot_id: "snapshot-original", review_run_id: "review-run", final_review_unit_id: "final-unit",
+    premises: [{ target_id: "premise", represented_content: "합성 상품 부위는 등심", condition_state: "not_applicable", condition_references: [],
+      evidence: [{ quote: "등심", source_version_id: "v", parse_run_id: "p", block_id: "b", start_char: 0, end_char: 2 }] }],
+  } } };
+  const before = structuredClone(links);
+  const render = (value: AnswerLinks) => renderToStaticMarkup(createElement(KnowledgeAnswerSources, { links: value }));
+  const html = render(links);
+  for (const text of ["검토 범위에 연결한 확정 불가 판단", "확인한 비교 전제", "합성 상품 부위는 등심", "전체 자료에 근거가 없다는 증명", "snapshot-original", "final-unit"]) expect(html).toContain(text);
+  expect(html).not.toContain("연결된 원문 구절 · 해당 답변의 기록된 위치");
+  expect(links).toEqual(before);
+  const unresolved = render({ ...links, links: links.links.map(l => ({ ...l, status: "unresolved" })) });
+  expect(unresolved).toContain("검토 범위 연결을 확인할 수 없습니다");
+  expect(unresolved).not.toContain("합성 상품 부위는 등심");
+  expect(render({ ...links, status: "needs_review" })).not.toContain("확인한 비교 전제");
 });

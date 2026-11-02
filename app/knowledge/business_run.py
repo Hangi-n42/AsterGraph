@@ -705,7 +705,8 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         output_type = required_review_type(output_type,required_targets)
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
-        schema = answer_links.generation_schema(schema)
+        schema = answer_links.generation_schema(schema,
+            context.get('review_scope_refs', {}) if run['query']['source_citation_contract'] == answer_links.REVIEW_CONTRACT else None)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,

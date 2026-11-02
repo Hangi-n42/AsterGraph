@@ -3,6 +3,8 @@ from copy import deepcopy
 import re
 
 CONTRACT = 'provided_source_quote_links_v1'
+# Opt-in only: the native trial linked review scopes but failed literal anchors and bounded wording.
+REVIEW_CONTRACT = 'provided_review_scope_links_v1'
 PROMPT = (
     '\nsource_citations마다 응답 내 고유한 불투명 quote_id(sq_접두)를 부여한다. 순번이나 전역 ID가 아니다. '
     'answer_links에는 target(answer 또는 limitations), 해당 필드의 정확하고 유일한 literal anchor, '
@@ -11,13 +13,31 @@ PROMPT = (
     'limitations anchor는 모든 항목을 통틀어 유일해야 한다. offset이나 항목 번호를 계산하지 않는다. '
     '여러 참조와 quote 재사용을 허용한다. 두 참조 집합 사이의 개별 지지관계나 의미 검증을 뜻하지 않는다.'
 )
+REVIEW_PROMPT = (
+    '\nanswer_links는 target, anchor, claim_refs, quote_refs, review_refs를 반환한다. '
+    '확인된 원문 사실은 quote_refs로 연결하고 review_refs=[]로 둔다. '
+    '확정 불가 판단은 review_scope_refs에 제공한 검수 참조로 연결하고 quote_refs=[]로 둔다. '
+    '검수 참조는 선택한 원문·속성을 비교한 모델 판단이며 전체 자료의 부재 증명이 아니다. '
+    '확정 불가 문장과 limitations 각각에 연결을 남기고, 확인한 비교 전제만으로 무엇을 확정할 수 없는지 범위를 명시한다. '
+    '한 원문 구절을 자료 전체의 부재 근거로 쓰거나 이전 검수 문장의 부재 표현을 전체 자료로 확대하지 않는다.'
+)
+
+
+def instruction(contract):
+    if contract == CONTRACT:
+        return PROMPT
+    if contract == REVIEW_CONTRACT:
+        return PROMPT.replace('claim_refs, quote_refs만', 'claim_refs, quote_refs, review_refs만').replace(
+            'quote_refs는 이번 source_citations의 quote_id를 하나 이상 선택한다.',
+            'quote_refs는 이번 source_citations의 quote_id만 선택한다.') + REVIEW_PROMPT
+    return ''
 
 
 def enabled(run, stage='business_qa'):
-    return stage == 'business_qa' and run.get('query', {}).get('source_citation_contract') == CONTRACT
+    return stage == 'business_qa' and run.get('query', {}).get('source_citation_contract') in {CONTRACT, REVIEW_CONTRACT}
 
 
-def generation_schema(schema):
+def generation_schema(schema, review_refs=None):
     schema = deepcopy(schema)
     quote = schema['$defs'][schema['properties']['source_citations']['items']['$ref'].split('/')[-1]]
     quote['properties']['quote_id'] = dict(type='string', pattern=r'^sq_\S+$')
@@ -28,6 +48,13 @@ def generation_schema(schema):
             claim_refs=dict(type='array', items=deepcopy(schema['properties']['citations']['items'])),
             quote_refs=dict(type='array', minItems=1, items=dict(type='string', pattern=r'^sq_\S+$')))))
     schema['required'] = [*schema['required'], 'answer_links']
+    if review_refs is not None:
+        row = schema['properties']['answer_links']['items']
+        row['required'].append('review_refs')
+        row['properties']['quote_refs']['minItems'] = 0
+        row['properties']['review_refs'] = dict(type='array', uniqueItems=True,
+            items=dict(type='string', enum=list(review_refs)) if review_refs else dict(type='string'),
+            **({} if review_refs else dict(maxItems=0)))
     return schema
 
 
@@ -85,6 +112,10 @@ def record(run, output, provided_ids):
         relation='model_declared', duplicates_removed=0,
         claims_without_resolved_links=list(output['citations']) if output else [])
     run['answer_links'] = result
+    review_mode = run['query']['source_citation_contract'] == REVIEW_CONTRACT
+    if review_mode:
+        from .selected_review_answer import review_scopes
+        result['review_scopes'] = review_scopes(run.get('selected_review_context'), provided_ids)
     if not metadata.get('recorded'):
         return
     result['status'] = 'recorded'
@@ -100,7 +131,8 @@ def record(run, output, provided_ids):
         seen.append(deepcopy(declaration))
         entry = dict(declaration=declaration, status='unresolved', errors=[])
         errors = entry['errors']
-        if not isinstance(declaration, dict) or set(declaration) != {'target', 'anchor', 'claim_refs', 'quote_refs'}:
+        fields = {'target', 'anchor', 'claim_refs', 'quote_refs'} | ({'review_refs'} if review_mode else set())
+        if not isinstance(declaration, dict) or set(declaration) != fields:
             errors.append('invalid_link_fields')
         else:
             target, anchor = declaration['target'], declaration['anchor']
@@ -126,10 +158,18 @@ def record(run, output, provided_ids):
                 errors.append('claim_not_provided_and_globally_cited')
             if not isinstance(quotes, list) or any(not isinstance(v, str) for v in quotes):
                 errors.append('invalid_quote_refs')
-            elif not quotes:
+            elif not quotes and not (review_mode and declaration['review_refs']):
                 errors.append('missing_quote_refs')
             elif any(result['quote_lookup'].get(v, {}).get('status') != 'resolved' for v in quotes):
                 errors.append('quote_ref_unresolved')
+            if review_mode:
+                reviews = declaration['review_refs']
+                if not isinstance(reviews, list) or any(not isinstance(v, str) for v in reviews):
+                    errors.append('invalid_review_refs')
+                elif any(v not in result['review_scopes'] for v in reviews):
+                    errors.append('review_ref_unresolved')
+                if reviews and quotes:
+                    errors.append('review_scope_is_not_source_quote_support')
             if not errors:
                 entry['status'] = 'resolved'
                 linked.update(claims)

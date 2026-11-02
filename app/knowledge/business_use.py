@@ -1112,7 +1112,7 @@ def graph_qa_input(snapshot, original, recipe, request, candidates, hits, previo
     body = dict(question=request.question, choices=request.choices, context=context,
         source_versions=snapshot['source_versions'], source_evidence=sources,
         requirement_limitations=limitations, reviewed_meanings=meanings,
-        **selected_review_answer.answer_context(selected_review_context, selected))
+        **selected_review_answer.answer_context(selected_review_context, selected, request.source_citation_contract))
     schema, references = answer_references(context, sources, source_citation_contract=request.source_citation_contract)
     return state, body, schema, references
 
@@ -1230,7 +1230,7 @@ def record_answer_source_citations(run, output, source_evidence, blocks):
 
 
 def source_citations_instruction(contract):
-    return (SOURCE_CITATIONS_PROMPT if contract else '') + (answer_links.PROMPT if contract == answer_links.CONTRACT else '')
+    return (SOURCE_CITATIONS_PROMPT if contract else '') + answer_links.instruction(contract)
 
 
 def resolve_query_defaults(request, context_mode):
@@ -1552,7 +1552,7 @@ def query(service, request, *, context_mode='graph'):
                  requirement_limitations=limitations, **(reader_context if structured_reader else
                     {'source_context': required_source_context} if source_reader else
                     {'reviewed_meanings': reviewed_meanings}),
-                 **selected_review_answer.answer_context(selected_review_context, selected))
+                 **selected_review_answer.answer_context(selected_review_context, selected, request.source_citation_contract))
         if request.evidence_union:
             packet = business_run.json_request(run, 'business_qa', instruction, answer_context, context_answer,
                 reference_map=reference_map)

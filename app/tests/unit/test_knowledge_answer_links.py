@@ -14,10 +14,12 @@ def raw(**changes):
         answer_links=[dict(target='answer', anchor='q13', claim_refs=[], quote_refs=['sq_alpha'])]), **changes)
 
 
-def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
+def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None, review_context=None):
     views = views or [source()]
     model, refs = use.answer_references([dict(id='claim', text='제공 주장')], views, source_citation_contract=contract)
     run = dict(recipe=dict(options={}), query=dict(source_citation_contract=contract), units=[])
+    if review_context is not None:
+        run['selected_review_context'] = deepcopy(review_context)
     seen = []
     def call(service, active, stage, messages, schema, **kwargs):
         seen.append(dict(messages=messages, schema=schema, refs=kwargs['reference_map']))
@@ -26,6 +28,9 @@ def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
     monkeypatch.setattr(business_run, 'call', call)
     monkeypatch.setattr(business_run, 'save', lambda *a: None)
     context = dict(context=[dict(id='claim')], source_evidence=views)
+    if review_context is not None:
+        from app.knowledge.selected_review_answer import answer_context
+        context.update(answer_context(review_context, ['claim'], contract))
     instruction = '기존 안내' + use.source_citations_instruction(contract)
     preview = business_run.json_request(run, 'business_qa', instruction, context, model, reference_map=refs)
     output = business_run.json_call(None, run, 'business_qa', instruction, context, model, reference_map=refs)
@@ -36,6 +41,66 @@ def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
         links.record(run, output, ['claim'])
         assert '_answer_link_metadata' not in output
     return output, run, preview
+
+
+def bounded_review():
+    return dict(required_claim_ids=['claim'], snapshot_id='s', review_run_id='r', final_review_unit_id='f',
+        source_review_unit_id='b', review_fingerprint='rf', snapshot_fingerprint='sf',
+        findings={'item': dict(findings=[dict(status='undetermined', statement='비교 전제로 확정 불가',
+            reason='속성 일치만 확인함', source_result_ids=['observation']), dict(status='confirmed')])},
+        source_observations=[dict(target_id='observation', represented_content='합성 비교 전제',
+            evidence=[dict(source_version_id='v', parse_run_id='p', block_id='b', start_char=0, end_char=2, quote='전제')],
+            expression_bindings=[dict(claim_id='claim', field='statement', quote='합성', span=[0, 2], claim_version='cv')],
+            condition_references=[], condition_state='not_applicable')])
+
+
+def test_bounded_judgment_keeps_review_premises_separate_from_direct_source_support(monkeypatch):
+    reviewed = bounded_review(); before = deepcopy(reviewed)
+    declaration = dict(target='limitations', anchor='확인 불가', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    payload = raw(answer_links=[declaration])
+    _, run, packet = evaluate(monkeypatch, payload, links.REVIEW_CONTRACT, review_context=reviewed)
+    record = run['answer_links']
+    assert record['status'] == 'recorded' and record['links'][0]['status'] == 'resolved'
+    assert record['links'][0]['declaration'] == declaration
+    scope = record['review_scopes']['rv_item_1']
+    assert scope['status'] == 'undetermined' and scope['semantic_support'] == 'not_assessed'
+    assert scope['snapshot_id'] == 's' and scope['scope'] == 'selected_source_observations_only'
+    assert scope['premises'][0]['evidence'] == reviewed['source_observations'][0]['evidence']
+    prop = packet['schema']['properties']['answer_links']['items']['properties']
+    assert prop['review_refs']['items']['enum'] == ['rv_item_1']
+    assert 'rv_item_2' not in record['review_scopes']
+    assert reviewed == before and run['units'][0]['response']['parsed'] == payload
+    links.withhold(run)
+    assert not run['answer_links'].get('review_scopes') and not run['answer_links']['links']
+
+
+@pytest.mark.parametrize('fault', ['unknown', 'confirmed', 'mixed', 'missing', 'not_list', 'missing_premise', 'undelivered'])
+def test_invalid_review_links_never_become_source_support(monkeypatch, fault):
+    reviewed = bounded_review()
+    declaration = dict(target='limitations', anchor='확인 불가', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    if fault in {'unknown', 'confirmed'}: declaration['review_refs'] = ['rv_absent' if fault == 'unknown' else 'rv_item_2']
+    elif fault == 'mixed': declaration['quote_refs'] = ['sq_alpha']
+    elif fault == 'missing': declaration['review_refs'] = []
+    elif fault == 'not_list': declaration['review_refs'] = 'rv_item_1'
+    elif fault == 'missing_premise': reviewed['source_observations'] = []
+    else:
+        from app.knowledge.selected_review_answer import review_scopes
+        assert review_scopes(reviewed, []) == {}
+        return
+    _, run, _ = evaluate(monkeypatch, raw(answer_links=[declaration]), links.REVIEW_CONTRACT, review_context=reviewed)
+    assert run['answer_links']['links'][0]['status'] == 'unresolved'
+
+
+def test_experimental_review_links_require_explicit_selection_and_a_bound_review():
+    kwargs = dict(question='합성', snapshot_id='s', selected_review=dict(run_id='r', unit_id='u'))
+    query, _ = use.resolve_query_defaults(BusinessQuery(**kwargs), 'graph')
+    assert query.source_citation_contract == links.CONTRACT
+    experimental, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=links.REVIEW_CONTRACT), 'graph')
+    assert experimental.source_citation_contract == links.REVIEW_CONTRACT
+    old, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=links.CONTRACT), 'graph')
+    assert old.source_citation_contract == links.CONTRACT
+    with pytest.raises(ValueError, match='selected_review'):
+        BusinessQuery(question='합성', snapshot_id='s', source_citation_contract=links.REVIEW_CONTRACT)
 
 
 def test_new_schema_is_only_opt_in_and_literals_survive_id_restoration(monkeypatch):
