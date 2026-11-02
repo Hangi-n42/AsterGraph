@@ -125,6 +125,23 @@ def test_single_scope_counts_keep_homonyms_and_parallel_relations(service):
     assert result['scope']['partial'] is True
 
 
+def test_additive_repair_has_no_previous_sentence_and_keeps_unverified_fields(service):
+    from copy import deepcopy
+    with service.repository.connect() as db:
+        run = service.repository.get(db, 'runs', 'run1')
+        claim = run['claims'][0]
+        claim.update(conditions=[], exceptions=[], period='unresolved', qualifier_status='unparsed_model_edit_requires_review')
+        run['repairs'] = [dict(id='repair', status='rechecked_in_scope', changes=[dict(before=None, after=deepcopy(claim))])]
+        service.repository.save(db, 'runs', run)
+    detail = workbench.explore(service, 'run', 'run1', selected_id='c0')['detail']
+    assert detail['history'][0]['changes'] == [dict(before=None, after=claim['statement'])]
+    assert detail['history'][0]['status'] == 'rechecked_in_scope'
+    assert detail['claims'][0]['period'] == 'unresolved'
+    assert detail['claims'][0]['qualifier_status'] == 'unparsed_model_edit_requires_review'
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'runs', 'run1') == run
+
+
 def test_catalog_labels_only_explicit_edit_runs_and_uses_recorded_save_time(service):
     with service.repository.connect() as db:
         for rid in ['run1','run2']:

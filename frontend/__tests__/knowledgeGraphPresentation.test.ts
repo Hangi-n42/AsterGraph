@@ -141,3 +141,17 @@ it("renders relation concepts as annotations without adding graph nodes", () => 
   expect(html).toContain('관계의 검색용 개념 · 명칭 속성');
   expect(html).not.toContain('출처별 대상을 연결하는 검색용 개념');
 });
+
+it.each(["unresolved", "가급적 빨리"])("keeps repaired qualifier values unverified after a sentence recheck: %s", period => {
+  const detail: KnowledgeDetail = { item: { id: "claim", kind: "claim", label: "보강 문장", claim_ids: ["claim"] }, relations: [],
+    history: [{ id: "repair", status: "rechecked_in_scope", changes: [{ after: "보강 문장" }] }],
+    claims: [{ id: "claim", role: "event_entity", statement: "보강 문장", review_status: "unreviewed", editable: true,
+      conditions: ["개봉후"], exceptions: [], period, qualifier_status: "unparsed_model_edit_requires_review", meanings: [], evidence: [] }] };
+  const before = structuredClone(detail);
+  const html = renderToStaticMarkup(createElement(KnowledgeSelection, { detail, onSelect: () => {} }));
+  for (const text of ["지정 범위 재검수 통과", "보강 후 보조 필드 미검수", "기간 · 필드 미검수", "개봉후", "생성 당시 보조 필드 원본", "예외 없음’ 판정이 아님"]) expect(html).toContain(text);
+  expect(html).not.toContain("<dd>unresolved</dd>");
+  expect(html).toContain(period === "unresolved" ? "<dd>미확인</dd>" : "<dd>가급적 빨리</dd>");
+  expect(html).toContain("미검수");
+  expect(detail).toEqual(before);
+});
