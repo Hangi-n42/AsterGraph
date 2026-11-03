@@ -17,6 +17,11 @@ export type AnswerLinks = {
     location?: { target: "answer" | "limitations"; limitation_index?: number; start_char: number; end_char: number } }[];
   claims_without_resolved_links: string[]; duplicates_removed: number;
   quote_lookup?: Record<string, { status: string; citation_index?: number }>;
+  review_scopes?: Record<string, { scope: "selected_source_observations_only"; status: "undetermined";
+    statement: string; reason: string; snapshot_id: string; review_run_id: string; final_review_unit_id: string;
+    premises: { target_id: string; represented_content: string; condition_state: string;
+      evidence: { quote: string; source_version_id: string; parse_run_id: string; block_id: string; start_char: number; end_char: number }[];
+      condition_references: { quote: string }[] }[] }>;
 };
 
 export type AnswerLinkClaims = {
@@ -39,13 +44,14 @@ function linkedQuote(id: string, links: AnswerLinks, record?: AnswerSourceCitati
   return citation;
 }
 
-type Declaration = { target: "answer" | "limitations"; anchor: string; claim_refs: string[]; quote_refs: string[] };
+type Declaration = { target: "answer" | "limitations"; anchor: string; claim_refs: string[]; quote_refs: string[]; review_refs?: string[] };
 function isDeclaration(value: unknown): value is Declaration {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (v.target === "answer" || v.target === "limitations") && typeof v.anchor === "string" &&
     Array.isArray(v.claim_refs) && v.claim_refs.every(x => typeof x === "string") &&
-    Array.isArray(v.quote_refs) && v.quote_refs.every(x => typeof x === "string");
+    Array.isArray(v.quote_refs) && v.quote_refs.every(x => typeof x === "string") &&
+    (v.review_refs === undefined || Array.isArray(v.review_refs) && v.review_refs.every(x => typeof x === "string"));
 }
 
 export default function KnowledgeAnswerSources({ record, links, claimBodies, claimEvidence = [] }: {
@@ -84,9 +90,29 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
           <p>선언한 원문 참조: {link.declaration.quote_refs.join(", ") || "없음"}</p>
         </>}
         {link.location && <p>{link.location.target === "answer" ? "답변" : `한계 항목 ${(link.location.limitation_index ?? 0) + 1}`} · 문자 [{link.location.start_char}, {link.location.end_char})</p>}
+        {declaration?.review_refs?.map(id => {
+          const scope = link.status === "resolved" ? links.review_scopes?.[id] : undefined;
+          return <div key={id} className="my-2 rounded border p-2">
+            <h5 className="font-semibold">검토 범위에 연결한 확정 불가 판단</h5>
+            {scope?.scope === "selected_source_observations_only" && scope.status === "undetermined" ? <>
+              <p>선택한 자료·속성을 비교한 모델 판단입니다. 전체 자료에 근거가 없다는 증명이나 사용 승인이 아닙니다.</p>
+              <details open><summary>확인한 비교 전제</summary>{scope.premises.map(p => <div key={p.target_id} className="my-2">
+                <p>{p.represented_content}</p>
+                {p.evidence.map((e, j) => <details key={j}><summary>원문: {e.quote}</summary>
+                  <p>원문 버전 {e.source_version_id} · 처리 기록 {e.parse_run_id}</p>
+                  <p>구간 {e.block_id} · 문자 [{e.start_char}, {e.end_char})</p>
+                </details>)}
+                {!!p.condition_references.length && <p>조건 원문: {p.condition_references.map(e => e.quote).join(" / ")}</p>}
+              </div>)}</details>
+              <details><summary>이전 검수의 판단·이력</summary><p>{scope.statement}</p><p>{scope.reason}</p>
+                <p>사용 버전 {scope.snapshot_id}</p><p>검수 실행 {scope.review_run_id} · 최종 검수 {scope.final_review_unit_id}</p>
+              </details>
+            </> : <p>검토 범위 연결을 확인할 수 없습니다.</p>}
+          </div>;
+        })}
         {claimBodies && declaration && <>
           <details><summary>{links.relation === "reviewer_corrected" ? "정정 후 주장 참조 · 원래 생성 입력" : "모델이 연결한 주장 본문 · 생성 입력"}</summary>
-            {!declaration.claim_refs.length && <p>이 연결에는 주장 참조 없이 원문 참조만 선언했습니다.</p>}
+            {!declaration.claim_refs.length && <p>{declaration.review_refs?.length ? "이 연결에는 주장 참조 없이 검토 범위를 선언했습니다." : "이 연결에는 주장 참조 없이 원문 참조만 선언했습니다."}</p>}
             {declaration.claim_refs.map((id, j) => {
               const body = claimBodies.claims[id];
               const scope = claimEvidence.filter(c => c.id === id);
@@ -106,7 +132,7 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
               </div>;
             })}
           </details>
-          <details><summary>연결된 원문 구절 · 해당 답변의 기록된 위치</summary>
+          {!!declaration.quote_refs.length && <details><summary>연결된 원문 구절 · 해당 답변의 기록된 위치</summary>
             {declaration.quote_refs.map((id, j) => {
               const citation = linkedQuote(id, links, record);
               return <div key={j} className="my-2"><p>{id}</p>{citation ? <>
@@ -115,7 +141,7 @@ export default function KnowledgeAnswerSources({ record, links, claimBodies, cla
                 <p>구간 {citation.block_id} · 문자 [{citation.start_char}, {citation.end_char})</p>
               </> : <p>저장된 원문 참조 연결을 확인할 수 없습니다.</p>}</div>;
             })}
-          </details>
+          </details>}
         </>}
         <details><summary>{links.relation === "reviewer_corrected" ? "정정 후 연결 진단" : "원래 연결 선언 진단"}</summary><pre className="whitespace-pre-wrap">{JSON.stringify(link.declaration, null, 2)}</pre></details>
       </article>; })}

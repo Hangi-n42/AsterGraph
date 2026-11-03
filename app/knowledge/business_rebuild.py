@@ -283,6 +283,7 @@ def prepare_run(service, db, run, request):
     if request.reuse_run_id or request.reassess_run_id or request.block_ids or request.target_parse_run_ids:
         raise ValueError('부분 재구축은 서버 계획의 전체 문맥과 처리 단위를 사용합니다.')
     parent = service.repository.get(db, 'runs', plan['basis']['parent_run_id'])
+    run['recipe']['concept_output_contract'] = parent['recipe'].get('concept_output_contract')
     whole_source = bool(plan.get('whole_source_policy'))
     run['parent_recipe'] = deepcopy(parent['recipe'])
     run['parent_model_identity'] = deepcopy(parent.get('model_identity'))

@@ -49,5 +49,28 @@ def remap(value, mapping):
         literal = {'endpoint_labels'} | ({'subject','object'} if value.get('endpoint_mode')=='source_text' and not value.get('source_relation') else set())
         if {'claim_id','field','quote'} <= value.keys():
             literal |= {'field','quote'}
+        if {'block_id','quote'} <= value.keys() or {'evidence_ref','span','quote'} <= value.keys():
+            literal.add('quote')
+        if 'fact_id' in value or {'subject_ref', 'attribute_ref', 'scope_id'} <= value.keys():
+            literal |= {'fact_id', 'scope_id', 'matching_binding_ids'}
+        if 'property_ref' in value:
+            literal.add('scope_id')
+            literal |= {'property_ref','parent_ref','item_ref','source_value','identity_refs','condition_refs'}
+        if 'criterion_id' in value:
+            literal.add('criterion_id')
+        if 'binding_id' in value:
+            literal.add('binding_id')
+        if {'field','quote'} <= value.keys():
+            literal |= {'field','quote'}
+        if {'requirement_id','requirement_revision','field','span','quote'} <= value.keys():
+            literal |= {'field','quote'}
+        if set(value) == {'field','span'}:
+            literal.add('field')
+        if {'requirement_id','request_quote'} <= value.keys():
+            literal |= {'field','request_quote'}
+        if {'question','criterion'} <= value.keys():
+            literal |= {'question','criterion'}
+        if 'character_addresses' in value:
+            literal |= {'field','text','character_addresses'}
         return {k: deepcopy(v) if k in literal else remap(v, mapping) for k,v in value.items()}
     return mapping.get(value, value) if isinstance(value, str) else value

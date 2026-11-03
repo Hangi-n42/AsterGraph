@@ -1,10 +1,14 @@
 """Fixed-input continuation fixtures; no real retrieval or model execution."""
+from copy import deepcopy
+import json
+
 import pytest
 
-from app.knowledge import business_run, business_use, concept_work, query_capacity_resume
+from app.knowledge import business_run, business_use, concept_work, query_capacity_resume, selected_review_answer
 from app.knowledge.business_models import QueryCapacityResume
 from app.knowledge.service import KnowledgeService, KnowledgeConflict, encode
-from app.tests.unit.test_knowledge_evidence_preservation import data, request
+from app.tests.unit.test_knowledge_evidence_preservation import data, request as query_request, no_network
+from app.tests.unit.test_knowledge_selected_review_answer import reviewed_source
 
 
 def test_existing_hippo_resume_api_never_repeats_retrieval(failed, monkeypatch):
@@ -27,7 +31,10 @@ def test_existing_hippo_resume_api_never_repeats_retrieval(failed, monkeypatch):
     app.dependency_overrides[knowledge.get_knowledge_service] = lambda: service
     with TestClient(app) as client:
         response = client.post('/api/v1/knowledge/business/runs/failed/capacity-resumes', json=payload.model_dump())
-    assert response.status_code == 200 and response.json()['data']['status'] == 'answered'
+        assert response.status_code == 200 and response.json()['data']['status'] == 'answered'
+        saved = client.get('/api/v1/knowledge/runs/'+response.json()['data']['run_id']).json()['data']
+    assert saved['snapshot_id'] == parent['snapshot_id']
+    assert saved.get('selected_review_context') == parent.get('selected_review_context')
     assert seen == ['business_qa']
     assert service.run(parent['id'])['query']['retrieval'] == 'hipporag2'
 
@@ -45,26 +52,43 @@ def test_legacy_hg_source_query_does_not_gain_capacity_resume(failed):
         assert db.execute('SELECT COUNT(*) FROM runs').fetchone()[0] == 2
 
 
-@pytest.fixture
-def failed(tmp_path, monkeypatch):
+@pytest.fixture(params=['plain', 'selected_review', 'review_scope', 'review_segments'])
+def failed(tmp_path, monkeypatch, request):
     snapshot, original, candidates, baseline, run = data()
     run['recipe']['options']['context_tokens'] = 49152
     run['model_identity'] = dict(review={})
-    hits = baseline + [dict(block_id='c2', file_id='v', score=.8)]
-    base = business_use.graph_qa_input(snapshot, original, run['recipe'], request(), candidates, baseline, [])[0]
-    state, body, schema, refs = business_use.graph_qa_input(
-        snapshot, original, run['recipe'], request(), candidates, hits, base['source_reference_order'])
-    packet = business_run.json_request(run, 'business_qa', business_use.SYNTHESIS_PROMPT
-        + business_use.REVIEWED_MEANINGS_PROMPT, body, schema, reference_map=refs)
+    query = query_request()
+    reviewed = None
+    if request.param != 'plain':
+        reviewed = reviewed_source(snapshot)
+        if request.param in {'review_scope', 'review_segments'}:
+            from app.tests.unit.test_knowledge_answer_links import bounded_review
+            scope = bounded_review()
+            scope.update(required_claim_ids=['c2'], source_observations=reviewed['source_observations'])
+            scope['source_observations'][0].update(target_id='observation', represented_content='Fixture cut',
+                condition_state='present')
+            reviewed = scope
+        run['selected_review_context'] = deepcopy(reviewed)
+        query = query_request(selected_review=dict(run_id='review', unit_id='u'),
+            source_citation_contract={'review_scope': 'provided_review_scope_links_v1',
+                'review_segments': 'provided_review_scope_segments_v1'}.get(request.param, 'provided_source_quote_links_v1'))
+        # Mandatory input starts with c2's source; a baseline-only preview would move c1 first.
+        snapshot['claims'].reverse()
+        candidates.reverse()
+    run['query'] = query.model_dump()
+    monkeypatch.setattr(selected_review_answer, 'load', lambda *a: deepcopy(reviewed))
+    monkeypatch.setattr(business_run, 'request_budget', lambda run, messages, schema, cap:
+        dict(estimate_tokens=49153 if len(json.loads(messages[-1]['content'])['context']) > 1 else 1))
+    with pytest.raises(ValueError, match='mandatory_capacity'):
+        business_use.preserved_graph_hits(run, snapshot, original, query, candidates, baseline)
+    packet = run['evidence_assembly']['rejected_input']['request']
     limits = dict(max_tokens=8192, context_tokens=49152, think=False)
     run.update(id='failed', kind='business_query', status='failed', error='mandatory_capacity',
-        query=request().model_dump(), context_mode='graph', snapshot_id='s', answer_basis='reviewed_claims',
+        query=query.model_dump(), context_mode='graph', snapshot_id='s', answer_basis='reviewed_claims',
         answer_contract=business_use.ANSWER_CONTRACT,
         execution_boundary={}, units=[dict(id='selector', stage='graph_retrieval_filter', status='succeeded',
             requested_limits=limits, executed_limits=limits,
-            response=dict(text='fixture selection', done=True, done_reason='stop', failure_kind=None))],
-        evidence_assembly=dict(failure_kind='mandatory_capacity', baseline_claim_ids=['c1'],
-            mandatory_claim_ids=['c1','c2'], rejected_input=dict(hits=hits, state=state, request=packet)))
+            response=dict(text='fixture selection', done=True, done_reason='stop', failure_kind=None))])
     run['graph_retrieval']['contract'] = 'fixture graph'
     service = KnowledgeService(tmp_path/'knowledge.db')
     with service.repository.connect() as db:
@@ -95,9 +119,44 @@ def test_resume_uses_same_packet_common_storage_and_is_idempotent(failed, monkey
     saved = service.run(reply['run_id'])
     assert saved['provided_ids'] == ['c1','c2'] and saved['answer']['citations'] == ['c2']
     assert saved['capacity_resume']['optional_additions'] == 0
+    assert saved['source_reference_order'] == parent['evidence_assembly']['rejected_input']['state']['source_reference_order']
+    if parent.get('selected_review_context'):
+        assert saved['selected_review_context'] == parent['selected_review_context']
+        assert [json.loads(ref)['block_id'] for ref in saved['source_reference_order']] == ['b2', 'b1', 'reviewed-title']
+        assert 'reviewed-title' in packet['reference_map']
+        assert selected_review_answer.INSTRUCTION in packet['messages'][0]['content']
     assert service.run(parent['id'])['evidence_assembly'] == parent['evidence_assembly']
     assert query_capacity_resume.start(service, parent['id'], payload)['duplicate_request']
     assert seen == ['business_qa']
+    with service.repository.connect() as db:
+        assert service.repository.get(db, 'snapshots', snapshot['id']) == snapshot
+        assert db.execute('SELECT count(*) FROM decisions').fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('failed', [True], indirect=True)
+def test_changed_review_blocks_without_qa_or_child(failed, monkeypatch):
+    service, parent, _, _, payload = failed
+    monkeypatch.setattr(selected_review_answer, 'load', lambda *a: dict(parent['selected_review_context'], changed=True))
+    monkeypatch.setattr(business_run, 'json_call', lambda *a, **k: pytest.fail('No QA permitted'))
+    with pytest.raises(KnowledgeConflict, match='선택한 검수 결과'):
+        query_capacity_resume.start(service, parent['id'], payload)
+    with service.repository.connect() as db:
+        assert db.execute('SELECT count(*) FROM runs').fetchone()[0] == 2
+
+
+@pytest.mark.parametrize('failed', [True], indirect=True)
+def test_review_changed_during_resumed_qa_withholds_answer(failed, monkeypatch):
+    service, parent, _, packet, payload = failed
+    def generate(svc, child, stage, instruction, body, schema, **kw):
+        assert business_run.json_request(child, stage, instruction, body, schema, **kw) == packet
+        monkeypatch.setattr(selected_review_answer, 'load', lambda *a: dict(parent['selected_review_context'], changed=True))
+        return dict(answer='Explicit fixture', choice=None, citations=['c2'], limitations=[])
+    monkeypatch.setattr(business_run, 'json_call', generate)
+    reply = query_capacity_resume.start(service, parent['id'], payload)
+    assert reply['status'] == 'needs_review' and reply['answer'] is None
+    saved = service.run(reply['run_id'])
+    assert saved['selected_review_error'] == 'selected_review_input_changed'
+    assert saved['answer_source_citations']['citations'] == []
 
 
 @pytest.mark.parametrize('field', ['expected_parent_fingerprint','expected_snapshot_fingerprint','expected_packet_fingerprint'])

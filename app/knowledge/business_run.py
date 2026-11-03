@@ -192,6 +192,7 @@ def start(service, request):
                    input_version_ids=list(sources), sources=sources, blocks=blocks, chunks=chunks,
                    requirements=requirements, recipe=dict(concept_work_contract=request.concept_work_contract or (
                        parent['recipe'].get('concept_work_contract', 'legacy') if parent else 'exact-original-concept-work-v1'), version=autoschema.VERSION, scope_contract=autoschema.SCOPE_CONTRACT,
+                   concept_output_contract=parent['recipe'].get('concept_output_contract') if parent else autoschema.CONCEPT_OUTPUT_CONTRACT,
                    review_contract=review_contract, generation=config,
                    models=models, options=options), model_identity=identity,
                    claims=[], graph=dict(nodes=[], edges=[]), concepts=[], assessments=[], repairs=[],
@@ -704,7 +705,10 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
         output_type = required_review_type(output_type,required_targets)
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
-        schema = answer_links.generation_schema(schema)
+        schema = answer_links.generation_schema(schema,
+            context.get('review_scope_refs', {}) if run['query']['source_citation_contract'] in {
+                answer_links.REVIEW_CONTRACT, answer_links.SEGMENT_CONTRACT} else None,
+            segments=run['query']['source_citation_contract'] == answer_links.SEGMENT_CONTRACT)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
@@ -736,7 +740,7 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         reverse = {v: k for k, v in mapping.items()}
         from . import answer_links
         if answer_links.enabled(run, stage):
-            parsed, metadata = answer_links.restore(result['parsed'], reverse)
+            parsed, metadata = answer_links.restore(result['parsed'], reverse, contract=run['query']['source_citation_contract'])
             normalized = output_type.model_validate(parsed).model_dump()
             normalized['_answer_link_metadata'] = metadata
             return normalized
@@ -1035,6 +1039,16 @@ def reassess_challenges(service, run, requirement, assessment, *, focus_meaning_
 
 def assess(service, run, requirement, *, source=None, phase='initial', previous_run=None, recheck_meaning_keys=None,
            application_only_resume=False, focus_meaning_keys=None):
+    if run.get('request_reference_review', {}).get('contract') == 'grounded-fact-reference-selection-v1-experimental':
+        from . import business_bound_source_review
+        if previous_run is not None or recheck_meaning_keys is not None:
+            raise ValueError('question_binding_selection_requires_fresh_comparison')
+        return business_bound_source_review.assess_application(service, run, requirement, source, phase)
+    if run.get('role_review', {}).get('contract') == 'business-source-business-review-v1-experimental':
+        from . import business_role_review
+        if source is None or previous_run is not None or recheck_meaning_keys is not None:
+            raise ValueError('역할 분리 진단은 고정 원문 범위와 새 평가에서만 실행합니다.')
+        return business_role_review.assess(service, run, requirement, source)
     previous_scope = None
     previous_meanings = None
     if previous_run is not None:

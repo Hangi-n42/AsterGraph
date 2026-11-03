@@ -35,7 +35,7 @@ def environment(tmp_path,monkeypatch):
         async def generate(self,request,cancelled=None):
             assert request.stage.startswith('concept_')
             requests.append(request)
-            return dict(request_id=request.request_id,text='테스트 유형',failure_kind=None,done=True,done_reason='stop',elapsed_s=0,prompt_eval_count=1,eval_count=1)
+            return dict(request_id=request.request_id,text='["테스트 유형"]' if request.schema else '테스트 유형',failure_kind=None,done=True,done_reason='stop',elapsed_s=0,prompt_eval_count=1,eval_count=1)
     monkeypatch.setattr(business_run,'ModelClient',Stub)
     monkeypatch.setattr('app.knowledge.business_use.publish',lambda *a:dict(id='fixture-changeset'))
     assert Path(business_concepts.__file__).resolve().is_relative_to(Path(__file__).resolve().parents[3])

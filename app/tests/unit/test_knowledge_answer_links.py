@@ -14,10 +14,12 @@ def raw(**changes):
         answer_links=[dict(target='answer', anchor='q13', claim_refs=[], quote_refs=['sq_alpha'])]), **changes)
 
 
-def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
+def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None, review_context=None):
     views = views or [source()]
     model, refs = use.answer_references([dict(id='claim', text='제공 주장')], views, source_citation_contract=contract)
     run = dict(recipe=dict(options={}), query=dict(source_citation_contract=contract), units=[])
+    if review_context is not None:
+        run['selected_review_context'] = deepcopy(review_context)
     seen = []
     def call(service, active, stage, messages, schema, **kwargs):
         seen.append(dict(messages=messages, schema=schema, refs=kwargs['reference_map']))
@@ -26,6 +28,9 @@ def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
     monkeypatch.setattr(business_run, 'call', call)
     monkeypatch.setattr(business_run, 'save', lambda *a: None)
     context = dict(context=[dict(id='claim')], source_evidence=views)
+    if review_context is not None:
+        from app.knowledge.selected_review_answer import answer_context
+        context.update(answer_context(review_context, ['claim'], contract))
     instruction = '기존 안내' + use.source_citations_instruction(contract)
     preview = business_run.json_request(run, 'business_qa', instruction, context, model, reference_map=refs)
     output = business_run.json_call(None, run, 'business_qa', instruction, context, model, reference_map=refs)
@@ -36,6 +41,137 @@ def evaluate(monkeypatch, payload, contract=links.CONTRACT, views=None):
         links.record(run, output, ['claim'])
         assert '_answer_link_metadata' not in output
     return output, run, preview
+
+
+def bounded_review():
+    return dict(required_claim_ids=['claim'], snapshot_id='s', review_run_id='r', final_review_unit_id='f',
+        source_review_unit_id='b', review_fingerprint='rf', snapshot_fingerprint='sf',
+        findings={'item': dict(findings=[dict(status='undetermined', statement='비교 전제로 확정 불가',
+            reason='속성 일치만 확인함', source_result_ids=['observation']), dict(status='confirmed')])},
+        source_observations=[dict(target_id='observation', represented_content='합성 비교 전제',
+            evidence=[dict(source_version_id='v', parse_run_id='p', block_id='b', start_char=0, end_char=2, quote='전제')],
+            expression_bindings=[dict(claim_id='claim', field='statement', quote='합성', span=[0, 2], claim_version='cv')],
+            condition_references=[], condition_state='not_applicable')])
+
+
+def test_bounded_judgment_keeps_review_premises_separate_from_direct_source_support(monkeypatch):
+    reviewed = bounded_review(); before = deepcopy(reviewed)
+    declaration = dict(target='limitations', anchor='확인 불가', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    payload = raw(answer_links=[declaration])
+    _, run, packet = evaluate(monkeypatch, payload, links.REVIEW_CONTRACT, review_context=reviewed)
+    record = run['answer_links']
+    assert record['status'] == 'recorded' and record['links'][0]['status'] == 'resolved'
+    assert record['links'][0]['declaration'] == declaration
+    scope = record['review_scopes']['rv_item_1']
+    assert scope['status'] == 'undetermined' and scope['semantic_support'] == 'not_assessed'
+    assert scope['snapshot_id'] == 's' and scope['scope'] == 'selected_source_observations_only'
+    assert scope['premises'][0]['evidence'] == reviewed['source_observations'][0]['evidence']
+    prop = packet['schema']['properties']['answer_links']['items']['properties']
+    assert prop['review_refs']['items']['enum'] == ['rv_item_1']
+    assert 'rv_item_2' not in record['review_scopes']
+    assert reviewed == before and run['units'][0]['response']['parsed'] == payload
+    links.withhold(run)
+    assert not run['answer_links'].get('review_scopes') and not run['answer_links']['links']
+
+
+@pytest.mark.parametrize('fault', ['unknown', 'confirmed', 'mixed', 'missing', 'not_list', 'missing_premise', 'undelivered'])
+def test_invalid_review_links_never_become_source_support(monkeypatch, fault):
+    reviewed = bounded_review()
+    declaration = dict(target='limitations', anchor='확인 불가', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    if fault in {'unknown', 'confirmed'}: declaration['review_refs'] = ['rv_absent' if fault == 'unknown' else 'rv_item_2']
+    elif fault == 'mixed': declaration['quote_refs'] = ['sq_alpha']
+    elif fault == 'missing': declaration['review_refs'] = []
+    elif fault == 'not_list': declaration['review_refs'] = 'rv_item_1'
+    elif fault == 'missing_premise': reviewed['source_observations'] = []
+    else:
+        from app.knowledge.selected_review_answer import review_scopes
+        assert review_scopes(reviewed, []) == {}
+        return
+    _, run, _ = evaluate(monkeypatch, raw(answer_links=[declaration]), links.REVIEW_CONTRACT, review_context=reviewed)
+    assert run['answer_links']['links'][0]['status'] == 'unresolved'
+
+
+@pytest.mark.parametrize('contract', [links.REVIEW_CONTRACT, links.SEGMENT_CONTRACT])
+def test_experimental_review_links_require_explicit_selection_and_a_bound_review(contract):
+    kwargs = dict(question='합성', snapshot_id='s', selected_review=dict(run_id='r', unit_id='u'))
+    query, _ = use.resolve_query_defaults(BusinessQuery(**kwargs), 'graph')
+    assert query.source_citation_contract == links.CONTRACT
+    experimental, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=contract), 'graph')
+    assert experimental.source_citation_contract == contract
+    old, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=links.CONTRACT), 'graph')
+    assert old.source_citation_contract == links.CONTRACT
+    with pytest.raises(ValueError, match='selected_review'):
+        BusinessQuery(question='합성', snapshot_id='s', source_citation_contract=contract)
+
+
+def segments():
+    fact = dict(text='상품의 부위는 **등심**입니다.', claim_refs=['q1'], quote_refs=['sq_alpha'], review_refs=[])
+    limit = dict(text='이 부위 비교만으로 적합성은 확정할 수 없습니다.', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    return dict(answer=[fact, deepcopy(fact), limit], limitations=[deepcopy(limit), deepcopy(limit)],
+        choice=None, citations=['q1'], source_citations=raw()['source_citations'])
+
+
+def test_text_is_generated_once_and_repeated_segments_keep_their_exact_locations(monkeypatch):
+    payload = segments(); before = deepcopy(payload)
+    output, run, packet = evaluate(monkeypatch, payload, links.SEGMENT_CONTRACT, review_context=bounded_review())
+    assert output['answer'] == '\n\n'.join(p['text'] for p in payload['answer'])
+    assert output['limitations'] == [p['text'] for p in payload['limitations']]
+    assert payload == before == run['units'][0]['response']['parsed']
+    assert '**등심**' in output['answer'] and 'answer_links' not in packet['schema']['properties']
+    assert set(packet['schema']['properties']['answer']['items']['properties']) == {'text', 'claim_refs', 'quote_refs', 'review_refs'}
+    record = run['answer_links']
+    assert record['status'] == 'recorded' and record['duplicates_removed'] == 0
+    assert len(record['links']) == 5 and record['claims_without_resolved_links'] == []
+    assert record['links'][0]['location'] != record['links'][1]['location']
+    assert record['links'][3]['location']['limitation_index'] == 0
+    assert record['links'][4]['location']['limitation_index'] == 1
+    for entry in record['links']:
+        loc = entry['location']; text = output['answer'] if loc['target'] == 'answer' else output['limitations'][loc['limitation_index']]
+        assert text[loc['start_char']:loc['end_char']] == entry['declaration']['anchor']
+    assert record['semantic_support'] == 'not_assessed'
+
+
+def test_old_markdown_copy_error_remains_rejected_and_raw_untouched(monkeypatch):
+    payload = raw(answer='상품 부위는 **등심**입니다.', answer_links=[dict(target='answer',
+        anchor='상품 부위는 등심입니다.', claim_refs=['q1'], quote_refs=['sq_alpha'])])
+    _, run, _ = evaluate(monkeypatch, payload)
+    assert run['answer_links']['links'][0]['errors'] == ['anchor_absent_or_non_unique']
+    assert run['units'][0]['response']['parsed'] == payload
+
+
+@pytest.mark.parametrize('fault', ['copied_anchor', 'empty', 'wrong_shape', 'extra_location'])
+def test_segments_reject_invalid_shapes_instead_of_repairing_them(fault):
+    payload = segments()
+    if fault == 'copied_anchor': payload['answer_links'] = []
+    elif fault == 'empty': payload['answer'] = []
+    elif fault == 'wrong_shape': payload['answer'] = 'string from old contract'
+    else: payload['answer'][0]['start_char'] = 0
+    before = deepcopy(payload)
+    with pytest.raises(ValueError): links.restore(payload, {}, contract=links.SEGMENT_CONTRACT)
+    assert payload == before
+
+
+@pytest.mark.parametrize('fault,error', [
+    (dict(claim_refs=['unknown']), 'claim_not_provided_and_globally_cited'),
+    (dict(quote_refs=['sq_missing']), 'quote_ref_unresolved'),
+    (dict(quote_refs=[]), 'missing_quote_refs'),
+    (dict(review_refs=['rv_item_1']), 'review_scope_is_not_source_quote_support'),
+    (dict(quote_refs=[], review_refs=['rv_unknown']), 'review_ref_unresolved'),
+])
+def test_segment_rendering_does_not_relax_evidence_checks(monkeypatch, fault, error):
+    payload = segments(); payload['answer'][0].update(fault)
+    _, run, _ = evaluate(monkeypatch, payload, links.SEGMENT_CONTRACT, review_context=bounded_review())
+    assert error in run['answer_links']['links'][0]['errors']
+    assert run['answer_links']['links'][1]['status'] == 'resolved'
+
+
+def test_changed_text_cannot_keep_a_segment_location():
+    output, meta = links.restore(segments(), {}, contract=links.SEGMENT_CONTRACT)
+    output['answer'] = output['answer'].replace('**등심**', '다른 값')
+    output['_answer_link_metadata'] = meta
+    run = dict(query=dict(source_citation_contract=links.SEGMENT_CONTRACT))
+    links.record(run, output, [])
+    assert 'segment_text_changed' in run['answer_links']['links'][0]['errors']
 
 
 def test_new_schema_is_only_opt_in_and_literals_survive_id_restoration(monkeypatch):

@@ -26,7 +26,7 @@ def bind_unchanged(service, run, planned):
         parent = service.repository.get(db, 'runs', receipt['parent_run_id'])
     if (parent['recipe'].get('concept_work_contract') != concept_work.VERSION
             or run['recipe'].get('concept_work_contract') != concept_work.VERSION
-            or any(parent['recipe'].get(k) != run['recipe'].get(k) for k in ('generation', 'models'))
+            or any(parent['recipe'].get(k) != run['recipe'].get(k) for k in ('generation', 'models', 'concept_output_contract'))
             or any(parent['recipe']['options'].get(k) != run['recipe']['options'].get(k)
                    for k in ('neighbor_mode', 'concept_source_context', 'concept_tokens', 'context_tokens', 'think', 'timeout'))
             or parent['model_identity'] != run['model_identity']):
@@ -64,7 +64,7 @@ def bind_unchanged(service, run, planned):
         unit = units[0]
         expected = deepcopy(original['work_input'])
         expected['runtime'] = deepcopy((unit.get('concept_work_input') or {}).get('runtime'))
-        if (unit.get('messages') != original['messages'] or unit.get('schema') is not None
+        if (unit.get('messages') != original['messages'] or unit.get('schema') != original.get('schema')
                 or unit.get('reference_map') != original['selection']['source_reference_map']
                 or not concept_work.reusable(service, parent, unit, expected, parent['id'])):
             continue

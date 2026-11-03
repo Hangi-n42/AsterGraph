@@ -189,6 +189,10 @@ def requirement_content_target(source, meaning):
         content='\n'.join(dict.fromkeys(a['required_content'] for a in required)),
         evidence=[deepcopy(e) for a in required for e in a['evidence']],
         applications=[deepcopy(a) for a in required])
+    if any(a.get('content_kind') == 'request_criteria' for a in required):
+        value.update(content_kind='request_criteria',
+            inspection_targets=[deepcopy(t) for a in required for t in a.get('inspection_targets', [])],
+            selection_pending=any(i['blocking'] for a in required for i in a.get('selection_record', {}).get('issues', [])))
     return dict(value, scope_id=autoschema.identifier(CONTENT_CONTRACT,
         [source.get('public_scope', {}).get('public_requirement'), value]))
 
@@ -1808,6 +1812,38 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
         public_answer_items=items,
         application_context={k: v for k, v in requirement.items() if k not in {'question', 'criterion'}},
         source_facts=[application_fact(m) for m in content], application_tasks=tasks, blocks=blocks)
+    from . import required_unit_selection, question_inspection, fixed_fact_application
+    property_catalog = None
+    if required_unit_selection.enabled(run):
+        if resume:
+            raise ValueError('request_selection_requires_fresh_application_tasks')
+        criteria = question_inspection.validate(run.get('question_inspection', {}), requirement, items)
+        property_catalog = required_unit_selection.property_catalog(service, content, blocks)
+        fixed_facts = required_unit_selection.validate_facts(run.get('source_fact_grounding', {}),
+            property_catalog, criteria, content, blocks)
+        output_type = required_unit_selection.application_type(fixed_facts, items, content, criteria)
+        instruction = instruction.split('\nrequired_content에는', 1)[0]
+        instruction = instruction.replace('requirement_link에서 먼저 question/criterion이 요청한 사실을 적고, ',
+            '고정 question_inspections를 유지하고, ')
+        instruction = instruction.replace('그 답변을 적용하는 데 반드시 필요한 전제 necessary_premise',
+            '그 답변·비교·판단한계에 필요한 기준 사실 necessary_premise')
+        instruction = instruction.replace('전제라면 reason에 어떤 요청 사실의 적용을 위해 왜 필요한지 적는다.',
+            '기준 사실이면 reason에 어떤 요청의 답변·비교·판단한계를 위해 왜 필요한지 적는다.')
+        instruction = instruction.replace('links는 application_tasks에 지정된 각 조합을 한 번씩 빠짐없이 반환한다.',
+            'links는 요청별 그룹이며 각 그룹의 facts는 지정된 모든 의미의 필요성을 함께 판단한다.')
+        instruction = instruction.replace('각 항목의 request_quote 자체에 대한 기여를 판단한다.',
+            '각 항목의 request_quote와 전체 question/criterion의 공유 비교 대상·기준을 함께 읽어 그 항목에 대한 기여를 판단한다.')
+        instruction += required_unit_selection.APPLICATION_INSTRUCTION
+        packet.update(source_property_catalog=required_unit_selection.model_properties(property_catalog),
+            question_inspections=criteria, fixed_source_facts=required_unit_selection.model_facts(fixed_facts),
+            request_groups=[dict(item_id=i['id'], meaning_keys=[m['key'] for m in content]) for i in items])
+        packet.pop('application_tasks')
+        if fixed_fact_application.enabled(run):
+            instruction = fixed_fact_application.PROMPT
+            output_type = fixed_fact_application.output_type(fixed_facts, items, criteria)
+            packet = fixed_fact_application.packet(dict(packet, application_tasks=tasks), fixed_facts, criteria)
+            packet.pop('source_property_catalog')
+            packet.pop('request_groups')
     request = execution.json_request(run, 'requirement_application', instruction, packet, output_type) if reuse else None
     fingerprint = autoschema.identifier('requirement_application', dict(request=request, requirement=requirement,
         recipe=run['recipe'],model_identity=run['model_identity'])) if reuse else None
@@ -1823,9 +1859,23 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
                     and unit.get('restored_evidence_output') == previous.get('output')):
                 return dict(deepcopy(facts),requirement_content_contract=CONTENT_CONTRACT)
     output = execution.json_call(service, run, 'requirement_application', instruction, packet, output_type)
+    producer_output = deepcopy(output)
+    if property_catalog is not None:
+        if fixed_fact_application.enabled(run):
+            output, projection = fixed_fact_application.project(output, fixed_facts, items, content, criteria)
+        else:
+            output, projection = required_unit_selection.project_output(output, items, content)
     receipt = dict(contract=APPLICATION_CONTRACT, unit_id=response_unit_id(run), output=deepcopy(output), errors=[], request_quote_bindings=[],
         answer_request={k: requirement.get(k, '') for k in ('question', 'criterion')}, public_answer_items=deepcopy(items),
         application_context={k: deepcopy(v) for k, v in requirement.items() if k not in {'question', 'criterion'}})
+    if property_catalog is not None:
+        receipt.update(output=producer_output, projected_output=deepcopy(output), task_group_projection=projection,
+            inspection_frame=deepcopy(run['question_inspection']),
+            source_fact_grounding=deepcopy(run['source_fact_grounding']),
+            property_selection_contract=required_unit_selection.CONTRACT, source_property_catalog=deepcopy(property_catalog),
+            provided_blocks_fingerprint=autoschema.identifier(required_unit_selection.CONTRACT, blocks))
+        if fixed_fact_application.enabled(run):
+            receipt['fact_application_contract'] = fixed_fact_application.CONTRACT
     if resume:
         receipt.update(reused_from=dict(run_id=resume['run_id'], unit_id=resume['unit']['id']),
                        reused_links=deepcopy(reused_links), application_tasks=deepcopy(tasks))
@@ -1854,6 +1904,9 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
                     raise ValueError('requirement_application_missing_or_duplicate')
                 proposed = {k: deepcopy(updates[0][k]) for k in ('requirement_link', 'required_for_requirement')}
                 link = proposed['requirement_link']
+                if property_catalog is not None:
+                    # Compatibility text is the original request, never a generated source paraphrase.
+                    link['requested_fact'] = item['request_quote']
                 bound = item['request_quote'] if link['contribution'] == 'direct_answer' else ''
                 receipt['request_quote_bindings'].append(dict(meaning_key=key, item_id=item['id'],
                     model_quote=link.get('requirement_quote'), bound_quote=bound))
@@ -1865,6 +1918,10 @@ required_content에는 해당 요청에 실제 필요한 하위 내용만 적고
             if len(updates) == 1:
                 metadata.update(required_content=updates[0].get('required_content'),
                                 evidence=deepcopy(updates[0].get('evidence', [])),content_evidence_bound=False)
+                if property_catalog is not None:
+                    decision = dict(updates[0], requirement_link=deepcopy(metadata['requirement_link']))
+                    metadata.update(required_unit_selection.bind_selection(decision, key,
+                        property_catalog, requirement, blocks, criteria, item['id'], run['source_fact_grounding']))
                 if application_required(metadata) is True:
                     if metadata['required_content'] is None:
                         receipt.setdefault('content_pending', []).append(dict(meaning_key=key,item_id=item['id']))

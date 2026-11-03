@@ -575,7 +575,7 @@ def explore(service, kind, scope_id, *, q='', selected_id=None, item_kind='all',
                       changeset_id=value.get('changeset_id'), run_id=value['id'] if kind == 'run' else value.get('run_id'),
                       parent_run_id=value.get('parent_run_id'),
                       history=[dict(id=r['id'], actor=r.get('actor'), reason=r.get('reason'), status=r.get('status'),
-                          changes=[dict(before=c.get('before', {}).get('statement'), after=c.get('after', {}).get('statement'))
+                          changes=[dict(before=(c.get('before') or {}).get('statement'), after=c.get('after', {}).get('statement'))
                                    for c in r.get('changes', []) if c.get('after', {}).get('id') in selected['claim_ids']])
                                for r in value.get('repairs', []) if any(c.get('after', {}).get('id') in selected['claim_ids'] for c in r.get('changes', []))])
         edit = value.get('interpretation_edit') or {}

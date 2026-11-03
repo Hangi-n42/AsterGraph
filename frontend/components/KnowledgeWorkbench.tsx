@@ -21,6 +21,7 @@ type SourceItem = { source: { id: string; title: string }; versions: { id: strin
 function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; single: boolean; editable: boolean }) {
   const [expanded, setExpanded] = useState(single);
   const corrected = claim.qualifier_status === 'explicit_reviewer_correction_unverified';
+  const unparsed = claim.qualifier_status === 'unparsed_model_edit_requires_review';
   const content = <div className={styles.claimContent}>
       {claim.extraction_error && <p role="note" className={styles.warning}>추출 오류 기록: {claim.extraction_error}</p>}
       {!!claim.interpretation_errors?.length && <div role="note" className={styles.warning}>
@@ -29,7 +30,13 @@ function ClaimDetail({ claim, single, editable }: { claim: KnowledgeClaim; singl
       </div>}
       <h3>조건 · 예외 · 기간</h3>
       {corrected && <p className={styles.warning}>검토자가 일부 해석 필드를 정정했습니다. 의미 검증과 사용 여부는 각각의 검토·사용 버전 상태에서 확인하세요.</p>}
-      {claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => {
+      {unparsed && <p role="note" className={styles.warning}>보강 후 보조 필드 미검수. 문장이 지정 범위 재검수를 통과했더라도 조건·예외·기간 필드 전체를 검증했다는 뜻은 아닙니다. 아래 값은 생성 당시의 미검수 기록입니다.</p>}
+      {unparsed ? <>
+        <dl><div><dt>조건 · 필드 미검수</dt><dd>{claim.conditions?.length ? claim.conditions.join("\n") : "미확인 · 비어 있는 저장값은 ‘조건 없음’ 판정이 아님"}</dd></div>
+          <div><dt>예외 · 필드 미검수</dt><dd>{claim.exceptions?.length ? claim.exceptions.join("\n") : "미확인 · 비어 있는 저장값은 ‘예외 없음’ 판정이 아님"}</dd></div>
+          <div><dt>기간 · 필드 미검수</dt><dd>{claim.period && claim.period !== "unresolved" ? claim.period : "미확인"}</dd></div></dl>
+        <details><summary>생성 당시 보조 필드 원본 · 미검수</summary><pre className={styles.prewrap}>{JSON.stringify({ conditions: claim.conditions, exceptions: claim.exceptions, period: claim.period, qualifier_status: claim.qualifier_status, meanings: claim.meanings }, null, 2)}</pre></details>
+      </> : claim.meanings.length > 0 ? claim.meanings.map((meaning, i) => {
         const fields = [['conditions', '조건'], ['exceptions', '예외'], ['time', '기간 / 시점'], ['references', '참조']] as const;
         const absent = fields.filter(([key]) => typeof meaning[key] === 'object' && meaning[key] !== null && (meaning[key] as { state?: string }).state === 'absent');
         const present = fields.filter(field => !absent.includes(field));

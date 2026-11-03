@@ -34,8 +34,8 @@ class KnowledgeService:
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='knowledge-parse')
         self.closed = False
         with self.repository.connect() as db:
-            for row in db.execute('SELECT payload FROM runs').fetchall():
-                run = json.loads(row['payload'])
+            for row in db.execute('SELECT id FROM runs ORDER BY rowid').fetchall():
+                run = self.repository.get(db, 'runs', row['id'])
                 if run['status'] in {'queued', 'running', 'cancel_requested'}:
                     for unit in [*run['units'], *run.get('analysis_units', [])]:
                         if unit['status'] in {'queued', 'running'}:
@@ -422,8 +422,8 @@ class KnowledgeService:
     def shutdown(self):
         with self.lock, self.repository.connect() as db:
             self.closed = True
-            for row in db.execute('SELECT payload FROM runs').fetchall():
-                run = json.loads(row['payload'])
+            for row in db.execute('SELECT id FROM runs ORDER BY rowid').fetchall():
+                run = self.repository.get(db, 'runs', row['id'])
                 if run['status'] in {'queued', 'running'}:
                     run['status'] = 'cancel_requested'
                     self.repository.save(db, 'runs', run)

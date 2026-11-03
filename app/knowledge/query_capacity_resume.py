@@ -3,7 +3,7 @@ from copy import deepcopy
 import json
 from time import monotonic
 
-from . import autoschema, business_run, business_use, concept_work
+from . import autoschema, business_run, business_use, concept_work, selected_review_answer
 from .business_models import BusinessQuery
 from .service import KnowledgeConflict, encode, utcnow
 
@@ -46,6 +46,9 @@ def start(service, parent_id, request):
         if any(r['revision'] != saved['revision'] or r['status'] == 'needs_review'
                for r, saved in zip(requirements, snapshot['requirements'])):
             raise KnowledgeConflict('업무 요구 변경 이후 재검수가 필요합니다.')
+        reviewed = selected_review_answer.load(service, db, query, snapshot)
+        if reviewed != parent.get('selected_review_context'):
+            raise KnowledgeConflict('선택한 검수 결과가 변경됐습니다.')
         units = parent['units']
         if (not units or any(u['stage'] != 'graph_retrieval_filter' or u['status'] != 'succeeded'
                 or u.get('error') or not concept_work.complete(u)
@@ -63,11 +66,17 @@ def start(service, parent_id, request):
         baseline = hits[:len(assembly['baseline_claim_ids'])]
         if [h['block_id'] for h in baseline] != assembly['baseline_claim_ids']:
             raise ValueError('저장된 기본 근거 순서가 다릅니다.')
-        base_state = business_use.graph_qa_input(snapshot, original, parent['recipe'], query, candidates, baseline, [])[0]
+        order = []
+        # Review-bound queries assemble mandatory facts together, without a baseline-only preview.
+        if not reviewed:
+            order = business_use.graph_qa_input(
+                snapshot, original, parent['recipe'], query, candidates, baseline, [])[0]['source_reference_order']
         state, body, schema, references = business_use.graph_qa_input(
-            snapshot, original, parent['recipe'], query, candidates, hits, base_state['source_reference_order'])
-        packet = business_run.json_request(parent, 'business_qa', business_use.SYNTHESIS_PROMPT
-            + business_use.REVIEWED_MEANINGS_PROMPT + business_use.source_citations_instruction(query.source_citation_contract),
+            snapshot, original, parent['recipe'], query, candidates, hits, order, reviewed)
+        instruction = (business_use.SYNTHESIS_PROMPT + business_use.REVIEWED_MEANINGS_PROMPT
+            + business_use.source_citations_instruction(query.source_citation_contract)
+            + (selected_review_answer.INSTRUCTION if reviewed else ''))
+        packet = business_run.json_request(parent, 'business_qa', instruction,
             body, schema, reference_map=references)
         if (packet != rejected['request'] or state != rejected['state']
                 or concept_work.digest(packet) != request.expected_packet_fingerprint):
@@ -93,8 +102,6 @@ def start(service, parent_id, request):
         db.execute('INSERT INTO runs VALUES(?,?)', (identifier, encode(run)))
     limitations = [dict(requirement_id=rid, status=a['status'], gaps=(a.get('source') or {}).get('gaps', []))
                    for rid, a in snapshot['assessments'].items() if a['status'] != 'satisfied']
-    output = business_run.json_call(service, run, 'business_qa', business_use.SYNTHESIS_PROMPT
-        + business_use.REVIEWED_MEANINGS_PROMPT + business_use.source_citations_instruction(query.source_citation_contract),
-        body, schema, reference_map=references)
+    output = business_run.json_call(service, run, 'business_qa', instruction, body, schema, reference_map=references)
     return business_use.finish_query(service, run, query, snapshot, requirements, output, hits,
                                     body['source_evidence'], limitations, started)

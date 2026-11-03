@@ -55,7 +55,9 @@ def natural(tmp_path, monkeypatch):
                     target = next(b for b in blocks if not b.get('context_only'))
                     output['definitions'] = [dict(term='기관', definition='정의 검사', evidence=[dict(block_id=target['id'], quote=q)])
                                              for q in (target['text'], '원문에 없는 정의 인용')]
-            return dict(parsed=output, text='검사 유형' if request.stage.startswith('concept_') else json.dumps(output),
+            if request.stage.startswith('concept_'):
+                output = ['검사 유형'] if request.schema else None
+            return dict(parsed=output, text='검사 유형' if output is None else json.dumps(output),
                 failure_kind=None, done=True, done_reason='stop', elapsed_s=0, prompt_eval_count=1, eval_count=1)
     monkeypatch.setattr(business_run, 'ModelClient', Stub)
     def register(body):

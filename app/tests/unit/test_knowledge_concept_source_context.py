@@ -34,7 +34,7 @@ def factory(tmp_path, monkeypatch):
         async def generate(self, request, cancelled=None):
             assert request.stage in {'concept_entity','concept_relation'}
             requests.append(request)
-            return dict(request_id=request.request_id,text='검색 개념',done=True,done_reason='stop',failure_kind=None,elapsed_s=0)
+            return dict(request_id=request.request_id,text='["검색 개념"]' if request.schema else '검색 개념',done=True,done_reason='stop',failure_kind=None,elapsed_s=0)
     monkeypatch.setattr(business_run, 'ModelClient', Stub)
     monkeypatch.setattr('app.knowledge.business_use.publish',lambda *args:dict(id='fixture-change'))
     def make(html=HTML):
