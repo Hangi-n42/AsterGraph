@@ -52,7 +52,7 @@ def test_legacy_hg_source_query_does_not_gain_capacity_resume(failed):
         assert db.execute('SELECT COUNT(*) FROM runs').fetchone()[0] == 2
 
 
-@pytest.fixture(params=['plain', 'selected_review', 'review_scope'])
+@pytest.fixture(params=['plain', 'selected_review', 'review_scope', 'review_segments'])
 def failed(tmp_path, monkeypatch, request):
     snapshot, original, candidates, baseline, run = data()
     run['recipe']['options']['context_tokens'] = 49152
@@ -61,7 +61,7 @@ def failed(tmp_path, monkeypatch, request):
     reviewed = None
     if request.param != 'plain':
         reviewed = reviewed_source(snapshot)
-        if request.param == 'review_scope':
+        if request.param in {'review_scope', 'review_segments'}:
             from app.tests.unit.test_knowledge_answer_links import bounded_review
             scope = bounded_review()
             scope.update(required_claim_ids=['c2'], source_observations=reviewed['source_observations'])
@@ -70,7 +70,8 @@ def failed(tmp_path, monkeypatch, request):
             reviewed = scope
         run['selected_review_context'] = deepcopy(reviewed)
         query = query_request(selected_review=dict(run_id='review', unit_id='u'),
-            source_citation_contract='provided_review_scope_links_v1' if request.param == 'review_scope' else 'provided_source_quote_links_v1')
+            source_citation_contract={'review_scope': 'provided_review_scope_links_v1',
+                'review_segments': 'provided_review_scope_segments_v1'}.get(request.param, 'provided_source_quote_links_v1'))
         # Mandatory input starts with c2's source; a baseline-only preview would move c1 first.
         snapshot['claims'].reverse()
         candidates.reverse()

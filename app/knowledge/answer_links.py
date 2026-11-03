@@ -5,6 +5,8 @@ import re
 CONTRACT = 'provided_source_quote_links_v1'
 # Opt-in only: the native trial linked review scopes but failed literal anchors and bounded wording.
 REVIEW_CONTRACT = 'provided_review_scope_links_v1'
+# Explicit schema change; native end-to-end QA awaits a passing bounded final review.
+SEGMENT_CONTRACT = 'provided_review_scope_segments_v1'
 PROMPT = (
     '\nsource_citations마다 응답 내 고유한 불투명 quote_id(sq_접두)를 부여한다. 순번이나 전역 ID가 아니다. '
     'answer_links에는 target(answer 또는 limitations), 해당 필드의 정확하고 유일한 literal anchor, '
@@ -30,14 +32,29 @@ def instruction(contract):
         return PROMPT.replace('claim_refs, quote_refs만', 'claim_refs, quote_refs, review_refs만').replace(
             'quote_refs는 이번 source_citations의 quote_id를 하나 이상 선택한다.',
             'quote_refs는 이번 source_citations의 quote_id만 선택한다.') + REVIEW_PROMPT
+    if contract == SEGMENT_CONTRACT:
+        return (
+            '\nanswer와 limitations는 각각 {text, claim_refs, quote_refs, review_refs} 객체의 배열이다. '
+            '문장과 해당 문장의 근거를 같은 객체에 한 번만 작성한다. text가 그대로 표시되므로 Markdown도 그 안에 쓴다. '
+            '별도의 answer_links, anchor, 위치, 문장 ID는 생성하지 않는다. 프로그램이 배열 순서대로 본문과 정확한 위치를 만든다. '
+            '각 객체의 text는 하나의 사실 또는 판단이며, 확인된 사실과 확정 불가 판단을 같은 객체에 섞지 않는다. '
+            'source_citations에는 응답 내 고유한 quote_id(sq_접두)를 부여한다. '
+            'claim_refs는 제공 context와 global citations에 있는 ID만 쓴다. 정확한 주장이 없으면 []다. '
+            '원문 사실은 이번 source_citations의 quote_id를 quote_refs로 연결하고 review_refs=[]로 둔다. '
+            '확정 불가 판단은 review_scope_refs의 참조를 review_refs로 연결하고 quote_refs=[]로 둔다. '
+            '모든 객체는 원문 인용 또는 검수 참조 중 하나를 가져야 한다. '
+            '확정 불가 문장과 limitations는 selected_requirement_review의 source_observations와 실제 비교 전제 안에서 작성한다. '
+            '어떤 사실만으로 어떤 결론을 도출할 수 없는지 설명하며, 전체 원문에 근거가 없다는 주장으로 넓히지 않는다. '
+            '검수 참조는 모델 판단의 추적이며 원문 사실·전체 자료의 부재 증명·사용 승인이 아니다.'
+        )
     return ''
 
 
 def enabled(run, stage='business_qa'):
-    return stage == 'business_qa' and run.get('query', {}).get('source_citation_contract') in {CONTRACT, REVIEW_CONTRACT}
+    return stage == 'business_qa' and run.get('query', {}).get('source_citation_contract') in {CONTRACT, REVIEW_CONTRACT, SEGMENT_CONTRACT}
 
 
-def generation_schema(schema, review_refs=None):
+def generation_schema(schema, review_refs=None, *, segments=False):
     schema = deepcopy(schema)
     quote = schema['$defs'][schema['properties']['source_citations']['items']['$ref'].split('/')[-1]]
     quote['properties']['quote_id'] = dict(type='string', pattern=r'^sq_\S+$')
@@ -55,15 +72,48 @@ def generation_schema(schema, review_refs=None):
         row['properties']['review_refs'] = dict(type='array', uniqueItems=True,
             items=dict(type='string', enum=list(review_refs)) if review_refs else dict(type='string'),
             **({} if review_refs else dict(maxItems=0)))
+    if segments:
+        row = schema['properties'].pop('answer_links')['items']
+        row['properties'].pop('target')
+        text = row['properties'].pop('anchor')
+        row['properties'] = dict(text=text, **row['properties'])
+        row['required'] = ['text', 'claim_refs', 'quote_refs', 'review_refs']
+        schema['required'].remove('answer_links')
+        for target in ('answer', 'limitations'):
+            schema['properties'][target] = dict(type='array', items=deepcopy(row), minItems=1 if target == 'answer' else 0)
     return schema
 
 
-def restore(parsed, reverse):
+def restore(parsed, reverse, *, contract=CONTRACT):
     """Keep literals untouched; detach optional metadata before legacy validation."""
     parsed = deepcopy(parsed)
     if not isinstance(parsed, dict):
         return parsed, {}
+    locations = []
+    if contract == SEGMENT_CONTRACT:
+        if 'answer_links' in parsed:
+            raise ValueError('segments_cannot_declare_copied_anchors')
+        links = []
+        for target in ('answer', 'limitations'):
+            parts = parsed.get(target)
+            if not isinstance(parts, list) or target == 'answer' and not parts:
+                raise ValueError('answer_segments_required')
+            texts = []; offset = 0
+            for index, part in enumerate(parts):
+                if (not isinstance(part, dict) or set(part) != {'text', 'claim_refs', 'quote_refs', 'review_refs'}
+                        or not isinstance(part['text'], str) or not part['text'].strip()):
+                    raise ValueError('invalid_answer_segment')
+                text = part['text']; texts.append(text)
+                links.append(dict(target=target, anchor=text, **{k: part[k] for k in ('claim_refs', 'quote_refs', 'review_refs')}))
+                start = offset if target == 'answer' else 0
+                locations.append(dict(target=target, start_char=start, end_char=start + len(text),
+                    **(dict(limitation_index=index) if target == 'limitations' else {})))
+                offset += len(text) + 2
+            parsed[target] = '\n\n'.join(texts) if target == 'answer' else texts
+        parsed['answer_links'] = links
     metadata = dict(recorded='answer_links' in parsed, links=parsed.pop('answer_links', None), quote_ids=[])
+    if contract == SEGMENT_CONTRACT:
+        metadata['segment_locations'] = locations
     if isinstance(parsed.get('citations'), list):
         parsed['citations'] = [reverse.get(v, v) if isinstance(v, str) else v for v in parsed['citations']]
     for item in parsed.get('source_citations', []) if isinstance(parsed.get('source_citations'), list) else []:
@@ -112,7 +162,8 @@ def record(run, output, provided_ids):
         relation='model_declared', duplicates_removed=0,
         claims_without_resolved_links=list(output['citations']) if output else [])
     run['answer_links'] = result
-    review_mode = run['query']['source_citation_contract'] == REVIEW_CONTRACT
+    segment_mode = run['query']['source_citation_contract'] == SEGMENT_CONTRACT
+    review_mode = run['query']['source_citation_contract'] in {REVIEW_CONTRACT, SEGMENT_CONTRACT}
     if review_mode:
         from .selected_review_answer import review_scopes
         result['review_scopes'] = review_scopes(run.get('selected_review_context'), provided_ids)
@@ -124,8 +175,8 @@ def record(run, output, provided_ids):
         result.update(status='unresolved', error='answer_links_not_list', declaration=links)
         return
     seen, linked = [], set()
-    for declaration in links:
-        if declaration in seen:
+    for link_index, declaration in enumerate(links):
+        if not segment_mode and declaration in seen:
             result['duplicates_removed'] += 1
             continue
         seen.append(deepcopy(declaration))
@@ -139,6 +190,17 @@ def record(run, output, provided_ids):
             matches = []
             if target not in ('answer', 'limitations') or not isinstance(anchor, str) or not anchor:
                 errors.append('invalid_anchor')
+            elif segment_mode:
+                locations = metadata.get('segment_locations', [])
+                location = locations[link_index] if link_index < len(locations) else None
+                if location is None:
+                    errors.append('segment_location_missing')
+                else:
+                    text = output['answer'] if target == 'answer' else output['limitations'][location['limitation_index']]
+                    if text[location['start_char']:location['end_char']] != anchor:
+                        errors.append('segment_text_changed')
+                    else:
+                        entry.update(location=location, segment_index=link_index)
             else:
                 texts = [output['answer']] if target == 'answer' else output['limitations']
                 for index, text in enumerate(texts):

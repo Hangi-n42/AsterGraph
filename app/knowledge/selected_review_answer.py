@@ -110,6 +110,6 @@ def answer_context(context, selected, citation_contract=None):
         return {}
     if not set(context['required_claim_ids']) <= set(selected):
         raise ValueError('selected_review_required_claim_not_delivered')
-    from .answer_links import REVIEW_CONTRACT
+    from .answer_links import REVIEW_CONTRACT, SEGMENT_CONTRACT
     return dict(selected_requirement_review=deepcopy(context),
-        **(dict(review_scope_refs=review_scope_refs(context)) if citation_contract == REVIEW_CONTRACT else {}))
+        **(dict(review_scope_refs=review_scope_refs(context)) if citation_contract in {REVIEW_CONTRACT, SEGMENT_CONTRACT} else {}))

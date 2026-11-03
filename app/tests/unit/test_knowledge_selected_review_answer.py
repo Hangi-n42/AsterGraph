@@ -148,7 +148,7 @@ def test_required_review_facts_are_not_dropped_on_capacity_failure(monkeypatch):
 
 
 @pytest.mark.parametrize('changed_during_call', [False, True])
-@pytest.mark.parametrize('contract', ['provided_source_quote_links_v1', 'provided_review_scope_links_v1'])
+@pytest.mark.parametrize('contract', ['provided_source_quote_links_v1', 'provided_review_scope_links_v1', 'provided_review_scope_segments_v1'])
 def test_api_new_answer_persists_snapshot_review_and_holds_changed_input(tmp_path, monkeypatch, changed_during_call, contract):
     service, client, wires = fixture_service(tmp_path, monkeypatch)
     calls = []
@@ -175,6 +175,12 @@ def test_api_new_answer_persists_snapshot_review_and_holds_changed_input(tmp_pat
             assert value['answer'] is None and saved['answer_source_citations']['citations']==[]
         else:
             assert saved['answer_source_citations']['citations'] and saved['answer_links']
+            response = client.get('/api/v1/knowledge/workbench/answers',
+                params=dict(kind='source_graph', scope_id='s', answer_id=value['run_id']))
+            assert response.status_code == 200, response.text
+            detail = response.json()['data']['detail']
+            assert detail['answer'] == saved['answer'] and detail['answer_links'] == saved['answer_links']
+            assert detail['snapshot_id'] == saved['snapshot_id']
         with service.repository.connect() as db:
             assert [tuple(r) for r in db.execute('SELECT * FROM snapshots')]==before
             assert db.execute('SELECT count(*) FROM decisions').fetchone()[0]==0

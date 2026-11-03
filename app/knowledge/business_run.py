@@ -706,7 +706,9 @@ def json_request(run, stage, instruction, context, output_type, *, reference_map
     schema = remap(output_type.model_json_schema(), mapping)
     if answer_links.enabled(run, stage):
         schema = answer_links.generation_schema(schema,
-            context.get('review_scope_refs', {}) if run['query']['source_citation_contract'] == answer_links.REVIEW_CONTRACT else None)
+            context.get('review_scope_refs', {}) if run['query']['source_citation_contract'] in {
+                answer_links.REVIEW_CONTRACT, answer_links.SEGMENT_CONTRACT} else None,
+            segments=run['query']['source_citation_contract'] == answer_links.SEGMENT_CONTRACT)
     return dict(messages=[dict(role='system', content=instruction), dict(role='user', content=content)],
         schema=schema, reference_map=mapping or None,
         evidence_reference_map=evidence_views,
@@ -738,7 +740,7 @@ def json_call(service, run, stage, instruction, context, output_type, *, referen
         reverse = {v: k for k, v in mapping.items()}
         from . import answer_links
         if answer_links.enabled(run, stage):
-            parsed, metadata = answer_links.restore(result['parsed'], reverse)
+            parsed, metadata = answer_links.restore(result['parsed'], reverse, contract=run['query']['source_citation_contract'])
             normalized = output_type.model_validate(parsed).model_dump()
             normalized['_answer_link_metadata'] = metadata
             return normalized

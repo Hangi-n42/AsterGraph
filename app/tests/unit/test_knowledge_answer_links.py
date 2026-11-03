@@ -91,16 +91,87 @@ def test_invalid_review_links_never_become_source_support(monkeypatch, fault):
     assert run['answer_links']['links'][0]['status'] == 'unresolved'
 
 
-def test_experimental_review_links_require_explicit_selection_and_a_bound_review():
+@pytest.mark.parametrize('contract', [links.REVIEW_CONTRACT, links.SEGMENT_CONTRACT])
+def test_experimental_review_links_require_explicit_selection_and_a_bound_review(contract):
     kwargs = dict(question='합성', snapshot_id='s', selected_review=dict(run_id='r', unit_id='u'))
     query, _ = use.resolve_query_defaults(BusinessQuery(**kwargs), 'graph')
     assert query.source_citation_contract == links.CONTRACT
-    experimental, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=links.REVIEW_CONTRACT), 'graph')
-    assert experimental.source_citation_contract == links.REVIEW_CONTRACT
+    experimental, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=contract), 'graph')
+    assert experimental.source_citation_contract == contract
     old, _ = use.resolve_query_defaults(BusinessQuery(**kwargs, source_citation_contract=links.CONTRACT), 'graph')
     assert old.source_citation_contract == links.CONTRACT
     with pytest.raises(ValueError, match='selected_review'):
-        BusinessQuery(question='합성', snapshot_id='s', source_citation_contract=links.REVIEW_CONTRACT)
+        BusinessQuery(question='합성', snapshot_id='s', source_citation_contract=contract)
+
+
+def segments():
+    fact = dict(text='상품의 부위는 **등심**입니다.', claim_refs=['q1'], quote_refs=['sq_alpha'], review_refs=[])
+    limit = dict(text='이 부위 비교만으로 적합성은 확정할 수 없습니다.', claim_refs=[], quote_refs=[], review_refs=['rv_item_1'])
+    return dict(answer=[fact, deepcopy(fact), limit], limitations=[deepcopy(limit), deepcopy(limit)],
+        choice=None, citations=['q1'], source_citations=raw()['source_citations'])
+
+
+def test_text_is_generated_once_and_repeated_segments_keep_their_exact_locations(monkeypatch):
+    payload = segments(); before = deepcopy(payload)
+    output, run, packet = evaluate(monkeypatch, payload, links.SEGMENT_CONTRACT, review_context=bounded_review())
+    assert output['answer'] == '\n\n'.join(p['text'] for p in payload['answer'])
+    assert output['limitations'] == [p['text'] for p in payload['limitations']]
+    assert payload == before == run['units'][0]['response']['parsed']
+    assert '**등심**' in output['answer'] and 'answer_links' not in packet['schema']['properties']
+    assert set(packet['schema']['properties']['answer']['items']['properties']) == {'text', 'claim_refs', 'quote_refs', 'review_refs'}
+    record = run['answer_links']
+    assert record['status'] == 'recorded' and record['duplicates_removed'] == 0
+    assert len(record['links']) == 5 and record['claims_without_resolved_links'] == []
+    assert record['links'][0]['location'] != record['links'][1]['location']
+    assert record['links'][3]['location']['limitation_index'] == 0
+    assert record['links'][4]['location']['limitation_index'] == 1
+    for entry in record['links']:
+        loc = entry['location']; text = output['answer'] if loc['target'] == 'answer' else output['limitations'][loc['limitation_index']]
+        assert text[loc['start_char']:loc['end_char']] == entry['declaration']['anchor']
+    assert record['semantic_support'] == 'not_assessed'
+
+
+def test_old_markdown_copy_error_remains_rejected_and_raw_untouched(monkeypatch):
+    payload = raw(answer='상품 부위는 **등심**입니다.', answer_links=[dict(target='answer',
+        anchor='상품 부위는 등심입니다.', claim_refs=['q1'], quote_refs=['sq_alpha'])])
+    _, run, _ = evaluate(monkeypatch, payload)
+    assert run['answer_links']['links'][0]['errors'] == ['anchor_absent_or_non_unique']
+    assert run['units'][0]['response']['parsed'] == payload
+
+
+@pytest.mark.parametrize('fault', ['copied_anchor', 'empty', 'wrong_shape', 'extra_location'])
+def test_segments_reject_invalid_shapes_instead_of_repairing_them(fault):
+    payload = segments()
+    if fault == 'copied_anchor': payload['answer_links'] = []
+    elif fault == 'empty': payload['answer'] = []
+    elif fault == 'wrong_shape': payload['answer'] = 'string from old contract'
+    else: payload['answer'][0]['start_char'] = 0
+    before = deepcopy(payload)
+    with pytest.raises(ValueError): links.restore(payload, {}, contract=links.SEGMENT_CONTRACT)
+    assert payload == before
+
+
+@pytest.mark.parametrize('fault,error', [
+    (dict(claim_refs=['unknown']), 'claim_not_provided_and_globally_cited'),
+    (dict(quote_refs=['sq_missing']), 'quote_ref_unresolved'),
+    (dict(quote_refs=[]), 'missing_quote_refs'),
+    (dict(review_refs=['rv_item_1']), 'review_scope_is_not_source_quote_support'),
+    (dict(quote_refs=[], review_refs=['rv_unknown']), 'review_ref_unresolved'),
+])
+def test_segment_rendering_does_not_relax_evidence_checks(monkeypatch, fault, error):
+    payload = segments(); payload['answer'][0].update(fault)
+    _, run, _ = evaluate(monkeypatch, payload, links.SEGMENT_CONTRACT, review_context=bounded_review())
+    assert error in run['answer_links']['links'][0]['errors']
+    assert run['answer_links']['links'][1]['status'] == 'resolved'
+
+
+def test_changed_text_cannot_keep_a_segment_location():
+    output, meta = links.restore(segments(), {}, contract=links.SEGMENT_CONTRACT)
+    output['answer'] = output['answer'].replace('**등심**', '다른 값')
+    output['_answer_link_metadata'] = meta
+    run = dict(query=dict(source_citation_contract=links.SEGMENT_CONTRACT))
+    links.record(run, output, [])
+    assert 'segment_text_changed' in run['answer_links']['links'][0]['errors']
 
 
 def test_new_schema_is_only_opt_in_and_literals_survive_id_restoration(monkeypatch):
